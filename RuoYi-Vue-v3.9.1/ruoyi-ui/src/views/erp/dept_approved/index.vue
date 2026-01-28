@@ -5,51 +5,42 @@
       <el-form-item label="主键" prop="id">
         <el-input v-model="queryParams.id" placeholder="请输入主键" clearable @keyup.enter="handleQuery" />
       </el-form-item>
-
       <el-form-item label="所属年份" prop="year">
         <el-input v-model="queryParams.year" placeholder="请输入所属年份" clearable @keyup.enter="handleQuery" />
       </el-form-item>
-
       <el-form-item label="成果类别" prop="category">
         <el-select v-model="queryParams.category" placeholder="请选择成果类别" clearable>
           <el-option v-for="dict in erp_outcome_category" :key="dict.value" :label="dict.label" :value="dict.value" />
         </el-select>
       </el-form-item>
-
       <el-form-item label="级别类型" prop="levelType">
         <el-select v-model="queryParams.levelType" placeholder="请选择级别类型" clearable>
           <el-option v-for="dict in erp_award_level_type" :key="dict.value" :label="dict.label" :value="dict.value" />
         </el-select>
       </el-form-item>
-
       <el-form-item label="奖项等级" prop="awardLevel">
         <el-select v-model="queryParams.awardLevel" placeholder="请选择奖项等级" clearable>
           <el-option v-for="dict in erp_award_rank" :key="dict.value" :label="dict.label" :value="dict.value" />
         </el-select>
       </el-form-item>
-
       <el-form-item label="证书编号" prop="certNo">
         <el-input v-model="queryParams.certNo" placeholder="请输入证书编号" clearable @keyup.enter="handleQuery" />
       </el-form-item>
-
       <el-form-item label="组别" prop="groupType">
         <el-select v-model="queryParams.groupType" placeholder="请选择组别" clearable>
           <el-option v-for="dict in erp_group_type" :key="dict.value" :label="dict.label" :value="dict.value" />
         </el-select>
       </el-form-item>
-
       <el-form-item label="所属学院" prop="deptId">
         <el-select v-model="queryParams.deptId" placeholder="请选择所属学院" clearable filterable>
           <el-option v-for="dept in deptOptions" :key="dept.value" :label="dept.label" :value="dept.value" />
         </el-select>
       </el-form-item>
-
       <el-form-item label="审核状态" prop="auditStatus">
         <el-select v-model="queryParams.auditStatus" placeholder="请选择审核状态" clearable>
           <el-option v-for="dict in erp_audit_status" :key="dict.value" :label="dict.label" :value="dict.value" />
         </el-select>
       </el-form-item>
-
       <el-form-item>
         <el-button type="primary" icon="Search" @click="handleQuery">搜索</el-button>
         <el-button icon="Refresh" @click="resetQuery">重置</el-button>
@@ -81,7 +72,7 @@
       <el-table-column label="成果类别" align="center" prop="category">
         <template #default="scope"><dict-tag :options="erp_outcome_category" :value="scope.row.category" /></template>
       </el-table-column>
-      <el-table-column label="作品名称" align="center" prop="workName" min-width="180" show-overflow-tooltip />
+      <el-table-column label="负责人姓名" align="center" prop="workName" min-width="180" show-overflow-tooltip />
       <el-table-column label="级别类型" align="center" prop="levelType">
         <template #default="scope"><dict-tag :options="erp_award_level_type" :value="scope.row.levelType" /></template>
       </el-table-column>
@@ -99,20 +90,16 @@
       <el-table-column label="获奖时间" align="center" prop="awardTime" width="120">
         <template #default="scope"><span>{{ parseTime(scope.row.awardTime, '{y}-{m}-{d}') }}</span></template>
       </el-table-column>
-      <el-table-column label="报名费" align="center" prop="entryFee" />
+      <!-- 删除报名费列 -->
+      <!-- <el-table-column label="报名费" align="center" prop="entryFee" /> -->
       <el-table-column label="审核状态" align="center" prop="auditStatus">
         <template #default="scope"><dict-tag :options="erp_audit_status" :value="scope.row.auditStatus" /></template>
       </el-table-column>
 
-      <!-- 可能存在的审核字段（没有也不影响） -->
-      <el-table-column label="系部审核人" align="center" prop="deptAuditUser" />
-      <el-table-column label="系部审核时间" align="center" prop="deptAuditTime" width="120">
-        <template #default="scope"><span>{{ parseTime(scope.row.deptAuditTime, '{y}-{m}-{d}') }}</span></template>
-      </el-table-column>
-      <el-table-column label="系部审核意见" align="center" prop="deptAuditReason" show-overflow-tooltip />
-
+      <!-- 审阅按钮 -->
       <el-table-column label="操作" align="center" class-name="small-padding fixed-width" width="160">
         <template #default="scope">
+          <el-button link type="primary" icon="Search" @click="handleReview(scope.row)">审阅</el-button>
           <el-button link type="primary" icon="Edit" @click="handleUpdate(scope.row)" v-hasPermi="['erp:dept_approved:edit']">修改</el-button>
           <el-button link type="primary" icon="Delete" @click="handleDelete(scope.row)" v-hasPermi="['erp:dept_approved:remove']">删除</el-button>
         </template>
@@ -142,6 +129,7 @@
 
 <script setup name="dept_approved">
 import { getCurrentInstance, reactive, ref, toRefs } from "vue";
+import { useRouter } from "vue-router";
 import BaseOutcomeDialog from "@/views/erp/BaseOutcomeDialog.vue";
 import { listDept } from "@/api/system/dept";
 
@@ -154,6 +142,7 @@ import {
 } from "@/api/erp/dept_approved";
 
 const { proxy } = getCurrentInstance();
+const router = useRouter();
 const {
   erp_outcome_category,
   erp_audit_status,
@@ -237,7 +226,7 @@ function handleUpdate(row) {
 function handleDelete(row) {
   const _ids = row?.id ? row.id : ids.value;
   proxy.$modal
-      .confirm(`是否确认删除院级已审核的成果编号为 "${_ids}" 的数据项？`)
+      .confirm(`是否确认删除院级未审核的成果编号为 "${_ids}" 的数据项？`)
       .then(() => delDept_approved(_ids))
       .then(() => {
         proxy.$modal.msgSuccess("删除成功");
@@ -247,6 +236,11 @@ function handleDelete(row) {
 }
 function handleExport() {
   proxy.download("erp/dept_approved/export", { ...queryParams.value }, `dept_approved_${new Date().getTime()}.xlsx`);
+}
+
+// 审阅按钮点击后，跳转到审阅页面
+function handleReview(row) {
+  router.push({ path: "/erp/reviewPage", query: { id: row.id, source: "dept_approved" } });
 }
 
 getDeptOptions();
