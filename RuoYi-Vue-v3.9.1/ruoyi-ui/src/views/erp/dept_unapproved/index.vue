@@ -72,7 +72,7 @@
       <el-table-column label="成果类别" align="center" prop="category">
         <template #default="scope"><dict-tag :options="erp_outcome_category" :value="scope.row.category" /></template>
       </el-table-column>
-      <el-table-column label="作品名称" align="center" prop="workName" min-width="180" show-overflow-tooltip />
+      <el-table-column label="负责人姓名" align="center" prop="workName" min-width="180" show-overflow-tooltip />
       <el-table-column label="级别类型" align="center" prop="levelType">
         <template #default="scope"><dict-tag :options="erp_award_level_type" :value="scope.row.levelType" /></template>
       </el-table-column>
@@ -90,13 +90,16 @@
       <el-table-column label="获奖时间" align="center" prop="awardTime" width="120">
         <template #default="scope"><span>{{ parseTime(scope.row.awardTime, '{y}-{m}-{d}') }}</span></template>
       </el-table-column>
-      <el-table-column label="报名费" align="center" prop="entryFee" />
+      <!-- 删除报名费列 -->
+      <!-- <el-table-column label="报名费" align="center" prop="entryFee" /> -->
       <el-table-column label="审核状态" align="center" prop="auditStatus">
         <template #default="scope"><dict-tag :options="erp_audit_status" :value="scope.row.auditStatus" /></template>
       </el-table-column>
 
+      <!-- 审阅按钮 -->
       <el-table-column label="操作" align="center" class-name="small-padding fixed-width" width="160">
         <template #default="scope">
+          <el-button link type="primary" icon="Search" @click="handleReview(scope.row)">审阅</el-button>
           <el-button link type="primary" icon="Edit" @click="handleUpdate(scope.row)" v-hasPermi="['erp:dept_unapproved:edit']">修改</el-button>
           <el-button link type="primary" icon="Delete" @click="handleDelete(scope.row)" v-hasPermi="['erp:dept_unapproved:remove']">删除</el-button>
         </template>
@@ -126,6 +129,7 @@
 
 <script setup name="dept_unapproved">
 import { getCurrentInstance, reactive, ref, toRefs } from "vue";
+import { useRouter } from "vue-router";
 import BaseOutcomeDialog from "@/views/erp/BaseOutcomeDialog.vue";
 import { listDept } from "@/api/system/dept";
 
@@ -138,6 +142,7 @@ import {
 } from "@/api/erp/dept_unapproved";
 
 const { proxy } = getCurrentInstance();
+const router = useRouter();
 const {
   erp_outcome_category,
   erp_audit_status,
@@ -231,6 +236,11 @@ function handleDelete(row) {
 }
 function handleExport() {
   proxy.download("erp/dept_unapproved/export", { ...queryParams.value }, `dept_unapproved_${new Date().getTime()}.xlsx`);
+}
+
+// 审阅按钮点击后，跳转到审阅页面
+function handleReview(row) {
+  router.push({ path: "/erp/reviewPage", query: { id: row.id, source: "dept_unapproved" } });
 }
 
 getDeptOptions();

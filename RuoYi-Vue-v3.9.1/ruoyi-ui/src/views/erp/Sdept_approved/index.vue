@@ -64,6 +64,7 @@
       <right-toolbar v-model:showSearch="showSearch" @queryTable="getList" />
     </el-row>
 
+    <!-- 列表 -->
     <el-table v-loading="loading" :data="Sdept_approvedList" @selection-change="handleSelectionChange">
       <el-table-column type="selection" width="55" align="center" />
       <el-table-column label="主键" align="center" prop="id" />
@@ -71,7 +72,7 @@
       <el-table-column label="成果类别" align="center" prop="category">
         <template #default="scope"><dict-tag :options="erp_outcome_category" :value="scope.row.category" /></template>
       </el-table-column>
-      <el-table-column label="作品名称" align="center" prop="workName" min-width="180" show-overflow-tooltip />
+      <el-table-column label="负责人姓名" align="center" prop="workName" min-width="180" show-overflow-tooltip />
       <el-table-column label="级别类型" align="center" prop="levelType">
         <template #default="scope"><dict-tag :options="erp_award_level_type" :value="scope.row.levelType" /></template>
       </el-table-column>
@@ -89,21 +90,16 @@
       <el-table-column label="获奖时间" align="center" prop="awardTime" width="120">
         <template #default="scope"><span>{{ parseTime(scope.row.awardTime, '{y}-{m}-{d}') }}</span></template>
       </el-table-column>
-      <el-table-column label="报名费" align="center" prop="entryFee" />
+      <!-- 删除报名费列 -->
+      <!-- <el-table-column label="报名费" align="center" prop="entryFee" /> -->
       <el-table-column label="审核状态" align="center" prop="auditStatus">
         <template #default="scope"><dict-tag :options="erp_audit_status" :value="scope.row.auditStatus" /></template>
       </el-table-column>
 
-      <!-- 校级审核字段（有则展示，无则空） -->
-      <el-table-column label="系部审核人" align="center" prop="deptAuditUser" />
-      <el-table-column label="校级审核人" align="center" prop="schoolAuditUser" />
-      <el-table-column label="校级审核时间" align="center" prop="schoolAuditTime" width="120">
-        <template #default="scope"><span>{{ parseTime(scope.row.schoolAuditTime, '{y}-{m}-{d}') }}</span></template>
-      </el-table-column>
-      <el-table-column label="校级审核意见" align="center" prop="schoolAuditReason" show-overflow-tooltip />
-
+      <!-- 审阅按钮 -->
       <el-table-column label="操作" align="center" class-name="small-padding fixed-width" width="160">
         <template #default="scope">
+          <el-button link type="primary" icon="Search" @click="handleReview(scope.row)">审阅</el-button>
           <el-button link type="primary" icon="Edit" @click="handleUpdate(scope.row)" v-hasPermi="['erp:Sdept_approved:edit']">修改</el-button>
           <el-button link type="primary" icon="Delete" @click="handleDelete(scope.row)" v-hasPermi="['erp:Sdept_approved:remove']">删除</el-button>
         </template>
@@ -118,6 +114,7 @@
         @pagination="getList"
     />
 
+    <!-- ✅ 复用弹窗 -->
     <BaseOutcomeDialog
         ref="dlgRef"
         :getFn="getSdept_approved"
@@ -132,6 +129,7 @@
 
 <script setup name="Sdept_approved">
 import { getCurrentInstance, reactive, ref, toRefs } from "vue";
+import { useRouter } from "vue-router";
 import BaseOutcomeDialog from "@/views/erp/BaseOutcomeDialog.vue";
 import { listDept } from "@/api/system/dept";
 
@@ -144,6 +142,7 @@ import {
 } from "@/api/erp/Sdept_approved";
 
 const { proxy } = getCurrentInstance();
+const router = useRouter();
 const {
   erp_outcome_category,
   erp_audit_status,
@@ -227,7 +226,7 @@ function handleUpdate(row) {
 function handleDelete(row) {
   const _ids = row?.id ? row.id : ids.value;
   proxy.$modal
-      .confirm(`是否确认删除校级已审核的成果编号为 "${_ids}" 的数据项？`)
+      .confirm(`是否确认删除院级未审核的成果编号为 "${_ids}" 的数据项？`)
       .then(() => delSdept_approved(_ids))
       .then(() => {
         proxy.$modal.msgSuccess("删除成功");
@@ -237,6 +236,11 @@ function handleDelete(row) {
 }
 function handleExport() {
   proxy.download("erp/Sdept_approved/export", { ...queryParams.value }, `Sdept_approved_${new Date().getTime()}.xlsx`);
+}
+
+// 审阅按钮点击后，跳转到审阅页面
+function handleReview(row) {
+  router.push({ path: "/erp/reviewPage", query: { id: row.id, source: "Sdept_approved" } });
 }
 
 getDeptOptions();
