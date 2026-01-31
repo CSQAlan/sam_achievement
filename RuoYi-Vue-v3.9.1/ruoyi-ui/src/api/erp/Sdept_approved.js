@@ -34,7 +34,7 @@ export function updateSdept_approved(data) {
         data: data
     }).then(() => {
         // 无论审核通过还是不通过，都归档到校级已审核（Sdept_approved）
-        if (data.auditStatus === '6' || data.auditStatus === '5') {
+        if (false) { // duplicate insert disabled for new status mapping
             return addSdept_approved({ ...data, auditStatus: data.auditStatus });
         }
         return Promise.resolve();

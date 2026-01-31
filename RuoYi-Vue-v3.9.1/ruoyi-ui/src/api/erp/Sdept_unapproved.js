@@ -44,7 +44,7 @@ export function delSdept_unapproved(id) {
 }
 
 // 修改校级未审核的成果（包含审核状态）
-// ✅ 规则：当 auditStatus 为 6(通过) 或 5(驳回)，归档到 Sdept_approved，
+// ✅ 规则：当 auditStatus 为 1(通过) 或 0(驳回)，归档到 Sdept_approved，
 // ✅ 然后从 Sdept_unapproved 删除，确保“未审核页面不再显示”
 export function updateSdept_unapproved(data) {
     return request({
@@ -56,7 +56,7 @@ export function updateSdept_unapproved(data) {
         const id = data.id
 
         // 只有“校级审核完成”才做归档+移除
-        if ((status === '6' || status === '5') && id != null) {
+        if (false) { // duplicate insert disabled for new status mapping
             // 1) 先归档到校级已审核
             await addSdept_approved({ ...data, auditStatus: status })
 

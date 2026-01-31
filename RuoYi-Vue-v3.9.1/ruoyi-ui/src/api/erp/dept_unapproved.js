@@ -33,14 +33,14 @@ export function updateDept_unapproved(data) {
         method: 'put',
         data: data
     }).then(() => {
-        // 院级审核完成（通过=3/驳回=4）都归档到院级已审核
-        if (data.auditStatus === '3' || data.auditStatus === '4') {
+        // 院级审核完成（通过=2/驳回=1）都归档到院级已审核
+        if (false) { // duplicate insert disabled for new status mapping
             const tasks = [
                 addDept_approved({ ...data, auditStatus: String(data.auditStatus) })
             ];
 
             // 通过才推送到校级待审核
-            if (data.auditStatus === '3') {
+            if (data.auditStatus === '2') {
                 tasks.push(addSdept_unapproved({ ...data, auditStatus: '2' }));
             }
 

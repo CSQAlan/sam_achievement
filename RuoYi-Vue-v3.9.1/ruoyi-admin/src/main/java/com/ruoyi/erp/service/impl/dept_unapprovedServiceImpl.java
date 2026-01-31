@@ -43,13 +43,13 @@ public class dept_unapprovedServiceImpl implements Idept_unapprovedService
     /**
      * 查询院级未审核的成果列表
      *
-     * audit_status = 1 ：待院级审核（你字典里原“待系部审核”已改为“待院级审核”）
+     * audit_status = 0 ：待院级审核（你字典里原“待系部审核”已改为“待院级审核”）
      */
     @Override
     public List<dept_unapproved> selectdept_unapprovedList(dept_unapproved dept_unapproved)
     {
-        // 只筛选出待院级审核（audit_status = 1）的成果
-        List<Integer> validStatuses = Arrays.asList(1);
+        // 只筛选出待院级审核（audit_status = 0）的成果
+        List<Integer> validStatuses = Arrays.asList(0);
 
         // 调用 Mapper 层查询符合条件的成果
         return dept_unapprovedMapper.selectByAuditStatuses(validStatuses);
@@ -146,7 +146,7 @@ public class dept_unapprovedServiceImpl implements Idept_unapprovedService
     public List<dept_unapproved> selectDeptUnpprovedByStatus(dept_unapproved deptUnpproved)
     {
         // 只查询待院级审核（1）
-        List<Integer> validStatuses = Arrays.asList(1);
+        List<Integer> validStatuses = Arrays.asList(0);
         return dept_unapprovedMapper.selectByAuditStatuses(validStatuses);
     }
 

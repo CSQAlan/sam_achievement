@@ -225,6 +225,7 @@
 
             <if test="entryFee != null">entry_fee = #{entryFee},</if>
             <if test="auditStatus != null">audit_status = #{auditStatus},</if>
+            <if test="auditStatus == '0' or auditStatus == '1'">school_audit_time = NOW(),</if>
             <if test="deptAuditUser != null">dept_audit_user = #{deptAuditUser},</if>
             <if test="deptAuditTime != null">dept_audit_time = #{deptAuditTime},</if>
             <if test="deptAuditReason != null">dept_audit_reason = #{deptAuditReason},</if>

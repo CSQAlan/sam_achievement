@@ -46,8 +46,8 @@ public  class dept_approvedServiceImpl implements Idept_approvedService
     @Override
     public List<dept_approved> selectdept_approvedList(dept_approved dept_approved)
     {
-        // 只筛选出院级审核通过（audit_status = 3）和院级驳回（audit_status = 4）的成果
-        List<Integer> validStatuses = Arrays.asList(3, 4);  // 院级审核通过和院级驳回的状态值
+        // 只筛选出院级审核通过（audit_status = 2）和院级驳回（audit_status = 1）的成果
+        List<Integer> validStatuses = Arrays.asList(2, 1);  // 院级审核通过和院级驳回的状态值
 
         // 调用 Mapper 层查询符合条件的成果
         return dept_approvedMapper.selectByAuditStatuses(validStatuses);
@@ -142,7 +142,7 @@ public  class dept_approvedServiceImpl implements Idept_approvedService
     public List<dept_approved> selectDeptApprovedByStatus(dept_approved deptApproved)
     {
         // 设置只查询系部已审核和系部驳回的状态值
-        List<Integer> validStatuses = Arrays.asList(2, 4);  // 2: 系部已审核, 4: 系部驳回
+        List<Integer> validStatuses = Arrays.asList(2, 1);  // 2: 院级审核通过, 1: 院级驳回
 
         // 调用 Mapper 层查询符合条件的成果
         return dept_approvedMapper.selectByAuditStatuses(validStatuses);

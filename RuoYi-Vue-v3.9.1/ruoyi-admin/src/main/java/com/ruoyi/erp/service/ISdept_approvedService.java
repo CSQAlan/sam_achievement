@@ -72,5 +72,5 @@ public interface ISdept_approvedService
      * @param schoolAuditReason 审核原因
      * @return 是否成功
      */
-    boolean wait(Long id, String auditStatus, String schoolAuditReason);
+    boolean wait(Long id, String auditStatus, String schoolAuditReason,String schoolAuditUser);
 }

@@ -60,10 +60,18 @@
     </resultMap>
 
     <sql id="selectSdept_approvedVo">
-        select id, year, category, work_name, level_type, award_level, track, cert_no, group_type, contest_id, dept_id, award_time, submit_time, entry_fee, audit_status, dept_audit_user, dept_audit_time, dept_audit_reason, school_audit_user, school_audit_time, school_audit_reason, is_reimburse, reimburse_fee, reimburse_ratio, reimburse_project_id, reimburse_pay_time, reimburse_audit_status, reimburse_audit_time, reimburse_audit_user_id, reimburse_audit_reason, del_flag, create_by, create_time, update_by, update_time, remark
+        select id, year, category, work_name, level_type, award_level, track, cert_no, group_type, contest_id, dept_id,
+            award_time, submit_time, entry_fee, audit_status,
+            dept_audit_user, dept_audit_time, dept_audit_reason,
+            school_audit_user, school_audit_time, school_audit_reason,
+            is_reimburse,
+            reimburse_fee, reimburse_ratio, reimburse_project_id, reimburse_pay_time,
+            reimburse_audit_status, reimburse_audit_time, reimburse_audit_user_id, reimburse_audit_reason,
+            del_flag, create_by, create_time, update_by, update_time, remark
         from erp_outcome
     </sql>
 
+    <!-- ✅ 修复：已审核列表永远只查 0/1；用户传 auditStatus 时再精确筛 -->
     <select id="selectSdept_approvedList" parameterType="Sdept_approved" resultMap="Sdept_approvedResult">
         <include refid="selectSdept_approvedVo"/>
         <where>
@@ -75,16 +83,21 @@
             <if test="track != null  and track != ''"> and track like concat('%', #{track}, '%')</if>
             <if test="certNo != null  and certNo != ''"> and cert_no = #{certNo}</if>
             <if test="groupType != null  and groupType != ''"> and group_type = #{groupType}</if>
-            <if test="deptId != null "> and dept_id like concat('%', #{deptId}, '%')</if>
-            <if test="auditStatus != null  and auditStatus != ''"> and audit_status = #{auditStatus}</if>
 
-            <!-- 只查询校级审核通过/校级驳回（按你之前 dept_approved 的思路：限制状态范围） -->
-            <if test="auditStatus != null">
-                and audit_status in (6, 5)
+            <!-- ✅ 修复：deptId 是 Long，不要 like -->
+            <if test="deptId != null "> and dept_id = #{deptId}</if>
+
+            <!-- ✅ 已审核页固定范围：只看通过/驳回 -->
+            and audit_status in (1, 0)
+
+            <!-- ✅ 如果前端选择了审核状态，再精确筛选 -->
+            <if test="auditStatus != null and auditStatus != ''">
+                and audit_status = #{auditStatus}
             </if>
         </where>
     </select>
 
+    <!-- 保留：按状态批量查（注意：school_audit_time 不为空） -->
     <select id="selectByAuditStatuses" resultMap="Sdept_approvedResult">
         <include refid="selectSdept_approvedVo"/>
         <where>
@@ -92,28 +105,31 @@
             <foreach item="status" collection="auditStatus" open="(" separator="," close=")">
                 #{status}
             </foreach>
+            and school_audit_time is not null
         </where>
     </select>
 
     <select id="selectSdept_approvedById" parameterType="Long" resultMap="Sdept_approvedErpContestantResult">
-        select id, year, category, work_name, level_type, award_level, track, cert_no, group_type, contest_id, dept_id, award_time, submit_time, entry_fee, audit_status, dept_audit_user, dept_audit_time, dept_audit_reason, school_audit_user, school_audit_time, school_audit_reason, is_reimburse, reimburse_fee, reimburse_ratio, reimburse_project_id, reimburse_pay_time, reimburse_audit_status, reimburse_audit_time, reimburse_audit_user_id, reimburse_audit_reason, del_flag, create_by, create_time, update_by, update_time, remark
+        select id, year, category, work_name, level_type, award_level, track, cert_no, group_type, contest_id, dept_id,
+            award_time, submit_time, entry_fee, audit_status,
+            dept_audit_user, dept_audit_time, dept_audit_reason,
+            school_audit_user, school_audit_time, school_audit_reason,
+            is_reimburse,
+            reimburse_fee, reimburse_ratio, reimburse_project_id, reimburse_pay_time,
+            reimburse_audit_status, reimburse_audit_time, reimburse_audit_user_id, reimburse_audit_reason,
+            del_flag, create_by, create_time, update_by, update_time, remark
         from erp_outcome
         where id = #{id}
     </select>
 
+    <!-- ✅ 修复：collection 传入 column="id"，所以这里用 #{id} -->
     <select id="selectErpContestantList" resultMap="ErpContestantResult">
         select id, outcome_id, student_code, sort_order, is_leader, create_by, create_time, update_by, update_time
         from erp_contestant
-        where outcome_id = #{outcome_id}
+        where outcome_id = #{id}
     </select>
 
     <!-- ======================= INSERT ======================= -->
-    <!-- 要求与前文一致：
-         1) submit_time 永远 NOW()
-         2) year 默认当前年份（IFNULL）
-         3) 除 work_name 可选，其余（category/level_type/award_level/track/cert_no/group_type/dept_id/award_time/entry_fee/audit_status/is_reimburse）按“必填”固定写入
-         4) contest_id 可选
-    -->
     <insert id="insertSdept_approved" parameterType="Sdept_approved" useGeneratedKeys="true" keyProperty="id">
         insert into erp_outcome
         <trim prefix="(" suffix=")" suffixOverrides=",">
@@ -208,7 +224,6 @@
     </insert>
 
     <!-- ======================= UPDATE ======================= -->
-    <!-- 要求与前文一致：submit_time 永远 NOW(); work_name 可选更新 -->
     <update id="updateSdept_approved" parameterType="Sdept_approved">
         update erp_outcome
         <trim prefix="SET" suffixOverrides=",">
@@ -257,13 +272,9 @@
         where id = #{id}
     </update>
 
-    <!-- ======================= WAIT（修复版） ======================= -->
-    <!-- 说明：
-         1) 你之前的 wait 是错误写法：set auditStatus, deptAuditReason 这种 MySQL 不认识
-         2) 这里按“学校审核”字段更新：audit_status / school_audit_reason / school_audit_time / school_audit_user
-         3) 如果你业务里 Sdept_approved 是“学校已审核/驳回”，这样最符合
-    -->
-    <update id="wait" parameterType="Sdept_approved">
+    <!-- ======================= WAIT（配套 Java @Param 参数） ======================= -->
+    <!-- ✅ 关键：Java wait(...) 是散参 + @Param，所以这里必须用 map（或删除 parameterType） -->
+    <update id="wait" parameterType="map">
         update erp_outcome
         set audit_status = #{auditStatus},
             school_audit_reason = #{schoolAuditReason},
