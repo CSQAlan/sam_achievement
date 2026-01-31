@@ -23,6 +23,10 @@ import com.ruoyi.erp.service.ISdept_approvedService;
 import com.ruoyi.common.utils.poi.ExcelUtil;
 import com.ruoyi.common.core.page.TableDataInfo;
 
+// ✅ 建议用 RuoYi 的 SecurityUtils 获取当前用户名（不同版本方法可能略不同）
+// 如果你项目里没有这个类/方法，请告诉我你用的获取登录用户方式，我再按你项目改
+import com.ruoyi.common.utils.SecurityUtils;
+
 /**
  * 校级已审核的成果Controller
  *
@@ -38,7 +42,7 @@ public class Sdept_approvedController extends BaseController
 
     /**
      * 查询校级已审核的成果列表
-     * 只显示“校级已审核”或“校级驳回”的成果（仿照院级已审核写法）
+     * 只显示“校级审核通过(1)”或“校级驳回(0)”的成果（仿照院级已审核写法）
      */
     @PreAuthorize("@ss.hasPermi('erp:Sdept_approved:list')")
     @GetMapping("/list")
@@ -46,7 +50,7 @@ public class Sdept_approvedController extends BaseController
     {
         startPage();
 
-        // 只查询校级已审核或校级驳回的成果（需要你在service/mapper里实现此方法）
+        // ✅ 只查询校级审核通过/驳回（由 service 内部统一限制 0/1）
         List<Sdept_approved> list = sdept_approvedService.selectSdeptApprovedByStatus(sdept_approved);
 
         return getDataTable(list);
@@ -60,7 +64,8 @@ public class Sdept_approvedController extends BaseController
     @PostMapping("/export")
     public void export(HttpServletResponse response, Sdept_approved sdept_approved)
     {
-        List<Sdept_approved> list = sdept_approvedService.selectSdept_approvedList(sdept_approved);
+        // ✅ 这里建议也用 “按状态查询” 的结果，避免把待审核(2)也导出去
+        List<Sdept_approved> list = sdept_approvedService.selectSdeptApprovedByStatus(sdept_approved);
         ExcelUtil<Sdept_approved> util = new ExcelUtil<Sdept_approved>(Sdept_approved.class);
         util.exportExcel(response, list, "校级已审核的成果数据");
     }
@@ -95,6 +100,36 @@ public class Sdept_approvedController extends BaseController
     public AjaxResult edit(@RequestBody Sdept_approved sdept_approved)
     {
         return toAjax(sdept_approvedService.updateSdept_approved(sdept_approved));
+    }
+
+    /**
+     * ✅ 校级审核：写入 audit_status + school_audit_reason + school_audit_time + school_audit_user
+     *
+     * 说明：
+     * - 这个接口是为了让“审核流转”由后端保证字段齐全
+     * - auditStatus 只能是 "0"(驳回) 或 "1"(通过)（你字典定义）
+     *
+     * 请求体示例：
+     * { "auditStatus": "1", "schoolAuditReason": "同意" }
+     */
+    @PreAuthorize("@ss.hasPermi('erp:Sdept_approved:edit')")
+    @Log(title = "校级成果审核", businessType = BusinessType.UPDATE)
+    @PutMapping("/wait/{id}")
+    public AjaxResult wait(@PathVariable("id") Long id, @RequestBody Sdept_approved body)
+    {
+        String auditStatus = body.getAuditStatus();
+        String schoolAuditReason = body.getSchoolAuditReason();
+
+        if (auditStatus == null || (!"0".equals(auditStatus) && !"1".equals(auditStatus)))
+        {
+            return AjaxResult.error("auditStatus 必须是 \"0\"(校级驳回) 或 \"1\"(校级审核通过)");
+        }
+
+        // ✅ 当前登录用户名（按你项目实际为准）
+        String schoolAuditUser = SecurityUtils.getUsername();
+
+        boolean ok = sdept_approvedService.wait(id, auditStatus, schoolAuditReason,schoolAuditUser);
+        return ok ? AjaxResult.success() : AjaxResult.error("审核失败");
     }
 
     /**

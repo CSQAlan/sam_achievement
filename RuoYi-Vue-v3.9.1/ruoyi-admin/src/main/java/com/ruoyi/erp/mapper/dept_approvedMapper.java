@@ -33,7 +33,7 @@ public interface dept_approvedMapper
     /**
      * 查询系部已审核和系部驳回的成果
      *
-     * @param auditStatus 审核状态列表，通常是 3 和 4，分别代表院级审核通过和院级驳回
+     * @param auditStatus 审核状态列表，通常是 2 和 1，分别代表院级审核通过和院级驳回
      * @return 符合条件的成果集合
      */
     List<dept_approved> selectByAuditStatuses(@Param("auditStatus") List<Integer> auditStatus);
