@@ -74,8 +74,8 @@ public class dept_unapproved extends BaseEntity
     @Excel(name = "报名费")
     private BigDecimal entryFee;
 
-    /** 审核状态（1:待院级审核, 2:待校级审核, 3:院级审核通过, 4:院级驳回, 5:校级驳回, 6:校级审核通过） */
-    @Excel(name = "审核状态", readConverterExp = "1=待院级审核,2=待校级审核,3=院级审核通过,4=院级驳回,5=校级驳回,6=校级审核通过")
+    /** 审核状态（0:待院级审核, 1:院级驳回, 2:院级审核通过） */
+    @Excel(name = "审核状态", readConverterExp = "0=待院级审核,1=院级驳回,2=院级审核通过")
     private String auditStatus;
 
     /** 系部审核人 */

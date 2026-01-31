@@ -78,7 +78,7 @@ PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
             <if test="auditStatus != null  and auditStatus != ''"> and audit_status = #{auditStatus}</if>
             <!-- 只查询院级审核通过和院级驳回的成果 -->
             <if test="auditStatus != null">
-                and audit_status in (3, 4)
+                and audit_status in (2, 1)
             </if>
         </where>
     </select>
@@ -90,6 +90,7 @@ PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
             <foreach item="status" collection="auditStatus" open="(" separator="," close=")">
                 #{status}
             </foreach>
+            and school_audit_time is null
         </where>
     </select>
 

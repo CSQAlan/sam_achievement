@@ -42,8 +42,8 @@ export function updateDept_approved(data) {
         method: 'put',
         data: data
     }).then(() => {
-        // 如果是院级通过（auditStatus = 3），需要推送到校级待审核
-        if (data.auditStatus === '3') {
+        // 如果是院级通过（auditStatus = 2），需要推送到校级待审核
+        if (false) { // duplicate insert disabled for new status mapping
             // 通过院级审核后，推送到校级待审核（auditStatus = 2）
             return addSdept_unapproved({ ...data, auditStatus: '2' });
         }
