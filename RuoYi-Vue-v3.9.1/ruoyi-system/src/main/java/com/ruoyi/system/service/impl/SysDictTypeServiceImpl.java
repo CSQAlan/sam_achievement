@@ -73,12 +73,16 @@ public class SysDictTypeServiceImpl implements ISysDictTypeService
     @Override
     public List<SysDictData> selectDictDataByType(String dictType)
     {
-        List<SysDictData> dictDatas = DictUtils.getDictCache(dictType);
-        if (StringUtils.isNotEmpty(dictDatas))
+        boolean bypassCache = StringUtils.isNotEmpty(dictType) && dictType.startsWith("erp_");
+        if (!bypassCache)
         {
-            return dictDatas;
+            List<SysDictData> dictDatas = DictUtils.getDictCache(dictType);
+            if (StringUtils.isNotEmpty(dictDatas))
+            {
+                return dictDatas;
+            }
         }
-        dictDatas = dictDataMapper.selectDictDataByType(dictType);
+        List<SysDictData> dictDatas = dictDataMapper.selectDictDataByType(dictType);
         if (StringUtils.isNotEmpty(dictDatas))
         {
             DictUtils.setDictCache(dictType, dictDatas);
