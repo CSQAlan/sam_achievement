@@ -86,11 +86,11 @@ PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
     <select id="selectByAuditStatuses" resultMap="dept_approvedResult">
         <include refid="selectdept_approvedVo"/>
         <where>
+            dept_audit_time is not null
             audit_status in
             <foreach item="status" collection="auditStatus" open="(" separator="," close=")">
                 #{status}
             </foreach>
-            and school_audit_time is null
         </where>
     </select>
 
@@ -98,6 +98,12 @@ PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
         select id, year, category, work_name, level_type, award_level, track, cert_no, group_type, contest_id, dept_id, award_time, submit_time, entry_fee, audit_status, dept_audit_user, dept_audit_time, dept_audit_reason, school_audit_user, school_audit_time, school_audit_reason, is_reimburse, reimburse_fee, reimburse_ratio, reimburse_project_id, reimburse_pay_time, reimburse_audit_status, reimburse_audit_time, reimburse_audit_user_id, reimburse_audit_reason, del_flag, create_by, create_time, update_by, update_time, remark
         from erp_outcome
         where id = #{id}
+    </select>
+
+    <select id="selectErpContestantList" resultMap="ErpContestantResult">
+        select id, outcome_id, student_code, sort_order, is_leader, create_by, create_time, update_by, update_time
+        from erp_contestant
+        where outcome_id = #{outcome_id}
     </select>
 
     <insert id="insertdept_approved" parameterType="dept_approved" useGeneratedKeys="true" keyProperty="id">
