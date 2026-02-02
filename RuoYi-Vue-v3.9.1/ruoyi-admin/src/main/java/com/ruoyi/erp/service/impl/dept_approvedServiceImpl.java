@@ -14,7 +14,7 @@ import com.ruoyi.erp.domain.dept_approved;
 import com.ruoyi.erp.service.Idept_approvedService;
 
 /**
- * 院级已审核的成果Service业务层处理
+ * 院级已审核的成果Service业务层处�?
  * 
  * @author cyy
  * @date 2026-01-26
@@ -47,7 +47,7 @@ public  class dept_approvedServiceImpl implements Idept_approvedService
     public List<dept_approved> selectdept_approvedList(dept_approved dept_approved)
     {
         // 只筛选出院级审核通过（audit_status = 2）和院级驳回（audit_status = 1）的成果
-        List<Integer> validStatuses = Arrays.asList(2, 1);  // 院级审核通过和院级驳回的状态值
+        List<Integer> validStatuses = Arrays.asList(2, 1, 0);  // 院级审核通过和院级驳回的状态�?
 
         // 调用 Mapper 层查询符合条件的成果
         return dept_approvedMapper.selectByAuditStatuses(validStatuses);
@@ -141,8 +141,8 @@ public  class dept_approvedServiceImpl implements Idept_approvedService
     @Override
     public List<dept_approved> selectDeptApprovedByStatus(dept_approved deptApproved)
     {
-        // 设置只查询系部已审核和系部驳回的状态值
-        List<Integer> validStatuses = Arrays.asList(2, 1);  // 2: 院级审核通过, 1: 院级驳回
+        // 设置只查询系部已审核和系部驳回的状态�?
+        List<Integer> validStatuses = Arrays.asList(2, 1, 0);  // 2: 院级审核通过, 1: 院级驳回
 
         // 调用 Mapper 层查询符合条件的成果
         return dept_approvedMapper.selectByAuditStatuses(validStatuses);

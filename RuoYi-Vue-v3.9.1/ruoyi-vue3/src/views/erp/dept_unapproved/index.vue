@@ -8,70 +8,85 @@
         v-show="showSearch"
         label-width="68px"
     >
-      <el-form-item label="主键" prop="id">
-        <el-input v-model="queryParams.id" placeholder="请输入主键" clearable @keyup.enter="handleQuery" />
+      <!-- 成果ID -->
+      <el-form-item label="成果ID" prop="id">
+        <el-input v-model="queryParams.id" placeholder="请输入成果ID" clearable @keyup.enter="handleQuery" />
       </el-form-item>
 
-      <el-form-item label="所属年份" prop="year">
-        <el-input v-model="queryParams.year" placeholder="请输入所属年份" clearable @keyup.enter="handleQuery" />
+      <!-- 比赛（暂不设置字典） -->
+      <el-form-item label="比赛" prop="competition">
+        <el-input v-model="queryParams.competition" placeholder="请输入比赛名称" clearable @keyup.enter="handleQuery" />
       </el-form-item>
 
-      <!-- ✅ 成果类别：字典下拉（不变） -->
+      <!-- 届次 -->
+      <el-form-item label="届次" prop="year">
+        <el-input v-model="queryParams.year" placeholder="请输入届次" clearable @keyup.enter="handleQuery" />
+      </el-form-item>
+
+      <!-- 参赛选手 -->
+      <el-form-item label="参赛选手" prop="participant">
+        <el-input v-model="queryParams.participant" placeholder="请输入参赛选手" clearable @keyup.enter="handleQuery" />
+      </el-form-item>
+
+      <!-- 指导老师 -->
+      <el-form-item label="指导老师" prop="teacher">
+        <el-input v-model="queryParams.teacher" placeholder="请输入指导老师" clearable @keyup.enter="handleQuery" />
+      </el-form-item>
+
+      <!-- 成果类别 -->
       <el-form-item label="成果类别" prop="category">
         <el-select v-model="queryParams.category" placeholder="请选择成果类别" clearable>
-          <el-option
-              v-for="dict in erp_outcome_category"
-              :key="dict.value"
-              :label="dict.label"
-              :value="dict.value"
-          />
+          <el-option v-for="dict in erp_outcome_category" :key="dict.value" :label="dict.label" :value="dict.value" />
         </el-select>
       </el-form-item>
 
-      <el-form-item label="级别类型" prop="levelType">
-        <el-select v-model="queryParams.levelType" placeholder="请选择级别类型" clearable>
-          <el-option
-              v-for="dict in erp_award_level_type"
-              :key="dict.value"
-              :label="dict.label"
-              :value="dict.value"
-          />
+      <!-- 作品名称 -->
+      <el-form-item label="作品名称" prop="workName">
+        <el-input v-model="queryParams.workName" placeholder="请输入作品名称" clearable @keyup.enter="handleQuery" />
+      </el-form-item>
+
+      <!-- 级别 -->
+      <el-form-item label="级别" prop="level">
+        <el-select v-model="queryParams.level" placeholder="请选择级别" clearable>
+          <el-option v-for="dict in erp_award_level_type" :key="dict.value" :label="dict.label" :value="dict.value" />
         </el-select>
       </el-form-item>
 
-      <el-form-item label="奖项等级" prop="awardLevel">
-        <el-select v-model="queryParams.awardLevel" placeholder="请选择奖项等级" clearable>
-          <el-option
-              v-for="dict in erp_award_rank"
-              :key="dict.value"
-              :label="dict.label"
-              :value="dict.value"
-          />
+      <!-- 获奖等级 -->
+      <el-form-item label="获奖等级" prop="awardLevel">
+        <el-select v-model="queryParams.awardLevel" placeholder="请选择获奖等级" clearable>
+          <el-option v-for="dict in erp_award_rank" :key="dict.value" :label="dict.label" :value="dict.value" />
         </el-select>
       </el-form-item>
 
-      <!-- ✅ 证书编号：主页面显示（搜索项保留） -->
+      <!-- 证书编号 -->
       <el-form-item label="证书编号" prop="certNo">
         <el-input v-model="queryParams.certNo" placeholder="请输入证书编号" clearable @keyup.enter="handleQuery" />
       </el-form-item>
 
+      <!-- 组别 -->
       <el-form-item label="组别" prop="groupType">
         <el-select v-model="queryParams.groupType" placeholder="请选择组别" clearable>
           <el-option v-for="dict in erp_group_type" :key="dict.value" :label="dict.label" :value="dict.value" />
         </el-select>
       </el-form-item>
 
-      <el-form-item label="所属学院" prop="deptId">
-        <el-select v-model="queryParams.deptId" placeholder="请选择所属学院" clearable filterable>
-          <el-option v-for="dept in deptOptions" :key="dept.value" :label="dept.label" :value="dept.value" />
-        </el-select>
-      </el-form-item>
-
-      <!-- ✅ 审核状态：院级字典（不变） -->
+      <!-- 审核状态 -->
       <el-form-item label="审核状态" prop="auditStatus">
         <el-select v-model="queryParams.auditStatus" placeholder="请选择审核状态" clearable>
           <el-option v-for="dict in dept_audit_status" :key="dict.value" :label="dict.label" :value="dict.value" />
         </el-select>
+      </el-form-item>
+
+      <!-- 获奖时间：开始时间到结束时间 -->
+      <el-form-item label="获奖时间" prop="awardTime">
+        <el-date-picker
+            v-model="queryParams.awardTime"
+            type="daterange"
+            placeholder="选择获奖时间"
+            clearable
+            @change="handleQuery"
+        />
       </el-form-item>
 
       <el-form-item>
@@ -122,65 +137,47 @@
     <!-- 列表 -->
     <el-table v-loading="loading" :data="dept_unapprovedList" @selection-change="handleSelectionChange">
       <el-table-column type="selection" width="55" align="center" />
-      <el-table-column label="主键" align="center" prop="id" />
-      <el-table-column label="所属年份" align="center" prop="year" />
-
+      <el-table-column label="成果ID" align="center" prop="id" />
+      <el-table-column label="比赛" align="center" prop="competition" />
+      <el-table-column label="届次" align="center" prop="year" />
+      <el-table-column label="参赛选手" align="center" prop="participant" />
+      <el-table-column label="指导老师" align="center" prop="teacher" />
       <el-table-column label="成果类别" align="center" prop="category">
         <template #default="scope">
           <dict-tag :options="erp_outcome_category" :value="scope.row.category" />
         </template>
       </el-table-column>
-
-      <el-table-column label="负责人姓名" align="center" prop="workName" min-width="180" show-overflow-tooltip />
-
-      <el-table-column label="级别类型" align="center" prop="levelType">
+      <el-table-column label="作品名称" align="center" prop="workName" />
+      <el-table-column label="级别" align="center" prop="level">
         <template #default="scope">
-          <dict-tag :options="erp_award_level_type" :value="scope.row.levelType" />
+          <dict-tag :options="erp_award_level_type" :value="scope.row.level" />
         </template>
       </el-table-column>
-
-      <el-table-column label="奖项等级" align="center" prop="awardLevel">
+      <el-table-column label="获奖等级" align="center" prop="awardLevel">
         <template #default="scope">
           <dict-tag :options="erp_award_rank" :value="scope.row.awardLevel" />
         </template>
       </el-table-column>
-
-      <el-table-column label="赛道" align="center" prop="track" />
-
-      <!-- ✅ 证书编号：主页面显示（列表列保留） -->
       <el-table-column label="证书编号" align="center" prop="certNo" />
-
       <el-table-column label="组别" align="center" prop="groupType">
         <template #default="scope">
           <dict-tag :options="erp_group_type" :value="scope.row.groupType" />
         </template>
       </el-table-column>
-
-      <el-table-column label="所属学院" align="center" prop="deptId">
+      <el-table-column label="审核状态" align="center" prop="auditStatus">
         <template #default="scope">
-          <dict-tag :options="deptOptions" :value="scope.row.deptId" />
+          <dict-tag :options="dept_audit_status" :value="scope.row.auditStatus" />
         </template>
       </el-table-column>
-
       <el-table-column label="获奖时间" align="center" prop="awardTime" width="120">
         <template #default="scope">
           <span>{{ parseTime(scope.row.awardTime, '{y}-{m}-{d}') }}</span>
         </template>
       </el-table-column>
 
-      <!-- 报名费：仍不显示（保持你原逻辑） -->
-      <!-- <el-table-column label="报名费" align="center" prop="entryFee" /> -->
-
-      <el-table-column label="审核状态" align="center" prop="auditStatus">
-        <template #default="scope">
-          <dict-tag :options="dept_audit_status" :value="scope.row.auditStatus" />
-        </template>
-      </el-table-column>
-
       <!-- 操作 -->
       <el-table-column label="操作" align="center" class-name="small-padding fixed-width" width="180">
         <template #default="scope">
-          <!-- ✅ 审阅跳转（不变） -->
           <el-button link type="primary" icon="Search" @click="handleReview(scope.row)">审阅</el-button>
           <el-button
               link
@@ -212,7 +209,7 @@
         @pagination="getList"
     />
 
-    <!-- ✅ 复用弹窗（不变） -->
+    <!-- 弹窗 -->
     <BaseOutcomeDialog
         ref="dlgRef"
         :getFn="getDept_unapproved"
@@ -273,15 +270,18 @@ const data = reactive({
     pageNum: 1,
     pageSize: 10,
     id: null,
+    competition: null,
     year: null,
+    participant: null,
+    teacher: null,
     category: null,
-    levelType: null,
+    workName: null,
+    level: null,
     awardLevel: null,
-    track: null,
-    certNo: null, // ✅ 保留
+    certNo: null,
     groupType: null,
-    deptId: null,
-    auditStatus: null
+    auditStatus: null,
+    awardTime: null
   }
 });
 const { queryParams } = toRefs(data);
@@ -344,7 +344,6 @@ function handleExport() {
   proxy.download("erp/dept_unapproved/export", { ...queryParams.value }, `dept_unapproved_${new Date().getTime()}.xlsx`);
 }
 
-/** ✅ 审阅按钮点击后，跳转到审核页（不变） */
 function handleReview(row) {
   router.push({ path: "/erp/reviewPage", query: { id: row.id, source: "dept_unapproved" } });
 }
