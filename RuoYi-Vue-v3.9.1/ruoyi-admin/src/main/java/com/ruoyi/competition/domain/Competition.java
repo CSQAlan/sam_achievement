@@ -168,7 +168,6 @@ public class Competition extends BaseEntity
             .append("createTime", getCreateTime())
             .append("updateBy", getUpdateBy())
             .append("updateTime", getUpdateTime())
-            .append("remark", getRemark())
             .append("delFlag", getDelFlag())
             .append("competitionDeptRelList", getCompetitionDeptRelList())
             .toString();

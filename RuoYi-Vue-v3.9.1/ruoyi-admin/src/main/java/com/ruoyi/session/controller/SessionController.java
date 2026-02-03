@@ -1,5 +1,6 @@
 package com.ruoyi.session.controller;
 
+import java.util.ArrayList;
 import java.util.List;
 import javax.servlet.http.HttpServletResponse;
 import org.springframework.security.access.prepost.PreAuthorize;
@@ -20,6 +21,7 @@ import com.ruoyi.session.domain.Session;
 import com.ruoyi.session.service.ISessionService;
 import com.ruoyi.common.utils.poi.ExcelUtil;
 import com.ruoyi.common.core.page.TableDataInfo;
+import org.springframework.web.multipart.MultipartFile;
 
 /**
  * 赛事届次Controller
@@ -100,5 +102,30 @@ public class SessionController extends BaseController
     public AjaxResult remove(@PathVariable Long[] ids)
     {
         return toAjax(sessionService.deleteSessionByIds(ids));
+    }
+
+    /**
+     * 导出赛事届次模板（不含状态列）
+     */
+    @PreAuthorize("@ss.hasPermi('session:session:exportTemplate')")
+    @Log(title = "赛事届次模板", businessType = BusinessType.EXPORT)
+    @PostMapping("/exportTemplate")
+    public void exportTemplate(HttpServletResponse response) {
+        // 传空列表，仅导出表头（不含状态列）
+        ExcelUtil<Session> util = new ExcelUtil<Session>(Session.class);
+        util.exportExcel(response, new ArrayList<>(), "赛事届次导入模板");
+    }
+
+    /**
+     * 批量导入赛事届次（默认状态为启用）
+     */
+    @PreAuthorize("@ss.hasPermi('session:session:import')")
+    @Log(title = "赛事届次", businessType = BusinessType.IMPORT)
+    @PostMapping("/importData")
+    public AjaxResult importData(MultipartFile file, boolean updateSupport) throws Exception {
+        ExcelUtil<Session> util = new ExcelUtil<Session>(Session.class);
+        List<Session> sessionList = util.importExcel(file.getInputStream());
+        String message = sessionService.importSession(sessionList, updateSupport);
+        return success(message);
     }
 }

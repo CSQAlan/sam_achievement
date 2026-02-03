@@ -58,4 +58,12 @@ public interface ISessionService
      * @return 结果
      */
     public int deleteSessionById(Long id);
+
+    /**
+     * 批量导入赛事届次
+     * @param sessionList 赛事届次列表
+     * @param updateSupport 是否更新已存在的数据
+     * @return 导入结果信息
+     */
+    public String importSession(List<Session> sessionList, boolean updateSupport);
 }
