@@ -6,7 +6,7 @@ spring:
         druid:
             # 主库数据源
             master:
-                url: jdbc:mysql://127.0.0.1:13306/ruoyi-submit?useUnicode=true&characterEncoding=utf8&serverTimezone=Asia/Shanghai&useSSL=false
+                url: jdbc:mysql://127.0.0.1:13306/ruoyi?useUnicode=true&characterEncoding=utf8&serverTimezone=Asia/Shanghai&useSSL=false
                 username: root
                 password: 'cqnuicdio'
             # 从库数据源
