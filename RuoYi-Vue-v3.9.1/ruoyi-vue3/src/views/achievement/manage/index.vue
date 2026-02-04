@@ -77,7 +77,7 @@
             plain
             icon="Plus"
             @click="handleAdd"
-            v-hasPermi="['achievement:manage:add']"
+        v-hasPermi="permAdd"
         >新增</el-button>
       </el-col>
       <el-col :span="1.5">
@@ -87,7 +87,7 @@
             icon="Edit"
             :disabled="single"
             @click="handleUpdate"
-            v-hasPermi="['achievement:manage:edit']"
+        v-hasPermi="permEdit"
         >修改</el-button>
       </el-col>
       <el-col :span="1.5">
@@ -97,7 +97,7 @@
             icon="Delete"
             :disabled="multiple"
             @click="handleDelete"
-            v-hasPermi="['achievement:manage:remove']"
+        v-hasPermi="permRemove"
         >删除</el-button>
       </el-col>
       <el-col :span="1.5">
@@ -106,7 +106,7 @@
             plain
             icon="Download"
             @click="handleExport"
-            v-hasPermi="['achievement:manage:export']"
+        v-hasPermi="permExport"
         >导出</el-button>
       </el-col>
     </el-row>
@@ -151,9 +151,9 @@
       </el-table-column>
       <el-table-column label="操作" align="center" class-name="small-padding fixed-width">
         <template #default="scope">
-          <el-button link type="primary" icon="Review" @click="handleReview(scope.row)" v-hasPermi="['achievement:manage:review']">详情</el-button>
-          <el-button link type="primary" icon="Edit" @click="handleUpdate(scope.row)" v-hasPermi="['achievement:manage:edit']">修改</el-button>
-          <el-button link type="primary" icon="Delete" @click="handleDelete(scope.row)" v-hasPermi="['achievement:manage:remove']">删除</el-button>
+          <el-button link type="primary" icon="Review" @click="handleReview(scope.row)" v-hasPermi="permReview">详情</el-button>
+          <el-button link type="primary" icon="Edit" @click="handleUpdate(scope.row)" v-hasPermi="permEdit">修改</el-button>
+          <el-button link type="primary" icon="Delete" @click="handleDelete(scope.row)" v-hasPermi="permRemove">删除</el-button>
         </template>
       </el-table-column>
     </el-table>
@@ -168,21 +168,66 @@
 
     <AchievementForm
         ref="achievementFormRef"
-        :get-fn="getManage"
-        :add-fn="addManage"
-        :update-fn="updateManage"
+        :get-fn="getFn"
+        :add-fn="addFn"
+        :update-fn="updateFn"
+        :page-mode="pageMode"
         @ok="getList"
     />
   </div>
 </template>
 
 <script setup>
-// 字典数据
+import { ref, reactive, computed, getCurrentInstance } from 'vue';
+import { useRouter } from 'vue-router';
+import { useDict } from '@/utils/dict';
+import AchievementForm from './AchievementForm.vue';
+import { listManage, getManage, addManage, updateManage, delManage } from '@/api/achievement/manage';
+
+const props = defineProps({
+  listFn: { type: Function, default: null },
+  getFn: { type: Function, default: null },
+  addFn: { type: Function, default: null },
+  updateFn: { type: Function, default: null },
+  delFn: { type: Function, default: null },
+  exportUrl: { type: String, default: '' },
+  permissionPrefix: { type: String, default: 'achievement:manage' },
+  auditDict: { type: Array, default: null },
+  showSearch: { type: Boolean, default: true },
+  pageMode: { type: Boolean, default: false },
+  reviewRoute: { type: String, default: '/achievement/manage/reviewPage' },
+  reviewSource: { type: String, default: '' }
+});
+
+const { proxy } = getCurrentInstance();
+const router = useRouter();
+
+const listFn = computed(() => props.listFn || listManage);
+const getFn = computed(() => props.getFn || getManage);
+const addFn = computed(() => props.addFn || addManage);
+const updateFn = computed(() => props.updateFn || updateManage);
+const delFn = computed(() => props.delFn || delManage);
+
+const exportUrl = computed(() => props.exportUrl || 'achievement/manage/export');
+const pageMode = computed(() => props.pageMode);
+const showSearch = computed(() => props.showSearch);
+
+const permissionPrefix = computed(() => props.permissionPrefix || 'achievement:manage');
+const permAdd = computed(() => [`${permissionPrefix.value}:add`]);
+const permEdit = computed(() => [`${permissionPrefix.value}:edit`]);
+const permRemove = computed(() => [`${permissionPrefix.value}:remove`]);
+const permExport = computed(() => [`${permissionPrefix.value}:export`]);
+const permReview = computed(() => [`${permissionPrefix.value}:review`]);
+
 const { achievement_category, group_type, award_rank, award_level_type, college_audit_status, school_audit_status } = useDict(
-    'achievement_category', 'group_type', 'award_rank', 'award_level_type', 'college_audit_status', 'school_audit_status'
+  'achievement_category',
+  'group_type',
+  'award_rank',
+  'award_level_type',
+  'college_audit_status',
+  'school_audit_status'
 );
 
-// 数据和状态管理
 const queryParams = reactive({
   pageNum: 1,
   pageSize: 10,
@@ -196,81 +241,94 @@ const queryParams = reactive({
   track: null,
   certificateNo: null,
   groupId: null,
-  awardTime: null
+  awardTime: null,
+  reviewStatus: null,
+  awardTimeStart: null,
+  awardTimeEnd: null
 });
 
 const listData = ref([]);
 const loading = ref(false);
 const total = ref(0);
-const showSearch = ref(true);
 const single = ref(true);
 const multiple = ref(true);
 const ids = ref([]);
+const achievementFormRef = ref(null);
 
-// 动态获取审核状态
 const auditStatus = computed(() => {
+  if (props.auditDict && Array.isArray(props.auditDict)) return props.auditDict;
   return queryParams.reviewStatus === 'college'
-      ? college_audit_status
-      : school_audit_status;
+    ? college_audit_status.value
+    : school_audit_status.value;
 });
 
-// 获取列表数据
 function getList() {
   loading.value = true;
-  listManage(queryParams).then(response => {
+  listFn.value(queryParams).then(response => {
     listData.value = response.rows;
     total.value = response.total;
+    loading.value = false;
+  }).catch(() => {
     loading.value = false;
   });
 }
 
-// 搜索操作
 const handleQuery = () => {
   queryParams.pageNum = 1;
   getList();
 };
 
-// 重置查询条件
 const resetQuery = () => {
   Object.keys(queryParams).forEach(key => {
     queryParams[key] = null;
   });
+  queryParams.pageNum = 1;
+  queryParams.pageSize = 10;
   getList();
 };
 
 function handleSelectionChange(selection) {
-  ids.value = selection.map(i => i.id);
+  ids.value = selection.map(i => i.achievementId);
   single.value = selection.length !== 1;
   multiple.value = !selection.length;
 }
 
-// 新增操作
 function handleAdd() {
-  if (achievementFormRef.value) {
-    achievementFormRef.value.open();
-  }
+  achievementFormRef.value?.open();
 }
 
-// 修改操作
 function handleUpdate(row) {
-  const _achievementId = row.achievementId || ids.value[0];
-  if (achievementFormRef.value) {
-    achievementFormRef.value.open(_achievementId);
-  }
+  const _achievementId = row?.achievementId || ids.value[0];
+  if (_achievementId) achievementFormRef.value?.open(_achievementId);
 }
 
-// 删除操作
 function handleDelete(row) {
-  const _achievementIds = row.achievementId || ids.value;
+  const _achievementIds = row?.achievementId || ids.value;
+  if (!_achievementIds || (_achievementIds.length !== undefined && _achievementIds.length === 0)) return;
   proxy.$modal
-      .confirm(`是否确认删除成果编号为 "${_achievementIds}" 的数据项？`)
-      .then(() => delManage(_achievementIds))
-      .then(() => {
-        proxy.$modal.msgSuccess("删除成功");
-        getList();
-      })
-      .catch(() => {});
+    .confirm(`Confirm delete achievement id(s): "${_achievementIds}"?`)
+    .then(() => delFn.value(_achievementIds))
+    .then(() => {
+      proxy.$modal.msgSuccess('Delete successful');
+      getList();
+    })
+    .catch(() => {});
+}
+
+function handleExport() {
+  const parts = exportUrl.value.split('/').filter(Boolean);
+  const base = parts.length >= 2 ? parts[parts.length - 2] : 'export';
+  proxy.download(exportUrl.value, { ...queryParams }, `${base}_${new Date().getTime()}.xlsx`);
+}
+
+function handleReview(row) {
+  const id = row?.achievementId;
+  if (!id || !props.reviewRoute) return;
+  const query = { id };
+  if (props.reviewSource) query.source = props.reviewSource;
+  router.push({ path: props.reviewRoute, query });
 }
 
 getList();
 </script>
+

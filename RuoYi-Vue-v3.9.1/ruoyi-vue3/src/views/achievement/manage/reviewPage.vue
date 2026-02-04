@@ -1,6 +1,6 @@
 ﻿<template>
   <div class="app-container review-page">
-    <BaseOutcomeDialog
+    <AchievementForm
         ref="dlgRef"
         :getFn="currentApi.getFn"
         :addFn="currentApi.addFn"
@@ -48,7 +48,7 @@
           </el-button>
         </div>
       </template>
-    </BaseOutcomeDialog>
+    </AchievementForm>
   </div>
 </template>
 
@@ -56,7 +56,7 @@
 import { computed, onMounted, ref, getCurrentInstance, watch } from "vue";
 import { useRoute, useRouter } from "vue-router";
 
-import BaseOutcomeDialog from "@/views/erp/BaseOutcomeDialog.vue";
+import AchievementForm from "@/views/achievement/manage/AchievementForm.vue";
 
 // ====== 四套 API（你已有）======
 import { getCollegeLevelUnreviewed, addCollegeLevelUnreviewed, updateCollegeLevelUnreviewed } from "@/api/erp/college_level_unreviewed";
