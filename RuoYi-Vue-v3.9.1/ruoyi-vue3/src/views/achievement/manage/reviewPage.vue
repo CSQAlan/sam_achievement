@@ -7,47 +7,47 @@
         :updateFn="currentApi.updateFn"
         :pageMode="true"
         :readOnly="false"
-    :showSubmit="false"
-    cancelText="返回"
-    titleAdd="成果审核"
-    titleEdit="成果审核"
-    @cancel="handleBack"
-    @ok="handleBack"
+        :showSubmit="false"
+        cancelText="返回"
+        titleAdd="成果审核"
+        titleEdit="成果审核"
+        @cancel="handleBack"
+        @ok="handleBack"
     >
-    <!-- ✅ 外置审核工具条：下拉 + 提交审核（手动流转） -->
-    <template #footer-left>
-      <div class="audit-toolbar">
-        <span class="audit-label">审核后状态</span>
+      <!-- ✅ 外置审核工具条：下拉 + 提交审核（手动流转） -->
+      <template #footer-left>
+        <div class="audit-toolbar">
+          <span class="audit-label">审核后状态</span>
 
-        <el-select
-            v-model="selectedAuditStatus"
-            placeholder="请选择"
-            style="width: 220px;"
-        >
-          <el-option
-              v-for="opt in nextStatusOptions"
-              :key="String(opt.value)"
-              :label="opt.label"
-              :value="String(opt.value)"
+          <el-select
+              v-model="selectedAuditStatus"
+              placeholder="请选择"
+              style="width: 220px;"
+          >
+            <el-option
+                v-for="opt in nextStatusOptions"
+                :key="String(opt.value)"
+                :label="opt.label"
+                :value="String(opt.value)"
+            />
+          </el-select>
+
+          <el-input
+              v-if="showRejectReason"
+              v-model="rejectReason"
+              type="textarea"
+              :rows="1"
+              maxlength="200"
+              show-word-limit
+              class="audit-reason"
+              :placeholder="rejectReasonPlaceholder"
           />
-        </el-select>
 
-        <el-input
-            v-if="showRejectReason"
-            v-model="rejectReason"
-            type="textarea"
-            :rows="1"
-            maxlength="200"
-            show-word-limit
-            class="audit-reason"
-            :placeholder="rejectReasonPlaceholder"
-        />
-
-        <el-button type="primary" :disabled="!selectedAuditStatus" @click="submitAudit">
-          提交审核
-        </el-button>
-      </div>
-    </template>
+          <el-button type="primary" :disabled="!selectedAuditStatus" @click="submitAudit">
+            提交审核
+          </el-button>
+        </div>
+      </template>
     </BaseOutcomeDialog>
   </div>
 </template>
@@ -59,10 +59,10 @@ import { useRoute, useRouter } from "vue-router";
 import BaseOutcomeDialog from "@/views/erp/BaseOutcomeDialog.vue";
 
 // ====== 四套 API（你已有）======
-import { getDept_unapproved, addDept_unapproved, updateDept_unapproved } from "@/api/erp/dept_unapproved";
-import { getDept_approved, addDept_approved, updateDept_approved } from "@/api/erp/dept_approved";
-import { getSdept_unapproved, addSdept_unapproved, updateSdept_unapproved } from "@/api/erp/Sdept_unapproved";
-import { getSdept_approved, addSdept_approved, updateSdept_approved } from "@/api/erp/Sdept_approved";
+import { getCollegeLevelUnreviewed, addCollegeLevelUnreviewed, updateCollegeLevelUnreviewed } from "@/api/erp/college_level_unreviewed";
+import { getCollegeLevelReviewed, addCollegeLevelReviewed, updateCollegeLevelReviewed } from "@/api/erp/college_level_reviewed";
+import { getSchoolLevelUnreviewed, addSchoolLevelUnreviewed, updateSchoolLevelUnreviewed } from "@/api/erp/school_level_unreviewed";
+import { getSchoolLevelReviewed, addSchoolLevelReviewed, updateSchoolLevelReviewed } from "@/api/erp/school_level_reviewed";
 
 const { proxy } = getCurrentInstance();
 const route = useRoute();
@@ -71,37 +71,37 @@ const router = useRouter();
 const dlgRef = ref(null);
 
 // ✅ 两套字典（按你最新定义）
-// 院级：dept_audit_status  0待院级审核 1院级驳回 2院级审核通过
-// 校级：shool_audit_status 2待校级审核 1校级审核通过 0校级驳回
-const { dept_audit_status, shool_audit_status } = proxy.useDict("dept_audit_status", "shool_audit_status");
+// 院级：college_audit_status 0待院级审核 1院级驳回 2院级审核通过
+// 校级：school_audit_status 2待校级审核 1校级审核通过 0校级驳回
+const { college_audit_status, school_audit_status } = proxy.useDict("college_audit_status", "school_audit_status");
 
 // ✅ API 映射
 const apiMap = {
-  dept_unapproved: { getFn: getDept_unapproved, addFn: addDept_unapproved, updateFn: updateDept_unapproved },
-  dept_approved: { getFn: getDept_approved, addFn: addDept_approved, updateFn: updateDept_approved },
-  sdept_unapproved: { getFn: getSdept_unapproved, addFn: addSdept_unapproved, updateFn: updateSdept_unapproved },
-  sdept_approved: { getFn: getSdept_approved, addFn: addSdept_approved, updateFn: updateSdept_approved }
+  college_level_unreviewed: { getFn: getCollegeLevelUnreviewed, addFn: addCollegeLevelUnreviewed, updateFn: updateCollegeLevelUnreviewed },
+  college_level_reviewed: { getFn: getCollegeLevelReviewed, addFn: addCollegeLevelReviewed, updateFn: updateCollegeLevelReviewed },
+  school_level_unreviewed: { getFn: getSchoolLevelUnreviewed, addFn: addSchoolLevelUnreviewed, updateFn: updateSchoolLevelUnreviewed },
+  school_level_reviewed: { getFn: getSchoolLevelReviewed, addFn: addSchoolLevelReviewed, updateFn: updateSchoolLevelReviewed }
 };
 
 // ✅ 来源（由列表页点击审阅传 query.source）
-const source = computed(() => String(route.query.source || "dept_unapproved").toLowerCase());
-const currentApi = computed(() => apiMap[source.value] || apiMap.dept_unapproved);
+const source = computed(() => String(route.query.source || "college_level_unreviewed").toLowerCase());
+const currentApi = computed(() => apiMap[source.value] || apiMap.college_level_unreviewed);
 
 // ✅ 根据来源决定使用哪套字典
 const currentAuditDict = computed(() => {
-  if (source.value.startsWith("dept_")) return dept_audit_status?.value || [];
-  if (source.value.startsWith("sdept_")) return shool_audit_status?.value || [];
+  if (source.value.startsWith("college")) return college_audit_status?.value || [];
+  if (source.value.startsWith("school")) return school_audit_status?.value || [];
   return [];
 });
 
 const nextStatusOptions = computed(() => {
   const options = currentAuditDict.value || [];
 
-  if (source.value === "dept_unapproved"||source.value === "dept_approved") {
+  if (source.value === "college_level_unreviewed" || source.value === "college_level_reviewed") {
     return options.filter((d) => ["1", "2"].includes(String(d.value)));
   }
 
-  if (source.value === "sdept_unapproved"||source.value === "sdept_approved") {
+  if (source.value === "school_level_unreviewed" || source.value === "school_level_reviewed") {
     return options.filter((d) => ["0", "1"].includes(String(d.value)));
   }
 
@@ -112,16 +112,16 @@ const selectedAuditStatus = ref("");
 const rejectReason = ref("");
 
 // 是否为院级来源
-const isDeptSource = computed(() => source.value.startsWith("dept_"));
+const isCollegeSource = computed(() => source.value.startsWith("college"));
 // 是否为校级来源
-const isSchoolSource = computed(() => source.value.startsWith("sdept_"));
+const isSchoolSource = computed(() => source.value.startsWith("school"));
 
-const isDeptReject = computed(() => isDeptSource.value && String(selectedAuditStatus.value) === "1");
+const isCollegeReject = computed(() => isCollegeSource.value && String(selectedAuditStatus.value) === "1");
 const isSchoolReject = computed(() => isSchoolSource.value && String(selectedAuditStatus.value) === "0");
 
-const showRejectReason = computed(() => isDeptReject.value || isSchoolReject.value);
+const showRejectReason = computed(() => isCollegeReject.value || isSchoolReject.value);
 const rejectReasonPlaceholder = computed(() =>
-    isDeptReject.value ? "请填写院级驳回原因" : "请填写校级驳回原因"
+    isCollegeReject.value ? "请填写院级驳回原因" : "请填写校级驳回原因"
 );
 
 // ✅ 默认优先选“通过”
@@ -135,7 +135,7 @@ function setDefaultSelected() {
     return;
   }
 
-  const preferValue = source.value === "dept_unapproved" ? "2" : "1";
+  const preferValue = source.value === "college_level_unreviewed" ? "2" : "1";
   const prefer = options.find((opt) => String(opt.value) === preferValue);
   selectedAuditStatus.value = String((prefer || options[0]).value);
 }
@@ -162,14 +162,14 @@ function handleBack() {
 
 /**
  * ✅ 手动流转归档推送（前端负责）：
- * 1) 院级未审核(dept_unapproved)
- *    - updateDept_unapproved：auditStatus 0 -> 1/2
- *    - addDept_approved：归档到院级已审核
- *    - 若通过(2)：addSdept_unapproved：推送到校级未审核（auditStatus=2 待校级审核）
+ * 1) 院级未审核(college_level_unreviewed)
+ *    - updateCollegeLevelUnreviewed：auditStatus 0 -> 1/2
+ *    - addCollegeLevelReviewed：归档到院级已审核
+ *    - 若通过(2)：addSchoolLevelUnreviewed：推送到校级未审核（auditStatus=2 待校级审核）
  *
- * 2) 校级未审核(sdept_unapproved)
- *    - updateSdept_unapproved：auditStatus 2 -> 0/1
- *    - addSdept_approved：归档到校级已审核
+ * 2) 校级未审核(school_level_unreviewed)
+ *    - updateSchoolLevelUnreviewed：auditStatus 2 -> 0/1
+ *    - addSchoolLevelReviewed：归档到校级已审核
  *
  * ✅ 关键修复：
  * - 归档到校级已审核时必须写 schoolAuditTime（你的 mapper 有 school_audit_time is not null 的过滤）
@@ -191,7 +191,7 @@ async function submitAudit() {
   if (!next) return;
 
   if (showRejectReason.value && !rejectReason.value.trim()) {
-    proxy.$modal?.msgError?.(isDeptReject.value ? "请填写院级驳回原因" : "请填写校级驳回原因");
+    proxy.$modal?.msgError?.(isCollegeReject.value ? "请填写院级驳回原因" : "请填写校级驳回原因");
     return;
   }
 
@@ -203,40 +203,40 @@ async function submitAudit() {
       "";
 
   const now = new Date();
-  const deptAuditReason = isDeptReject.value ? rejectReason.value.trim() : "";
+  const collegeAuditReason = isCollegeReject.value ? rejectReason.value.trim() : "";
   const schoolAuditReason = isSchoolReject.value ? rejectReason.value.trim() : "";
 
   try {
     // ===== 院级审核 =====
-    if (source.value === "dept_unapproved") {
+    if (source.value === "college_level_unreviewed") {
       // 1) 更新院级未审核状态（0 -> 1/2）
-      await updateDept_unapproved({
+      await updateCollegeLevelUnreviewed({
         ...baseForm,
         id,
         auditStatus: next,
-        deptAuditReason,
-        deptAuditTime: now,
-        deptAuditUser: auditUser
+        collegeAuditReason,
+        collegeAuditTime: now,
+        collegeAuditUser: auditUser
       });
 
       // 2) 归档到院级已审核（✅更稳：去掉 id 字段，而不是 id:null）
       const { id: _omit1, ...payload1 } = baseForm;
-      await addDept_approved({
+      await addCollegeLevelReviewed({
         ...payload1,
         auditStatus: next,
-        deptAuditReason,
-        deptAuditTime: now,
-        deptAuditUser: auditUser
+        collegeAuditReason,
+        collegeAuditTime: now,
+        collegeAuditUser: auditUser
       });
 
       // 3) 院级通过(2) -> 推送到校级未审核（待校级审核=2）
       if (next === "2") {
-        await addSdept_unapproved({
+        await addSchoolLevelUnreviewed({
           ...payload1,
           auditStatus: "2",
-          deptAuditReason,
-          deptAuditTime: now,
-          deptAuditUser: auditUser
+          collegeAuditReason,
+          collegeAuditTime: now,
+          collegeAuditUser: auditUser
         });
       }
 
@@ -246,14 +246,14 @@ async function submitAudit() {
     }
 
     // 重新审核已经审核的院级记录
-    if (source.value === "dept_approved") {
-      await updateDept_approved({
+    if (source.value === "college_level_reviewed") {
+      await updateCollegeLevelReviewed({
         ...baseForm,
         id,
         auditStatus: next,
-        deptAuditReason,
-        deptAuditTime: now,
-        deptAuditUser: auditUser
+        collegeAuditReason,
+        collegeAuditTime: now,
+        collegeAuditUser: auditUser
       });
 
       proxy.$modal?.msgSuccess?.("院级审核成功");
@@ -262,9 +262,9 @@ async function submitAudit() {
     }
 
     // ===== 校级审核 =====
-    if (source.value === "sdept_unapproved"||source.value === "sdept_approved") {
+    if (source.value === "school_level_unreviewed" || source.value === "school_level_reviewed") {
       // 1) 更新校级未审核状态（2 -> 0/1），✅补齐校级审核信息
-      await updateSdept_unapproved({
+      await updateSchoolLevelUnreviewed({
         ...baseForm,
         id,
         auditStatus: next,
@@ -275,7 +275,7 @@ async function submitAudit() {
 
       // 2) 归档到校级已审核（✅必须写 schoolAuditTime，否则 selectByAuditStatuses 会过滤）
       const { id: _omit2, ...payload2 } = baseForm;
-      await addSdept_approved({
+      await addSchoolLevelReviewed({
         ...payload2,
         auditStatus: next,
         schoolAuditTime: now,
