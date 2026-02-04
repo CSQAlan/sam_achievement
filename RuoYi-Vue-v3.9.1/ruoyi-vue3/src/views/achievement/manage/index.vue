@@ -1,6 +1,6 @@
 <template>
-  <div class="manage-index-root">
-    <div v-show="!pageModeActive" class="app-container">
+  <div class="achievement-manage-root">
+  <div v-show="!pageModeActive" class="app-container">
     <!-- 搜索表单 -->
     <el-form :model="queryParams" ref="queryRef" :inline="true" v-show="showSearch" label-width="68px">
       <el-form-item label="成果ID" prop="achievementId">
@@ -225,22 +225,22 @@
         @pagination="getList"
     />
 
-    </div>
+  </div>
 
-    <AchievementForm
-        v-if="pageModeActive"
-        :key="pageModeKey"
-        ref="achievementFormRef"
-        :get-fn="getFn"
-        :add-fn="addFn"
-        :update-fn="updateFn"
-        :page-mode="pageModeActive"
-        :read-only="formReadOnly"
-        :show-submit="formShowSubmit"
-        cancel-text="返回"
-        @ok="handleFormOk"
-        @cancel="handleFormCancel"
-    />
+  <AchievementForm
+      v-if="pageModeActive"
+      :key="pageModeKey"
+      ref="achievementFormRef"
+      :get-fn="getFn"
+      :add-fn="addFn"
+      :update-fn="updateFn"
+      :page-mode="pageModeActive"
+      :read-only="formReadOnly"
+      :show-submit="formShowSubmit"
+      cancel-text="返回"
+      @ok="handleFormOk"
+      @cancel="handleFormCancel"
+  />
   </div>
 </template>
 
