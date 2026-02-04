@@ -192,12 +192,11 @@
         </template>
       </el-table-column>
       <el-table-column label="证书编号" align="center" prop="certificateNo" />
-      <el-table-column label="组别" align="center" prop="groupId">
+      <el-table-column label="组别" align="center" prop="groupId" min-width="100">
         <template #default="scope">
           <dict-tag :options="group_type" :value="scope.row.groupId" />
         </template>
       </el-table-column>
-      <el-table-column label="学号" align="center" prop="studentId" />
       <el-table-column label="审核状态" align="center" prop="reviewStatus">
         <template #default="scope">
           <dict-tag :options="auditStatus" :value="scope.row.reviewStatus" />
@@ -210,8 +209,8 @@
       </el-table-column>
       <el-table-column label="操作" align="center" class-name="small-padding fixed-width">
         <template #default="scope">
-          <el-button link type="primary" icon="Review" @click="handleReview(scope.row)" v-hasPermi="permReview">详情</el-button>
-          <el-button link type="primary" icon="Edit" @click="handleUpdate(scope.row)" v-hasPermi="permEdit">修改</el-button>
+          <el-button link type="primary" icon="View" @click="handleReview(scope.row)" v-hasPermi="permReview">详情</el-button>
+          <el-button link type="primary" icon="Edit" @click="handleRowUpdate(scope.row)" v-hasPermi="permEdit">修改</el-button>
           <el-button link type="primary" icon="Delete" @click="handleDelete(scope.row)" v-hasPermi="permRemove">删除</el-button>
         </template>
       </el-table-column>
@@ -241,12 +240,23 @@
       @ok="handleFormOk"
       @cancel="handleFormCancel"
   />
+  <AchievementForm
+      ref="achievementDialogRef"
+      :get-fn="getFn"
+      :add-fn="addFn"
+      :update-fn="updateFn"
+      :read-only="formReadOnly"
+      :show-submit="formShowSubmit"
+      cancel-text="返回"
+      @ok="handleFormOk"
+      @cancel="handleFormCancel"
+  />
   </div>
 </template>
 
 <script setup>
 import { ref, reactive, computed, getCurrentInstance, nextTick, watch, onActivated } from 'vue';
-import { useRoute } from 'vue-router';
+import { useRoute, useRouter } from 'vue-router';
 import { useDict } from '@/utils/dict';
 import AchievementForm from './AchievementForm.vue';
 import { listManage, getManage, addManage, updateManage, delManage } from '@/api/achievement/manage';
@@ -262,12 +272,13 @@ const props = defineProps({
   auditDict: { type: Array, default: null },
   showSearch: { type: Boolean, default: true },
   pageMode: { type: Boolean, default: false },
-  reviewRoute: { type: String, default: '/achievement/manage/reviewPage' },
+  reviewRoute: { type: String, default: '' },
   reviewSource: { type: String, default: '' }
 });
 
 const { proxy } = getCurrentInstance();
 const route = useRoute();
+const router = useRouter();
 
 const listFn = computed(() => props.listFn || listManage);
 const getFn = computed(() => props.getFn || getManage);
@@ -277,6 +288,14 @@ const delFn = computed(() => props.delFn || delManage);
 
 const exportUrl = computed(() => props.exportUrl || 'achievement/manage/export');
 const showSearch = computed(() => props.showSearch);
+const reviewRoute = computed(() => {
+  if (props.reviewRoute) return props.reviewRoute;
+  const parentRecord = route.matched?.[route.matched.length - 2];
+  const base = parentRecord?.path || '';
+  if (!base) return '/achievement/reviewPage';
+  return base.endsWith('/') ? `${base}reviewPage` : `${base}/reviewPage`;
+});
+const reviewSource = computed(() => (props.reviewSource || '').toLowerCase());
 
 const permissionPrefix = computed(() => props.permissionPrefix || 'achievement:manage');
 const permAdd = computed(() => [`${permissionPrefix.value}:add`]);
@@ -320,6 +339,7 @@ const single = ref(true);
 const multiple = ref(true);
 const ids = ref([]);
 const achievementFormRef = ref(null);
+const achievementDialogRef = ref(null);
 const pageModeActive = ref(false);
 const pageModeKey = ref(0);
 const formReadOnly = ref(false);
@@ -335,12 +355,47 @@ const auditStatus = computed(() => {
 function getList() {
   loading.value = true;
   listFn.value(queryParams).then(response => {
-    listData.value = response.rows;
-    total.value = response.total;
+    const rows = (response.rows || []).map((row) => normalizeRowStatus(row));
+    let filtered = filterRowsBySource(rows);
+    if (queryParams.reviewStatus !== null && queryParams.reviewStatus !== '' && queryParams.reviewStatus !== undefined) {
+      filtered = filtered.filter((row) => String(row.reviewStatus) === String(queryParams.reviewStatus));
+    }
+    listData.value = filtered;
+    total.value = filtered.length;
     loading.value = false;
   }).catch(() => {
     loading.value = false;
   });
+}
+
+function normalizeRowStatus(row) {
+  const reviewResult = row.reviewResult ?? row.review_result ?? row.reviewStatus;
+  const schoolResult = row.schooiReviewResult ?? row.schoolReviewResult ?? row.schooi_review_result ?? row.school_review_result;
+  row.reviewResult = reviewResult;
+  row.schooiReviewResult = schoolResult;
+  if (reviewSource.value.startsWith('college')) {
+    row.reviewStatus = reviewResult ?? 0;
+  } else if (reviewSource.value.startsWith('school')) {
+    row.reviewStatus = schoolResult ?? 2;
+  }
+  return row;
+}
+
+function filterRowsBySource(rows) {
+  const source = reviewSource.value;
+  if (source === 'college_level_unreviewed') {
+    return rows.filter(r => r.reviewResult === null || r.reviewResult === undefined || String(r.reviewResult) === '0');
+  }
+  if (source === 'college_level_reviewed') {
+    return rows.filter(r => String(r.reviewResult) === '1' || String(r.reviewResult) === '2');
+  }
+  if (source === 'school_level_unreviewed') {
+    return rows.filter(r => String(r.schooiReviewResult) === '2');
+  }
+  if (source === 'school_level_reviewed') {
+    return rows.filter(r => String(r.schooiReviewResult) === '0' || String(r.schooiReviewResult) === '1');
+  }
+  return rows;
 }
 
 const handleQuery = () => {
@@ -364,12 +419,17 @@ function handleSelectionChange(selection) {
 }
 
 function handleAdd() {
-  openPageForm();
+  openDialog();
 }
 
-function handleUpdate(row) {
-  const _achievementId = row?.achievementId || ids.value[0];
-  if (_achievementId) openPageForm(_achievementId, { readOnly: false });
+function handleUpdate() {
+  const _achievementId = ids.value[0];
+  if (_achievementId) openDialog(_achievementId, { readOnly: false });
+}
+
+function handleRowUpdate(row) {
+  const _achievementId = row?.achievementId;
+  if (_achievementId) openReviewPage(_achievementId, 'edit');
 }
 
 function handleDelete(row) {
@@ -394,7 +454,7 @@ function handleExport() {
 function handleReview(row) {
   const id = row?.achievementId;
   if (!id) return;
-  openPageForm(id, { readOnly: true });
+  openReviewPage(id, 'view');
 }
 
 function refreshFromRoute() {
@@ -421,6 +481,25 @@ function openPageForm(id, options = {}) {
   pageModeKey.value = Date.now();
   nextTick(() => {
     achievementFormRef.value?.open(id);
+  });
+}
+
+function openDialog(id, options = {}) {
+  formReadOnly.value = !!options.readOnly;
+  formShowSubmit.value = !formReadOnly.value;
+  nextTick(() => {
+    achievementDialogRef.value?.open(id);
+  });
+}
+
+function openReviewPage(id, mode) {
+  router.push({
+    path: reviewRoute.value,
+    query: {
+      id,
+      source: reviewSource.value,
+      mode
+    }
   });
 }
 
