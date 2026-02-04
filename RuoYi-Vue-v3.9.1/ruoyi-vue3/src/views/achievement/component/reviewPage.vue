@@ -1,13 +1,14 @@
 ﻿<template>
   <div class="app-container review-page">
     <AchievementForm
+        :key="formKey"
         ref="dlgRef"
         :getFn="currentApi.getFn"
         :addFn="currentApi.addFn"
         :updateFn="currentApi.updateFn"
         :pageMode="true"
-        :readOnly="false"
-        :showSubmit="false"
+        :readOnly="isView"
+        :showSubmit="isEdit"
         cancelText="返回"
         titleAdd="成果审核"
         titleEdit="成果审核"
@@ -15,7 +16,7 @@
         @ok="handleBack"
     >
       <!-- ✅ 外置审核工具条：下拉 + 提交审核（手动流转） -->
-      <template #footer-left>
+      <template v-if="showAuditToolbar" #footer-left>
         <div class="audit-toolbar">
           <span class="audit-label">审核后状态</span>
 
@@ -53,22 +54,23 @@
 </template>
 
 <script setup name="ReviewPage">
-import { computed, onMounted, ref, getCurrentInstance, watch } from "vue";
+import { computed, onMounted, onActivated, ref, getCurrentInstance, watch, nextTick } from "vue";
 import { useRoute, useRouter } from "vue-router";
 
-import AchievementForm from "@/views/achievement/manage/AchievementForm.vue";
+import AchievementForm from "@/views/achievement/component/AchievementForm.vue";
 
 // ====== 四套 API（你已有）======
-import { getCollegeLevelUnreviewed, addCollegeLevelUnreviewed, updateCollegeLevelUnreviewed } from "@/api/erp/college_level_unreviewed";
-import { getCollegeLevelReviewed, addCollegeLevelReviewed, updateCollegeLevelReviewed } from "@/api/erp/college_level_reviewed";
-import { getSchoolLevelUnreviewed, addSchoolLevelUnreviewed, updateSchoolLevelUnreviewed } from "@/api/erp/school_level_unreviewed";
-import { getSchoolLevelReviewed, addSchoolLevelReviewed, updateSchoolLevelReviewed } from "@/api/erp/school_level_reviewed";
+import { getCollege_level_unreviewed, addCollege_level_unreviewed, updateCollege_level_unreviewed } from "@/api/achievement/college_level_unreviewed";
+import { getCollege_level_reviewed, addCollege_level_reviewed, updateCollege_level_reviewed } from "@/api/achievement/college_level_reviewed";
+import { getSchool_level_unreviewed, addSchool_level_unreviewed, updateSchool_level_unreviewed } from "@/api/achievement/school_level_unreviewed";
+import { getSchool_level_reviewed, addSchool_level_reviewed, updateSchool_level_reviewed } from "@/api/achievement/school_level_reviewed";
 
 const { proxy } = getCurrentInstance();
 const route = useRoute();
 const router = useRouter();
 
 const dlgRef = ref(null);
+const formKey = ref(0);
 
 // ✅ 两套字典（按你最新定义）
 // 院级：college_audit_status 0待院级审核 1院级驳回 2院级审核通过
@@ -77,14 +79,18 @@ const { college_audit_status, school_audit_status } = proxy.useDict("college_aud
 
 // ✅ API 映射
 const apiMap = {
-  college_level_unreviewed: { getFn: getCollegeLevelUnreviewed, addFn: addCollegeLevelUnreviewed, updateFn: updateCollegeLevelUnreviewed },
-  college_level_reviewed: { getFn: getCollegeLevelReviewed, addFn: addCollegeLevelReviewed, updateFn: updateCollegeLevelReviewed },
-  school_level_unreviewed: { getFn: getSchoolLevelUnreviewed, addFn: addSchoolLevelUnreviewed, updateFn: updateSchoolLevelUnreviewed },
-  school_level_reviewed: { getFn: getSchoolLevelReviewed, addFn: addSchoolLevelReviewed, updateFn: updateSchoolLevelReviewed }
+  college_level_unreviewed: { getFn: getCollege_level_unreviewed, addFn: addCollege_level_unreviewed, updateFn: updateCollege_level_unreviewed },
+  college_level_reviewed: { getFn: getCollege_level_reviewed, addFn: addCollege_level_reviewed, updateFn: updateCollege_level_reviewed },
+  school_level_unreviewed: { getFn: getSchool_level_unreviewed, addFn: addSchool_level_unreviewed, updateFn: updateSchool_level_unreviewed },
+  school_level_reviewed: { getFn: getSchool_level_reviewed, addFn: addSchool_level_reviewed, updateFn: updateSchool_level_reviewed }
 };
 
 // ✅ 来源（由列表页点击审阅传 query.source）
 const source = computed(() => String(route.query.source || "college_level_unreviewed").toLowerCase());
+const mode = computed(() => String(route.query.mode || "review").toLowerCase());
+const isEdit = computed(() => mode.value === "edit");
+const isView = computed(() => mode.value === "view");
+const showAuditToolbar = computed(() => true);
 const currentApi = computed(() => apiMap[source.value] || apiMap.college_level_unreviewed);
 
 // ✅ 根据来源决定使用哪套字典
@@ -163,20 +169,20 @@ function handleBack() {
 /**
  * ✅ 手动流转归档推送（前端负责）：
  * 1) 院级未审核(college_level_unreviewed)
- *    - updateCollegeLevelUnreviewed：auditStatus 0 -> 1/2
- *    - addCollegeLevelReviewed：归档到院级已审核
- *    - 若通过(2)：addSchoolLevelUnreviewed：推送到校级未审核（auditStatus=2 待校级审核）
+ *    - updateCollege_level_unreviewed：auditStatus 0 -> 1/2
+ *    - addCollege_level_reviewed：归档到院级已审核
+ *    - 若通过(2)：addSchool_level_unreviewed：推送到校级未审核（auditStatus=2 待校级审核）
  *
  * 2) 校级未审核(school_level_unreviewed)
- *    - updateSchoolLevelUnreviewed：auditStatus 2 -> 0/1
- *    - addSchoolLevelReviewed：归档到校级已审核
+ *    - updateSchool_level_unreviewed：auditStatus 2 -> 0/1
+ *    - addSchool_level_reviewed：归档到校级已审核
  *
  * ✅ 关键修复：
  * - 归档到校级已审核时必须写 schoolAuditTime（你的 mapper 有 school_audit_time is not null 的过滤）
  */
 async function submitAudit() {
   const baseForm = dlgRef.value?.getForm?.();
-  const id = baseForm?.id ?? route.query.id;
+  const id = baseForm?.achievementId ?? route.query.id;
 
   if (!id) {
     proxy.$modal?.msgError?.("未获取到成果ID，无法审核");
@@ -210,33 +216,20 @@ async function submitAudit() {
     // ===== 院级审核 =====
     if (source.value === "college_level_unreviewed") {
       // 1) 更新院级未审核状态（0 -> 1/2）
-      await updateCollegeLevelUnreviewed({
+      await updateCollege_level_unreviewed({
         ...baseForm,
-        id,
-        auditStatus: next,
-        collegeAuditReason,
-        collegeAuditTime: now,
-        collegeAuditUser: auditUser
+        achievementId: id,
+        reviewResult: next,
+        reviewReason: collegeAuditReason,
+        reviewedAt: now,
+        auditBy: auditUser
       });
 
-      // 2) 归档到院级已审核（✅更稳：去掉 id 字段，而不是 id:null）
-      const { id: _omit1, ...payload1 } = baseForm;
-      await addCollegeLevelReviewed({
-        ...payload1,
-        auditStatus: next,
-        collegeAuditReason,
-        collegeAuditTime: now,
-        collegeAuditUser: auditUser
-      });
-
-      // 3) 院级通过(2) -> 推送到校级未审核（待校级审核=2）
+      // 2) 院级通过(2) -> 推送到校级未审核（待校级审核=2）
       if (next === "2") {
-        await addSchoolLevelUnreviewed({
-          ...payload1,
-          auditStatus: "2",
-          collegeAuditReason,
-          collegeAuditTime: now,
-          collegeAuditUser: auditUser
+        await updateSchool_level_unreviewed({
+          achievementId: id,
+          schooiReviewResult: "2"
         });
       }
 
@@ -247,14 +240,21 @@ async function submitAudit() {
 
     // 重新审核已经审核的院级记录
     if (source.value === "college_level_reviewed") {
-      await updateCollegeLevelReviewed({
+      await updateCollege_level_reviewed({
         ...baseForm,
-        id,
-        auditStatus: next,
-        collegeAuditReason,
-        collegeAuditTime: now,
-        collegeAuditUser: auditUser
+        achievementId: id,
+        reviewResult: next,
+        reviewReason: collegeAuditReason,
+        reviewedAt: now,
+        auditBy: auditUser
       });
+
+      if (next === "2" && (baseForm?.schooiReviewResult == null || baseForm?.schooiReviewResult === "")) {
+        await updateSchool_level_unreviewed({
+          achievementId: id,
+          schooiReviewResult: "2"
+        });
+      }
 
       proxy.$modal?.msgSuccess?.("院级审核成功");
       handleBack();
@@ -263,24 +263,14 @@ async function submitAudit() {
 
     // ===== 校级审核 =====
     if (source.value === "school_level_unreviewed" || source.value === "school_level_reviewed") {
-      // 1) 更新校级未审核状态（2 -> 0/1），✅补齐校级审核信息
-      await updateSchoolLevelUnreviewed({
+      // 1) 更新校级审核状态（2 -> 0/1）
+      await updateSchool_level_unreviewed({
         ...baseForm,
-        id,
-        auditStatus: next,
-        schoolAuditTime: now,
-        schoolAuditUser: auditUser,
-        schoolAuditReason
-      });
-
-      // 2) 归档到校级已审核（✅必须写 schoolAuditTime，否则 selectByAuditStatuses 会过滤）
-      const { id: _omit2, ...payload2 } = baseForm;
-      await addSchoolLevelReviewed({
-        ...payload2,
-        auditStatus: next,
-        schoolAuditTime: now,
-        schoolAuditUser: auditUser,
-        schoolAuditReason
+        achievementId: id,
+        schooiReviewResult: next,
+        schoolReviewReason: schoolAuditReason,
+        schoolReviewedAt: now,
+        schoolAuditBy: auditUser
       });
 
       proxy.$modal?.msgSuccess?.("校级审核成功");
@@ -294,11 +284,29 @@ async function submitAudit() {
   }
 }
 
+function loadCurrent() {
+  formKey.value = Date.now();
+  nextTick(() => {
+    const id = route.query.id;
+    dlgRef.value?.open(id);
+    setDefaultSelected();
+  });
+}
+
 onMounted(() => {
-  const id = route.query.id;
-  dlgRef.value?.open(id);
-  setDefaultSelected();
+  loadCurrent();
 });
+
+onActivated(() => {
+  loadCurrent();
+});
+
+watch(
+  () => [route.query.id, route.query.source],
+  () => {
+    loadCurrent();
+  }
+);
 </script>
 
 <style scoped>

@@ -19,45 +19,45 @@
           <el-col :span="12">
             <el-row>
               <el-col :span="12">
-                <el-form-item label="类别" prop="category">
-                  <el-select v-model="form.category" placeholder="请选择类别" filterable>
+                <el-form-item label="类别" prop="category" label-for="category">
+                  <el-select v-model="form.category" input-id="category" placeholder="请选择类别" filterable>
                     <el-option v-for="dict in achievement_category" :key="dict.value" :label="dict.label" :value="dict.value" />
                   </el-select>
                 </el-form-item>
               </el-col>
               <el-col :span="12">
-                <el-form-item label="届次" prop="sessionId">
-                  <el-input v-model="form.sessionId" placeholder="例：15" />
+                <el-form-item label="届次" prop="sessionId" label-for="sessionId">
+                  <el-input v-model="form.sessionId" input-id="sessionId" placeholder="例：15" />
                 </el-form-item>
               </el-col>
             </el-row>
 
             <el-row>
               <el-col :span="12">
-                <el-form-item label="所属学院" prop="ownerDepId">
-                  <el-tree-select v-model="form.ownerDepId" :data="deptOptions"
+                <el-form-item label="所属学院" prop="ownerDepId" label-for="ownerDepId">
+                  <el-tree-select v-model="form.ownerDepId" input-id="ownerDepId" :data="deptOptions"
                                   :props="{ value: 'deptId', label: 'deptName', children: 'children' }" value-key="deptId"
                                   placeholder="请选择所属学院" check-strictly />
                 </el-form-item>
               </el-col>
               <el-col :span="12">
-                <el-form-item label="作品名称" prop="name">
-                  <el-input v-model="form.name" placeholder="请输入作品名称(选填)" />
+                <el-form-item label="作品名称" prop="name" label-for="name">
+                  <el-input v-model="form.name" input-id="name" placeholder="请输入作品名称(选填)" />
                 </el-form-item>
               </el-col>
             </el-row>
 
             <el-row>
               <el-col :span="12">
-                <el-form-item label="获奖级别" prop="level">
-                  <el-select v-model="form.level" placeholder="请选择">
+                <el-form-item label="获奖级别" prop="level" label-for="level">
+                  <el-select v-model="form.level" input-id="level" placeholder="请选择">
                     <el-option v-for="dict in award_level_type" :key="dict.value" :label="dict.label" :value="dict.value" />
                   </el-select>
                 </el-form-item>
               </el-col>
               <el-col :span="12">
-                <el-form-item label="奖项等级" prop="grade">
-                  <el-select v-model="form.grade" placeholder="请选择">
+                <el-form-item label="奖项等级" prop="grade" label-for="grade">
+                  <el-select v-model="form.grade" input-id="grade" placeholder="请选择">
                     <el-option v-for="dict in award_rank" :key="dict.value" :label="dict.label" :value="dict.value" />
                   </el-select>
                 </el-form-item>
@@ -66,13 +66,13 @@
 
             <el-row>
               <el-col :span="12">
-                <el-form-item label="赛道" prop="track">
-                  <el-input v-model="form.track" placeholder="请输入赛道" />
+                <el-form-item label="赛道" prop="track" label-for="track">
+                  <el-input v-model="form.track" input-id="track" placeholder="请输入赛道" />
                 </el-form-item>
               </el-col>
               <el-col :span="12">
-                <el-form-item label="组别" prop="groupId">
-                  <el-select v-model="form.groupId" placeholder="请选择组别">
+                <el-form-item label="组别" prop="groupId" label-for="groupId">
+                  <el-select v-model="form.groupId" input-id="groupId" placeholder="请选择组别">
                     <el-option v-for="dict in group_type" :key="dict.value" :label="dict.label" :value="dict.value" />
                   </el-select>
                 </el-form-item>
@@ -81,13 +81,13 @@
 
             <el-row>
               <el-col :span="12">
-                <el-form-item label="证书编号" prop="certificateNo">
-                  <el-input v-model="form.certificateNo" placeholder="请输入证书编号" />
+                <el-form-item label="证书编号" prop="certificateNo" label-for="certificateNo">
+                  <el-input v-model="form.certificateNo" input-id="certificateNo" placeholder="请输入证书编号" />
                 </el-form-item>
               </el-col>
               <el-col :span="12">
-                <el-form-item label="获奖时间" prop="awardTime">
-                  <el-date-picker clearable v-model="form.awardTime" type="date" value-format="YYYY-MM-DD"
+                <el-form-item label="获奖时间" prop="awardTime" label-for="awardTime">
+                  <el-date-picker clearable v-model="form.awardTime" type="date" value-format="YYYY-MM-DD" input-id="awardTime"
                                   placeholder="选择日期" style="width: 100%" />
                 </el-form-item>
               </el-col>
@@ -95,13 +95,13 @@
 
             <el-row>
               <el-col :span="12">
-                <el-form-item label="团队名称" prop="teamName">
-                  <el-input v-model="form.teamName" placeholder="请输入团队名称(选填)" />
+                <el-form-item label="团队名称" prop="teamName" label-for="teamName">
+                  <el-input v-model="form.teamName" input-id="teamName" placeholder="请输入团队名称(选填)" />
                 </el-form-item>
               </el-col>
               <el-col :span="12" v-if="form.isReimburse === 1">
-                <el-form-item label="报名费" prop="fee">
-                  <el-input v-model="form.fee" placeholder="请输入金额">
+                <el-form-item label="报名费" prop="fee" label-for="fee">
+                  <el-input v-model="form.fee" input-id="fee" placeholder="请输入金额">
                     <template #append>元</template>
                   </el-input>
                 </el-form-item>
@@ -109,10 +109,11 @@
             </el-row>
 
             <el-divider content-position="left"><i class="el-icon-money"></i> 报销申请</el-divider>
-            <el-form-item label="是否申请报销" prop="isReimburse">
+            <el-form-item label="是否申请报销" prop="isReimburse" label-for="isReimburse_yes">
+              <input id="isReimburse_yes" type="hidden" />
               <el-radio-group v-model="form.isReimburse">
-                <el-radio :label="1">是 (需要上传凭证)</el-radio>
-                <el-radio :label="0">否</el-radio>
+                <el-radio :label="1" id="isReimburse_yes">是 (需要上传凭证)</el-radio>
+                <el-radio :label="0" id="isReimburse_no">否</el-radio>
               </el-radio-group>
             </el-form-item>
 
@@ -180,7 +181,8 @@
                 <el-tab-pane label="奖状(证书)" name="award">
                   <div class="upload-pane-content">
                     <el-alert title="请上传获奖证书" type="info" :closable="false" class="mb10"/>
-                    <el-form-item label-width="0" prop="fileAward">
+                    <el-form-item label-width="0" prop="fileAward" label-for="fileAward">
+                      <input id="fileAward" type="hidden" />
                       <file-upload v-model="form.fileAward" :limit="1" :fileSize="10" :fileType="['pdf']" class="hide-file-list" v-if="!readOnly"/>
                       <div v-if="previewUrls.award" class="preview-box">
                         <iframe :src="previewUrls.award" width="100%" height="450px" frameborder="0"></iframe>
@@ -199,7 +201,8 @@
                 <el-tab-pane label="比赛通知" name="notice">
                   <div class="upload-pane-content">
                     <el-alert title="请上传比赛通知" type="info" :closable="false" class="mb10"/>
-                    <el-form-item label-width="0" prop="fileNotice">
+                    <el-form-item label-width="0" prop="fileNotice" label-for="fileNotice">
+                      <input id="fileNotice" type="hidden" />
                       <file-upload v-model="form.fileNotice" :limit="1" :fileSize="10" :fileType="['pdf']" class="hide-file-list" v-if="!readOnly"/>
                       <div v-if="previewUrls.notice" class="preview-box">
                         <iframe :src="previewUrls.notice" width="100%" height="450px" frameborder="0"></iframe>
@@ -218,7 +221,8 @@
                 <el-tab-pane label="参赛作品" name="work">
                   <div class="upload-pane-content">
                     <el-alert title="请上传参赛作品" type="info" :closable="false" class="mb10"/>
-                    <el-form-item label-width="0" prop="fileWork">
+                    <el-form-item label-width="0" prop="fileWork" label-for="fileWork">
+                      <input id="fileWork" type="hidden" />
                       <file-upload v-model="form.fileWork" :limit="1" :fileSize="10" :fileType="['pdf']" class="hide-file-list" v-if="!readOnly"/>
                       <div v-if="previewUrls.work" class="preview-box">
                         <iframe :src="previewUrls.work" width="100%" height="450px" frameborder="0"></iframe>
@@ -237,7 +241,8 @@
                 <el-tab-pane label="支付记录" name="payment" v-if="form.isReimburse === 1">
                   <div class="upload-pane-content">
                     <el-alert title="请上传转账截图" type="warning" :closable="false" class="mb10"/>
-                    <el-form-item label-width="0" prop="filePayment">
+                    <el-form-item label-width="0" prop="filePayment" label-for="filePayment">
+                      <input id="filePayment" type="hidden" />
                       <file-upload v-model="form.filePayment" :limit="1" :fileSize="10" :fileType="['pdf']" class="hide-file-list" v-if="!readOnly"/>
                       <div v-if="previewUrls.payment" class="preview-box">
                         <iframe :src="previewUrls.payment" width="100%" height="450px" frameborder="0"></iframe>
@@ -256,7 +261,8 @@
                 <el-tab-pane label="正规发票" name="invoice" v-if="form.isReimburse === 1">
                   <div class="upload-pane-content">
                     <el-alert title="请上传电子发票" type="warning" :closable="false" class="mb10"/>
-                    <el-form-item label-width="0" prop="fileInvoice">
+                    <el-form-item label-width="0" prop="fileInvoice" label-for="fileInvoice">
+                      <input id="fileInvoice" type="hidden" />
                       <file-upload v-model="form.fileInvoice" :limit="1" :fileSize="10" :fileType="['pdf']" class="hide-file-list" v-if="!readOnly"/>
                       <div v-if="previewUrls.invoice" class="preview-box">
                         <iframe :src="previewUrls.invoice" width="100%" height="450px" frameborder="0"></iframe>
@@ -275,7 +281,8 @@
                 <el-tab-pane label="收款码" name="receipt" v-if="form.isReimburse === 1">
                   <div class="upload-pane-content">
                     <el-alert title="请上传收款码" type="warning" :closable="false" class="mb10"/>
-                    <el-form-item label-width="0" prop="fileReceiptCode">
+                    <el-form-item label-width="0" prop="fileReceiptCode" label-for="fileReceiptCode">
+                      <input id="fileReceiptCode" type="hidden" />
                       <file-upload v-model="form.fileReceiptCode" :limit="1" :fileSize="10" :fileType="['pdf']" class="hide-file-list" v-if="!readOnly"/>
                       <div v-if="previewUrls.receipt" class="preview-box">
                         <iframe :src="previewUrls.receipt" width="100%" height="450px" frameborder="0"></iframe>
@@ -313,45 +320,45 @@
           <el-col :span="12">
             <el-row>
               <el-col :span="12">
-                <el-form-item label="类别" prop="category">
-                  <el-select v-model="form.category" placeholder="请选择类别" filterable>
+                <el-form-item label="类别" prop="category" label-for="category">
+                  <el-select v-model="form.category" input-id="category" placeholder="请选择类别" filterable>
                     <el-option v-for="dict in achievement_category" :key="dict.value" :label="dict.label" :value="dict.value" />
                   </el-select>
                 </el-form-item>
               </el-col>
               <el-col :span="12">
-                <el-form-item label="届次" prop="sessionId">
-                  <el-input v-model="form.sessionId" placeholder="例：15" />
+                <el-form-item label="届次" prop="sessionId" label-for="sessionId">
+                  <el-input v-model="form.sessionId" input-id="sessionId" placeholder="例：15" />
                 </el-form-item>
               </el-col>
             </el-row>
 
             <el-row>
               <el-col :span="12">
-                <el-form-item label="所属学院" prop="ownerDepId">
-                  <el-tree-select v-model="form.ownerDepId" :data="deptOptions"
+                <el-form-item label="所属学院" prop="ownerDepId" label-for="ownerDepId">
+                  <el-tree-select v-model="form.ownerDepId" input-id="ownerDepId" :data="deptOptions"
                                   :props="{ value: 'deptId', label: 'deptName', children: 'children' }" value-key="deptId"
                                   placeholder="请选择所属学院" check-strictly />
                 </el-form-item>
               </el-col>
               <el-col :span="12">
-                <el-form-item label="作品名称" prop="name">
-                  <el-input v-model="form.name" placeholder="请输入作品名称(选填)" />
+                <el-form-item label="作品名称" prop="name" label-for="name">
+                  <el-input v-model="form.name" input-id="name" placeholder="请输入作品名称(选填)" />
                 </el-form-item>
               </el-col>
             </el-row>
 
             <el-row>
               <el-col :span="12">
-                <el-form-item label="获奖级别" prop="level">
-                  <el-select v-model="form.level" placeholder="请选择">
+                <el-form-item label="获奖级别" prop="level" label-for="level">
+                  <el-select v-model="form.level" input-id="level" placeholder="请选择">
                     <el-option v-for="dict in award_level_type" :key="dict.value" :label="dict.label" :value="dict.value" />
                   </el-select>
                 </el-form-item>
               </el-col>
               <el-col :span="12">
-                <el-form-item label="奖项等级" prop="grade">
-                  <el-select v-model="form.grade" placeholder="请选择">
+                <el-form-item label="奖项等级" prop="grade" label-for="grade">
+                  <el-select v-model="form.grade" input-id="grade" placeholder="请选择">
                     <el-option v-for="dict in award_rank" :key="dict.value" :label="dict.label" :value="dict.value" />
                   </el-select>
                 </el-form-item>
@@ -360,13 +367,13 @@
 
             <el-row>
               <el-col :span="12">
-                <el-form-item label="赛道" prop="track">
-                  <el-input v-model="form.track" placeholder="请输入赛道" />
+                <el-form-item label="赛道" prop="track" label-for="track">
+                  <el-input v-model="form.track" input-id="track" placeholder="请输入赛道" />
                 </el-form-item>
               </el-col>
               <el-col :span="12">
-                <el-form-item label="组别" prop="groupId">
-                  <el-select v-model="form.groupId" placeholder="请选择组别">
+                <el-form-item label="组别" prop="groupId" label-for="groupId">
+                  <el-select v-model="form.groupId" input-id="groupId" placeholder="请选择组别">
                     <el-option v-for="dict in group_type" :key="dict.value" :label="dict.label" :value="dict.value" />
                   </el-select>
                 </el-form-item>
@@ -375,13 +382,13 @@
 
             <el-row>
               <el-col :span="12">
-                <el-form-item label="证书编号" prop="certificateNo">
-                  <el-input v-model="form.certificateNo" placeholder="请输入证书编号" />
+                <el-form-item label="证书编号" prop="certificateNo" label-for="certificateNo">
+                  <el-input v-model="form.certificateNo" input-id="certificateNo" placeholder="请输入证书编号" />
                 </el-form-item>
               </el-col>
               <el-col :span="12">
-                <el-form-item label="获奖时间" prop="awardTime">
-                  <el-date-picker clearable v-model="form.awardTime" type="date" value-format="YYYY-MM-DD"
+                <el-form-item label="获奖时间" prop="awardTime" label-for="awardTime">
+                  <el-date-picker clearable v-model="form.awardTime" type="date" value-format="YYYY-MM-DD" input-id="awardTime"
                                   placeholder="选择日期" style="width: 100%" />
                 </el-form-item>
               </el-col>
@@ -389,13 +396,13 @@
 
             <el-row>
               <el-col :span="12">
-                <el-form-item label="团队名称" prop="teamName">
-                  <el-input v-model="form.teamName" placeholder="请输入团队名称(选填)" />
+                <el-form-item label="团队名称" prop="teamName" label-for="teamName">
+                  <el-input v-model="form.teamName" input-id="teamName" placeholder="请输入团队名称(选填)" />
                 </el-form-item>
               </el-col>
               <el-col :span="12" v-if="form.isReimburse === 1">
-                <el-form-item label="报名费" prop="fee">
-                  <el-input v-model="form.fee" placeholder="请输入金额">
+                <el-form-item label="报名费" prop="fee" label-for="fee">
+                  <el-input v-model="form.fee" input-id="fee" placeholder="请输入金额">
                     <template #append>元</template>
                   </el-input>
                 </el-form-item>
@@ -403,10 +410,11 @@
             </el-row>
 
             <el-divider content-position="left"><i class="el-icon-money"></i> 报销申请</el-divider>
-            <el-form-item label="是否申请报销" prop="isReimburse">
+            <el-form-item label="是否申请报销" prop="isReimburse" label-for="isReimburse_yes">
+              <input id="isReimburse_yes" type="hidden" />
               <el-radio-group v-model="form.isReimburse">
-                <el-radio :label="1">是 (需要上传凭证)</el-radio>
-                <el-radio :label="0">否</el-radio>
+                <el-radio :label="1" id="isReimburse_yes">是 (需要上传凭证)</el-radio>
+                <el-radio :label="0" id="isReimburse_no">否</el-radio>
               </el-radio-group>
             </el-form-item>
 
@@ -474,7 +482,8 @@
                 <el-tab-pane label="奖状(证书)" name="award">
                   <div class="upload-pane-content">
                     <el-alert title="请上传获奖证书" type="info" :closable="false" class="mb10"/>
-                    <el-form-item label-width="0" prop="fileAward">
+                    <el-form-item label-width="0" prop="fileAward" label-for="fileAward">
+                      <input id="fileAward" type="hidden" />
                       <file-upload v-model="form.fileAward" :limit="1" :fileSize="10" :fileType="['pdf']" class="hide-file-list" v-if="!readOnly"/>
                       <div v-if="previewUrls.award" class="preview-box">
                         <iframe :src="previewUrls.award" width="100%" height="450px" frameborder="0"></iframe>
@@ -493,7 +502,8 @@
                 <el-tab-pane label="比赛通知" name="notice">
                   <div class="upload-pane-content">
                     <el-alert title="请上传比赛通知" type="info" :closable="false" class="mb10"/>
-                    <el-form-item label-width="0" prop="fileNotice">
+                    <el-form-item label-width="0" prop="fileNotice" label-for="fileNotice">
+                      <input id="fileNotice" type="hidden" />
                       <file-upload v-model="form.fileNotice" :limit="1" :fileSize="10" :fileType="['pdf']" class="hide-file-list" v-if="!readOnly"/>
                       <div v-if="previewUrls.notice" class="preview-box">
                         <iframe :src="previewUrls.notice" width="100%" height="450px" frameborder="0"></iframe>
@@ -512,7 +522,8 @@
                 <el-tab-pane label="参赛作品" name="work">
                   <div class="upload-pane-content">
                     <el-alert title="请上传参赛作品" type="info" :closable="false" class="mb10"/>
-                    <el-form-item label-width="0" prop="fileWork">
+                    <el-form-item label-width="0" prop="fileWork" label-for="fileWork">
+                      <input id="fileWork" type="hidden" />
                       <file-upload v-model="form.fileWork" :limit="1" :fileSize="10" :fileType="['pdf']" class="hide-file-list" v-if="!readOnly"/>
                       <div v-if="previewUrls.work" class="preview-box">
                         <iframe :src="previewUrls.work" width="100%" height="450px" frameborder="0"></iframe>
@@ -531,7 +542,8 @@
                 <el-tab-pane label="支付记录" name="payment" v-if="form.isReimburse === 1">
                   <div class="upload-pane-content">
                     <el-alert title="请上传转账截图" type="warning" :closable="false" class="mb10"/>
-                    <el-form-item label-width="0" prop="filePayment">
+                    <el-form-item label-width="0" prop="filePayment" label-for="filePayment">
+                      <input id="filePayment" type="hidden" />
                       <file-upload v-model="form.filePayment" :limit="1" :fileSize="10" :fileType="['pdf']" class="hide-file-list" v-if="!readOnly"/>
                       <div v-if="previewUrls.payment" class="preview-box">
                         <iframe :src="previewUrls.payment" width="100%" height="450px" frameborder="0"></iframe>
@@ -550,7 +562,8 @@
                 <el-tab-pane label="正规发票" name="invoice" v-if="form.isReimburse === 1">
                   <div class="upload-pane-content">
                     <el-alert title="请上传电子发票" type="warning" :closable="false" class="mb10"/>
-                    <el-form-item label-width="0" prop="fileInvoice">
+                    <el-form-item label-width="0" prop="fileInvoice" label-for="fileInvoice">
+                      <input id="fileInvoice" type="hidden" />
                       <file-upload v-model="form.fileInvoice" :limit="1" :fileSize="10" :fileType="['pdf']" class="hide-file-list" v-if="!readOnly"/>
                       <div v-if="previewUrls.invoice" class="preview-box">
                         <iframe :src="previewUrls.invoice" width="100%" height="450px" frameborder="0"></iframe>
@@ -569,7 +582,8 @@
                 <el-tab-pane label="收款码" name="receipt" v-if="form.isReimburse === 1">
                   <div class="upload-pane-content">
                     <el-alert title="请上传收款码" type="warning" :closable="false" class="mb10"/>
-                    <el-form-item label-width="0" prop="fileReceiptCode">
+                    <el-form-item label-width="0" prop="fileReceiptCode" label-for="fileReceiptCode">
+                      <input id="fileReceiptCode" type="hidden" />
                       <file-upload v-model="form.fileReceiptCode" :limit="1" :fileSize="10" :fileType="['pdf']" class="hide-file-list" v-if="!readOnly"/>
                       <div v-if="previewUrls.receipt" class="preview-box">
                         <iframe :src="previewUrls.receipt" width="100%" height="450px" frameborder="0"></iframe>
@@ -819,6 +833,7 @@ function loadDetail(id) {
   props.getFn(id).then(response => {
     const d = response.data;
     form.value = d;
+    normalizeDictFields();
     samAchievementParticipantList.value = d.samAchievementParticipantList || [];
     samAchievementAdvisorList.value = d.samAchievementAdvisorList || [];
     reIndexList(samAchievementParticipantList.value);
@@ -840,11 +855,28 @@ function loadDetail(id) {
   });
 }
 
+function normalizeDictFields() {
+  const dictFields = ['category', 'level', 'grade', 'groupId'];
+  dictFields.forEach((key) => {
+    const val = form.value?.[key];
+    if (val !== null && val !== undefined && val !== '') {
+      form.value[key] = String(val);
+    }
+  });
+  const owner = form.value?.ownerDepId;
+  if (owner !== null && owner !== undefined && owner !== '') {
+    if (typeof owner === 'string' && /^\d+$/.test(owner)) {
+      form.value.ownerDepId = Number(owner);
+    }
+  }
+}
+
 function reset() {
   form.value = {
     achievementId: null, sessionId: null, category: null, name: null, teamName: null,
     level: null, grade: null, track: null, certificateNo: null, groupId: null, ownerDepId: null,
     awardTime: null, fee: null, isReimburse: 0,
+    reviewResult: 0, schooiReviewResult: null,
     fileAward: null, fileNotice: null, fileWork: null, filePayment: null, fileInvoice: null, fileReceiptCode: null
   };
   samAchievementParticipantList.value = [];
@@ -984,6 +1016,21 @@ function handleDownload(url) { if (url) proxy.$download.resource(url); }
 .outcome-page .page-title { font-size: 18px; font-weight: 600; }
 .outcome-page .page-actions { display: flex; align-items: center; gap: 10px; }
 .dialog-footer-wrapper { display: flex; justify-content: space-between; align-items: center; }
+.dialog-footer-wrapper,
+.footer-left,
+.footer-right {
+  position: relative;
+  z-index: 2;
+  pointer-events: auto;
+}
+:deep(.el-dialog__footer) {
+  position: relative;
+  z-index: 2;
+}
+.footer-right .el-button,
+.page-actions .el-button {
+  min-width: 96px;
+}
 .attach-card { background: #f8f8f9; padding: 10px; border-radius: 4px; border: 1px solid #d9d9d9; height: 100%; }
 .upload-pane-content { padding: 20px; }
 .mb10 { margin-bottom: 15px; }
