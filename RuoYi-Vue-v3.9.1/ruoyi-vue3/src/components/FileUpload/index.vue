@@ -29,22 +29,46 @@
     <!-- 文件列表 -->
     <transition-group ref="uploadFileList" class="upload-file-list el-upload-list el-upload-list--text" name="el-fade-in-linear" tag="ul">
       <li :key="file.uid" class="el-upload-list__item ele-upload-list__item-content" v-for="(file, index) in fileList">
-        <el-link :href="`${baseUrl}${file.url}`" :underline="false" target="_blank">
-          <span class="el-icon-document"> {{ getFileName(file.name) }} </span>
-        </el-link>
+        <div class="file-item-container">
+          <!-- PDF 小窗预览 -->
+          <div v-if="isPdf(file.url)" class="pdf-preview-box" @click="handlePreview(file)">
+            <!-- 使用真实渲染的缩略图 -->
+            <pdf-thumbnail :url="`${baseUrl}${file.url}`" />
+            
+            <div class="pdf-preview-mask">
+              <el-icon><zoom-in /></el-icon>
+              <span>点击预览</span>
+            </div>
+          </div>
+          <!-- 非 PDF 或 辅助显示名称 -->
+          <div class="file-info">
+            <el-link :href="`${baseUrl}${file.url}`" :underline="false" target="_blank">
+              <span class="el-icon-document"> {{ getFileName(file.name) }} </span>
+            </el-link>
+          </div>
+        </div>
         <div class="ele-upload-list__item-content-action">
           <el-link :underline="false" @click="handleDelete(index)" type="danger" v-if="!disabled">&nbsp;删除</el-link>
         </div>
       </li>
     </transition-group>
+
+    <!-- 预览界面 -->
+    <el-dialog v-model="previewVisible" title="文档预览" width="800px" append-to-body>
+      <div style="height: 600px;">
+        <iframe :src="previewUrl" width="100%" height="100%" frameborder="0"></iframe>
+      </div>
+    </el-dialog>
   </div>
 </template>
 
 <script setup>
 import { getToken } from "@/utils/auth"
 import Sortable from 'sortablejs'
+import PdfThumbnail from './PdfThumbnail.vue'
 
 const props = defineProps({
+// ... (omitted props for brevity in thought, but I must include them in new_string as per tool requirements if I replace the whole script, but I'll target the script body)
   modelValue: [String, Object, Array],
   // 上传接口地址
   action: {
@@ -98,6 +122,18 @@ const fileList = ref([])
 const showTip = computed(
   () => props.isShowTip && (props.fileType || props.fileSize)
 )
+
+const previewVisible = ref(false);
+const previewUrl = ref("");
+
+function isPdf(url) {
+  return url && url.toLowerCase().endsWith(".pdf");
+}
+
+function handlePreview(file) {
+  previewUrl.value = baseUrl + file.url;
+  previewVisible.value = true;
+}
 
 watch(() => props.modelValue, val => {
   if (val) {
@@ -252,5 +288,70 @@ onMounted(() => {
 }
 .ele-upload-list__item-content-action .el-link {
   margin-right: 10px;
+}
+
+.file-item-container {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  padding: 5px;
+  width: 100%;
+}
+
+.pdf-preview-box {
+  position: relative;
+  width: 120px;
+  height: 160px;
+  border: 1px solid #e4e7ed;
+  border-radius: 4px;
+  overflow: hidden;
+  cursor: pointer;
+  margin-bottom: 5px;
+  background: #f5f7fa; /* 浅灰背景 */
+}
+
+.pdf-placeholder {
+  width: 100%;
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  align-items: center;
+  color: #909399;
+}
+
+.pdf-icon {
+  font-size: 48px;
+  color: #e6a23c; /* 使用警告色或自定义颜色作为 PDF 图标色 */
+  margin-bottom: 10px;
+}
+
+.pdf-text {
+  font-size: 12px;
+}
+
+.pdf-preview-mask {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background: rgba(0, 0, 0, 0.4);
+  color: #fff;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  align-items: center;
+  opacity: 0;
+  transition: opacity 0.3s;
+}
+
+.pdf-preview-box:hover .pdf-preview-mask {
+  opacity: 1;
+}
+
+.pdf-preview-mask i {
+  font-size: 20px;
+  margin-bottom: 5px;
 }
 </style>
