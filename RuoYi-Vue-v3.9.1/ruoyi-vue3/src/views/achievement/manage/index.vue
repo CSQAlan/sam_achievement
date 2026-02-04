@@ -1,5 +1,6 @@
 <template>
-  <div v-show="!pageModeActive" class="app-container">
+  <div class="manage-index-root">
+    <div v-show="!pageModeActive" class="app-container">
     <!-- 搜索表单 -->
     <el-form :model="queryParams" ref="queryRef" :inline="true" v-show="showSearch" label-width="68px">
       <el-form-item label="成果ID" prop="achievementId">
@@ -224,25 +225,28 @@
         @pagination="getList"
     />
 
-  </div>
+    </div>
 
-  <AchievementForm
-      v-show="pageModeActive"
-      ref="achievementFormRef"
-      :get-fn="getFn"
-      :add-fn="addFn"
-      :update-fn="updateFn"
-      :page-mode="pageModeActive"
-      :read-only="formReadOnly"
-      :show-submit="formShowSubmit"
-      cancel-text="返回"
-      @ok="handleFormOk"
-      @cancel="handleFormCancel"
-  />
+    <AchievementForm
+        v-if="pageModeActive"
+        :key="pageModeKey"
+        ref="achievementFormRef"
+        :get-fn="getFn"
+        :add-fn="addFn"
+        :update-fn="updateFn"
+        :page-mode="pageModeActive"
+        :read-only="formReadOnly"
+        :show-submit="formShowSubmit"
+        cancel-text="返回"
+        @ok="handleFormOk"
+        @cancel="handleFormCancel"
+    />
+  </div>
 </template>
 
 <script setup>
-import { ref, reactive, computed, getCurrentInstance, nextTick } from 'vue';
+import { ref, reactive, computed, getCurrentInstance, nextTick, watch, onActivated } from 'vue';
+import { useRoute } from 'vue-router';
 import { useDict } from '@/utils/dict';
 import AchievementForm from './AchievementForm.vue';
 import { listManage, getManage, addManage, updateManage, delManage } from '@/api/achievement/manage';
@@ -263,6 +267,7 @@ const props = defineProps({
 });
 
 const { proxy } = getCurrentInstance();
+const route = useRoute();
 
 const listFn = computed(() => props.listFn || listManage);
 const getFn = computed(() => props.getFn || getManage);
@@ -316,6 +321,7 @@ const multiple = ref(true);
 const ids = ref([]);
 const achievementFormRef = ref(null);
 const pageModeActive = ref(false);
+const pageModeKey = ref(0);
 const formReadOnly = ref(false);
 const formShowSubmit = ref(true);
 
@@ -391,10 +397,28 @@ function handleReview(row) {
   openPageForm(id, { readOnly: true });
 }
 
+function refreshFromRoute() {
+  pageModeActive.value = false;
+  formReadOnly.value = false;
+  formShowSubmit.value = true;
+  nextTick(() => {
+    getList();
+  });
+}
+
+watch(() => route.fullPath, () => {
+  refreshFromRoute();
+});
+
+onActivated(() => {
+  refreshFromRoute();
+});
+
 function openPageForm(id, options = {}) {
   formReadOnly.value = !!options.readOnly;
   formShowSubmit.value = !formReadOnly.value;
   pageModeActive.value = true;
+  pageModeKey.value = Date.now();
   nextTick(() => {
     achievementFormRef.value?.open(id);
   });
@@ -410,5 +434,11 @@ function handleFormCancel() {
 }
 
 getList();
+</script>
+
+<script>
+export default {
+  name: 'AchievementManageIndex'
+}
 </script>
 

@@ -25,3 +25,9 @@ import {
 
 const { college_audit_status } = useDict('college_audit_status');
 </script>
+
+<script>
+export default {
+  name: 'CollegeLevelReviewed'
+}
+</script>
