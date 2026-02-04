@@ -1,5 +1,5 @@
 <template>
-  <div class="app-container">
+  <div v-show="!pageModeActive" class="app-container">
     <!-- 搜索表单 -->
     <el-form :model="queryParams" ref="queryRef" :inline="true" v-show="showSearch" label-width="68px">
       <el-form-item label="成果ID" prop="achievementId">
@@ -224,20 +224,25 @@
         @pagination="getList"
     />
 
-    <AchievementForm
-        ref="achievementFormRef"
-        :get-fn="getFn"
-        :add-fn="addFn"
-        :update-fn="updateFn"
-        :page-mode="pageMode"
-        @ok="getList"
-    />
   </div>
+
+  <AchievementForm
+      v-show="pageModeActive"
+      ref="achievementFormRef"
+      :get-fn="getFn"
+      :add-fn="addFn"
+      :update-fn="updateFn"
+      :page-mode="pageModeActive"
+      :read-only="formReadOnly"
+      :show-submit="formShowSubmit"
+      cancel-text="返回"
+      @ok="handleFormOk"
+      @cancel="handleFormCancel"
+  />
 </template>
 
 <script setup>
-import { ref, reactive, computed, getCurrentInstance } from 'vue';
-import { useRouter } from 'vue-router';
+import { ref, reactive, computed, getCurrentInstance, nextTick } from 'vue';
 import { useDict } from '@/utils/dict';
 import AchievementForm from './AchievementForm.vue';
 import { listManage, getManage, addManage, updateManage, delManage } from '@/api/achievement/manage';
@@ -258,7 +263,6 @@ const props = defineProps({
 });
 
 const { proxy } = getCurrentInstance();
-const router = useRouter();
 
 const listFn = computed(() => props.listFn || listManage);
 const getFn = computed(() => props.getFn || getManage);
@@ -267,7 +271,6 @@ const updateFn = computed(() => props.updateFn || updateManage);
 const delFn = computed(() => props.delFn || delManage);
 
 const exportUrl = computed(() => props.exportUrl || 'achievement/manage/export');
-const pageMode = computed(() => props.pageMode);
 const showSearch = computed(() => props.showSearch);
 
 const permissionPrefix = computed(() => props.permissionPrefix || 'achievement:manage');
@@ -312,6 +315,9 @@ const single = ref(true);
 const multiple = ref(true);
 const ids = ref([]);
 const achievementFormRef = ref(null);
+const pageModeActive = ref(false);
+const formReadOnly = ref(false);
+const formShowSubmit = ref(true);
 
 const auditStatus = computed(() => {
   if (props.auditDict && Array.isArray(props.auditDict)) return props.auditDict;
@@ -352,12 +358,12 @@ function handleSelectionChange(selection) {
 }
 
 function handleAdd() {
-  achievementFormRef.value?.open();
+  openPageForm();
 }
 
 function handleUpdate(row) {
   const _achievementId = row?.achievementId || ids.value[0];
-  if (_achievementId) achievementFormRef.value?.open(_achievementId);
+  if (_achievementId) openPageForm(_achievementId, { readOnly: false });
 }
 
 function handleDelete(row) {
@@ -381,10 +387,26 @@ function handleExport() {
 
 function handleReview(row) {
   const id = row?.achievementId;
-  if (!id || !props.reviewRoute) return;
-  const query = { id };
-  if (props.reviewSource) query.source = props.reviewSource;
-  router.push({ path: props.reviewRoute, query });
+  if (!id) return;
+  openPageForm(id, { readOnly: true });
+}
+
+function openPageForm(id, options = {}) {
+  formReadOnly.value = !!options.readOnly;
+  formShowSubmit.value = !formReadOnly.value;
+  pageModeActive.value = true;
+  nextTick(() => {
+    achievementFormRef.value?.open(id);
+  });
+}
+
+function handleFormOk() {
+  pageModeActive.value = false;
+  getList();
+}
+
+function handleFormCancel() {
+  pageModeActive.value = false;
 }
 
 getList();
