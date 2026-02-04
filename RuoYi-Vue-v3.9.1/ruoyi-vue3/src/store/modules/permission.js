@@ -62,6 +62,21 @@ function filterAsyncRouter(asyncRouterMap, lastRouter = false, type = false) {
       route.children = filterChildren(route.children)
     }
     if (route.component) {
+      // Ensure unique names for routes that share a common component to avoid keep-alive cache collisions
+      if (typeof route.component === 'string') {
+        const comp = route.component.toLowerCase()
+        if (comp.includes('achievement/college_level_unreviewed')) {
+          route.name = 'CollegeLevelUnreviewed'
+        } else if (comp.includes('achievement/college_level_reviewed')) {
+          route.name = 'CollegeLevelReviewed'
+        } else if (comp.includes('achievement/school_level_unreviewed')) {
+          route.name = 'SchoolLevelUnreviewed'
+        } else if (comp.includes('achievement/school_level_reviewed')) {
+          route.name = 'SchoolLevelReviewed'
+        } else if (comp.includes('achievement/manage/index')) {
+          route.name = 'AchievementManage'
+        }
+      }
       // Layout ParentView 组件特殊处理
       if (route.component === 'Layout') {
         route.component = Layout
