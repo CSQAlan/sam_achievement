@@ -621,7 +621,7 @@ const { proxy } = getCurrentInstance();
 const emit = defineEmits(["ok", "cancel"]);
 
 // ==========================================
-// Props 定义：复用 BaseOutcomeDialog
+// Props 定义：复用 AchievementForm
 // ==========================================
 const props = defineProps({
   // CRUD
