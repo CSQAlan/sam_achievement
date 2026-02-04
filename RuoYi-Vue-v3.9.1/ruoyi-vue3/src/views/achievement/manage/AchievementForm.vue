@@ -629,6 +629,9 @@ const props = defineProps({
   addFn: { type: Function, required: false },
   updateFn: { type: Function, required: false },
 
+  // ????
+  auditSource: { type: String, default: "" },
+
   // 模式：pageMode=true 为全屏，false 为弹窗
   pageMode: { type: Boolean, default: false },
 
@@ -644,7 +647,34 @@ const props = defineProps({
 });
 
 // ✅ 字典：使用 index.vue 中的正确字典
-const { achievement_category, group_type, award_rank, award_level_type } = proxy.useDict('achievement_category', 'group_type', 'award_rank', 'award_level_type');
+const { achievement_category, group_type, award_rank, award_level_type, college_audit_status, school_audit_status } = proxy.useDict('achievement_category', 'group_type', 'award_rank', 'award_level_type', 'college_audit_status', 'school_audit_status');
+
+const auditSource = computed(() => String(props.auditSource || "").toLowerCase());
+const auditEnabled = computed(() => auditSource.value.includes("unreviewed"));
+const isCollegeAudit = computed(() => auditSource.value.includes("college"));
+const isSchoolAudit = computed(() => auditSource.value.includes("school"));
+
+const selectedAuditStatus = ref("");
+const rejectReason = ref("");
+
+const currentAuditDict = computed(() => {
+  if (isCollegeAudit.value) return college_audit_status.value || [];
+  if (isSchoolAudit.value) return school_audit_status.value || [];
+  return [];
+});
+
+const nextStatusOptions = computed(() => {
+  const options = currentAuditDict.value || [];
+  if (isCollegeAudit.value) return options.filter(d => ["1", "2"].includes(String(d.value)));
+  if (isSchoolAudit.value) return options.filter(d => ["0", "1"].includes(String(d.value)));
+  return [];
+});
+
+const isCollegeReject = computed(() => isCollegeAudit.value && String(selectedAuditStatus.value) === "1");
+const isSchoolReject = computed(() => isSchoolAudit.value && String(selectedAuditStatus.value) === "0");
+const showAuditSection = computed(() => auditEnabled.value);
+const showRejectReason = computed(() => auditEnabled.value && (isCollegeReject.value || isSchoolReject.value));
+
 
 const isPageMode = computed(() => props.pageMode);
 
@@ -680,6 +710,48 @@ const data = reactive({
   }
 });
 const { form, rules } = toRefs(data);
+
+function initAuditFromForm() {
+  if (!auditEnabled.value) return;
+  const currentStatus = form.value?.auditStatus;
+  if (currentStatus !== null && currentStatus !== undefined && currentStatus !== '') {
+    selectedAuditStatus.value = String(currentStatus);
+  } else {
+    selectedAuditStatus.value = '';
+  }
+  if (isCollegeAudit.value) {
+    rejectReason.value = form.value?.collegeAuditReason || '';
+  } else if (isSchoolAudit.value) {
+    rejectReason.value = form.value?.schoolAuditReason || '';
+  } else {
+    rejectReason.value = '';
+  }
+}
+
+watch(
+  nextStatusOptions,
+  () => {
+    if (!auditEnabled.value) return;
+    if (selectedAuditStatus.value) return;
+    const options = nextStatusOptions.value || [];
+    if (!options.length) {
+      selectedAuditStatus.value = '';
+      return;
+    }
+    const preferValue = isCollegeAudit.value ? '2' : '1';
+    const prefer = options.find(opt => String(opt.value) === preferValue);
+    selectedAuditStatus.value = String((prefer || options[0]).value);
+  },
+  { immediate: true }
+);
+
+watch(
+  () => selectedAuditStatus.value,
+  () => {
+    if (!showRejectReason.value) rejectReason.value = '';
+  }
+);
+
 
 const submitTextComputed = computed(() => {
   if (props.submitText) return props.submitText;
@@ -724,6 +796,7 @@ function open(id) {
   reset();
   getDeptTree();
   activeAttachmentTab.value = 'award';
+  initAuditFromForm();
   if (id) {
     title.value = props.titleEdit;
     loadDetail(id);
@@ -763,6 +836,7 @@ function loadDetail(id) {
       });
     }
     if (form.value.isReimburse == null) form.value.isReimburse = 0;
+    initAuditFromForm();
   });
 }
 
@@ -775,6 +849,8 @@ function reset() {
   };
   samAchievementParticipantList.value = [];
   samAchievementAdvisorList.value = [];
+  selectedAuditStatus.value = "";
+  rejectReason.value = "";
   Object.keys(previewUrls).forEach(key => {
     if (previewUrls[key]) {
       window.URL.revokeObjectURL(previewUrls[key]);
