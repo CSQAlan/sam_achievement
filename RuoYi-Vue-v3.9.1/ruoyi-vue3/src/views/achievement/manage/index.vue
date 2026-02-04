@@ -26,6 +26,22 @@
             @keyup.enter="handleQuery"
         />
       </el-form-item>
+      <el-form-item label="参赛选手" prop="contestant">
+        <el-input
+            v-model="queryParams.contestant"
+            placeholder="请输入参赛选手"
+            clearable
+            @keyup.enter="handleQuery"
+        />
+      </el-form-item>
+      <el-form-item label="指导老师" prop="instructor">
+        <el-input
+            v-model="queryParams.instructor"
+            placeholder="请输入指导老师"
+            clearable
+            @keyup.enter="handleQuery"
+        />
+      </el-form-item>
       <el-form-item label="类别" prop="category">
         <el-select v-model="queryParams.category" placeholder="请选择类别" clearable>
           <el-option
@@ -44,10 +60,38 @@
             @keyup.enter="handleQuery"
         />
       </el-form-item>
-      <el-form-item label="审核状态" prop="reviewStatus">
-        <el-select v-model="queryParams.reviewStatus" placeholder="请选择审核状态" clearable>
+      <el-form-item label="级别" prop="level">
+        <el-select v-model="queryParams.level" placeholder="请选择级别" clearable>
           <el-option
-              v-for="dict in auditStatus"
+              v-for="dict in award_level_type"
+              :key="dict.value"
+              :label="dict.label"
+              :value="dict.value"
+          />
+        </el-select>
+      </el-form-item>
+      <el-form-item label="获奖等级" prop="grade">
+        <el-select v-model="queryParams.grade" placeholder="请选择获奖等级" clearable>
+          <el-option
+              v-for="dict in award_rank"
+              :key="dict.value"
+              :label="dict.label"
+              :value="dict.value"
+          />
+        </el-select>
+      </el-form-item>
+      <el-form-item label="证书编号" prop="certificateNo">
+        <el-input
+            v-model="queryParams.certificateNo"
+            placeholder="请输入证书编号"
+            clearable
+            @keyup.enter="handleQuery"
+        />
+      </el-form-item>
+      <el-form-item label="组别" prop="groupId">
+        <el-select v-model="queryParams.groupId" placeholder="请选择组别" clearable>
+          <el-option
+              v-for="dict in group_type"
               :key="dict.value"
               :label="dict.label"
               :value="dict.value"
@@ -64,12 +108,23 @@
             end-placeholder="结束时间"
         />
       </el-form-item>
+      <el-form-item label="审核状态" prop="reviewStatus">
+        <el-select v-model="queryParams.reviewStatus" placeholder="请选择审核状态" clearable>
+          <el-option
+              v-for="dict in auditStatus"
+              :key="dict.value"
+              :label="dict.label"
+              :value="dict.value"
+          />
+        </el-select>
+      </el-form-item>
       <el-form-item>
         <el-button type="primary" icon="Search" @click="handleQuery">搜索</el-button>
         <el-button icon="Refresh" @click="resetQuery">重置</el-button>
       </el-form-item>
     </el-form>
 
+    <!-- 操作按钮 -->
     <el-row :gutter="10" class="mb8">
       <el-col :span="1.5">
         <el-button
@@ -77,7 +132,7 @@
             plain
             icon="Plus"
             @click="handleAdd"
-        v-hasPermi="permAdd"
+            v-hasPermi="permAdd"
         >新增</el-button>
       </el-col>
       <el-col :span="1.5">
@@ -87,7 +142,7 @@
             icon="Edit"
             :disabled="single"
             @click="handleUpdate"
-        v-hasPermi="permEdit"
+            v-hasPermi="permEdit"
         >修改</el-button>
       </el-col>
       <el-col :span="1.5">
@@ -97,7 +152,7 @@
             icon="Delete"
             :disabled="multiple"
             @click="handleDelete"
-        v-hasPermi="permRemove"
+            v-hasPermi="permRemove"
         >删除</el-button>
       </el-col>
       <el-col :span="1.5">
@@ -106,16 +161,19 @@
             plain
             icon="Download"
             @click="handleExport"
-        v-hasPermi="permExport"
+            v-hasPermi="permExport"
         >导出</el-button>
       </el-col>
     </el-row>
 
+    <!-- 数据表格 -->
     <el-table v-loading="loading" :data="listData" @selection-change="handleSelectionChange">
       <el-table-column type="selection" width="55" align="center" />
       <el-table-column label="成果ID" align="center" prop="achievementId" />
       <el-table-column label="比赛" align="center" prop="track" />
       <el-table-column label="届次" align="center" prop="sessionId" />
+      <el-table-column label="参赛选手" align="center" prop="contestant" />
+      <el-table-column label="指导老师" align="center" prop="instructor" />
       <el-table-column label="类别" align="center" prop="category">
         <template #default="scope">
           <dict-tag :options="achievement_category" :value="scope.row.category" />
@@ -156,8 +214,8 @@
           <el-button link type="primary" icon="Delete" @click="handleDelete(scope.row)" v-hasPermi="permRemove">删除</el-button>
         </template>
       </el-table-column>
-    </el-table>
 
+    </el-table>
     <pagination
         v-show="total > 0"
         :total="total"
