@@ -116,6 +116,7 @@ const nextStatusOptions = computed(() => {
 
 const selectedAuditStatus = ref("");
 const rejectReason = ref("");
+const auditInitialized = ref(false);
 
 // 是否为院级来源
 const isCollegeSource = computed(() => source.value.startsWith("college"));
@@ -160,6 +161,61 @@ watch(
     () => {
       if (!showRejectReason.value) rejectReason.value = "";
     }
+);
+
+function syncAuditFromForm() {
+  if (auditInitialized.value) return;
+  const form = dlgRef.value?.getForm?.();
+  const id = route.query.id;
+  if (!form || !id || !form.achievementId) return;
+  if (String(form.achievementId) !== String(id)) return;
+
+  if (isCollegeSource.value) {
+    const status = form.reviewResult ?? form.review_result;
+    if (status === 1 || status === "1" || status === 2 || status === "2") {
+      selectedAuditStatus.value = String(status);
+    } else {
+      setDefaultSelected();
+    }
+
+    if (String(selectedAuditStatus.value) === "1") {
+      rejectReason.value = form.reviewReason || "";
+    } else {
+      rejectReason.value = "";
+    }
+  } else if (isSchoolSource.value) {
+    const status = form.schooiReviewResult ?? form.schooi_review_result ?? form.schoolReviewResult ?? form.school_review_result;
+    if (status === 0 || status === "0" || status === 1 || status === "1") {
+      selectedAuditStatus.value = String(status);
+    } else {
+      setDefaultSelected();
+    }
+
+    if (String(selectedAuditStatus.value) === "0") {
+      rejectReason.value = form.schoolReviewReason || "";
+    } else {
+      rejectReason.value = "";
+    }
+  }
+
+  auditInitialized.value = true;
+}
+
+watch(
+  () => {
+    const form = dlgRef.value?.getForm?.();
+    return [
+      form?.achievementId,
+      form?.reviewResult,
+      form?.schooiReviewResult,
+      form?.reviewReason,
+      form?.schoolReviewReason
+    ];
+  },
+  () => {
+    syncAuditFromForm();
+  },
+  { immediate: true }
 );
 
 function handleBack() {
@@ -286,6 +342,7 @@ async function submitAudit() {
 
 function loadCurrent() {
   formKey.value = Date.now();
+  auditInitialized.value = false;
   nextTick(() => {
     const id = route.query.id;
     dlgRef.value?.open(id);
