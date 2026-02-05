@@ -558,10 +558,33 @@ watch(() => form.value.filePayment, (uuid) => loadSafePreview(uuid, 'payment'));
 watch(() => form.value.fileInvoice, (uuid) => loadSafePreview(uuid, 'invoice'));
 watch(() => form.value.fileReceiptCode, (uuid) => loadSafePreview(uuid, 'receipt'));
 
+// 【修改】详情按钮逻辑：通过 Blob 方式打开，解决 401 问题
 function handleOpenDetail(uuid) {
   if (!uuid) return;
-  const url = import.meta.env.VITE_APP_BASE_API + "/common/download/resource?resource=" + uuid;
-  window.open(url);
+  
+  // 提示用户正在加载（可选）
+  proxy.$modal.loading("正在打开文件...");
+
+  request({
+    url: '/common/download/resource',
+    method: 'get',
+    params: { resource: uuid },
+    responseType: 'blob' // 关键：必须指定响应类型为 blob
+  }).then(blob => {
+    proxy.$modal.closeLoading();
+    
+    // 1. 创建一个临时的 Blob URL
+    const blobUrl = window.URL.createObjectURL(blob);
+    
+    // 2. 在新窗口打开这个 Blob URL
+    // 浏览器会自动识别文件类型（如PDF会直接预览，图片会显示）
+    window.open(blobUrl);
+    
+  }).catch(err => {
+    proxy.$modal.closeLoading();
+    console.error("打开文件失败", err);
+    proxy.$modal.msgError("文件打开失败，请稍后重试");
+  });
 }
 
 function open(id) {
