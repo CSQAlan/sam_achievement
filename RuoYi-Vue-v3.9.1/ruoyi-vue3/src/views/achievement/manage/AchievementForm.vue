@@ -7,11 +7,9 @@
         </div>
         <div class="page-actions">
           <slot name="footer-left" :form="form"></slot>
-
           <el-button v-if="showSubmit && !readOnly" type="warning" plain @click="handleSaveDraft">
             暂存草稿 (本地)
           </el-button>
-
           <el-button v-if="showSubmit && !readOnly" type="primary" @click="submitForm">
             {{ submitTextComputed }}
           </el-button>
@@ -31,221 +29,7 @@
         <el-form ref="outcomeRefPage" :model="form" :rules="rules" label-width="110px" :disabled="readOnly">
           <el-row :gutter="20">
             <el-col :span="12">
-               <el-row>
-                <el-col :span="12">
-                  <el-form-item label="类别" prop="category">
-                    <el-select v-model="form.category" placeholder="请选择类别" filterable>
-                      <el-option v-for="dict in achievement_category" :key="dict.value" :label="dict.label" :value="dict.value" />
-                    </el-select>
-                  </el-form-item>
-                </el-col>
-                <el-col :span="12">
-                  <el-form-item label="届次" prop="sessionId">
-                    <el-input v-model="form.sessionId" placeholder="例：15" />
-                  </el-form-item>
-                </el-col>
-              </el-row>
               <el-row>
-                <el-col :span="12">
-                  <el-form-item label="所属学院" prop="ownerDepId">
-                    <el-tree-select v-model="form.ownerDepId" :data="deptOptions"
-                      :props="{ value: 'deptId', label: 'deptName', children: 'children' }" value-key="deptId"
-                      placeholder="请选择所属学院" check-strictly />
-                  </el-form-item>
-                </el-col>
-                <el-col :span="12">
-                  <el-form-item label="作品名称" prop="name">
-                    <el-input v-model="form.name" placeholder="请输入作品名称(选填)" />
-                  </el-form-item>
-                </el-col>
-              </el-row>
-               <el-row>
-                <el-col :span="12">
-                  <el-form-item label="获奖级别" prop="level">
-                    <el-select v-model="form.level" placeholder="请选择">
-                      <el-option v-for="dict in award_level_type" :key="dict.value" :label="dict.label" :value="dict.value" />
-                    </el-select>
-                  </el-form-item>
-                </el-col>
-                <el-col :span="12">
-                  <el-form-item label="奖项等级" prop="grade">
-                    <el-select v-model="form.grade" placeholder="请选择">
-                      <el-option v-for="dict in award_rank" :key="dict.value" :label="dict.label" :value="dict.value" />
-                    </el-select>
-                  </el-form-item>
-                </el-col>
-              </el-row>
-               </el-col>
-
-            <el-col :span="12">
-              <div class="attach-card">
-                <el-divider content-position="left">附件管理</el-divider>
-                <el-tabs tab-position="left" style="height: 100%; min-height: 500px;" v-model="activeAttachmentTab">
-                  
-                  <el-tab-pane label="奖状(证书)" name="award">
-                    <div class="upload-pane-content">
-                      <el-alert v-if="!form.fileAward" title="请上传获奖证书" type="info" :closable="false" class="mb10"/>
-                      <el-form-item label-width="0" prop="fileAward">
-                        <file-upload v-model="form.fileAward" :limit="1" :fileSize="10" :fileType="['pdf']" 
-                                     class="hide-file-list" :upload-url="uploadurl" 
-                                     v-if="!readOnly && !form.fileAward"/>
-                        
-                        <div v-if="previewUrls.award" class="preview-box">
-                          <iframe :src="previewUrls.award" width="100%" height="450px" frameborder="0"></iframe>
-                        </div>
-
-                        <div v-if="form.fileAward" class="custom-file-row">
-                          <div class="file-name"><el-icon class="mr5"><Document /></el-icon><span>{{ getFileName(form.fileAward) }}</span></div>
-                          <div class="file-action">
-                            <el-button link type="primary" :icon="View" @click="handleOpenDetail(form.fileAward)">详情</el-button>
-                            <el-button link type="primary" :icon="Download" @click="handleDownload(form.fileAward)">下载</el-button>
-                            <el-button v-if="!readOnly" link type="danger" :icon="Delete" @click="form.fileAward = null">删除</el-button>
-                          </div>
-                        </div>
-                      </el-form-item>
-                    </div>
-                  </el-tab-pane>
-
-                  <el-tab-pane label="比赛通知" name="notice">
-                    <div class="upload-pane-content">
-                      <el-alert v-if="!form.fileNotice" title="请上传比赛通知" type="info" :closable="false" class="mb10"/>
-                      <el-form-item label-width="0" prop="fileNotice">
-                        <file-upload v-model="form.fileNotice" :limit="1" :fileSize="10" :fileType="['pdf']" 
-                                     class="hide-file-list" :upload-url="uploadurl" 
-                                     v-if="!readOnly && !form.fileNotice"/>
-                        <div v-if="previewUrls.notice" class="preview-box">
-                          <iframe :src="previewUrls.notice" width="100%" height="450px" frameborder="0"></iframe>
-                        </div>
-                        <div v-if="form.fileNotice" class="custom-file-row">
-                          <div class="file-name"><el-icon class="mr5"><Document /></el-icon><span>{{ getFileName(form.fileNotice) }}</span></div>
-                          <div class="file-action">
-                            <el-button link type="primary" :icon="View" @click="handleOpenDetail(form.fileNotice)">详情</el-button>
-                            <el-button link type="primary" :icon="Download" @click="handleDownload(form.fileNotice)">下载</el-button>
-                            <el-button v-if="!readOnly" link type="danger" :icon="Delete" @click="form.fileNotice = null">删除</el-button>
-                          </div>
-                        </div>
-                      </el-form-item>
-                    </div>
-                  </el-tab-pane>
-
-                  <el-tab-pane label="参赛作品" name="work">
-                    <div class="upload-pane-content">
-                      <el-alert v-if="!form.fileWork" title="请上传参赛作品" type="info" :closable="false" class="mb10"/>
-                      <el-form-item label-width="0" prop="fileWork">
-                        <file-upload v-model="form.fileWork" :limit="1" :fileSize="10" :fileType="['pdf']" 
-                                     class="hide-file-list" :upload-url="uploadurl" 
-                                     v-if="!readOnly && !form.fileWork"/>
-                        <div v-if="previewUrls.work" class="preview-box">
-                          <iframe :src="previewUrls.work" width="100%" height="450px" frameborder="0"></iframe>
-                        </div>
-                        <div v-if="form.fileWork" class="custom-file-row">
-                          <div class="file-name"><el-icon class="mr5"><Document /></el-icon><span>{{ getFileName(form.fileWork) }}</span></div>
-                          <div class="file-action">
-                            <el-button link type="primary" :icon="View" @click="handleOpenDetail(form.fileWork)">详情</el-button>
-                            <el-button link type="primary" :icon="Download" @click="handleDownload(form.fileWork)">下载</el-button>
-                            <el-button v-if="!readOnly" link type="danger" :icon="Delete" @click="form.fileWork = null">删除</el-button>
-                          </div>
-                        </div>
-                      </el-form-item>
-                    </div>
-                  </el-tab-pane>
-
-                  <el-tab-pane label="支付记录" name="payment" v-if="form.isReimburse === 1">
-                    <div class="upload-pane-content">
-                      <el-alert v-if="!form.filePayment" title="请上传转账截图" type="warning" :closable="false" class="mb10"/>
-                      <el-form-item label-width="0" prop="filePayment">
-                        <file-upload v-model="form.filePayment" :limit="1" :fileSize="10" :fileType="['pdf']" 
-                                     class="hide-file-list" :upload-url="uploadurl" 
-                                     v-if="!readOnly && !form.filePayment"/>
-                        <div v-if="previewUrls.payment" class="preview-box">
-                          <iframe :src="previewUrls.payment" width="100%" height="450px" frameborder="0"></iframe>
-                        </div>
-                        <div v-if="form.filePayment" class="custom-file-row">
-                          <div class="file-name"><el-icon class="mr5"><Document /></el-icon><span>{{ getFileName(form.filePayment) }}</span></div>
-                          <div class="file-action">
-                            <el-button link type="primary" :icon="View" @click="handleOpenDetail(form.filePayment)">详情</el-button>
-                            <el-button link type="primary" :icon="Download" @click="handleDownload(form.filePayment)">下载</el-button>
-                            <el-button v-if="!readOnly" link type="danger" :icon="Delete" @click="form.filePayment = null">删除</el-button>
-                          </div>
-                        </div>
-                      </el-form-item>
-                    </div>
-                  </el-tab-pane>
-
-                  <el-tab-pane label="正规发票" name="invoice" v-if="form.isReimburse === 1">
-                    <div class="upload-pane-content">
-                      <el-alert v-if="!form.fileInvoice" title="请上传电子发票" type="warning" :closable="false" class="mb10"/>
-                      <el-form-item label-width="0" prop="fileInvoice">
-                        <file-upload v-model="form.fileInvoice" :limit="1" :fileSize="10" :fileType="['pdf']" 
-                                     class="hide-file-list" :upload-url="uploadurl" 
-                                     v-if="!readOnly && !form.fileInvoice"/>
-                        <div v-if="previewUrls.invoice" class="preview-box">
-                          <iframe :src="previewUrls.invoice" width="100%" height="450px" frameborder="0"></iframe>
-                        </div>
-                        <div v-if="form.fileInvoice" class="custom-file-row">
-                          <div class="file-name"><el-icon class="mr5"><Document /></el-icon><span>{{ getFileName(form.fileInvoice) }}</span></div>
-                          <div class="file-action">
-                            <el-button link type="primary" :icon="View" @click="handleOpenDetail(form.fileInvoice)">详情</el-button>
-                            <el-button link type="primary" :icon="Download" @click="handleDownload(form.fileInvoice)">下载</el-button>
-                            <el-button v-if="!readOnly" link type="danger" :icon="Delete" @click="form.fileInvoice = null">删除</el-button>
-                          </div>
-                        </div>
-                      </el-form-item>
-                    </div>
-                  </el-tab-pane>
-
-                  <el-tab-pane label="收款码" name="receipt" v-if="form.isReimburse === 1">
-                    <div class="upload-pane-content">
-                      <el-alert v-if="!form.fileReceiptCode" title="请上传用于接收报销款的收款码" type="warning" :closable="false" class="mb10"/>
-                      <el-form-item label-width="0" prop="fileReceiptCode">
-                        <file-upload v-model="form.fileReceiptCode" :limit="1" :fileSize="10" :fileType="['pdf']" 
-                                     class="hide-file-list" :upload-url="uploadurl" 
-                                     v-if="!readOnly && !form.fileReceiptCode"/>
-                        <div v-if="previewUrls.receipt" class="preview-box">
-                          <iframe :src="previewUrls.receipt" width="100%" height="450px" frameborder="0"></iframe>
-                        </div>
-                        <div v-if="form.fileReceiptCode" class="custom-file-row">
-                          <div class="file-name"><el-icon class="mr5"><Document /></el-icon><span>{{ getFileName(form.fileReceiptCode) }}</span></div>
-                          <div class="file-action">
-                            <el-button link type="primary" :icon="View" @click="handleOpenDetail(form.fileReceiptCode)">详情</el-button>
-                            <el-button link type="primary" :icon="Download" @click="handleDownload(form.fileReceiptCode)">下载</el-button>
-                            <el-button v-if="!readOnly" link type="danger" :icon="Delete" @click="form.fileReceiptCode = null">删除</el-button>
-                          </div>
-                        </div>
-                      </el-form-item>
-                    </div>
-                  </el-tab-pane>
-
-                </el-tabs>
-              </div>
-            </el-col>
-          </el-row>
-        </el-form>
-      </div>
-    </div>
-  </div>
-
-  <el-dialog
-    v-else
-    :title="title"
-    v-model="visible"
-    width="1200px"
-    append-to-body
-    :close-on-click-modal="false"
-    @close="handleCancel"
-  >
-    <el-alert v-if="hasDraft" title="检测到本地有未提交的草稿" type="warning" show-icon :closable="false" style="margin-bottom: 10px;">
-      <template #default>
-        <el-button link type="primary" @click="recoverDraft">点击恢复草稿</el-button>
-        <el-button link type="danger" @click="clearDraft">丢弃</el-button>
-      </template>
-    </el-alert>
-
-    <div class="outcome-body">
-      <el-form ref="outcomeRefDialog" :model="form" :rules="rules" label-width="110px" :disabled="readOnly">
-        <el-row :gutter="20">
-           <el-col :span="12">
-               <el-row>
                 <el-col :span="12">
                   <el-form-item label="类别" prop="category">
                     <el-select v-model="form.category" placeholder="请选择类别" filterable>
@@ -394,144 +178,255 @@
             </el-col>
 
             <el-col :span="12">
-               <div class="attach-card">
+              <div class="attach-card">
                 <el-divider content-position="left">附件管理</el-divider>
-                <el-tabs tab-position="left" style="height: 100%; min-height: 500px;" v-model="activeAttachmentTab">
-                  <el-tab-pane label="奖状(证书)" name="award">
+                <el-tabs tab-position="left" style="height: 100%; min-height: 700px;" v-model="activeAttachmentTab">
+                  <el-tab-pane 
+                    v-for="item in visibleAttachments" 
+                    :key="item.name" 
+                    :label="item.label" 
+                    :name="item.name"
+                  >
                     <div class="upload-pane-content">
-                      <el-alert v-if="!form.fileAward" title="请上传获奖证书" type="info" :closable="false" class="mb10"/>
-                      <el-form-item label-width="0" prop="fileAward">
-                        <file-upload v-model="form.fileAward" :limit="1" :fileSize="10" :fileType="['pdf']" 
-                                     class="hide-file-list" :upload-url="uploadurl" 
-                                     v-if="!readOnly && !form.fileAward"/>
-                        <div v-if="previewUrls.award" class="preview-box">
-                          <iframe :src="previewUrls.award" width="100%" height="450px" frameborder="0"></iframe>
+                      <el-alert v-if="!form[item.prop]" :title="item.alert" :type="item.type || 'info'" :closable="false" class="mb10"/>
+                      <el-form-item label-width="0" :prop="item.prop">
+                        <file-upload 
+                          v-if="!readOnly && !form[item.prop]"
+                          v-model="form[item.prop]" 
+                          :limit="1" 
+                          :fileSize="10" 
+                          :fileType="['pdf']" 
+                          class="hide-file-list" 
+                          :upload-url="uploadUrl" 
+                        />
+                        <div v-if="previewUrls[item.name]" class="preview-box">
+                          <iframe :src="previewUrls[item.name]" width="100%" height="650px" frameborder="0"></iframe>
                         </div>
-                        <div v-if="form.fileAward" class="custom-file-row">
-                          <div class="file-name"><el-icon class="mr5"><Document /></el-icon><span>{{ getFileName(form.fileAward) }}</span></div>
-                          <div class="file-action">
-                            <el-button link type="primary" :icon="View" @click="handleOpenDetail(form.fileAward)">详情</el-button>
-                            <el-button link type="primary" :icon="Download" @click="handleDownload(form.fileAward)">下载</el-button>
-                            <el-button v-if="!readOnly" link type="danger" :icon="Delete" @click="form.fileAward = null">删除</el-button>
+                        <div v-if="form[item.prop]" class="custom-file-row">
+                          <div class="file-name">
+                            <el-icon class="mr5"><Document /></el-icon>
+                            <span>{{ getFileName(form[item.prop]) }}</span>
                           </div>
-                        </div>
-                      </el-form-item>
-                    </div>
-                  </el-tab-pane>
-
-                  <el-tab-pane label="比赛通知" name="notice">
-                    <div class="upload-pane-content">
-                      <el-alert v-if="!form.fileNotice" title="请上传比赛通知" type="info" :closable="false" class="mb10"/>
-                      <el-form-item label-width="0" prop="fileNotice">
-                        <file-upload v-model="form.fileNotice" :limit="1" :fileSize="10" :fileType="['pdf']" 
-                                     class="hide-file-list" :upload-url="uploadurl" 
-                                     v-if="!readOnly && !form.fileNotice"/>
-                        <div v-if="previewUrls.notice" class="preview-box">
-                          <iframe :src="previewUrls.notice" width="100%" height="450px" frameborder="0"></iframe>
-                        </div>
-                        <div v-if="form.fileNotice" class="custom-file-row">
-                          <div class="file-name"><el-icon class="mr5"><Document /></el-icon><span>{{ getFileName(form.fileNotice) }}</span></div>
                           <div class="file-action">
-                            <el-button link type="primary" :icon="View" @click="handleOpenDetail(form.fileNotice)">详情</el-button>
-                            <el-button link type="primary" :icon="Download" @click="handleDownload(form.fileNotice)">下载</el-button>
-                            <el-button v-if="!readOnly" link type="danger" :icon="Delete" @click="form.fileNotice = null">删除</el-button>
-                          </div>
-                        </div>
-                      </el-form-item>
-                    </div>
-                  </el-tab-pane>
-                  
-                  <el-tab-pane label="参赛作品" name="work">
-                    <div class="upload-pane-content">
-                      <el-alert v-if="!form.fileWork" title="请上传参赛作品" type="info" :closable="false" class="mb10"/>
-                      <el-form-item label-width="0" prop="fileWork">
-                        <file-upload v-model="form.fileWork" :limit="1" :fileSize="10" :fileType="['pdf']" 
-                                     class="hide-file-list" :upload-url="uploadurl" 
-                                     v-if="!readOnly && !form.fileWork"/>
-                        <div v-if="previewUrls.work" class="preview-box">
-                          <iframe :src="previewUrls.work" width="100%" height="450px" frameborder="0"></iframe>
-                        </div>
-                        <div v-if="form.fileWork" class="custom-file-row">
-                          <div class="file-name"><el-icon class="mr5"><Document /></el-icon><span>{{ getFileName(form.fileWork) }}</span></div>
-                          <div class="file-action">
-                            <el-button link type="primary" :icon="View" @click="handleOpenDetail(form.fileWork)">详情</el-button>
-                            <el-button link type="primary" :icon="Download" @click="handleDownload(form.fileWork)">下载</el-button>
-                            <el-button v-if="!readOnly" link type="danger" :icon="Delete" @click="form.fileWork = null">删除</el-button>
-                          </div>
-                        </div>
-                      </el-form-item>
-                    </div>
-                  </el-tab-pane>
-                  <el-tab-pane label="支付记录" name="payment" v-if="form.isReimburse === 1">
-                    <div class="upload-pane-content">
-                      <el-alert v-if="!form.filePayment" title="请上传转账截图" type="warning" :closable="false" class="mb10"/>
-                      <el-form-item label-width="0" prop="filePayment">
-                        <file-upload v-model="form.filePayment" :limit="1" :fileSize="10" :fileType="['pdf']" 
-                                     class="hide-file-list" :upload-url="uploadurl" 
-                                     v-if="!readOnly && !form.filePayment"/>
-                        <div v-if="previewUrls.payment" class="preview-box">
-                          <iframe :src="previewUrls.payment" width="100%" height="450px" frameborder="0"></iframe>
-                        </div>
-                        <div v-if="form.filePayment" class="custom-file-row">
-                          <div class="file-name"><el-icon class="mr5"><Document /></el-icon><span>{{ getFileName(form.filePayment) }}</span></div>
-                          <div class="file-action">
-                            <el-button link type="primary" :icon="View" @click="handleOpenDetail(form.filePayment)">详情</el-button>
-                            <el-button link type="primary" :icon="Download" @click="handleDownload(form.filePayment)">下载</el-button>
-                            <el-button v-if="!readOnly" link type="danger" :icon="Delete" @click="form.filePayment = null">删除</el-button>
-                          </div>
-                        </div>
-                      </el-form-item>
-                    </div>
-                  </el-tab-pane>
-                  <el-tab-pane label="正规发票" name="invoice" v-if="form.isReimburse === 1">
-                    <div class="upload-pane-content">
-                      <el-alert v-if="!form.fileInvoice" title="请上传电子发票" type="warning" :closable="false" class="mb10"/>
-                      <el-form-item label-width="0" prop="fileInvoice">
-                        <file-upload v-model="form.fileInvoice" :limit="1" :fileSize="10" :fileType="['pdf']" 
-                                     class="hide-file-list" :upload-url="uploadurl" 
-                                     v-if="!readOnly && !form.fileInvoice"/>
-                        <div v-if="previewUrls.invoice" class="preview-box">
-                          <iframe :src="previewUrls.invoice" width="100%" height="450px" frameborder="0"></iframe>
-                        </div>
-                        <div v-if="form.fileInvoice" class="custom-file-row">
-                          <div class="file-name"><el-icon class="mr5"><Document /></el-icon><span>{{ getFileName(form.fileInvoice) }}</span></div>
-                          <div class="file-action">
-                            <el-button link type="primary" :icon="View" @click="handleOpenDetail(form.fileInvoice)">详情</el-button>
-                            <el-button link type="primary" :icon="Download" @click="handleDownload(form.fileInvoice)">下载</el-button>
-                            <el-button v-if="!readOnly" link type="danger" :icon="Delete" @click="form.fileInvoice = null">删除</el-button>
-                          </div>
-                        </div>
-                      </el-form-item>
-                    </div>
-                  </el-tab-pane>
-                  <el-tab-pane label="收款码" name="receipt" v-if="form.isReimburse === 1">
-                    <div class="upload-pane-content">
-                      <el-alert v-if="!form.fileReceiptCode" title="请上传用于接收报销款的收款码" type="warning" :closable="false" class="mb10"/>
-                      <el-form-item label-width="0" prop="fileReceiptCode">
-                        <file-upload v-model="form.fileReceiptCode" :limit="1" :fileSize="10" :fileType="['pdf']" 
-                                     class="hide-file-list" :upload-url="uploadurl" 
-                                     v-if="!readOnly && !form.fileReceiptCode"/>
-                        <div v-if="previewUrls.receipt" class="preview-box">
-                          <iframe :src="previewUrls.receipt" width="100%" height="450px" frameborder="0"></iframe>
-                        </div>
-                        <div v-if="form.fileReceiptCode" class="custom-file-row">
-                          <div class="file-name"><el-icon class="mr5"><Document /></el-icon><span>{{ getFileName(form.fileReceiptCode) }}</span></div>
-                          <div class="file-action">
-                            <el-button link type="primary" :icon="View" @click="handleOpenDetail(form.fileReceiptCode)">详情</el-button>
-                            <el-button link type="primary" :icon="Download" @click="handleDownload(form.fileReceiptCode)">下载</el-button>
-                            <el-button v-if="!readOnly" link type="danger" :icon="Delete" @click="form.fileReceiptCode = null">删除</el-button>
+                            <el-button link type="primary" :icon="View" @click="handleOpenDetail(form[item.prop])">详情</el-button>
+                            <el-button link type="primary" :icon="Download" @click="handleDownload(form[item.prop])">下载</el-button>
+                            <el-button v-if="!readOnly" link type="danger" :icon="Delete" @click="form[item.prop] = null">删除</el-button>
                           </div>
                         </div>
                       </el-form-item>
                     </div>
                   </el-tab-pane>
                 </el-tabs>
-               </div>
+              </div>
             </el-col>
-        </el-row>
+          </el-row>
+        </el-form>
+      </div>
+    </div>
+  </div><el-dialog v-else :title="title" v-model="visible" width="1200px" append-to-body :close-on-click-modal="false" @close="handleCancel" top="5vh">
+    <el-alert v-if="hasDraft" title="检测到本地有未提交的草稿" type="warning" show-icon :closable="false" style="margin-bottom: 10px;">
+      <template #default>
+        <el-button link type="primary" @click="recoverDraft">点击恢复草稿</el-button>
+        <el-button link type="danger" @click="clearDraft">丢弃</el-button>
+      </template>
+    </el-alert>
+    <div class="outcome-body">
+      <el-form ref="outcomeRefDialog" :model="form" :rules="rules" label-width="110px" :disabled="readOnly">
+        <el-row :gutter="20">
+            <el-col :span="12">
+              <el-row>
+                <el-col :span="12">
+                  <el-form-item label="类别" prop="category">
+                    <el-select v-model="form.category" placeholder="请选择类别" filterable>
+                      <el-option v-for="dict in achievement_category" :key="dict.value" :label="dict.label" :value="dict.value" />
+                    </el-select>
+                  </el-form-item>
+                </el-col>
+                <el-col :span="12">
+                  <el-form-item label="届次" prop="sessionId">
+                    <el-input v-model="form.sessionId" placeholder="例：15" />
+                  </el-form-item>
+                </el-col>
+              </el-row>
+              <el-row>
+                <el-col :span="12">
+                  <el-form-item label="所属学院" prop="ownerDepId">
+                    <el-tree-select v-model="form.ownerDepId" :data="deptOptions"
+                      :props="{ value: 'deptId', label: 'deptName', children: 'children' }" value-key="deptId"
+                      placeholder="请选择所属学院" check-strictly />
+                  </el-form-item>
+                </el-col>
+                <el-col :span="12">
+                  <el-form-item label="作品名称" prop="name">
+                    <el-input v-model="form.name" placeholder="请输入作品名称(选填)" />
+                  </el-form-item>
+                </el-col>
+              </el-row>
+              <el-row>
+                <el-col :span="12">
+                  <el-form-item label="获奖级别" prop="level">
+                    <el-select v-model="form.level" placeholder="请选择">
+                      <el-option v-for="dict in award_level_type" :key="dict.value" :label="dict.label" :value="dict.value" />
+                    </el-select>
+                  </el-form-item>
+                </el-col>
+                <el-col :span="12">
+                  <el-form-item label="奖项等级" prop="grade">
+                    <el-select v-model="form.grade" placeholder="请选择">
+                      <el-option v-for="dict in award_rank" :key="dict.value" :label="dict.label" :value="dict.value" />
+                    </el-select>
+                  </el-form-item>
+                </el-col>
+              </el-row>
+              <el-row>
+                <el-col :span="12">
+                  <el-form-item label="赛道" prop="track">
+                    <el-input v-model="form.track" placeholder="请输入赛道" />
+                  </el-form-item>
+                </el-col>
+                <el-col :span="12">
+                  <el-form-item label="组别" prop="groupId">
+                    <el-select v-model="form.groupId" placeholder="请选择组别">
+                      <el-option v-for="dict in group_type" :key="dict.value" :label="dict.label" :value="dict.value" />
+                    </el-select>
+                  </el-form-item>
+                </el-col>
+              </el-row>
+              <el-row>
+                <el-col :span="12">
+                  <el-form-item label="证书编号" prop="certificateNo">
+                    <el-input v-model="form.certificateNo" placeholder="请输入证书编号" />
+                  </el-form-item>
+                </el-col>
+                <el-col :span="12">
+                  <el-form-item label="获奖时间" prop="awardTime">
+                    <el-date-picker clearable v-model="form.awardTime" type="date" value-format="YYYY-MM-DD"
+                      placeholder="选择日期" style="width: 100%" />
+                  </el-form-item>
+                </el-col>
+              </el-row>
+              <el-row>
+                <el-col :span="12">
+                  <el-form-item label="团队名称" prop="teamName">
+                    <el-input v-model="form.teamName" placeholder="请输入团队名称(选填)" />
+                  </el-form-item>
+                </el-col>
+                <el-col :span="12" v-if="form.isReimburse === 1">
+                  <el-form-item label="报名费" prop="fee">
+                    <el-input v-model="form.fee" placeholder="请输入金额">
+                      <template #append>元</template>
+                    </el-input>
+                  </el-form-item>
+                </el-col>
+              </el-row>
+              <el-divider content-position="left"><i class="el-icon-money"></i> 报销申请</el-divider>
+              <el-form-item label="是否申请报销" prop="isReimburse">
+                <el-radio-group v-model="form.isReimburse">
+                  <el-radio :label="1">是 (需要上传凭证)</el-radio>
+                  <el-radio :label="0">否</el-radio>
+                </el-radio-group>
+              </el-form-item>
+              <el-divider content-position="center">参赛选手信息</el-divider>
+              <el-row :gutter="10" class="mb8" v-if="!readOnly">
+                <el-col :span="1.5"><el-button type="primary" :icon="Plus" @click="handleAddParticipant">添加学生</el-button></el-col>
+                <el-col :span="1.5"><el-button type="danger" :icon="Delete" @click="handleDeleteParticipant">删除选中</el-button></el-col>
+              </el-row>
+              <el-table :data="samAchievementParticipantList" :row-class-name="rowParticipantIndex" @selection-change="handleParticipantSelectionChange">
+                <el-table-column v-if="!readOnly" type="selection" width="50" align="center" />
+                <el-table-column label="学生学号" prop="studentId">
+                  <template #default="scope">
+                    <el-input v-model="scope.row.studentId" placeholder="请输入学号" @blur="handleStudentBlur(scope.row)" :disabled="readOnly"/>
+                  </template>
+                </el-table-column>
+                <el-table-column label="姓名" align="center" prop="studentName" width="120">
+                  <template #default="scope">
+                    <el-input v-model="scope.row.studentName" disabled />
+                  </template>
+                </el-table-column>
+                <el-table-column label="排序" prop="orderNo" width="100">
+                  <template #default="scope">
+                    <el-input v-model="scope.row.orderNo" disabled />
+                  </template>
+                </el-table-column>
+                <el-table-column label="是否负责人" prop="manager" width="150">
+                  <template #default="scope">
+                    <el-select v-model="scope.row.manager" disabled>
+                      <el-option :label="'是'" :value="1" />
+                      <el-option :label="'否'" :value="0" />
+                    </el-select>
+                  </template>
+                </el-table-column>
+              </el-table>
+              <el-divider content-position="center">指导老师信息</el-divider>
+              <el-row :gutter="10" class="mb8" v-if="!readOnly">
+                <el-col :span="1.5"><el-button type="primary" :icon="Plus" @click="handleAddAdvisor">添加老师</el-button></el-col>
+                <el-col :span="1.5"><el-button type="danger" :icon="Delete" @click="handleDeleteAdvisor">删除选中</el-button></el-col>
+              </el-row>
+              <el-table :data="samAchievementAdvisorList" @selection-change="handleAdvisorSelectionChange">
+                <el-table-column v-if="!readOnly" type="selection" width="50" align="center" />
+                <el-table-column label="教师工号" prop="teacherId">
+                  <template #default="scope">
+                    <el-input v-model="scope.row.teacherId" placeholder="请输入工号" @blur="handleTeacherBlur(scope.row)" :disabled="readOnly"/>
+                  </template>
+                </el-table-column>
+                <el-table-column label="姓名" align="center" prop="teacherName" width="120">
+                  <template #default="scope">
+                    <el-input v-model="scope.row.teacherName" disabled />
+                  </template>
+                </el-table-column>
+                <el-table-column label="排序" prop="orderNo" width="100">
+                  <template #default="scope">
+                    <el-input v-model="scope.row.orderNo" disabled />
+                  </template>
+                </el-table-column>
+              </el-table>
+            </el-col>
+
+            <el-col :span="12">
+              <div class="attach-card">
+                <el-divider content-position="left">附件管理</el-divider>
+                <el-tabs tab-position="left" style="height: 100%; min-height: 700px;" v-model="activeAttachmentTab">
+                  <el-tab-pane 
+                    v-for="item in visibleAttachments" 
+                    :key="item.name" 
+                    :label="item.label" 
+                    :name="item.name"
+                  >
+                    <div class="upload-pane-content">
+                      <el-alert v-if="!form[item.prop]" :title="item.alert" :type="item.type || 'info'" :closable="false" class="mb10"/>
+                      <el-form-item label-width="0" :prop="item.prop">
+                        <file-upload 
+                          v-if="!readOnly && !form[item.prop]"
+                          v-model="form[item.prop]" 
+                          :limit="1" 
+                          :fileSize="10" 
+                          :fileType="['pdf']" 
+                          class="hide-file-list" 
+                          :upload-url="uploadUrl" 
+                        />
+                        <div v-if="previewUrls[item.name]" class="preview-box">
+                          <iframe :src="previewUrls[item.name]" width="100%" height="650px" frameborder="0"></iframe>
+                        </div>
+                        <div v-if="form[item.prop]" class="custom-file-row">
+                          <div class="file-name">
+                            <el-icon class="mr5"><Document /></el-icon>
+                            <span>{{ getFileName(form[item.prop]) }}</span>
+                          </div>
+                          <div class="file-action">
+                            <el-button link type="primary" :icon="View" @click="handleOpenDetail(form[item.prop])">详情</el-button>
+                            <el-button link type="primary" :icon="Download" @click="handleDownload(form[item.prop])">下载</el-button>
+                            <el-button v-if="!readOnly" link type="danger" :icon="Delete" @click="form[item.prop] = null">删除</el-button>
+                          </div>
+                        </div>
+                      </el-form-item>
+                    </div>
+                  </el-tab-pane>
+                </el-tabs>
+              </div>
+            </el-col>
+          </el-row>
       </el-form>
     </div>
-
     <template #footer>
       <div class="dialog-footer-wrapper">
         <div class="footer-left">
@@ -553,7 +448,6 @@
 
 <script setup name="AchievementForm">
 import { getCurrentInstance, ref, reactive, toRefs, computed, onMounted, watch } from "vue";
-// 引入 View 图标
 import { Plus, Delete, Document, Download, View } from "@element-plus/icons-vue";
 import { listStudent } from "@/api/achievement/student";
 import { listTeacher } from "@/api/achievement/teacher";
@@ -592,8 +486,6 @@ const samAchievementParticipantList = ref([]);
 const samAchievementAdvisorList = ref([]);
 const checkedParticipant = ref([]);
 const checkedAdvisor = ref([]);
-
-// 草稿相关
 const DRAFT_KEY = 'achievement_form_draft';
 const hasDraft = ref(false);
 
@@ -619,6 +511,23 @@ const submitTextComputed = computed(() => {
   return form.value?.achievementId ? "保 存" : "确 定";
 });
 
+// --- 附件配置 (使用 computed 过滤，解决 v-if 和 v-for 冲突) ---
+const attachmentConfig = [
+  { label: '奖状(证书)', name: 'award', prop: 'fileAward', alert: '请上传获奖证书' },
+  { label: '比赛通知', name: 'notice', prop: 'fileNotice', alert: '请上传比赛通知' },
+  { label: '参赛作品', name: 'work', prop: 'fileWork', alert: '请上传参赛作品' },
+  { label: '支付记录', name: 'payment', prop: 'filePayment', alert: '请上传转账截图', type: 'warning', condition: (f) => f.isReimburse === 1 },
+  { label: '正规发票', name: 'invoice', prop: 'fileInvoice', alert: '请上传电子发票', type: 'warning', condition: (f) => f.isReimburse === 1 },
+  { label: '收款码', name: 'receipt', prop: 'fileReceiptCode', alert: '请上传用于接收报销款的收款码', type: 'warning', condition: (f) => f.isReimburse === 1 },
+];
+
+const visibleAttachments = computed(() => {
+  return attachmentConfig.filter(item => {
+    if (!item.condition) return true;
+    return item.condition(form.value);
+  });
+});
+
 // --- 安全预览逻辑 ---
 const previewUrls = reactive({ award: "", notice: "", work: "", payment: "", invoice: "", receipt: "" });
 
@@ -642,7 +551,6 @@ function loadSafePreview(uuid, type) {
   });
 }
 
-// 监听文件变化
 watch(() => form.value.fileAward, (uuid) => loadSafePreview(uuid, 'award'));
 watch(() => form.value.fileNotice, (uuid) => loadSafePreview(uuid, 'notice'));
 watch(() => form.value.fileWork, (uuid) => loadSafePreview(uuid, 'work'));
@@ -650,20 +558,11 @@ watch(() => form.value.filePayment, (uuid) => loadSafePreview(uuid, 'payment'));
 watch(() => form.value.fileInvoice, (uuid) => loadSafePreview(uuid, 'invoice'));
 watch(() => form.value.fileReceiptCode, (uuid) => loadSafePreview(uuid, 'receipt'));
 
-
-// ==========================================
-// 【详情】若依自带方式打开文件
-// ==========================================
 function handleOpenDetail(uuid) {
   if (!uuid) return;
-  // 若依通用的资源访问路径
   const url = import.meta.env.VITE_APP_BASE_API + "/common/download/resource?resource=" + uuid;
   window.open(url);
 }
-
-// ==========================================
-// 基础逻辑
-// ==========================================
 
 function open(id) {
   if (!isPageMode.value) visible.value = true;
@@ -906,20 +805,52 @@ function handleDownload(uuid) {
 .outcome-page .page-actions { display: flex; align-items: center; gap: 10px; }
 .dialog-footer-wrapper { display: flex; justify-content: space-between; align-items: center; }
 .attach-card { background: #f8f8f9; padding: 10px; border-radius: 4px; border: 1px solid #d9d9d9; height: 100%; }
-.upload-pane-content { padding: 20px; }
+.upload-pane-content { padding: 5px 10px; }
 .mb10 { margin-bottom: 15px; }
 .mr5 { margin-right: 5px; }
 :deep(.el-tabs__content) { height: 100%; }
 
 .hide-file-list :deep(.el-upload-list) { display: none !important; }
 
+/* 自定义文件行样式：块级布局 */
 .custom-file-row {
-  margin-top: 10px; display: flex; align-items: center; justify-content: space-between;
-  background-color: #f5f7fa; padding: 8px 10px; border-radius: 4px; font-size: 13px; color: #606266;
-  border: 1px solid #e4e7ed; transition: all 0.3s;
+  margin-top: 10px;
+  background-color: #f5f7fa;
+  padding: 10px;
+  border-radius: 4px;
+  font-size: 13px;
+  color: #606266;
+  border: 1px solid #e4e7ed;
+  display: block; 
 }
-.custom-file-row:hover { background-color: #ecf5ff; }
-.preview-box { margin-top: 15px; border: 1px solid #ddd; padding: 5px; background-color: #fff; }
-.file-name { display: flex; align-items: center; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; max-width: 280px; }
-.file-action { margin-left: 10px; flex-shrink: 0; display: flex; align-items: center;}
+
+/* 第一行：文件名 */
+.file-name {
+  display: flex; 
+  align-items: center; 
+  width: 100%;
+  margin-bottom: 8px;
+  font-weight: 500;
+  white-space: nowrap; 
+  overflow: hidden; 
+  text-overflow: ellipsis;
+}
+
+/* 第二行：操作按钮（右对齐） */
+.file-action {
+  width: 100%;
+  display: flex;
+  justify-content: flex-end;
+  gap: 15px;
+}
+
+/* 预览框 */
+.preview-box {
+  margin-top: 5px;
+  border: 1px solid #ddd;
+  padding: 2px;
+  background-color: #fff;
+  width: 100%; /* 设置宽度为 100%，使其占满容器 */
+  box-sizing: border-box; /* 确保 padding 和 border 不会影响总宽度 */
+}
 </style>
