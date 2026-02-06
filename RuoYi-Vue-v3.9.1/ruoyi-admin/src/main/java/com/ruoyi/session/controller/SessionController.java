@@ -33,7 +33,7 @@ import org.springframework.web.multipart.MultipartFile;
  */
 @RestController
 @RequestMapping("/session/session")
-public class SessionController extends BaseController
+public class  SessionController extends BaseController
 {
     // 新增：日志对象，方便排查导入异常
     private static final Logger log = LoggerFactory.getLogger(SessionController.class);
