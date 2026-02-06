@@ -20,7 +20,7 @@ public interface SessionMapper
     public Session selectSessionById(Long id);
 
     /**
-     * 查询赛事届次列表
+     * 查询赛事届次列表（支持多条件筛选，批量导入时复用做重复校验）
      *
      * @param session 赛事届次
      * @return 赛事届次集合

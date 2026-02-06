@@ -43,14 +43,23 @@ export function delSession(id) {
   })
 }
 
-// 新增：批量导入接口
-export function importSessionData(data) {
+// 新增：导出模板接口
+export function exportTemplateSession() {
+  return request({
+    url: '/session/session/exportTemplate',
+    method: 'post',
+    responseType: 'blob' // 二进制流（Excel文件）
+  })
+}
+
+// 新增：批量导入接口（FormData格式，文件上传）
+export function importDataSession(data) {
   return request({
     url: '/session/session/importData',
     method: 'post',
     data: data,
     headers: {
-      'Content-Type': 'multipart/form-data' // 文件上传必须指定该请求头
+      'Content-Type': 'multipart/form-data' // 表单提交格式
     }
   })
 }

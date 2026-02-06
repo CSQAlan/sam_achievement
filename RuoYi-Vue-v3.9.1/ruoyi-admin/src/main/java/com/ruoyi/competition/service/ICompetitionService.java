@@ -60,4 +60,11 @@ public interface ICompetitionService
     public int deleteCompetitionById(Long id);
 
 
+    // ========== 新增：按赛事名称查询实体（用于届次表关联主表） ==========
+    /**
+     * 按赛事名称查询总赛事（用于届次表批量导入时关联主表ID）
+     * @param compName 赛事名称
+     * @return 总赛事实体（无则返回null）
+     */
+    public Competition selectCompetitionByCompName(String compName);
 }
