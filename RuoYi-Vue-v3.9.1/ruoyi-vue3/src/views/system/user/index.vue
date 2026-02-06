@@ -53,6 +53,14 @@
               <el-col :span="1.5">
                 <el-button type="warning" plain icon="Download" @click="handleExport" v-hasPermi="['system:user:export']">导出</el-button>
               </el-col>
+              <!-- 新增的学生导入按钮 -->
+              <el-col :span="1.5">
+                <el-button type="info" plain icon="Upload" @click="handleImportStudents" v-hasPermi="['system:user:import']">导入学生</el-button>
+              </el-col>
+              <!-- 新增的教师导入按钮 -->
+              <el-col :span="1.5">
+                <el-button type="info" plain icon="Upload" @click="handleImportTeachers" v-hasPermi="['system:user:import']">导入教师</el-button>
+              </el-col>
               <right-toolbar v-model:showSearch="showSearch" @queryTable="getList" :columns="columns"></right-toolbar>
             </el-row>
 
@@ -66,10 +74,10 @@
               <el-table-column label="状态" align="center" key="status" v-if="columns.status.visible">
                 <template #default="scope">
                   <el-switch
-                    v-model="scope.row.status"
-                    active-value="0"
-                    inactive-value="1"
-                    @change="handleStatusChange(scope.row)"
+                      v-model="scope.row.status"
+                      active-value="0"
+                      inactive-value="1"
+                      @change="handleStatusChange(scope.row)"
                   ></el-switch>
                 </template>
               </el-table-column>
@@ -216,7 +224,7 @@
 <script setup name="User">
 import { getToken } from "@/utils/auth"
 import useAppStore from '@/store/modules/app'
-import { changeUserStatus, listUser, resetUserPwd, delUser, getUser, updateUser, addUser, deptTreeSelect } from "@/api/system/user"
+import { changeUserStatus, listUser, resetUserPwd, delUser, getUser, updateUser, addUser, deptTreeSelect, importStudentData, importTeacherData } from "@/api/system/user"
 import { Splitpanes, Pane } from "splitpanes"
 import "splitpanes/dist/splitpanes.css"
 
@@ -247,6 +255,8 @@ const upload = reactive({
   open: false,
   // 弹出层标题（用户导入）
   title: "",
+  // 导入类型（user: 普通用户, student: 学生, teacher: 教师）
+  importType: "user",
   // 是否禁用上传
   isUploading: false,
   // 是否更新已经存在的用户数据
@@ -435,10 +445,33 @@ function handleImport() {
   upload.selectedFile = null
 }
 
+/** 批量导入学生按钮操作 */
+function handleImportStudents() {
+  upload.title = "导入学生"
+  upload.importType = "student"
+  upload.open = true
+  upload.selectedFile = null
+}
+
+/** 批量导入教师按钮操作 */
+function handleImportTeachers() {
+  upload.title = "导入教师"
+  upload.importType = "teacher"
+  upload.open = true
+  upload.selectedFile = null
+}
+
 /** 下载模板操作 */
 function importTemplate() {
-  proxy.download("system/user/importTemplate", {
-  }, `user_template_${new Date().getTime()}.xlsx`)
+  let url = "system/user/importTemplate"
+  // 根据不同的导入类型下载不同的模板
+  if (upload.importType === "student") {
+    url = "sam/student/importStudentTemplate"
+  } else if (upload.importType === "teacher") {
+    url = "sam/teacher/importTeacherTemplate"
+  }
+
+  proxy.download(url, {}, `${upload.importType}_template_${new Date().getTime()}.xlsx`)
 }
 
 /**文件上传中处理 */
@@ -468,12 +501,44 @@ const handleFileSuccess = (response, file, fileList) => {
 /** 提交上传文件 */
 function submitFileForm() {
   const file = upload.selectedFile
-  if (!file || file.length === 0 || !file.name.toLowerCase().endsWith('.xls') && !file.name.toLowerCase().endsWith('.xlsx')) {
+  if (!file || !file.raw || !file.name.toLowerCase().endsWith('.xls') && !file.name.toLowerCase().endsWith('.xlsx')) {
     proxy.$modal.msgError("请选择后缀为 “xls”或“xlsx”的文件。")
     return
   }
-  proxy.$refs["uploadRef"].submit()
+
+  // 根据导入类型调用不同的接口
+  if (upload.importType === "student") {
+    // 使用 FormData 上传文件
+    const formData = new FormData()
+    formData.append('file', file.raw)
+    formData.append('updateSupport', upload.updateSupport.toString())
+
+    upload.isUploading = true
+    importStudentData(formData).then(response => {
+      handleFileSuccess(response, file, [])
+    }).catch(error => {
+      proxy.$modal.msgError("导入失败: " + (error.message || "未知错误"))
+      upload.isUploading = false
+    })
+  } else if (upload.importType === "teacher") {
+    // 使用 FormData 上传文件
+    const formData = new FormData()
+    formData.append('file', file.raw)
+    formData.append('updateSupport', upload.updateSupport.toString())
+
+    upload.isUploading = true
+    importTeacherData(formData).then(response => {
+      handleFileSuccess(response, file, [])
+    }).catch(error => {
+      proxy.$modal.msgError("导入失败: " + (error.message || "未知错误"))
+      upload.isUploading = false
+    })
+  } else {
+    // 普通用户导入保持原有逻辑
+    proxy.$refs["uploadRef"].submit()
+  }
 }
+
 
 /** 重置操作表单 */
 function reset() {

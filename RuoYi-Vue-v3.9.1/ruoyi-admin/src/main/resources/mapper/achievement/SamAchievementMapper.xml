@@ -95,9 +95,18 @@ PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
         where participant_id = #{participant_id}
     </select>
 
-    <insert id="insertSamAchievement" parameterType="SamAchievement" useGeneratedKeys="true" keyProperty="achievementId">
+    <select id="selectNextAchievementId" resultType="long">
+        select next_val from sam_achievement_seq for update
+    </select>
+
+    <update id="incrementNextAchievementId">
+        update sam_achievement_seq set next_val = next_val + 1
+    </update>
+
+    <insert id="insertSamAchievement" parameterType="SamAchievement">
         insert into sam_achievement
         <trim prefix="(" suffix=")" suffixOverrides=",">
+            achievement_id,
             <if test="sessionId != null and sessionId != ''">session_id,</if>
             <if test="category != null and category != ''">category,</if>
             <if test="name != null">name,</if>
@@ -136,6 +145,7 @@ PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
             <if test="remark != null">remark,</if>
          </trim>
         <trim prefix="values (" suffix=")" suffixOverrides=",">
+            #{achievementId},
             <if test="sessionId != null and sessionId != ''">#{sessionId},</if>
             <if test="category != null and category != ''">#{category},</if>
             <if test="name != null">#{name},</if>
@@ -247,3 +257,7 @@ PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
         </foreach>
     </insert>
 </mapper>
+
+
+
+

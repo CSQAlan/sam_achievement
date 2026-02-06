@@ -112,9 +112,10 @@ PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
         where participant_id = #{participant_id}
     </select>
 
-    <insert id="insertreviewed" parameterType="reviewed" useGeneratedKeys="true" keyProperty="achievementId">
+    <insert id="insertreviewed" parameterType="reviewed">
         insert into sam_achievement
         <trim prefix="(" suffix=")" suffixOverrides=",">
+            achievement_id,
             <if test="sessionId != null and sessionId != ''">session_id,</if>
             <if test="category != null and category != ''">category,</if>
             <if test="name != null">name,</if>
@@ -153,6 +154,7 @@ PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
             <if test="remark != null">remark,</if>
          </trim>
         <trim prefix="values (" suffix=")" suffixOverrides=",">
+            #{achievementId},
             <if test="sessionId != null and sessionId != ''">#{sessionId},</if>
             <if test="category != null and category != ''">#{category},</if>
             <if test="name != null">#{name},</if>
