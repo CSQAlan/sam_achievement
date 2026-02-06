@@ -24,23 +24,26 @@ public class Competition extends BaseEntity
     private String name;
 
     /** 赛事类别 */
-    @Excel(name = "赛事类别")
+    @Excel(name = "赛事类别",dictType = "sys_competition_category")
     private String category;
 
     /** 盖章单位 */
     @Excel(name = "盖章单位")
     private String organizations;
 
+    @Excel(name="赛事等级",dictType = "sys_competition_level")
+    private String level;
+
     /** 赛事标签 */
-    @Excel(name = "赛事标签")
+    @Excel(name = "赛事标签",dictType = "sys_competition_tag",separator =",")
     private String tags;
 
     /** 适用范围 */
-    @Excel(name = "适用范围")
+    @Excel(name = "适用范围",dictType = "sys_competition_scope_type")
     private String scopeType;
 
     /** 状态 */
-    @Excel(name = "状态")
+    @Excel(name = "状态",dictType = "sys_competition_status")
     private String status;
 
     /** 赛事说明 */
@@ -91,6 +94,16 @@ public class Competition extends BaseEntity
     public String getOrganizations()
     {
         return organizations;
+    }
+
+    public void setLevel(String level)
+    {
+        this.level = level;
+    }
+
+    public String getLevel()
+    {
+        return level;
     }
 
     public void setTags(String tags)

@@ -14,6 +14,11 @@
             :value="dict.value" />
         </el-select>
       </el-form-item>
+      <el-form-item label="赛事级别" prop="level">
+        <el-select v-model="queryParams.level" placeholder="请选择赛事级别" clearable>
+          <el-option v-for="dict in sys_competition_level" :key="dict.value" :label="dict.label" :value="dict.value" />
+        </el-select>
+      </el-form-item>
       <el-form-item label="标签" prop="tags">
         <el-select v-model="queryParams.tags" placeholder="请选择赛事标签" clearable>
           <el-option v-for="dict in sys_competition_tag" :key="dict.value" :label="dict.label" :value="dict.value" />
@@ -60,7 +65,7 @@
     <!-- 展示表格 -->
     <el-table v-loading="loading" :data="competitionList" @selection-change="handleSelectionChange">
       <el-table-column type="selection" width="55" align="center" />
-      <el-table-column label="赛事主键" align="center" prop="id" />
+      <!-- <el-table-column label="赛事主键" align="center" prop="id" /> -->
       <el-table-column label="赛事名称" align="center" prop="name" />
       <el-table-column label="赛事类别" align="center" prop="category">
         <template #default="scope">
@@ -69,6 +74,11 @@
         </template>
       </el-table-column>
       <el-table-column label="盖章单位" align="center" prop="organizations" />
+      <el-table-column label="赛事级别" width="130" align="center" prop="level">
+        <template #default="scope">
+          <dict-tag :options="sys_competition_level" :value="scope.row.level ? scope.row.level.split(',') : []" />
+        </template>
+      </el-table-column>
       <el-table-column label="赛事标签" width="150" align="center" prop="tags">
         <template #default="scope">
           <dict-tag :options="sys_competition_tag" :value="scope.row.tags ? scope.row.tags.split(',') : []" />
@@ -90,7 +100,7 @@
           <dict-tag :options="sys_competition_status" :value="scope.row.status" />
         </template>
       </el-table-column>
-      <el-table-column label="赛事说明" align="center" prop="memo" />
+      <el-table-column label="赛事说明" width="100" align="center" prop="memo" />
       <el-table-column label="操作" align="center" class-name="small-padding fixed-width">
         <template #default="scope">
           <el-button link type="primary" icon="Edit" @click="handleUpdate(scope.row)"
@@ -119,6 +129,13 @@
         </el-form-item>
         <el-form-item label="盖章单位" prop="organizations">
           <el-input v-model="form.organizations" placeholder="请输入盖章单位" />
+        </el-form-item>
+        <el-form-item label="赛事级别" prop="level">
+          <el-checkbox-group v-model="form.level">
+            <el-checkbox v-for="dict in sys_competition_level" :key="dict.value" :label="dict.value">
+              {{ dict.label }}
+            </el-checkbox>
+          </el-checkbox-group>
         </el-form-item>
         <el-form-item label="赛事标签" prop="tags">
           <el-checkbox-group v-model="form.tags">
@@ -192,7 +209,7 @@ import { listDept } from "@/api/system/dept"
 import { ref } from 'vue'
 
 const { proxy } = getCurrentInstance()
-const { sys_competition_tag, sys_competition_status, sys_competition_del_flag, sys_competition_scope_type, sys_competition_category } = proxy.useDict('sys_competition_tag', 'sys_competition_status', 'sys_competition_del_flag', 'sys_competition_scope_type', 'sys_competition_category')
+const { sys_competition_level, sys_competition_tag, sys_competition_status, sys_competition_del_flag, sys_competition_scope_type, sys_competition_category } = proxy.useDict('sys_competition_level', 'sys_competition_tag', 'sys_competition_status', 'sys_competition_del_flag', 'sys_competition_scope_type', 'sys_competition_category')
 
 const competitionList = ref([])
 const competitionDeptRelList = ref([])
@@ -220,6 +237,7 @@ const data = reactive({
     name: null,
     category: null,
     organizations: null,
+    level: null,
     tags: null,
     scopeType: null,
     status: null,
@@ -234,6 +252,9 @@ const data = reactive({
     organizations: [
       { required: true, message: "盖章单位不能为空", trigger: "blur" }
     ],
+    level: [
+      { required: true, message: "赛事级别不能为空", trigger: "blur" }
+    ]
   }
 })
 
@@ -307,6 +328,7 @@ function reset() {
     name: null,
     category: [],
     organizations: null,
+    level: [],
     tags: [],
     scopeType: '0',
     status: null,
@@ -358,8 +380,9 @@ function handleUpdate(row) {
   const _id = row.id || ids.value
   getCompetition(_id).then(response => {
     form.value = response.data
-    form.value.category = form.value.category.split(",")
-    form.value.tags = form.value.tags.split(",")
+    form.value.category = form.value.category?.split(",").filter(v => v) || []
+    form.value.level = form.value.level?.split(",").filter(v => v) || []
+    form.value.tags = form.value.tags?.split(",").filter(v => v) || []
     competitionDeptRelList.value = response.data.competitionDeptRelList || []
     open.value = true
     title.value = "修改总赛事"
@@ -371,6 +394,7 @@ function submitForm() {
   proxy.$refs["competitionRef"].validate(valid => {
     if (valid) {
       form.value.category = form.value.category.join(",")
+      form.value.level = form.value.level.join(",")
       form.value.tags = form.value.tags.join(",")
       // 全校时清空子表，避免提交无效数据
       if (form.value.scopeType === '0') {

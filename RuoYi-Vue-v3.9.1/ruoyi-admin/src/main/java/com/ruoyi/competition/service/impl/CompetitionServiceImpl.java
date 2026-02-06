@@ -132,5 +132,15 @@ public class CompetitionServiceImpl implements ICompetitionService
         }
     }
 
+    // ========== 实现新增的按名称查询方法 ==========
+    @Override
+    public Competition selectCompetitionByCompName(String compName) {
+        Competition query = new Competition();
+        query.setName(compName); // 假设赛事主表中“名称”对应的字段是name
+        List<Competition> list = competitionMapper.selectCompetitionList(query);
+        // 按名称查询，返回第一个匹配的实体（默认赛事名称唯一）
+        return list.isEmpty() ? null : list.get(0);
+    }
+
 
 }

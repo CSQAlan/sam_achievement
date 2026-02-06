@@ -1,18 +1,24 @@
 package com.ruoyi.session.service.impl;
 
+import java.util.Collections;
 import java.util.List;
-
-import com.ruoyi.common.exception.ServiceException;
-import com.ruoyi.common.utils.DateUtils;
-import com.ruoyi.common.utils.SecurityUtils;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.util.CollectionUtils;
+import com.ruoyi.common.exception.ServiceException;
+import com.ruoyi.common.utils.DateUtils;
+import com.ruoyi.common.utils.SecurityUtils;
+import com.ruoyi.competition.domain.Competition;
+import com.ruoyi.competition.service.ICompetitionService;
 import com.ruoyi.session.mapper.SessionMapper;
 import com.ruoyi.session.domain.Session;
 import com.ruoyi.session.service.ISessionService;
-// 正确导入（删除其他包的CollectionUtils导入）
-import org.springframework.util.CollectionUtils;
+// ========== 新增：导入字典相关类（RuoYi框架自带） ==========
+import com.ruoyi.common.core.domain.entity.SysDictData;
+import com.ruoyi.system.service.ISysDictDataService;
 
 /**
  * 赛事届次Service业务层处理
@@ -21,120 +27,226 @@ import org.springframework.util.CollectionUtils;
  * @date 2026-02-01
  */
 @Service
-public class SessionServiceImpl implements ISessionService
-{
+public class SessionServiceImpl implements ISessionService {
+    private static final Logger log = LoggerFactory.getLogger(SessionServiceImpl.class);
+
     @Autowired
     private SessionMapper sessionMapper;
 
-    /**
-     * 查询赛事届次
-     *
-     * @param id 赛事届次主键
-     * @return 赛事届次
-     */
+    @Autowired
+    private ICompetitionService competitionService;
+    // ========== 新增：注入框架自带的字典服务（核心） ==========
+    @Autowired
+    private ISysDictDataService sysDictDataService;
+
+    // ========== 原有方法：完整保留，无需改动 ==========
     @Override
-    public Session selectSessionById(Long id)
-    {
+    public Session selectSessionById(Long id) {
         return sessionMapper.selectSessionById(id);
     }
-
-    /**
-     * 查询赛事届次列表
-     *
-     * @param session 赛事届次
-     * @return 赛事届次
-     */
     @Override
-    public List<Session> selectSessionList(Session session)
-    {
+    public List<Session> selectSessionList(Session session) {
         return sessionMapper.selectSessionList(session);
     }
-
-    /**
-     * 新增赛事届次
-     *
-     * @param session 赛事届次
-     * @return 结果
-     */
     @Transactional
     @Override
-    public int insertSession(Session session)
-    {
+    public int insertSession(Session session) {
         session.setCreateTime(DateUtils.getNowDate());
-        // 直接单表插入，无需任何标签子表操作
         return sessionMapper.insertSession(session);
     }
-
-    /**
-     * 修改赛事届次
-     *
-     * @param session 赛事届次
-     * @return 结果
-     */
     @Transactional
     @Override
-    public int updateSession(Session session)
-    {
+    public int updateSession(Session session) {
         session.setUpdateTime(DateUtils.getNowDate());
-        // 直接单表更新，tags字段随主表一起更新
         return sessionMapper.updateSession(session);
     }
-
-    /**
-     * 批量删除赛事届次
-     *
-     * @param ids 需要删除的赛事届次主键
-     * @return 结果
-     */
     @Transactional
     @Override
-    public int deleteSessionByIds(Long[] ids)
-    {
-        // 仅批量删除主表数据，无标签子表操作
+    public int deleteSessionByIds(Long[] ids) {
         return sessionMapper.deleteSessionByIds(ids);
     }
-
-    /**
-     * 删除赛事届次信息
-     *
-     * @param id 赛事届次主键
-     * @return 结果
-     */
     @Transactional
     @Override
-    public int deleteSessionById(Long id)
-    {
-        // 仅删除主表数据，无标签子表操作
+    public int deleteSessionById(Long id) {
         return sessionMapper.deleteSessionById(id);
     }
 
+    // ========== 新增：通用工具方法（核心）→ 文字标签自动匹配字典数字 ==========
     /**
-     * 批量导入赛事届次
+     * 文字标签转字典数字编码（自动从系统字典查询，无需写死）
+     * @param dictType 字典类型（如sys_competition_category），对应@Excel的dictType
+     * @param textLabels Excel导入的文字标签（支持多标签，中英文逗号分隔）
+     * @return 逗号分隔的数字编码（如"0,1,2"）
      */
+    private String convertTextToDictCode(String dictType, String textLabels) {
+        if (textLabels == null || textLabels.trim().isEmpty()) {
+            return "";
+        }
+        String handleText = textLabels.trim().replaceAll("，", ",");
+        String[] textArr = handleText.split(",");
+        StringBuilder codeSb = new StringBuilder();
 
-    @Transactional
+        for (String text : textArr) {
+            String trimText = text.trim();
+            if (trimText.isEmpty()) continue;
+
+            // ========== 核心修改1：清洗用户输入的空格 ==========
+            // 去掉所有空格（半角、全角、多个连续空格）
+            String cleanText = trimText.replaceAll("\\s+", "").replaceAll("　", "");
+
+            // ========== 核心修改2：构造查询条件（兼容去空格匹配） ==========
+            SysDictData queryDict = new SysDictData();
+            queryDict.setDictType(dictType);    // 字典类型
+            queryDict.setStatus("0");           // 只查启用的字典项
+
+            // 第一步：先按原始清洗后的文字查（优先）
+            queryDict.setDictLabel(cleanText);
+            List<SysDictData> dictList = sysDictDataService.selectDictDataList(queryDict);
+
+            // 第二步：如果没查到，遍历该字典类型下所有标签，去空格后匹配（兜底）
+            if (CollectionUtils.isEmpty(dictList)) {
+                // 查询该字典类型下所有启用的标签
+                SysDictData allDict = new SysDictData();
+                allDict.setDictType(dictType);
+                allDict.setStatus("0");
+                List<SysDictData> allDictList = sysDictDataService.selectDictDataList(allDict);
+
+                // 遍历字典，把字典标签去空格后和用户输入的清洗后文字匹配
+                for (SysDictData dict : allDictList) {
+                    String dictLabel = dict.getDictLabel();
+                    if (dictLabel == null) continue;
+                    // 字典标签也去空格
+                    String cleanDictLabel = dictLabel.replaceAll("\\s+", "").replaceAll("　", "");
+                    // 匹配成功则赋值
+                    if (cleanText.equals(cleanDictLabel)) {
+                        dictList = Collections.singletonList(dict);
+                        break;
+                    }
+                }
+            }
+
+            // 校验是否找到
+            if (CollectionUtils.isEmpty(dictList)) {
+                throw new ServiceException("系统字典【" + dictType + "】中未找到标签【" + trimText + "】（清洗后：" + cleanText + "）");
+            }
+
+            // 获取对应的字典值
+            String dictValue = dictList.get(0).getDictValue();
+            codeSb.append(dictValue).append(",");
+        }
+
+        return codeSb.length() > 0 ? codeSb.deleteCharAt(codeSb.length()-1).toString() : "";
+    }
+
+    // ========== 原有方法：importSession 完整保留，无需改动 ==========
     @Override
     public String importSession(List<Session> sessionList, boolean updateSupport) {
         if (CollectionUtils.isEmpty(sessionList)) {
-            throw new ServiceException("导入数据不能为空");
+            throw new ServiceException("导入数据不能为空，请检查Excel文件是否有数据！");
         }
         int successNum = 0;
+        int failureNum = 0;
         StringBuilder successMsg = new StringBuilder();
-        for (Session session : sessionList) {
+        StringBuilder failureMsg = new StringBuilder();
+        String operName = SecurityUtils.getUsername();
+        for (int i = 0; i < sessionList.size(); i++) {
+            Session session = sessionList.get(i);
+            int rowNum = i + 2;
             try {
-                // 1. 设置默认状态为“启用”（根据实际字典键值调整，比如字典中“启用”对应值为“0”）
-                session.setStatus("1");
-                // 2. 设置创建人、时间等基础信息
-                session.setCreateBy(SecurityUtils.getUsername());
-                session.setCreateTime(DateUtils.getNowDate());
-                // 3. 新增或更新数据
-                this.insertSession(session);
+                processSingleSession(session, updateSupport, operName);
                 successNum++;
+                successMsg.append("<br/>第").append(rowNum).append("行：【")
+                        .append(session.getCompetitionName()).append("-").append(session.getSession())
+                        .append("】导入成功");
             } catch (Exception e) {
-                // 异常处理
+                failureNum++;
+                failureMsg.append("<br/>第").append(rowNum).append("行导入失败：").append(e.getMessage());
+                log.error("第{}行导入失败", rowNum, e);
             }
         }
-        successMsg.append("导入成功").append(successNum).append("条");
-        return successMsg.toString();
+        if (failureNum > 0) {
+            failureMsg.insert(0, "本次导入共失败" + failureNum + "条，成功" + successNum + "条：");
+            if (successNum > 0) {
+                return successMsg.toString() + failureMsg.toString();
+            } else {
+                throw new ServiceException(failureMsg.toString());
+            }
+        } else {
+            return "本次导入全部成功，共导入" + successNum + "条数据：" + successMsg.toString();
+        }
+    }
+
+    // ========== 核心修改：processSingleSession 中的标签处理逻辑 ==========
+    @Transactional(rollbackFor = Exception.class)
+    private void processSingleSession(Session session, boolean updateSupport, String operName) {
+        // 步骤1：校验赛事名称
+        String compName = session.getCompetitionName();
+        if (compName == null || compName.trim().isEmpty()) {
+            throw new ServiceException("赛事名称不能为空");
+        }
+        compName = compName.trim();
+
+        // ========== 核心修改：替换原有标签处理，调用自动字典匹配方法 ==========
+        // 直接传入@Excel注解的dictType，自动匹配文字→数字，支持多标签
+        String categoryCode = convertTextToDictCode("sys_competition_category", session.getCategory());
+        String levelCode = convertTextToDictCode("sys_competition_level", session.getLevel());
+        String tagsCode = convertTextToDictCode("sys_competition_tag", session.getTags());
+
+        // 步骤2：查询赛事总表，无则自动新增
+        Competition comp = competitionService.selectCompetitionByCompName(compName);
+        if (comp == null) {
+            Competition newComp = new Competition();
+            newComp.setName(compName);
+            newComp.setStatus("1"); // 修正：1=启用
+            // ========== 赋值：自动匹配后的数字编码 ==========
+            newComp.setCategory(categoryCode);
+            newComp.setLevel(levelCode);
+            newComp.setTags(tagsCode);
+            newComp.setOrganizations(session.getOrganizations());
+            newComp.setScopeType("0");
+            newComp.setCreateBy(operName);
+            newComp.setCreateTime(DateUtils.getNowDate());
+            newComp.setDelFlag("0");
+            competitionService.insertCompetition(newComp);
+
+            comp = competitionService.selectCompetitionByCompName(compName);
+            if (comp == null) {
+                throw new ServiceException("自动新增总赛事后，未查询到赛事信息，请检查");
+            }
+            log.info("自动新增总赛事：{}，赛事ID：{}", compName, comp.getId());
+        }
+
+        // 步骤3：设置届次表基础信息
+        session.setCompetitionId(comp.getId());
+        session.setStatus("1"); // 修正：0=启用（原1是停用，必改）
+        session.setDelFlag("0");
+        session.setCreateBy(operName);
+        session.setCreateTime(DateUtils.getNowDate());
+        session.setUpdateBy(operName);
+        session.setUpdateTime(DateUtils.getNowDate());
+
+        // ========== 赋值：届次表也用自动匹配后的数字编码 ==========
+        session.setCategory(categoryCode);
+        session.setLevel(levelCode);
+        session.setTags(tagsCode);
+
+        // 步骤4：届次重复校验+新增/更新
+        String sessionName = session.getSession();
+        if (sessionName == null || sessionName.trim().isEmpty()) {
+            throw new ServiceException("赛事届次不能为空");
+        }
+        Session query = new Session();
+        query.setCompetitionId(session.getCompetitionId());
+        query.setSession(sessionName.trim());
+        List<Session> existList = sessionMapper.selectSessionList(query);
+
+        if (CollectionUtils.isEmpty(existList)) {
+            this.insertSession(session);
+        } else if (updateSupport) {
+            session.setId(existList.get(0).getId());
+            this.updateSession(session);
+        } else {
+            throw new ServiceException("该赛事届次已存在，且未开启更新模式");
+        }
     }
 }
