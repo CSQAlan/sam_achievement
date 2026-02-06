@@ -3,6 +3,8 @@ package com.ruoyi.session.controller;
 import java.util.ArrayList;
 import java.util.List;
 import javax.servlet.http.HttpServletResponse;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -25,7 +27,7 @@ import org.springframework.web.multipart.MultipartFile;
 
 /**
  * 赛事届次Controller
- * 
+ *
  * @author ruoyi
  * @date 2026-02-01
  */
@@ -33,6 +35,9 @@ import org.springframework.web.multipart.MultipartFile;
 @RequestMapping("/session/session")
 public class SessionController extends BaseController
 {
+    // 新增：日志对象，方便排查导入异常
+    private static final Logger log = LoggerFactory.getLogger(SessionController.class);
+
     @Autowired
     private ISessionService sessionService;
 
@@ -98,34 +103,47 @@ public class SessionController extends BaseController
      */
     @PreAuthorize("@ss.hasPermi('session:session:remove')")
     @Log(title = "赛事届次", businessType = BusinessType.DELETE)
-	@DeleteMapping("/{ids}")
+    @DeleteMapping("/{ids}")
     public AjaxResult remove(@PathVariable Long[] ids)
     {
         return toAjax(sessionService.deleteSessionByIds(ids));
     }
 
     /**
-     * 导出赛事届次模板（不含状态列）
+     * 导出赛事届次模板（不含状态列，依托实体@Excel注解自动生成表头）
      */
     @PreAuthorize("@ss.hasPermi('session:session:exportTemplate')")
     @Log(title = "赛事届次模板", businessType = BusinessType.EXPORT)
     @PostMapping("/exportTemplate")
     public void exportTemplate(HttpServletResponse response) {
-        // 传空列表，仅导出表头（不含状态列）
         ExcelUtil<Session> util = new ExcelUtil<Session>(Session.class);
+        // 传空列表仅导出表头，实体中status字段无@Excel注解，模板自动不含该列
         util.exportExcel(response, new ArrayList<>(), "赛事届次导入模板");
     }
 
     /**
      * 批量导入赛事届次（默认状态为启用）
+     * 优化：空文件校验+指定表头行号+全局异常捕获
      */
     @PreAuthorize("@ss.hasPermi('session:session:import')")
     @Log(title = "赛事届次", businessType = BusinessType.IMPORT)
     @PostMapping("/importData")
-    public AjaxResult importData(MultipartFile file, boolean updateSupport) throws Exception {
-        ExcelUtil<Session> util = new ExcelUtil<Session>(Session.class);
-        List<Session> sessionList = util.importExcel(file.getInputStream());
-        String message = sessionService.importSession(sessionList, updateSupport);
-        return success(message);
+    public AjaxResult importData(MultipartFile file, boolean updateSupport) {
+        // 1. 空文件校验：避免上传空文件导致解析异常
+        if (file == null || file.isEmpty()) {
+            return AjaxResult.error("导入失败：请选择有效的Excel文件，文件不能为空！");
+        }
+        try {
+            ExcelUtil<Session> util = new ExcelUtil<Session>(Session.class);
+            // 2. 解析Excel：指定表头在第0行（Excel实际第1行），数据从第1行开始，和Service层行号提示一致
+            List<Session> sessionList = util.importExcel(file.getInputStream(), 0);
+            // 3. 调用Service处理导入逻辑
+            String message = sessionService.importSession(sessionList, updateSupport);
+            return AjaxResult.success(message);
+        } catch (Exception e) {
+            // 4. 全局异常捕获：统一处理所有导入异常，打印日志+返回友好提示
+            log.error("批量导入赛事届次失败", e);
+            return AjaxResult.error("导入失败：" + e.getMessage());
+        }
     }
 }

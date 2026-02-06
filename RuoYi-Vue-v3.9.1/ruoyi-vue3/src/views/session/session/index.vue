@@ -23,7 +23,6 @@
           <el-option v-for="dict in sys_competition_status" :key="dict.value" :label="dict.label" :value="dict.value" />
         </el-select>
       </el-form-item>
-      <!-- 可选优化：查询栏也加赛事名称下拉，方便按赛事筛选 -->
       <el-form-item label="赛事名称" prop="competitionId">
         <el-select v-model="queryParams.competitionId" placeholder="请选择赛事名称" clearable>
           <el-option v-for="comp in competitionList" :key="comp.id" :label="comp.name" :value="comp.id" />
@@ -52,14 +51,22 @@
         <el-button type="warning" plain icon="Download" @click="handleExport"
           v-hasPermi="['session:session:export']">导出</el-button>
       </el-col>
+      <!-- 新增：导出模板按钮 -->
+      <el-col :span="1.8">
+        <el-button type="info" plain icon="DocumentCopy" @click="handleExportTemplate"
+          v-hasPermi="['session:session:exportTemplate']">导出模板</el-button>
+      </el-col>
+      <!-- 新增：批量导入按钮 -->
+      <el-col :span="1.8">
+        <el-button type="primary" plain icon="UploadFilled" @click="handleImportOpen"
+          v-hasPermi="['session:session:import']">批量导入</el-button>
+      </el-col>
       <right-toolbar v-model:showSearch="showSearch" @queryTable="getList"></right-toolbar>
     </el-row>
 
     <el-table v-loading="loading" :data="sessionList" @selection-change="handleSelectionChange">
       <el-table-column type="selection" width="55" align="center" />
-      <!-- <el-table-column label="届次主键" align="center" prop="id" /> -->
       <el-table-column label="赛事名称" align="center" prop="competitionId">
-        <!-- 核心修改1：表格中ID映射为赛事名称，无匹配则显示原ID -->
         <template #default="scope">
           {{ getCompetitionName(scope.row.competitionId) || scope.row.competitionId }}
         </template>
@@ -103,7 +110,6 @@
     <el-dialog :title="title" v-model="open" width="500px" append-to-body>
       <el-form ref="sessionRef" :model="form" :rules="rules" label-width="80px">
         <el-form-item label="赛事名称" prop="competitionId">
-          <!-- 核心修改2：把赛事主键输入框改成下拉选择框，显示去重后的赛事名称 -->
           <el-select v-model="form.competitionId" placeholder="请选择赛事名称" clearable style="width:100%;">
             <el-option v-for="comp in competitionList" :key="comp.id" :label="comp.name" :value="comp.id" />
           </el-select>
@@ -139,33 +145,6 @@
             </el-checkbox>
           </el-checkbox-group>
         </el-form-item>
-        <!-- <el-form-item label="备注" prop="remark">
-          <el-input v-model="form.remark" type="textarea" placeholder="请输入备注" />
-        </el-form-item> -->
-        <!-- <el-divider content-position="center">标签信息</el-divider>
-        <el-row :gutter="10" class="mb8">
-          <el-col :span="1.5">
-            <el-button type="primary" icon="Plus" @click="handleAddTag">添加</el-button>
-          </el-col>
-          <el-col :span="1.5">
-            <el-button type="danger" icon="Delete" @click="handleDeleteTag">删除</el-button>
-          </el-col>
-        </el-row>
-        <el-table :data="tagList" :row-class-name="rowTagIndex" @selection-change="handleTagSelectionChange" ref="tag">
-          <el-table-column type="selection" width="50" align="center" />
-          <el-table-column label="序号" align="center" prop="index" width="50" />
-          <el-table-column label="标签名称" prop="tagName" width="150">
-            <template #default="scope">
-              <el-input v-model="scope.row.tagName" placeholder="请输入标签名称" />
-            </template>
-          </el-table-column>
-          <el-table-column label="适用学院" prop="depId" width="150">
-            <template #default="scope">
-             
-              <el-input v-model="scope.row.depId" placeholder="请输入适用学院" />
-            </template>
-          </el-table-column>
-        </el-table> -->
       </el-form>
       <template #footer>
         <div class="dialog-footer">
@@ -174,12 +153,41 @@
         </div>
       </template>
     </el-dialog>
+
+    <!-- 新增：批量导入弹窗 -->
+    <el-dialog title="批量导入赛事届次" v-model="importOpen" width="400px" append-to-body>
+      <el-form ref="importRef" :model="importForm" label-width="80px">
+        <el-form-item label="Excel文件" prop="file">
+          <!-- 若依通用文件上传组件，适配Excel导入 -->
+          <el-upload ref="uploadRef" :auto-upload="false" :on-change="handleFileChange" :file-list="fileList"
+            accept=".xlsx,.xls" drag style="width:100%;">
+            <i class="el-icon-upload" />
+            <div class="el-upload__text">将文件拖到此处，或<em>点击上传</em></div>
+            <div class="el-upload__tip" slot="tip">仅支持.xlsx/.xls格式文件，且需按模板填写</div>
+          </el-upload>
+        </el-form-item>
+        <el-form-item label="导入模式">
+          <!-- 新增：更新模式选择，对应后端updateSupport参数 -->
+          <el-radio-group v-model="importForm.updateSupport" style="width:100%;">
+            <el-radio label="false" border style="width:70%;">仅新增（存在则跳过）</el-radio>
+            <el-radio label="true" border style="width:70%;">覆盖更新（存在则修改）</el-radio>
+          </el-radio-group>
+        </el-form-item>
+      </el-form>
+      <template #footer>
+        <div class="dialog-footer">
+          <el-button @click="handleImportClose">取 消</el-button>
+          <el-button type="primary" @click="handleImportSubmit" :disabled="!fileList.length">确 定 导 入</el-button>
+        </div>
+      </template>
+    </el-dialog>
   </div>
 </template>
 
 <script setup name="Session">
 import { listSession, getSession, delSession, addSession, updateSession } from "@/api/session/session"
-// 核心引入：赛事主表接口，用于获取所有赛事列表
+// 核心新增：导入/导出模板接口（和后端Controller接口对应）
+import { exportTemplateSession, importDataSession } from "@/api/session/session"
 import { listCompetition } from "@/api/competition/competition"
 
 const { proxy } = getCurrentInstance()
@@ -187,7 +195,6 @@ const { sys_competition_tag, sys_competition_status, sys_competition_del_flag, s
 
 const sessionList = ref([])
 const tagList = ref([])
-// 核心定义：赛事主表列表（去重后），供下拉框和表格映射使用
 const competitionList = ref([])
 const open = ref(false)
 const loading = ref(true)
@@ -198,6 +205,16 @@ const single = ref(true)
 const multiple = ref(true)
 const total = ref(0)
 const title = ref("")
+
+// 新增：导入相关响应式变量
+const importOpen = ref(false) // 导入弹窗开关
+const importRef = ref(null)   // 导入表单ref
+const uploadRef = ref(null)   // 文件上传组件ref
+const fileList = ref([])      // 上传文件列表
+// 导入表单：updateSupport对应后端参数（是否更新已存在数据）
+const importForm = reactive({
+  updateSupport: "false" // 默认仅新增
+})
 
 const data = reactive({
   form: {},
@@ -214,7 +231,6 @@ const data = reactive({
   },
   rules: {
     competitionId: [
-      // 校验提示修改为“赛事名称不能为空”，更直观
       { required: true, message: "赛事名称不能为空", trigger: "change" }
     ],
     session: [
@@ -237,29 +253,24 @@ const data = reactive({
 
 const { queryParams, form, rules } = toRefs(data)
 
-// 核心方法1：获取赛事主表列表并做去重处理（根据赛事名称去重）
+// 获取赛事主表列表并去重
 function getCompetitionList() {
-  // 传空参数获取所有赛事
   listCompetition({}).then(response => {
-    // 适配若依不同接口返回格式：rows / data
     const originList = response.rows || response.data || []
-    // 按赛事名称去重：利用Map的key唯一性，name为key，保留第一个匹配项
     const uniqueMap = new Map()
     originList.forEach(item => {
       if (item.name && !uniqueMap.has(item.name)) {
         uniqueMap.set(item.name, item)
       }
     })
-    // 转换为数组赋值给下拉框
     competitionList.value = Array.from(uniqueMap.values())
-    console.log("去重后的赛事列表：", competitionList.value)
   }).catch(error => {
     console.error("获取赛事主表列表失败：", error)
     proxy.$modal.msgError("获取赛事列表失败，请先添加赛事主表数据")
   })
 }
 
-// 核心方法2：根据赛事ID获取对应的赛事名称（用于表格映射）
+// 根据赛事ID获取名称
 function getCompetitionName(competitionId) {
   if (!competitionId) return ''
   const target = competitionList.value.find(item => item.id == competitionId)
@@ -297,7 +308,6 @@ function reset() {
     createTime: null,
     updateBy: null,
     updateTime: null,
-    // remark: null,
     delFlag: null
   }
   tagList.value = []
@@ -323,7 +333,7 @@ function handleSelectionChange(selection) {
   multiple.value = !selection.length
 }
 
-/** 新增按钮操作 - 重新获取赛事列表，确保数据最新 */
+/** 新增按钮操作 */
 function handleAdd() {
   reset()
   getCompetitionList()
@@ -331,18 +341,17 @@ function handleAdd() {
   title.value = "添加赛事届次"
 }
 
-/** 修改按钮操作 - 重新获取赛事列表，适配回显 */
+/** 修改按钮操作 */
 function handleUpdate(row) {
   reset()
   getCompetitionList()
   const _id = row.id || ids.value
   getSession(_id).then(response => {
     form.value = response.data
-    // 重点：将后台返回的tags字符串（如"标签1,标签2"）转为数组
     if (form.value.tags && typeof form.value.tags === 'string') {
       form.value.tags = form.value.tags.split(',')
     } else {
-      form.value.tags = [] // 无数据时给空数组
+      form.value.tags = []
     }
     tagList.value = response.data.tagList
     open.value = true
@@ -350,12 +359,11 @@ function handleUpdate(row) {
   })
 }
 
-/** 提交按钮 - 无需修改，提交的还是competitionId（ID值），后台兼容 */
+/** 提交按钮 */
 function submitForm() {
   proxy.$refs["sessionRef"].validate(valid => {
     if (valid) {
       form.value.tags = form.value.tags.join(",")
-      // form.value.tagList = tagList.value
       if (form.value.id != null) {
         updateSession(form.value).then(response => {
           proxy.$modal.msgSuccess("修改成功")
@@ -394,7 +402,6 @@ function handleAddTag() {
   let obj = {}
   obj.tagName = ""
   obj.depId = ""
-  // obj.remark = ""
   tagList.value.push(obj)
 }
 
@@ -416,14 +423,67 @@ function handleTagSelectionChange(selection) {
   checkedTag.value = selection.map(item => item.index)
 }
 
-/** 导出按钮操作 */
+/** 原有导出按钮操作（导出已有数据） */
 function handleExport() {
   proxy.download('session/session/export', {
     ...queryParams.value
   }, `session_${new Date().getTime()}.xlsx`)
 }
 
-// 页面初始化：同时加载届次列表和赛事主表列表
+// ========== 新增：导出模板核心方法 ==========
+function handleExportTemplate() {
+  proxy.download('session/session/exportTemplate', {}, `赛事届次导入模板_${new Date().getTime()}.xlsx`)
+}
+
+// ========== 新增：批量导入相关方法 ==========
+// 打开导入弹窗
+function handleImportOpen() {
+  importOpen.value = true
+  // 重置上传状态
+  fileList.value = []
+  importForm.updateSupport = "false"
+  if (uploadRef.value) {
+    uploadRef.value.clearFiles()
+  }
+}
+
+// 关闭导入弹窗
+function handleImportClose() {
+  importOpen.value = false
+  fileList.value = []
+  if (uploadRef.value) {
+    uploadRef.value.clearFiles()
+  }
+}
+
+// 监听文件选择变化
+function handleFileChange(file) {
+  // 只保留最后一个选择的文件
+  fileList.value = [file]
+}
+
+// 提交导入操作（核心）
+function handleImportSubmit() {
+  if (!fileList.value.length) {
+    proxy.$modal.msgWarning("请选择要导入的Excel文件！")
+    return
+  }
+  // 构造FormData（适配文件上传）
+  const formData = new FormData()
+  formData.append("file", fileList.value[0].raw) // 文件流
+  formData.append("updateSupport", importForm.updateSupport) // 导入模式
+  // 调用导入接口
+  importDataSession(formData).then(response => {
+    proxy.$modal.msgSuccess(response.msg || "导入成功！")
+    handleImportClose()
+    getList() // 刷新列表
+    getCompetitionList()
+  }).catch(error => {
+    proxy.$modal.msgError(error.msg || "导入失败，请检查文件格式和内容！")
+  })
+}
+
+// 页面初始化
 getList()
 getCompetitionList()
 </script>
