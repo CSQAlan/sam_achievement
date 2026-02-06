@@ -30,7 +30,7 @@ public class Session extends BaseEntity
     private String session;
 
     /** 赛事类别（0=政府类，1=学会类） */
-    @Excel(name = "赛事类别",prompt = "填写：政府类/学会类" )
+    @Excel(name = "赛事类别", prompt = "填写：政府类/学会类" )
     private String category;
 
     /** 盖章单位（多个分号分隔） */

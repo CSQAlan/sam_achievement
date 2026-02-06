@@ -1,5 +1,6 @@
 package com.ruoyi.session.service.impl;
 
+import java.util.Collections;
 import java.util.List;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -89,17 +90,46 @@ public class SessionServiceImpl implements ISessionService {
             String trimText = text.trim();
             if (trimText.isEmpty()) continue;
 
-            // 核心修改：构造SysDictData查询条件
+            // ========== 核心修改1：清洗用户输入的空格 ==========
+            // 去掉所有空格（半角、全角、多个连续空格）
+            String cleanText = trimText.replaceAll("\\s+", "").replaceAll("　", "");
+
+            // ========== 核心修改2：构造查询条件（兼容去空格匹配） ==========
             SysDictData queryDict = new SysDictData();
             queryDict.setDictType(dictType);    // 字典类型
-            queryDict.setDictLabel(trimText);   // 字典文字
             queryDict.setStatus("0");           // 只查启用的字典项
 
-            // 调用现有方法查询字典列表（因为类型+文字唯一，列表只会有一条数据）
+            // 第一步：先按原始清洗后的文字查（优先）
+            queryDict.setDictLabel(cleanText);
             List<SysDictData> dictList = sysDictDataService.selectDictDataList(queryDict);
+
+            // 第二步：如果没查到，遍历该字典类型下所有标签，去空格后匹配（兜底）
             if (CollectionUtils.isEmpty(dictList)) {
-                throw new ServiceException("系统字典【" + dictType + "】中未找到标签【" + trimText + "】");
+                // 查询该字典类型下所有启用的标签
+                SysDictData allDict = new SysDictData();
+                allDict.setDictType(dictType);
+                allDict.setStatus("0");
+                List<SysDictData> allDictList = sysDictDataService.selectDictDataList(allDict);
+
+                // 遍历字典，把字典标签去空格后和用户输入的清洗后文字匹配
+                for (SysDictData dict : allDictList) {
+                    String dictLabel = dict.getDictLabel();
+                    if (dictLabel == null) continue;
+                    // 字典标签也去空格
+                    String cleanDictLabel = dictLabel.replaceAll("\\s+", "").replaceAll("　", "");
+                    // 匹配成功则赋值
+                    if (cleanText.equals(cleanDictLabel)) {
+                        dictList = Collections.singletonList(dict);
+                        break;
+                    }
+                }
             }
+
+            // 校验是否找到
+            if (CollectionUtils.isEmpty(dictList)) {
+                throw new ServiceException("系统字典【" + dictType + "】中未找到标签【" + trimText + "】（清洗后：" + cleanText + "）");
+            }
+
             // 获取对应的字典值
             String dictValue = dictList.get(0).getDictValue();
             codeSb.append(dictValue).append(",");
