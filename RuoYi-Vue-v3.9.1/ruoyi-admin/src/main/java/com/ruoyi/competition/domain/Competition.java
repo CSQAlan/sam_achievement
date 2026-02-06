@@ -31,6 +31,9 @@ public class Competition extends BaseEntity
     @Excel(name = "盖章单位")
     private String organizations;
 
+    @Excel(name="赛事等级")
+    private String level;
+
     /** 赛事标签 */
     @Excel(name = "赛事标签")
     private String tags;
@@ -91,6 +94,16 @@ public class Competition extends BaseEntity
     public String getOrganizations()
     {
         return organizations;
+    }
+
+    public void setLevel(String level)
+    {
+        this.level = level;
+    }
+
+    public String getLevel()
+    {
+        return level;
     }
 
     public void setTags(String tags)

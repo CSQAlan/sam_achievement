@@ -33,6 +33,7 @@
     <select id="selectSessionList" parameterType="Session" resultMap="SessionResult">
         <include refid="selectSessionVo"/>
         <where>
+            del_flag = '0' <!-- 新增：只查询未删除的数据，重复校验更严谨 -->
             <if test="competitionId != null "> and competition_id = #{competitionId}</if>
             <if test="session != null  and session != ''"> and session = #{session}</if>
             <if test="category != null  and category != ''"> and category = #{category}</if>
@@ -45,7 +46,7 @@
     <!-- 单条查询：移除子表关联，直接用基础SessionResult，表名随公共SQL变动 -->
     <select id="selectSessionById" parameterType="Long" resultMap="SessionResult">
         <include refid="selectSessionVo"/>
-        where session_id = #{id}
+        where session_id = #{id} and del_flag = '0' <!-- 新增：只查未删除数据 -->
     </select>
 
     <!-- 新增：保留tags字段插入，单表操作，仅修改表名 -->
@@ -109,8 +110,8 @@
         delete from sam_competition_session where session_id = #{id}
     </delete>
 
-    <!-- 批量删除：单表操作，仅修改表名 -->
-    <delete id="deleteSessionByIds" parameterType="String">
+    <!-- 批量删除：单表操作，仅修改表名 + 修正parameterType为Long[]（原String错误） -->
+    <delete id="deleteSessionByIds" parameterType="Long[]">
         delete from sam_competition_session where session_id in
         <foreach item="id" collection="array" open="(" separator="," close=")">
             #{id}
