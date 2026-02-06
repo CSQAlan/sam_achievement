@@ -9,6 +9,7 @@
         <result property="name"       column="name"        />
         <result property="category"   column="category"    />
         <result property="organizations" column="organizations"/>
+        <result property="level"     column="level"      />
         <result property="tags"       column="tags"        />
         <result property="scopeType"  column="scope_type"  />
         <result property="status"     column="status"      />
@@ -41,7 +42,7 @@
 
     <!-- 1. 主表名：competition → sam_competition，已移除remark字段 -->
     <sql id="selectCompetitionVo">
-        select id, name, category, organizations, tags, scope_type, status, memo, create_by, create_time, update_by, update_time, del_flag from sam_competition
+        select id, name, category, organizations,level, tags, scope_type, status, memo, create_by, create_time, update_by, update_time, del_flag from sam_competition
     </sql>
 
     <select id="selectCompetitionList" parameterType="Competition" resultMap="CompetitionResult">
@@ -49,6 +50,7 @@
         <where>
             <if test="name != null  and name != ''"> and name like concat('%', #{name}, '%')</if>
             <if test="category != null  and category != ''"> and category like concat('%', #{category}, '%')</if>
+            <if test="level != null  and level != ''"> and level like concat('%', #{level}, '%')</if>
             <if test="organizations != null  and organizations != ''"> and organizations = #{organizations}</if>
             <if test="tags != null  and tags != ''"> and tags like concat('%', #{tags}, '%')</if>
             <if test="scopeType != null  and scopeType != ''"> and scope_type = #{scopeType}</if>
@@ -58,7 +60,7 @@
 
     <!-- 2. 主表单查：删除SQL中的remark字段（解决本次核心报错） -->
     <select id="selectCompetitionById" parameterType="Long" resultMap="CompetitionCompetitionDeptRelResult">
-        select id, name, category, organizations, tags, scope_type, status, memo, create_by, create_time, update_by, update_time, del_flag
+        select id, name, category, organizations,level, tags, scope_type, status, memo, create_by, create_time, update_by, update_time, del_flag
         from sam_competition
         where id = #{id}
     </select>
@@ -77,6 +79,7 @@
             <if test="name != null and name != ''">name,</if>
             <if test="category != null and category != ''">category,</if>
             <if test="organizations != null and organizations != ''">organizations,</if>
+            <if test="level != null">level,</if>
             <if test="tags != null">tags,</if>
             <if test="scopeType != null">scope_type,</if>
             <if test="status != null">status,</if>
@@ -92,6 +95,7 @@
             <if test="name != null and name != ''">#{name},</if>
             <if test="category != null and category != ''">#{category},</if>
             <if test="organizations != null and organizations != ''">#{organizations},</if>
+            <if test="level != null">#{level},</if>
             <if test="tags != null">#{tags},</if>
             <if test="scopeType != null">#{scopeType},</if>
             <if test="status != null">#{status},</if>
@@ -112,6 +116,7 @@
             <if test="name != null and name != ''">name = #{name},</if>
             <if test="category != null and category != ''">category = #{category},</if>
             <if test="organizations != null and organizations != ''">organizations = #{organizations},</if>
+            <if test="level != null">level = #{level},</if>
             <if test="tags != null">tags = #{tags},</if>
             <if test="scopeType != null">scope_type = #{scopeType},</if>
             <if test="status != null">status = #{status},</if>
