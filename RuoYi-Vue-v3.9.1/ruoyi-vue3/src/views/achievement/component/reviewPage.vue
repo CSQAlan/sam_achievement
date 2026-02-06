@@ -336,7 +336,7 @@ async function submitAudit() {
 
     proxy.$modal?.msgError?.("当前来源(source)不支持审核（请从未审核列表进入）");
   } catch (e) {
-    proxy.$modal?.msgError?.("审核失败（可能已归档/已推送或接口限制）");
+    proxy.$modal?.msgError?.("审核失败（可能院级审核未通过）");
   }
 }
 

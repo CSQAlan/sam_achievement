@@ -13,7 +13,7 @@ import com.ruoyi.achievement.domain.SamAchievement;
 import com.ruoyi.achievement.service.ISamAchievementService;
 
 /**
- * 成果录入Service业务层处理
+ * 成果录入Service业务层处�?
  * 
  * @author 王璨
  * @date 2026-02-03
@@ -57,7 +57,14 @@ public class SamAchievementServiceImpl implements ISamAchievementService
     @Transactional
     @Override
     public int insertSamAchievement(SamAchievement samAchievement)
-    {
+    {
+        if (!StringUtils.hasText(samAchievement.getAchievementId()))
+        {
+            Long nextId = samAchievementMapper.selectNextAchievementId();
+            samAchievementMapper.incrementNextAchievementId();
+            samAchievement.setAchievementId(String.valueOf(nextId));
+        }
+
         samAchievement.setCreateTime(DateUtils.getNowDate());
         int rows = samAchievementMapper.insertSamAchievement(samAchievement);
         insertSamAchievementParticipant(samAchievement);
@@ -132,3 +139,6 @@ public class SamAchievementServiceImpl implements ISamAchievementService
         }
     }
 }
+
+
+
