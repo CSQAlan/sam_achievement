@@ -1,50 +1,50 @@
-<template>
+﻿<template>
   <div class="achievement-manage-root">
   <div v-show="!pageModeActive" class="app-container">
-    <!-- 搜索表单 -->
+    <!-- 鎼滅储琛ㄥ崟 -->
     <el-form :model="queryParams" ref="queryRef" :inline="true" v-show="showSearch" label-width="68px">
-      <el-form-item label="成果ID" prop="achievementId">
+      <el-form-item label="鎴愭灉ID" prop="achievementId">
         <el-input
             v-model="queryParams.achievementId"
-            placeholder="请输入成果ID"
+            placeholder="璇疯緭鍏ユ垚鏋淚D"
             clearable
             @keyup.enter="handleQuery"
         />
       </el-form-item>
-      <el-form-item label="比赛" prop="track">
+      <el-form-item label="姣旇禌" prop="track">
         <el-input
             v-model="queryParams.track"
-            placeholder="请输入比赛"
+            placeholder="璇疯緭鍏ユ瘮璧?
             clearable
             @keyup.enter="handleQuery"
         />
       </el-form-item>
-      <el-form-item label="届次" prop="sessionId">
+      <el-form-item label="灞婃" prop="sessionId">
         <el-input
             v-model="queryParams.sessionId"
-            placeholder="请输入届次"
+            placeholder="璇疯緭鍏ュ眾娆?
             clearable
             @keyup.enter="handleQuery"
         />
       </el-form-item>
-      <el-form-item label="参赛选手" prop="contestant">
+      <el-form-item label="鍙傝禌閫夋墜" prop="contestant">
         <el-input
             v-model="queryParams.contestant"
-            placeholder="请输入参赛选手"
+            placeholder="璇疯緭鍏ュ弬璧涢€夋墜"
             clearable
             @keyup.enter="handleQuery"
         />
       </el-form-item>
-      <el-form-item label="指导老师" prop="instructor">
+      <el-form-item label="鎸囧鑰佸笀" prop="instructor">
         <el-input
             v-model="queryParams.instructor"
-            placeholder="请输入指导老师"
+            placeholder="璇疯緭鍏ユ寚瀵艰€佸笀"
             clearable
             @keyup.enter="handleQuery"
         />
       </el-form-item>
-      <el-form-item label="类别" prop="category">
-        <el-select v-model="queryParams.category" placeholder="请选择类别" clearable>
+      <el-form-item label="绫诲埆" prop="category">
+        <el-select v-model="queryParams.category" placeholder="璇烽€夋嫨绫诲埆" clearable>
           <el-option
               v-for="dict in achievement_category"
               :key="dict.value"
@@ -53,16 +53,16 @@
           />
         </el-select>
       </el-form-item>
-      <el-form-item label="作品名称" prop="name">
+      <el-form-item label="浣滃搧鍚嶇О" prop="name">
         <el-input
             v-model="queryParams.name"
-            placeholder="请输入作品名称"
+            placeholder="璇疯緭鍏ヤ綔鍝佸悕绉?
             clearable
             @keyup.enter="handleQuery"
         />
       </el-form-item>
-      <el-form-item label="级别" prop="level">
-        <el-select v-model="queryParams.level" placeholder="请选择级别" clearable>
+      <el-form-item label="绾у埆" prop="level">
+        <el-select v-model="queryParams.level" placeholder="璇烽€夋嫨绾у埆" clearable>
           <el-option
               v-for="dict in award_level_type"
               :key="dict.value"
@@ -71,8 +71,8 @@
           />
         </el-select>
       </el-form-item>
-      <el-form-item label="获奖等级" prop="grade">
-        <el-select v-model="queryParams.grade" placeholder="请选择获奖等级" clearable>
+      <el-form-item label="鑾峰绛夌骇" prop="grade">
+        <el-select v-model="queryParams.grade" placeholder="璇烽€夋嫨鑾峰绛夌骇" clearable>
           <el-option
               v-for="dict in award_rank"
               :key="dict.value"
@@ -81,16 +81,16 @@
           />
         </el-select>
       </el-form-item>
-      <el-form-item label="证书编号" prop="certificateNo">
+      <el-form-item label="璇佷功缂栧彿" prop="certificateNo">
         <el-input
             v-model="queryParams.certificateNo"
-            placeholder="请输入证书编号"
+            placeholder="璇疯緭鍏ヨ瘉涔︾紪鍙?
             clearable
             @keyup.enter="handleQuery"
         />
       </el-form-item>
-      <el-form-item label="组别" prop="groupId">
-        <el-select v-model="queryParams.groupId" placeholder="请选择组别" clearable>
+      <el-form-item label="缁勫埆" prop="groupId">
+        <el-select v-model="queryParams.groupId" placeholder="璇烽€夋嫨缁勫埆" clearable>
           <el-option
               v-for="dict in group_type"
               :key="dict.value"
@@ -99,18 +99,18 @@
           />
         </el-select>
       </el-form-item>
-      <el-form-item label="获奖时间" prop="awardTime">
+      <el-form-item label="鑾峰鏃堕棿" prop="awardTime">
         <el-date-picker
             v-model="queryParams.awardTimeStart"
             type="daterange"
             value-format="YYYY-MM-DD"
-            range-separator="至"
-            start-placeholder="开始时间"
-            end-placeholder="结束时间"
+            range-separator="鑷?
+            start-placeholder="寮€濮嬫椂闂?
+            end-placeholder="缁撴潫鏃堕棿"
         />
       </el-form-item>
-      <el-form-item label="审核状态" prop="reviewStatus">
-        <el-select v-model="queryParams.reviewStatus" placeholder="请选择审核状态" clearable>
+      <el-form-item label="瀹℃牳鐘舵€? prop="reviewStatus">
+        <el-select v-model="queryParams.reviewStatus" placeholder="璇烽€夋嫨瀹℃牳鐘舵€? clearable>
           <el-option
               v-for="dict in auditStatus"
               :key="dict.value"
@@ -120,12 +120,12 @@
         </el-select>
       </el-form-item>
       <el-form-item>
-        <el-button type="primary" icon="Search" @click="handleQuery">搜索</el-button>
-        <el-button icon="Refresh" @click="resetQuery">重置</el-button>
+        <el-button type="primary" icon="Search" @click="handleQuery">鎼滅储</el-button>
+        <el-button icon="Refresh" @click="resetQuery">閲嶇疆</el-button>
       </el-form-item>
     </el-form>
 
-    <!-- 操作按钮 -->
+    <!-- 鎿嶄綔鎸夐挳 -->
     <el-row :gutter="10" class="mb8">
       <el-col :span="1.5">
         <el-button
@@ -134,7 +134,7 @@
             icon="Plus"
             @click="handleAdd"
             v-hasPermi="permAdd"
-        >新增</el-button>
+        >鏂板</el-button>
       </el-col>
       <el-col :span="1.5">
         <el-button
@@ -144,7 +144,7 @@
             :disabled="single"
             @click="handleUpdate"
             v-hasPermi="permEdit"
-        >修改</el-button>
+        >淇敼</el-button>
       </el-col>
       <el-col :span="1.5">
         <el-button
@@ -154,7 +154,7 @@
             :disabled="multiple"
             @click="handleDelete"
             v-hasPermi="permRemove"
-        >删除</el-button>
+        >鍒犻櫎</el-button>
       </el-col>
       <el-col :span="1.5">
         <el-button
@@ -163,53 +163,61 @@
             icon="Download"
             @click="handleExport"
             v-hasPermi="permExport"
-        >导出</el-button>
+        >瀵煎嚭</el-button>
       </el-col>
     </el-row>
 
-    <!-- 数据表格 -->
+    <!-- 鏁版嵁琛ㄦ牸 -->
     <el-table v-loading="loading" :data="listData" @selection-change="handleSelectionChange">
       <el-table-column type="selection" width="55" align="center" />
-      <el-table-column label="成果ID" align="center" prop="achievementId" />
-      <el-table-column label="比赛" align="center" prop="track" />
-      <el-table-column label="届次" align="center" prop="sessionId" />
-      <el-table-column label="参赛选手" align="center" prop="contestant" />
-      <el-table-column label="指导老师" align="center" prop="instructor" />
-      <el-table-column label="类别" align="center" prop="category">
+      <el-table-column label="鎴愭灉ID" align="center" prop="achievementId" />
+      <el-table-column label="姣旇禌" align="center" prop="track"`r`n        <template #default="scope">
+  <template #default="scope">
+    <span>{{ scope.row.competitionName || scope.row.competition_name || scope.row.track || scope.row.competitionId || '' }}</span>
+  </template>
+</el-table-column>
+      <el-table-column label="灞婃" align="center" prop="sessionId"`r`n        <template #default="scope">
+  <template #default="scope">
+    <span>{{ scope.row.session || scope.row.sessionName || scope.row.session_name || scope.row.sessionId || '' }}</span>
+  </template>
+</el-table-column>
+      <el-table-column label="鍙傝禌閫夋墜" align="center" prop="contestant" />
+      <el-table-column label="鎸囧鑰佸笀" align="center" prop="instructor" />
+      <el-table-column label="绫诲埆" align="center" prop="category">
         <template #default="scope">
           <dict-tag :options="achievement_category" :value="scope.row.category" />
         </template>
       </el-table-column>
-      <el-table-column label="作品名称" align="center" prop="name" />
-      <el-table-column label="级别" align="center" prop="level">
+      <el-table-column label="浣滃搧鍚嶇О" align="center" prop="name" />
+      <el-table-column label="绾у埆" align="center" prop="level">
         <template #default="scope">
           <dict-tag :options="award_level_type" :value="scope.row.level" />
         </template>
       </el-table-column>
-      <el-table-column label="获奖等级" align="center" prop="grade">
+      <el-table-column label="鑾峰绛夌骇" align="center" prop="grade">
         <template #default="scope">
           <dict-tag :options="award_rank" :value="scope.row.grade" />
         </template>
       </el-table-column>
-      <el-table-column label="证书编号" align="center" prop="certificateNo" />
-      <el-table-column label="组别" align="center" prop="groupId" min-width="100">
+      <el-table-column label="璇佷功缂栧彿" align="center" prop="certificateNo" />
+      <el-table-column label="缁勫埆" align="center" prop="groupId" min-width="100">
         <template #default="scope">
           <dict-tag :options="group_type" :value="scope.row.groupId" />
         </template>
       </el-table-column>
-      <el-table-column label="审核状态" align="center" prop="reviewStatus">
+      <el-table-column label="瀹℃牳鐘舵€? align="center" prop="reviewStatus">
         <template #default="scope">
           <dict-tag :options="auditStatus" :value="scope.row.reviewStatus" />
         </template>
       </el-table-column>
-      <el-table-column label="获奖时间" align="center" prop="awardTime" width="180">
+      <el-table-column label="鑾峰鏃堕棿" align="center" prop="awardTime" width="180">
         <template #default="scope">
           <span>{{ parseTime(scope.row.awardTime, '{y}-{m}-{d}') }}</span>
         </template>
       </el-table-column>
- <el-table-column label="操作" align="center" class-name="small-padding fixed-width">
+ <el-table-column label="鎿嶄綔" align="center" class-name="small-padding fixed-width">
   <template #default="scope">
-    <el-button link type="primary" icon="View" @click="handleReview(scope.row)" v-hasPermi="permReview">详情</el-button>
+    <el-button link type="primary" icon="View" @click="handleReview(scope.row)" v-hasPermi="permReview">璇︽儏</el-button>
     
     <el-button 
       link 
@@ -218,7 +226,7 @@
       @click="handleRowUpdate(scope.row)" 
       v-hasPermi="permEdit"
       :disabled="!checkEditable(scope.row)" 
-    >修改</el-button>
+    >淇敼</el-button>
     
     <el-button 
       link 
@@ -227,7 +235,7 @@
       @click="handleDelete(scope.row)" 
       v-hasPermi="permRemove"
       :disabled="!checkEditable(scope.row)"
-    >删除</el-button>
+    >鍒犻櫎</el-button>
   </template>
 </el-table-column>
 
@@ -252,7 +260,7 @@
       :page-mode="pageModeActive"
       :read-only="formReadOnly"
       :show-submit="formShowSubmit"
-      cancel-text="返回"
+      cancel-text="杩斿洖"
       @ok="handleFormOk"
       @cancel="handleFormCancel"
   />
@@ -263,7 +271,7 @@
       :update-fn="updateFn"
       :read-only="formReadOnly"
       :show-submit="formShowSubmit"
-      cancel-text="返回"
+      cancel-text="杩斿洖"
       @ok="handleFormOk"
       @cancel="handleFormCancel"
   />
@@ -385,19 +393,19 @@ function getList() {
 }
 
 function normalizeRowStatus(row) {
-  // 1. 获取后端可能返回的各种字段名
+  // 1. 鑾峰彇鍚庣鍙兘杩斿洖鐨勫悇绉嶅瓧娈靛悕
   const reviewResult = row.reviewResult ?? row.review_result ?? row.reviewStatus;
   const schoolResult = row.schooiReviewResult ?? row.schoolReviewResult ?? row.schooi_review_result ?? row.school_review_result;
 
   row.reviewResult = reviewResult;
   row.schooiReviewResult = schoolResult;
 
-  // 2. 根据场景决定表格里的“审核状态(reviewStatus)”列到底显示哪个值
+  // 2. 鏍规嵁鍦烘櫙鍐冲畾琛ㄦ牸閲岀殑鈥滃鏍哥姸鎬?reviewStatus)鈥濆垪鍒板簳鏄剧ず鍝釜鍊?
   if (reviewSource.value.startsWith('college')) {
-    // 场景A：院级审核员 -> 显示院级结果
+    // 鍦烘櫙A锛氶櫌绾у鏍稿憳 -> 鏄剧ず闄㈢骇缁撴灉
     row.reviewStatus = reviewResult ?? 0;
   } else if (reviewSource.value.startsWith('school')) {
-    // 场景B：校级审核员 -> 显示校级结果
+    // 鍦烘櫙B锛氭牎绾у鏍稿憳 -> 鏄剧ず鏍＄骇缁撴灉
     row.reviewStatus = schoolResult ?? 2;
   } else {
     row.reviewStatus = reviewResult; 
@@ -452,16 +460,16 @@ function handleUpdate() {
   if (_achievementId) openDialog(_achievementId, { readOnly: false });
 }
 
-/** 行内修改按钮操作 */
+/** 琛屽唴淇敼鎸夐挳鎿嶄綔 */
 function handleRowUpdate(row) {
   const _achievementId = row?.achievementId;
   if (!_achievementId) return;
 
-  // 【核心修改】：如果是审核模式，可能需要跳转去审核修改（保留同学逻辑）
+  // 銆愭牳蹇冧慨鏀广€戯細濡傛灉鏄鏍告ā寮忥紝鍙兘闇€瑕佽烦杞幓瀹℃牳淇敼锛堜繚鐣欏悓瀛﹂€昏緫锛?
   if (reviewSource.value) {
     openReviewPage(_achievementId, 'edit');
   } else {
-    // 否则是普通用户，直接打开本地弹窗进行编辑
+    // 鍚﹀垯鏄櫘閫氱敤鎴凤紝鐩存帴鎵撳紑鏈湴寮圭獥杩涜缂栬緫
     openDialog(_achievementId, { readOnly: false });
   }
 }
@@ -551,13 +559,13 @@ function handleFormCancel() {
 }
 
 /**
- * 核心逻辑：检查是否可以修改
+ * 鏍稿績閫昏緫锛氭鏌ユ槸鍚﹀彲浠ヤ慨鏀?
  */
 function checkEditable(row) {
   if (reviewSource.value) return true; 
-  // 防空判断
+  // 闃茬┖鍒ゆ柇
   if (!row) return false;
-  // 获取状态值
+  // 鑾峰彇鐘舵€佸€?
   const collegeStatus = String(row.reviewResult); 
   const schoolStatus = String(row.schooiReviewResult); 
   if (schoolStatus === '0') {
@@ -577,4 +585,6 @@ export default {
   name: 'AchievementManageIndex'
 }
 </script>
+
+
 
