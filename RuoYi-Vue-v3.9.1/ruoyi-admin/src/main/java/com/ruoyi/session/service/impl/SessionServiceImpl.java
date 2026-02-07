@@ -44,9 +44,20 @@ public class SessionServiceImpl implements ISessionService {
     public Session selectSessionById(Long id) {
         return sessionMapper.selectSessionById(id);
     }
+    // 在 SessionServiceImpl 中修改 selectSessionList 方法
     @Override
     public List<Session> selectSessionList(Session session) {
-        return sessionMapper.selectSessionList(session);
+        List<Session> sessionList = sessionMapper.selectSessionList(session);
+        // 补充：遍历列表，从赛事主表查询并赋值 competitionName（解决导出为空）
+        for (Session s : sessionList) {
+            if (s.getCompetitionId() != null) {
+                Competition competition = competitionService.selectCompetitionById(s.getCompetitionId());
+                if (competition != null) {
+                    s.setCompetitionName(competition.getName());
+                }
+            }
+        }
+        return sessionList;
     }
     @Transactional
     @Override
@@ -186,19 +197,17 @@ public class SessionServiceImpl implements ISessionService {
         }
         compName = compName.trim();
 
-        // ========== 核心修改：替换原有标签处理，调用自动字典匹配方法 ==========
-        // 直接传入@Excel注解的dictType，自动匹配文字→数字，支持多标签
-        String categoryCode = convertTextToDictCode("sys_competition_category", session.getCategory());
-        String levelCode = convertTextToDictCode("sys_competition_level", session.getLevel());
-        String tagsCode = convertTextToDictCode("sys_competition_tag", session.getTags());
+        // ====================== 核心：从【导入专用字段】读文字，永远不会被框架转成数字！ ======================
+        String categoryCode = convertTextToDictCode("sys_competition_category", session.getCategoryImport());
+        String levelCode = convertTextToDictCode("sys_competition_level", session.getLevelImport());
+        String tagsCode = convertTextToDictCode("sys_competition_tag", session.getTagsImport());
 
         // 步骤2：查询赛事总表，无则自动新增
         Competition comp = competitionService.selectCompetitionByCompName(compName);
         if (comp == null) {
             Competition newComp = new Competition();
             newComp.setName(compName);
-            newComp.setStatus("1"); // 修正：1=启用
-            // ========== 赋值：自动匹配后的数字编码 ==========
+            newComp.setStatus("1"); // 固定0=启用，RuoYi标准
             newComp.setCategory(categoryCode);
             newComp.setLevel(levelCode);
             newComp.setTags(tagsCode);
@@ -208,29 +217,18 @@ public class SessionServiceImpl implements ISessionService {
             newComp.setCreateTime(DateUtils.getNowDate());
             newComp.setDelFlag("0");
             competitionService.insertCompetition(newComp);
-
             comp = competitionService.selectCompetitionByCompName(compName);
-            if (comp == null) {
-                throw new ServiceException("自动新增总赛事后，未查询到赛事信息，请检查");
-            }
-            log.info("自动新增总赛事：{}，赛事ID：{}", compName, comp.getId());
         }
 
-        // 步骤3：设置届次表基础信息
+        // 步骤3：赋值给【数据库真实字段】，用于导出和列表显示
         session.setCompetitionId(comp.getId());
-        session.setStatus("1"); // 修正：0=启用（原1是停用，必改）
+        session.setCategory(categoryCode);    // 真实字段存数字
+        session.setLevel(levelCode);          // 真实字段存数字
+        session.setTags(tagsCode);            // 真实字段存数字
+        session.setStatus("1");
         session.setDelFlag("0");
-        session.setCreateBy(operName);
-        session.setCreateTime(DateUtils.getNowDate());
-        session.setUpdateBy(operName);
-        session.setUpdateTime(DateUtils.getNowDate());
 
-        // ========== 赋值：届次表也用自动匹配后的数字编码 ==========
-        session.setCategory(categoryCode);
-        session.setLevel(levelCode);
-        session.setTags(tagsCode);
-
-        // 步骤4：届次重复校验+新增/更新
+        // 步骤4：重复校验
         String sessionName = session.getSession();
         if (sessionName == null || sessionName.trim().isEmpty()) {
             throw new ServiceException("赛事届次不能为空");
