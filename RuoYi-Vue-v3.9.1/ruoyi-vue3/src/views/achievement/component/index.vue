@@ -345,6 +345,25 @@ const pageModeKey = ref(0);
 const formReadOnly = ref(false);
 const formShowSubmit = ref(true);
 
+function hashString(input) {
+  let hash = 0;
+  for (let i = 0; i < input.length; i++) {
+    hash = ((hash << 5) - hash) + input.charCodeAt(i);
+    hash |= 0;
+  }
+  return String(hash >>> 0);
+}
+
+function buildPageKey() {
+  const payload = {
+    source: reviewSource.value,
+    pageNum: queryParams.pageNum,
+    pageSize: queryParams.pageSize,
+    filters: { ...queryParams }
+  };
+  return hashString(JSON.stringify(payload));
+}
+
 const auditStatus = computed(() => {
   if (props.auditDict && Array.isArray(props.auditDict)) return props.auditDict;
   return queryParams.reviewStatus === 'college'
@@ -493,12 +512,30 @@ function openDialog(id, options = {}) {
 }
 
 function openReviewPage(id, mode) {
+  const ids = (listData.value || [])
+    .map((row) => row?.achievementId)
+    .filter((val) => val !== null && val !== undefined && val !== '');
+  const uniqueIds = Array.from(new Set(ids))
+    .map((val) => Number(val))
+    .filter((val) => !Number.isNaN(val))
+    .sort((a, b) => a - b);
+  const pageIds = uniqueIds.join(',');
+  const pageKey = buildPageKey();
+  if (pageKey) {
+    try {
+      sessionStorage.setItem(`review_page_${pageKey}`, pageIds);
+    } catch (e) {
+      // ignore storage errors
+    }
+  }
   router.push({
     path: reviewRoute.value,
     query: {
       id,
       source: reviewSource.value,
-      mode
+      mode,
+      pageKey,
+      pageIds
     }
   });
 }
@@ -520,4 +557,3 @@ export default {
   name: 'AchievementManageIndex'
 }
 </script>
-
