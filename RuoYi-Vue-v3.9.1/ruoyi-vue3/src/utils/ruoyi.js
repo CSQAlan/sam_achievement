@@ -215,7 +215,8 @@ export function getNormalPath(p) {
   if (p.length === 0 || !p || p == 'undefined') {
     return p
   }
-  let res = p.replace('//', '/')
+  // Collapse multiple slashes to avoid protocol-relative paths like //user
+  let res = p.replace(/\/{2,}/g, '/')
   if (res[res.length - 1] === '/') {
     return res.slice(0, res.length - 1)
   }

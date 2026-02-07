@@ -84,7 +84,7 @@ export const constantRoutes = [
     path: '/user',
     component: Layout,
     hidden: true,
-    redirect: 'noredirect',
+    redirect: '/noredirect',
     children: [
       {
         path: 'profile/:activeTab?',

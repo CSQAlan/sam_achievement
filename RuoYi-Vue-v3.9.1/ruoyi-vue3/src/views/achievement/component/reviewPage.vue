@@ -8,7 +8,7 @@
         :updateFn="currentApi.updateFn"
         :pageMode="true"
         :readOnly="isView"
-        :showSubmit="canSave"
+        :showSubmit="isEdit"
         cancelText="返回"
         titleAdd="成果审核"
         titleEdit="成果审核"
@@ -90,7 +90,6 @@ const source = computed(() => String(route.query.source || "college_level_unrevi
 const mode = computed(() => String(route.query.mode || "review").toLowerCase());
 const isEdit = computed(() => mode.value === "edit");
 const isView = computed(() => mode.value === "view");
-const canSave = computed(() => !isView.value);
 const showAuditToolbar = computed(() => true);
 const currentApi = computed(() => apiMap[source.value] || apiMap.college_level_unreviewed);
 
@@ -223,15 +222,20 @@ function handleBack() {
   router.back();
 }
 
-  /**
-   * ✅ 手动流转（前端触发，后端做校验）：
-   * 1) 院级未审核(college_level_unreviewed)
-   *    - updateCollege_level_unreviewed：reviewResult 0 -> 1/2
-   *    - 若通过(2)：同一次请求写入 schooiReviewResult=2（推送到校级未审核）
-   *
-   * 2) 校级未审核(school_level_unreviewed)
-   *    - updateSchool_level_unreviewed：schooiReviewResult 2 -> 0/1
-   */
+/**
+ * ✅ 手动流转归档推送（前端负责）：
+ * 1) 院级未审核(college_level_unreviewed)
+ *    - updateCollege_level_unreviewed：auditStatus 0 -> 1/2
+ *    - addCollege_level_reviewed：归档到院级已审核
+ *    - 若通过(2)：addSchool_level_unreviewed：推送到校级未审核（auditStatus=2 待校级审核）
+ *
+ * 2) 校级未审核(school_level_unreviewed)
+ *    - updateSchool_level_unreviewed：auditStatus 2 -> 0/1
+ *    - addSchool_level_reviewed：归档到校级已审核
+ *
+ * ✅ 关键修复：
+ * - 归档到校级已审核时必须写 schoolAuditTime（你的 mapper 有 school_audit_time is not null 的过滤）
+ */
 async function submitAudit() {
   const baseForm = dlgRef.value?.getForm?.();
   const id = baseForm?.achievementId ?? route.query.id;
@@ -266,42 +270,50 @@ async function submitAudit() {
 
   try {
     // ===== 院级审核 =====
-      if (source.value === "college_level_unreviewed") {
-        // 1) 更新院级未审核状态（0 -> 1/2）
-        const setSchoolPending = next === "2";
-        await updateCollege_level_unreviewed({
-          ...baseForm,
-          achievementId: id,
-          reviewResult: next,
-          reviewReason: collegeAuditReason,
-          reviewedAt: now,
-          auditBy: auditUser,
-          ...(setSchoolPending ? { schooiReviewResult: "2" } : {})
-        });
+    if (source.value === "college_level_unreviewed") {
+      // 1) 更新院级未审核状态（0 -> 1/2）
+      await updateCollege_level_unreviewed({
+        ...baseForm,
+        achievementId: id,
+        reviewResult: next,
+        reviewReason: collegeAuditReason,
+        reviewedAt: now,
+        auditBy: auditUser
+      });
 
-        proxy.$modal?.msgSuccess?.("院级审核成功");
-        handleBack();
-        return;
+      // 2) 院级通过(2) -> 推送到校级未审核（待校级审核=2）
+      if (next === "2") {
+        await updateSchool_level_unreviewed({
+          achievementId: id,
+          schooiReviewResult: "2"
+        });
       }
 
-    // 重新审核已经审核的院级记录
-      if (source.value === "college_level_reviewed") {
-        const existingSchool = baseForm?.schooiReviewResult;
-        const canSetSchoolPending =
-          next === "2" &&
-          (existingSchool == null || String(existingSchool) === "" || String(existingSchool) === "2");
-        await updateCollege_level_reviewed({
-          ...baseForm,
-          achievementId: id,
-          reviewResult: next,
-          reviewReason: collegeAuditReason,
-          reviewedAt: now,
-          auditBy: auditUser,
-          ...(canSetSchoolPending ? { schooiReviewResult: "2" } : {})
-        });
+      proxy.$modal?.msgSuccess?.("院级审核成功");
+      handleBack();
+      return;
+    }
 
-        proxy.$modal?.msgSuccess?.("院级审核成功");
-        handleBack();
+    // 重新审核已经审核的院级记录
+    if (source.value === "college_level_reviewed") {
+      await updateCollege_level_reviewed({
+        ...baseForm,
+        achievementId: id,
+        reviewResult: next,
+        reviewReason: collegeAuditReason,
+        reviewedAt: now,
+        auditBy: auditUser
+      });
+
+      if (next === "2" && (baseForm?.schooiReviewResult == null || baseForm?.schooiReviewResult === "")) {
+        await updateSchool_level_unreviewed({
+          achievementId: id,
+          schooiReviewResult: "2"
+        });
+      }
+
+      proxy.$modal?.msgSuccess?.("院级审核成功");
+      handleBack();
       return;
     }
 
