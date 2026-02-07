@@ -4,10 +4,12 @@
         "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
 <mapper namespace="com.ruoyi.session.mapper.SessionMapper">
 
-    <!-- 仅保留sam_competition_session单表的结果映射，包含tags字段，字段映射无变动 -->
+    <!-- 关键修改1：新增competitionName字段映射，解决赛事名称导出为空 -->
     <resultMap type="Session" id="SessionResult">
         <result property="id"           column="session_id"    />
         <result property="competitionId" column="competition_id" />
+        <!-- 新增：映射赛事名称（从competition表关联查询的name字段） -->
+        <result property="competitionName" column="competition_name" />
         <result property="session"      column="session"       />
         <result property="category"     column="category"      />
         <result property="organizations" column="organizations" />
@@ -22,34 +24,40 @@
         <result property="delFlag"      column="del_flag"      />
     </resultMap>
 
-    <!-- sam_competition_session单表查询公共SQL：仅修改表名 -->
+    <!-- 关键修改2：公共SQL关联competition表，查询赛事名称 -->
     <sql id="selectSessionVo">
-        select session_id, competition_id, session, category, organizations, level, status, tags,
-        create_by, create_time, update_by, update_time, remark, del_flag
-        from sam_competition_session
+        select s.session_id, s.competition_id, c.name as competition_name,
+        s.session, s.category, s.organizations, s.level, s.status, s.tags,
+        s.create_by, s.create_time, s.update_by, s.update_time, s.remark, s.del_flag
+        from sam_competition_session s
+        <!-- 左关联赛事主表（替换成你的competition表名，比如sam_competition） -->
+        left join sam_competition c on s.competition_id = c.id
     </sql>
 
-    <!-- 列表查询：单表，保留tags字段筛选，表名随公共SQL变动 -->
+    <!-- 列表查询：保留原有筛选条件，新增赛事名称模糊查询 -->
     <select id="selectSessionList" parameterType="Session" resultMap="SessionResult">
         <include refid="selectSessionVo"/>
         <where>
-            del_flag = '0' <!-- 新增：只查询未删除的数据，重复校验更严谨 -->
-            <if test="competitionId != null "> and competition_id = #{competitionId}</if>
-            <if test="session != null  and session != ''"> and session = #{session}</if>
-            <if test="category != null  and category != ''"> and category = #{category}</if>
-            <if test="organizations != null  and organizations != ''"> and organizations like concat('%', #{organizations}, '%')</if>
-            <if test="level != null  and level != ''"> and level = #{level}</if>
-            <if test="status != null  and status != ''"> and status = #{status}</if>
+            s.del_flag = '0' <!-- 新增：只查询未删除的数据，重复校验更严谨 -->
+            <if test="competitionId != null "> and s.competition_id = #{competitionId}</if>
+            <if test="competitionName != null and competitionName != ''">
+                and c.name like concat('%', #{competitionName}, '%')
+            </if>
+            <if test="session != null  and session != ''"> and s.session = #{session}</if>
+            <if test="category != null  and category != ''"> and s.category = #{category}</if>
+            <if test="organizations != null  and organizations != ''"> and s.organizations like concat('%', #{organizations}, '%')</if>
+            <if test="level != null  and level != ''"> and s.level = #{level}</if>
+            <if test="status != null  and status != ''"> and s.status = #{status}</if>
         </where>
     </select>
 
-    <!-- 单条查询：移除子表关联，直接用基础SessionResult，表名随公共SQL变动 -->
+    <!-- 单条查询：关联competition表，获取赛事名称 -->
     <select id="selectSessionById" parameterType="Long" resultMap="SessionResult">
         <include refid="selectSessionVo"/>
-        where session_id = #{id} and del_flag = '0' <!-- 新增：只查未删除数据 -->
+        where s.session_id = #{id} and s.del_flag = '0'
     </select>
 
-    <!-- 新增：保留tags字段插入，单表操作，仅修改表名 -->
+    <!-- 以下增删改操作完全保留，无需改动 -->
     <insert id="insertSession" parameterType="Session" useGeneratedKeys="true" keyProperty="id">
         insert into sam_competition_session
         <trim prefix="(" suffix=")" suffixOverrides=",">
@@ -84,7 +92,6 @@
         </trim>
     </insert>
 
-    <!-- 修改：保留tags字段更新，单表操作，仅修改表名 -->
     <update id="updateSession" parameterType="Session">
         update sam_competition_session
         <trim prefix="SET" suffixOverrides=",">
@@ -105,12 +112,10 @@
         where session_id = #{id}
     </update>
 
-    <!-- 单条删除：单表操作，仅修改表名 -->
     <delete id="deleteSessionById" parameterType="Long">
         delete from sam_competition_session where session_id = #{id}
     </delete>
 
-    <!-- 批量删除：单表操作，仅修改表名 + 修正parameterType为Long[]（原String错误） -->
     <delete id="deleteSessionByIds" parameterType="Long[]">
         delete from sam_competition_session where session_id in
         <foreach item="id" collection="array" open="(" separator="," close=")">
