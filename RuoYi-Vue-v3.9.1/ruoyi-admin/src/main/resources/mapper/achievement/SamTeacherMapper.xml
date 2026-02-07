@@ -1,0 +1,72 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper
+PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+"http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.ruoyi.achievement.mapper.SamTeacherMapper">
+    
+    <resultMap type="SamTeacher" id="SamTeacherResult">
+        <result property="id"    column="id"    />
+        <result property="teacherName"    column="teacher_name"    />
+        <result property="no"    column="no"    />
+        <result property="school"    column="school"    />
+        <result property="department"    column="department"    />
+    </resultMap>
+
+    <sql id="selectSamTeacherVo">
+        select id, teacher_name, no, school, department from sam_teacher
+    </sql>
+
+    <select id="selectSamTeacherList" parameterType="SamTeacher" resultMap="SamTeacherResult">
+        <include refid="selectSamTeacherVo"/>
+        <where>  
+            <if test="id != null "> and id = #{id}</if>
+            <if test="teacherName != null  and teacherName != ''"> and teacher_name like concat('%', #{teacherName}, '%')</if>
+            <if test="no != null  and no != ''"> and no = #{no}</if>
+            <if test="school != null  and school != ''"> and school = #{school}</if>
+            <if test="department != null  and department != ''"> and department = #{department}</if>
+        </where>
+    </select>
+    
+    <select id="selectSamTeacherById" parameterType="Long" resultMap="SamTeacherResult">
+        <include refid="selectSamTeacherVo"/>
+        where id = #{id}
+    </select>
+
+    <insert id="insertSamTeacher" parameterType="SamTeacher" useGeneratedKeys="true" keyProperty="id">
+        insert into sam_teacher
+        <trim prefix="(" suffix=")" suffixOverrides=",">
+            <if test="teacherName != null and teacherName != ''">teacher_name,</if>
+            <if test="no != null and no != ''">no,</if>
+            <if test="school != null">school,</if>
+            <if test="department != null">department,</if>
+         </trim>
+        <trim prefix="values (" suffix=")" suffixOverrides=",">
+            <if test="teacherName != null and teacherName != ''">#{teacherName},</if>
+            <if test="no != null and no != ''">#{no},</if>
+            <if test="school != null">#{school},</if>
+            <if test="department != null">#{department},</if>
+         </trim>
+    </insert>
+
+    <update id="updateSamTeacher" parameterType="SamTeacher">
+        update sam_teacher
+        <trim prefix="SET" suffixOverrides=",">
+            <if test="teacherName != null and teacherName != ''">teacher_name = #{teacherName},</if>
+            <if test="no != null and no != ''">no = #{no},</if>
+            <if test="school != null">school = #{school},</if>
+            <if test="department != null">department = #{department},</if>
+        </trim>
+        where id = #{id}
+    </update>
+
+    <delete id="deleteSamTeacherById" parameterType="Long">
+        delete from sam_teacher where id = #{id}
+    </delete>
+
+    <delete id="deleteSamTeacherByIds" parameterType="String">
+        delete from sam_teacher where id in 
+        <foreach item="id" collection="array" open="(" separator="," close=")">
+            #{id}
+        </foreach>
+    </delete>
+</mapper>
