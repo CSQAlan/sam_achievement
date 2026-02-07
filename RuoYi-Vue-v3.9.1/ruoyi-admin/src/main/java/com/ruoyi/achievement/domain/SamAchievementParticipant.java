@@ -8,7 +8,7 @@ import com.ruoyi.common.core.domain.BaseEntity;
 /**
  * 参赛选手对象 sam_achievement_participant
  * 
- * @author 王璨
+ * @author cyy
  * @date 2026-02-03
  */
 public class SamAchievementParticipant extends BaseEntity
