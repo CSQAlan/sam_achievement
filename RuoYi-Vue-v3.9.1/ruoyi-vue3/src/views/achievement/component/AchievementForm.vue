@@ -28,8 +28,8 @@
       <div class="outcome-body">
         <el-form ref="outcomeRefPage" :model="form" :rules="rules" label-width="110px" :disabled="readOnly">
           <div class="common-form-content">
-             <template v-for="(_, slot) in $slots">
-                <slot :name="slot"></slot>
+             <template v-for="(_, slot) in $slots" :key="slot">
+                <slot v-if="slot !== 'footer-left' && slot !== 'footer-right'" :name="slot"></slot>
              </template>
              <el-row :gutter="20">
                 <el-col :span="12">
@@ -809,8 +809,8 @@ function getCompetitionList() {
   }).then(response => {
     const list = response.data || response.rows || [];
     competitionOptions.value = list.map(item => ({
-      competitionId: item.id || item.competitionId,
-      competitionName: item.name || item.competitionName,
+      competitionId: String(item.id ?? item.competitionId ?? item.competition_id ?? ""),
+      competitionName: item.name || item.competitionName || item.competition_name || "",
       ...item
     }));
   });
@@ -828,7 +828,12 @@ function getSessionList(competitionId) {
     // 关键：将赛事ID作为参数传递给后端，后端根据此ID过滤数据
     params: { competitionId: competitionId, pageNum: 1, pageSize: 100 } 
   }).then(response => {
-    sessionOptions.value = response.rows || [];
+    const rows = response.rows || response.data || [];
+    sessionOptions.value = rows.map(item => ({
+      ...item,
+      id: String(item.id ?? item.sessionId ?? item.session_id ?? ""),
+      session: item.session || item.sessionName || item.session_name || ""
+    }));
   });
 }
 
@@ -903,6 +908,9 @@ function loadDetail(id) {
   props.getFn(id).then(response => {
     const d = response.data;
     form.value = d;
+
+    // Normalize dict-backed fields to strings so el-select matches option values.
+    normalizeDictFields(form.value);
     
     // 修改：回显时，如果存在 competitionId，需要手动触发加载届次列表，否则下拉框只会显示 ID
     if (d.competitionId) {
@@ -925,6 +933,16 @@ function loadDetail(id) {
        });
     }
     if (form.value.isReimburse == null) form.value.isReimburse = 0;
+  });
+}
+
+function normalizeDictFields(target) {
+  if (!target) return;
+  ["category", "level", "grade", "groupId", "competitionId", "sessionId"].forEach((key) => {
+    const value = target[key];
+    if (value !== null && value !== undefined && value !== "") {
+      target[key] = String(value);
+    }
   });
 }
 
@@ -961,9 +979,10 @@ function checkDraft() {
 function recoverDraft() {
   try {
     const draftStr = localStorage.getItem(DRAFT_KEY);
-    if (draftStr) {
-      const draftData = JSON.parse(draftStr);
-      form.value = { ...form.value, ...draftData.form };
+      if (draftStr) {
+        const draftData = JSON.parse(draftStr);
+        form.value = { ...form.value, ...draftData.form };
+        normalizeDictFields(form.value);
       
       // 恢复草稿时，如果保存了 competitionId，也需要加载届次
       if (form.value.competitionId) {

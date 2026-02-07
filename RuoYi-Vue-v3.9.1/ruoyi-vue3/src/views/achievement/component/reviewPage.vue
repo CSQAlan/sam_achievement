@@ -8,7 +8,7 @@
         :updateFn="currentApi.updateFn"
         :pageMode="true"
         :readOnly="isView"
-        :showSubmit="isEdit"
+        :showSubmit="canSave"
         cancelText="返回"
         titleAdd="成果审核"
         titleEdit="成果审核"
@@ -90,6 +90,7 @@ const source = computed(() => String(route.query.source || "college_level_unrevi
 const mode = computed(() => String(route.query.mode || "review").toLowerCase());
 const isEdit = computed(() => mode.value === "edit");
 const isView = computed(() => mode.value === "view");
+const canSave = computed(() => !isView.value);
 const showAuditToolbar = computed(() => true);
 const currentApi = computed(() => apiMap[source.value] || apiMap.college_level_unreviewed);
 
