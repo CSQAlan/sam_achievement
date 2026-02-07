@@ -45,8 +45,3 @@ nbdist/
 !*/build/*.java
 !*/build/*.html
 !*/build/*.xml
-# Frontend dependencies
-node_modules/
-dist/
-.vite/
-.workspace

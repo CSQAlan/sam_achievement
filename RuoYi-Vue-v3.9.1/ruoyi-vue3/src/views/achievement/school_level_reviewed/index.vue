@@ -11,10 +11,10 @@
       :add-fn="addSchool_level_reviewed"
       :update-fn="updateSchool_level_reviewed"
       :del-fn="delSchool_level_reviewed"
-      :export-url="'achievement/school_level_reviewed/export'"
-      :audit-dict="school_audit_status"
-      permission-prefix="achievement:school_level_reviewed"
-      review-source="school_level_reviewed"
+      :export-url="'achievement/School_level_reviewed/export'"
+      :audit-dict="School_audit_status"
+      permission-prefix="achievement:School_level_reviewed"
+      review-source="School_level_reviewed"
     />
   </div>
 </template>
@@ -30,9 +30,9 @@ import {
   addSchool_level_reviewed,
   updateSchool_level_reviewed,
   delSchool_level_reviewed
-} from '@/api/achievement/school_level_reviewed';
+} from '@/api/achievement/School_level_reviewed';
 
-const { school_audit_status } = useDict('school_audit_status');
+const { School_audit_status } = useDict('School_audit_status');
 
 const route = useRoute();
 const router = useRouter();

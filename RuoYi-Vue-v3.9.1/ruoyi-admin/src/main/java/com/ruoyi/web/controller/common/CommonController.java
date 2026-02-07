@@ -4,10 +4,6 @@ import java.util.ArrayList;
 import java.util.List;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
-
-import com.ruoyi.achievement.domain.FileUuid;
-import com.ruoyi.achievement.mapper.FileUuidMapper;
-import com.ruoyi.common.constant.Constants;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -37,11 +33,9 @@ public class CommonController
 
     @Autowired
     private ServerConfig serverConfig;
-    @Autowired
-    private FileUuidMapper fileUuidMapper;
-
 
     private static final String FILE_DELIMITER = ",";
+
     /**
      * 通用下载请求
      * 
@@ -137,9 +131,8 @@ public class CommonController
         }
     }
 
-
     /**
-     * 本地资源通用下载 (支持 UUID 安全下载)
+     * 本地资源通用下载
      */
     @GetMapping("/download/resource")
     public void resourceDownload(String resource, HttpServletRequest request, HttpServletResponse response)
@@ -147,40 +140,19 @@ public class CommonController
     {
         try
         {
-            // 1. 检查 resource 是否为 UUID (简单判断: 长度32且不含路径分隔符)
-            if (resource != null && resource.length() == 32 && !resource.contains("/")) {
-                // --- 新增的 UUID 逻辑 ---
-               FileUuid fileRecord = fileUuidMapper.selectFileUuidById(resource);
-                if (fileRecord == null) {
-                    throw new Exception("文件映射不存在");
-                }
-                // 数据库存的是相对路径 /profile/upload/2024/02/03/xxx.pdf
-                // 或者是绝对路径，根据你 AttachmentController 存的方式
-                // 假设你存的是若依标准的相对路径 (例如 /profile/upload/...)
-                String realPath = fileRecord.getRealPath();
-
-                // 将相对路径转换为本地绝对路径 (D:/ruoyi/upload/...)
-                String localPath = RuoYiConfig.getProfile() + StringUtils.substringAfter(realPath, Constants.RESOURCE_PREFIX);
-
-                // 下载设置
-                response.setContentType(MediaType.APPLICATION_PDF_VALUE); // 或者 MediaType.APPLICATION_OCTET_STREAM_VALUE
-                FileUtils.setAttachmentResponseHeader(response, fileRecord.getOriginName()); // 使用原始文件名
-                FileUtils.writeBytes(localPath, response.getOutputStream());
-                return;
-            }
-
-            // 2. --- 保持若依原有逻辑 (为了兼容其他模块的头像预览等) ---
             if (!FileUtils.checkAllowDownload(resource))
             {
                 throw new Exception(StringUtils.format("资源文件({})非法，不允许下载。 ", resource));
             }
             // 本地资源路径
-            String localPath = RuoYiConfig.getProfile() + StringUtils.substringAfter(resource, Constants.RESOURCE_PREFIX);
+            String localPath = RuoYiConfig.getProfile();
+            // 数据库资源地址
+            String downloadPath = localPath + FileUtils.stripPrefix(resource);
             // 下载名称
-            String downloadName = StringUtils.substringAfterLast(localPath, "/");
+            String downloadName = StringUtils.substringAfterLast(downloadPath, "/");
             response.setContentType(MediaType.APPLICATION_OCTET_STREAM_VALUE);
             FileUtils.setAttachmentResponseHeader(response, downloadName);
-            FileUtils.writeBytes(localPath, response.getOutputStream());
+            FileUtils.writeBytes(downloadPath, response.getOutputStream());
         }
         catch (Exception e)
         {
