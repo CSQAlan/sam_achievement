@@ -20,7 +20,8 @@
         </el-select>
       </el-form-item>
       <el-form-item label="标签" prop="tags">
-        <el-select v-model="queryParams.tags" placeholder="请选择赛事标签" clearable>
+        <!-- 新增multiple属性，支持多选 -->
+        <el-select v-model="queryParams.tags" placeholder="请选择赛事标签" clearable multiple>
           <el-option v-for="dict in sys_competition_tag" :key="dict.value" :label="dict.label" :value="dict.value" />
         </el-select>
       </el-form-item>
