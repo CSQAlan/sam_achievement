@@ -20,6 +20,7 @@ import com.ruoyi.common.core.domain.AjaxResult;
 import com.ruoyi.common.core.domain.entity.SysDictData;
 import com.ruoyi.common.core.page.TableDataInfo;
 import com.ruoyi.common.enums.BusinessType;
+import com.ruoyi.common.utils.DictUtils;
 import com.ruoyi.common.utils.StringUtils;
 import com.ruoyi.common.utils.poi.ExcelUtil;
 import com.ruoyi.system.service.ISysDictDataService;
@@ -75,10 +76,28 @@ public class SysDictDataController extends BaseController
     @GetMapping(value = "/type/{dictType}")
     public AjaxResult dictType(@PathVariable String dictType)
     {
+        if (StringUtils.isNotEmpty(dictType) && dictType.startsWith("erp_"))
+        {
+            DictUtils.removeDictCache(dictType);
+        }
         List<SysDictData> data = dictTypeService.selectDictDataByType(dictType);
         if (StringUtils.isNull(data))
         {
             data = new ArrayList<SysDictData>();
+        }
+        else
+        {
+            for (SysDictData item : data)
+            {
+                if (StringUtils.isNotEmpty(item.getDictValue()))
+                {
+                    item.setDictValue(item.getDictValue().trim());
+                }
+                if (StringUtils.isNotEmpty(item.getDictLabel()))
+                {
+                    item.setDictLabel(item.getDictLabel().trim());
+                }
+            }
         }
         return success(data);
     }
