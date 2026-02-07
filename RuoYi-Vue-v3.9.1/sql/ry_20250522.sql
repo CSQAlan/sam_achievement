@@ -260,6 +260,12 @@ insert into sys_menu values('1058', '导入代码', '116', '4', '#', '', '', '',
 insert into sys_menu values('1059', '预览代码', '116', '5', '#', '', '', '', 1, 0, 'F', '0', '0', 'tool:gen:preview',           '#', 'admin', sysdate(), '', null, '');
 insert into sys_menu values('1060', '生成代码', '116', '6', '#', '', '', '', 1, 0, 'F', '0', '0', 'tool:gen:code',              '#', 'admin', sysdate(), '', null, '');
 
+-- ----------------------------
+-- 个人资料角色字段所需权限
+-- ----------------------------
+insert into sys_menu values('20001', '学生档案查询', '0', '1', '', '', '', '', 1, 0, 'F', '0', '0', 'student:student:list',      '#', 'admin', sysdate(), '', null, '');
+insert into sys_menu values('20002', '教师档案查询', '0', '2', '', '', '', '', 1, 0, 'F', '0', '0', 'achievement:teacher:list',   '#', 'admin', sysdate(), '', null, '');
+
 
 -- ----------------------------
 -- 6、用户和角色关联表  用户N-1角色
@@ -376,6 +382,8 @@ insert into sys_role_menu values ('2', '1057');
 insert into sys_role_menu values ('2', '1058');
 insert into sys_role_menu values ('2', '1059');
 insert into sys_role_menu values ('2', '1060');
+insert into sys_role_menu values ('3', '20001');
+insert into sys_role_menu values ('103', '20002');
 
 -- ----------------------------
 -- 8、角色和部门关联表  角色1-N部门

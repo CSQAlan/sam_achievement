@@ -2,9 +2,9 @@
 <!DOCTYPE mapper
 PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
 "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
-<mapper namespace="com.ruoyi.achievement.mapper.SamAchievementMapper">
+<mapper namespace="com.ruoyi.achievement.mapper.reviewedMapper">
     
-    <resultMap type="SamAchievement" id="SamAchievementResult">
+    <resultMap type="reviewed" id="reviewedResult">
         <result property="achievementId"    column="achievement_id"    />
         <result property="sessionId"    column="session_id"    />
         <result property="category"    column="category"    />
@@ -44,7 +44,7 @@ PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
         <result property="remark"    column="remark"    />
     </resultMap>
 
-    <resultMap id="SamAchievementSamAchievementParticipantResult" type="SamAchievement" extends="SamAchievementResult">
+    <resultMap id="reviewedSamAchievementParticipantResult" type="reviewed" extends="reviewedResult">
         <collection property="samAchievementParticipantList" ofType="SamAchievementParticipant" column="achievement_id" select="selectSamAchievementParticipantList" />
     </resultMap>
 
@@ -62,12 +62,12 @@ PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
         <result property="remark"    column="remark"    />
     </resultMap>
 
-    <sql id="selectSamAchievementVo">
+    <sql id="selectreviewedVo">
         select achievement_id, session_id, category, name, team_name, level, grade, track, certificate_no, group_id, award_time, year, owner_dep_id, is_reimburse, is_supplement, fee, reimbursement_fee, reimbursement_ratio, reimbursement_item_id, reimbursement_date, item_index, quality_index, submitted_at, reviewed_at, school_reviewed_at, review_result, schooi_review_result, review_reason, school_review_reason, audit_by, school_audit_by, create_by, update_by, create_time, update_time, del_flag, remark from sam_achievement
     </sql>
 
-    <select id="selectSamAchievementList" parameterType="SamAchievement" resultMap="SamAchievementResult">
-        <include refid="selectSamAchievementVo"/>
+    <select id="selectreviewedList" parameterType="reviewed" resultMap="reviewedResult">
+        <include refid="selectreviewedVo"/>
         <where>  
             <if test="achievementId != null  and achievementId != ''"> and achievement_id = #{achievementId}</if>
             <if test="sessionId != null  and sessionId != ''"> and session_id = #{sessionId}</if>
@@ -80,10 +80,27 @@ PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
             <if test="certificateNo != null  and certificateNo != ''"> and certificate_no = #{certificateNo}</if>
             <if test="groupId != null "> and group_id = #{groupId}</if>
             <if test="awardTime != null "> and award_time = #{awardTime}</if>
+        
+            <if test="reviewStage != null and reviewStage != '' and reviewStatus != null and reviewStatus != ''">
+                <choose>
+                    <when test="reviewStage == 'college'">
+                        <choose>
+                            <when test="reviewStatus == 'unreviewed'"> and (review_result is null or review_result = 0)</when>
+                            <when test="reviewStatus == 'reviewed'"> and review_result in (1, 2)</when>
+                        </choose>
+                    </when>
+                    <when test="reviewStage == 'school'">
+                        <choose>
+                            <when test="reviewStatus == 'unreviewed'"> and schooi_review_result = 2</when>
+                            <when test="reviewStatus == 'reviewed'"> and schooi_review_result in (0, 1)</when>
+                        </choose>
+                    </when>
+                </choose>
+            </if>
         </where>
     </select>
     
-    <select id="selectSamAchievementByAchievementId" parameterType="String" resultMap="SamAchievementSamAchievementParticipantResult">
+    <select id="selectreviewedByAchievementId" parameterType="String" resultMap="reviewedSamAchievementParticipantResult">
         select achievement_id, session_id, category, name, team_name, level, grade, track, certificate_no, group_id, award_time, year, owner_dep_id, is_reimburse, is_supplement, fee, reimbursement_fee, reimbursement_ratio, reimbursement_item_id, reimbursement_date, item_index, quality_index, submitted_at, reviewed_at, school_reviewed_at, review_result, schooi_review_result, review_reason, school_review_reason, audit_by, school_audit_by, create_by, update_by, create_time, update_time, del_flag, remark
         from sam_achievement
         where achievement_id = #{achievementId}
@@ -95,15 +112,7 @@ PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
         where participant_id = #{participant_id}
     </select>
 
-    <select id="selectNextAchievementId" resultType="long">
-        select next_val from sam_achievement_seq for update
-    </select>
-
-    <update id="incrementNextAchievementId">
-        update sam_achievement_seq set next_val = next_val + 1
-    </update>
-
-    <insert id="insertSamAchievement" parameterType="SamAchievement">
+    <insert id="insertreviewed" parameterType="reviewed">
         insert into sam_achievement
         <trim prefix="(" suffix=")" suffixOverrides=",">
             achievement_id,
@@ -185,7 +194,7 @@ PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
          </trim>
     </insert>
 
-    <update id="updateSamAchievement" parameterType="SamAchievement">
+    <update id="updatereviewed" parameterType="reviewed">
         update sam_achievement
         <trim prefix="SET" suffixOverrides=",">
             <if test="sessionId != null and sessionId != ''">session_id = #{sessionId},</if>
@@ -228,11 +237,11 @@ PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
         where achievement_id = #{achievementId}
     </update>
 
-    <delete id="deleteSamAchievementByAchievementId" parameterType="String">
+    <delete id="deletereviewedByAchievementId" parameterType="String">
         delete from sam_achievement where achievement_id = #{achievementId}
     </delete>
 
-    <delete id="deleteSamAchievementByAchievementIds" parameterType="String">
+    <delete id="deletereviewedByAchievementIds" parameterType="String">
         delete from sam_achievement where achievement_id in 
         <foreach item="achievementId" collection="array" open="(" separator="," close=")">
             #{achievementId}
@@ -257,7 +266,3 @@ PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
         </foreach>
     </insert>
 </mapper>
-
-
-
-

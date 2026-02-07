@@ -116,6 +116,7 @@ const nextStatusOptions = computed(() => {
 
 const selectedAuditStatus = ref("");
 const rejectReason = ref("");
+const auditInitialized = ref(false);
 
 // 是否为院级来源
 const isCollegeSource = computed(() => source.value.startsWith("college"));
@@ -162,24 +163,74 @@ watch(
     }
 );
 
+function syncAuditFromForm() {
+  if (auditInitialized.value) return;
+  const form = dlgRef.value?.getForm?.();
+  const id = route.query.id;
+  if (!form || !id || !form.achievementId) return;
+  if (String(form.achievementId) !== String(id)) return;
+
+  if (isCollegeSource.value) {
+    const status = form.reviewResult ?? form.review_result;
+    if (status === 1 || status === "1" || status === 2 || status === "2") {
+      selectedAuditStatus.value = String(status);
+    } else {
+      setDefaultSelected();
+    }
+
+    if (String(selectedAuditStatus.value) === "1") {
+      rejectReason.value = form.reviewReason || "";
+    } else {
+      rejectReason.value = "";
+    }
+  } else if (isSchoolSource.value) {
+    const status = form.schooiReviewResult ?? form.schooi_review_result ?? form.schoolReviewResult ?? form.school_review_result;
+    if (status === 0 || status === "0" || status === 1 || status === "1") {
+      selectedAuditStatus.value = String(status);
+    } else {
+      setDefaultSelected();
+    }
+
+    if (String(selectedAuditStatus.value) === "0") {
+      rejectReason.value = form.schoolReviewReason || "";
+    } else {
+      rejectReason.value = "";
+    }
+  }
+
+  auditInitialized.value = true;
+}
+
+watch(
+  () => {
+    const form = dlgRef.value?.getForm?.();
+    return [
+      form?.achievementId,
+      form?.reviewResult,
+      form?.schooiReviewResult,
+      form?.reviewReason,
+      form?.schoolReviewReason
+    ];
+  },
+  () => {
+    syncAuditFromForm();
+  },
+  { immediate: true }
+);
+
 function handleBack() {
   router.back();
 }
 
-/**
- * ✅ 手动流转归档推送（前端负责）：
- * 1) 院级未审核(college_level_unreviewed)
- *    - updateCollege_level_unreviewed：auditStatus 0 -> 1/2
- *    - addCollege_level_reviewed：归档到院级已审核
- *    - 若通过(2)：addSchool_level_unreviewed：推送到校级未审核（auditStatus=2 待校级审核）
- *
- * 2) 校级未审核(school_level_unreviewed)
- *    - updateSchool_level_unreviewed：auditStatus 2 -> 0/1
- *    - addSchool_level_reviewed：归档到校级已审核
- *
- * ✅ 关键修复：
- * - 归档到校级已审核时必须写 schoolAuditTime（你的 mapper 有 school_audit_time is not null 的过滤）
- */
+  /**
+   * ✅ 手动流转（前端触发，后端做校验）：
+   * 1) 院级未审核(college_level_unreviewed)
+   *    - updateCollege_level_unreviewed：reviewResult 0 -> 1/2
+   *    - 若通过(2)：同一次请求写入 schooiReviewResult=2（推送到校级未审核）
+   *
+   * 2) 校级未审核(school_level_unreviewed)
+   *    - updateSchool_level_unreviewed：schooiReviewResult 2 -> 0/1
+   */
 async function submitAudit() {
   const baseForm = dlgRef.value?.getForm?.();
   const id = baseForm?.achievementId ?? route.query.id;
@@ -214,50 +265,42 @@ async function submitAudit() {
 
   try {
     // ===== 院级审核 =====
-    if (source.value === "college_level_unreviewed") {
-      // 1) 更新院级未审核状态（0 -> 1/2）
-      await updateCollege_level_unreviewed({
-        ...baseForm,
-        achievementId: id,
-        reviewResult: next,
-        reviewReason: collegeAuditReason,
-        reviewedAt: now,
-        auditBy: auditUser
-      });
-
-      // 2) 院级通过(2) -> 推送到校级未审核（待校级审核=2）
-      if (next === "2") {
-        await updateSchool_level_unreviewed({
+      if (source.value === "college_level_unreviewed") {
+        // 1) 更新院级未审核状态（0 -> 1/2）
+        const setSchoolPending = next === "2";
+        await updateCollege_level_unreviewed({
+          ...baseForm,
           achievementId: id,
-          schooiReviewResult: "2"
+          reviewResult: next,
+          reviewReason: collegeAuditReason,
+          reviewedAt: now,
+          auditBy: auditUser,
+          ...(setSchoolPending ? { schooiReviewResult: "2" } : {})
         });
-      }
 
-      proxy.$modal?.msgSuccess?.("院级审核成功");
-      handleBack();
-      return;
-    }
+        proxy.$modal?.msgSuccess?.("院级审核成功");
+        handleBack();
+        return;
+      }
 
     // 重新审核已经审核的院级记录
-    if (source.value === "college_level_reviewed") {
-      await updateCollege_level_reviewed({
-        ...baseForm,
-        achievementId: id,
-        reviewResult: next,
-        reviewReason: collegeAuditReason,
-        reviewedAt: now,
-        auditBy: auditUser
-      });
-
-      if (next === "2" && (baseForm?.schooiReviewResult == null || baseForm?.schooiReviewResult === "")) {
-        await updateSchool_level_unreviewed({
+      if (source.value === "college_level_reviewed") {
+        const existingSchool = baseForm?.schooiReviewResult;
+        const canSetSchoolPending =
+          next === "2" &&
+          (existingSchool == null || String(existingSchool) === "" || String(existingSchool) === "2");
+        await updateCollege_level_reviewed({
+          ...baseForm,
           achievementId: id,
-          schooiReviewResult: "2"
+          reviewResult: next,
+          reviewReason: collegeAuditReason,
+          reviewedAt: now,
+          auditBy: auditUser,
+          ...(canSetSchoolPending ? { schooiReviewResult: "2" } : {})
         });
-      }
 
-      proxy.$modal?.msgSuccess?.("院级审核成功");
-      handleBack();
+        proxy.$modal?.msgSuccess?.("院级审核成功");
+        handleBack();
       return;
     }
 
@@ -280,12 +323,13 @@ async function submitAudit() {
 
     proxy.$modal?.msgError?.("当前来源(source)不支持审核（请从未审核列表进入）");
   } catch (e) {
-    proxy.$modal?.msgError?.("审核失败（可能已归档/已推送或接口限制）");
+    proxy.$modal?.msgError?.("审核失败（可能院级审核未通过）");
   }
 }
 
 function loadCurrent() {
   formKey.value = Date.now();
+  auditInitialized.value = false;
   nextTick(() => {
     const id = route.query.id;
     dlgRef.value?.open(id);
