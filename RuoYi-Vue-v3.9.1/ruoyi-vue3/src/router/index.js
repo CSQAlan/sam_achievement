@@ -48,6 +48,16 @@ export const constantRoutes = [
     hidden: true
   },
   {
+    path: '/noredirect',
+    redirect: '/user/profile',
+    hidden: true
+  },
+  {
+    path: '/achievement/noredirect',
+    redirect: '/user/profile',
+    hidden: true
+  },
+  {
     path: "/:pathMatch(.*)*",
     component: () => import('@/views/error/404'),
     hidden: true

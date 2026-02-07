@@ -2,23 +2,23 @@
   <div class="header-search">
     <svg-icon class-name="search-icon" icon-class="search" @click.stop="click" />
     <el-dialog
-      v-model="show"
-      width="600"
-      @close="close"
-      :show-close="false"
-      append-to-body
+        v-model="show"
+        width="600"
+        @close="close"
+        :show-close="false"
+        append-to-body
     >
       <el-input
-        v-model="search"
-        ref="headerSearchSelectRef"
-        size="large"
-        @input="querySearch"
-        prefix-icon="Search"
-        placeholder="菜单搜索，支持标题、URL模糊查询"
-        clearable
-        @keyup.enter="selectActiveResult"
-        @keydown.up.prevent="navigateResult('up')"
-        @keydown.down.prevent="navigateResult('down')"
+          v-model="search"
+          ref="headerSearchSelectRef"
+          size="large"
+          @input="querySearch"
+          prefix-icon="Search"
+          placeholder="菜单搜索，支持标题、URL模糊查询"
+          clearable
+          @keyup.enter="selectActiveResult"
+          @keydown.up.prevent="navigateResult('up')"
+          @keydown.down.prevent="navigateResult('down')"
       >
       </el-input>
 
@@ -205,7 +205,7 @@ watch(searchPool, (list) => {
   }
 }
 
-.result-wrap {	
+.result-wrap {
   height: 280px;
   margin: 6px 0;
 
