@@ -1,0 +1,86 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper
+PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+"http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.ruoyi.achievement.mapper.SamStudentMapper">
+    
+    <resultMap type="SamStudent" id="SamStudentResult">
+        <result property="studentId"    column="student_id"    />
+        <result property="name"    column="name"    />
+        <result property="no"    column="no"    />
+        <result property="school"    column="school"    />
+        <result property="department"    column="department"    />
+        <result property="major"    column="major"    />
+        <result property="className"    column="class_name"    />
+        <result property="classYear"    column="class_year"    />
+    </resultMap>
+
+    <sql id="selectSamStudentVo">
+        select student_id, name, no, school, department, major, class_name, class_year from sam_student
+    </sql>
+
+    <select id="selectSamStudentList" parameterType="SamStudent" resultMap="SamStudentResult">
+        <include refid="selectSamStudentVo"/>
+        <where>  
+            <if test="name != null  and name != ''"> and name like concat('%', #{name}, '%')</if>
+            <if test="no != null  and no != ''"> and no = #{no}</if>
+            <if test="school != null  and school != ''"> and school = #{school}</if>
+            <if test="department != null  and department != ''"> and department = #{department}</if>
+            <if test="major != null  and major != ''"> and major = #{major}</if>
+            <if test="className != null  and className != ''"> and class_name like concat('%', #{className}, '%')</if>
+            <if test="classYear != null  and classYear != ''"> and class_year = #{classYear}</if>
+        </where>
+    </select>
+    
+    <select id="selectSamStudentByStudentId" parameterType="Long" resultMap="SamStudentResult">
+        <include refid="selectSamStudentVo"/>
+        where student_id = #{studentId}
+    </select>
+
+    <insert id="insertSamStudent" parameterType="SamStudent" useGeneratedKeys="true" keyProperty="studentId">
+        insert into sam_student
+        <trim prefix="(" suffix=")" suffixOverrides=",">
+            <if test="name != null and name != ''">name,</if>
+            <if test="no != null and no != ''">no,</if>
+            <if test="school != null">school,</if>
+            <if test="department != null">department,</if>
+            <if test="major != null">major,</if>
+            <if test="className != null">class_name,</if>
+            <if test="classYear != null">class_year,</if>
+         </trim>
+        <trim prefix="values (" suffix=")" suffixOverrides=",">
+            <if test="name != null and name != ''">#{name},</if>
+            <if test="no != null and no != ''">#{no},</if>
+            <if test="school != null">#{school},</if>
+            <if test="department != null">#{department},</if>
+            <if test="major != null">#{major},</if>
+            <if test="className != null">#{className},</if>
+            <if test="classYear != null">#{classYear},</if>
+         </trim>
+    </insert>
+
+    <update id="updateSamStudent" parameterType="SamStudent">
+        update sam_student
+        <trim prefix="SET" suffixOverrides=",">
+            <if test="name != null and name != ''">name = #{name},</if>
+            <if test="no != null and no != ''">no = #{no},</if>
+            <if test="school != null">school = #{school},</if>
+            <if test="department != null">department = #{department},</if>
+            <if test="major != null">major = #{major},</if>
+            <if test="className != null">class_name = #{className},</if>
+            <if test="classYear != null">class_year = #{classYear},</if>
+        </trim>
+        where student_id = #{studentId}
+    </update>
+
+    <delete id="deleteSamStudentByStudentId" parameterType="Long">
+        delete from sam_student where student_id = #{studentId}
+    </delete>
+
+    <delete id="deleteSamStudentByStudentIds" parameterType="String">
+        delete from sam_student where student_id in 
+        <foreach item="studentId" collection="array" open="(" separator="," close=")">
+            #{studentId}
+        </foreach>
+    </delete>
+</mapper>
