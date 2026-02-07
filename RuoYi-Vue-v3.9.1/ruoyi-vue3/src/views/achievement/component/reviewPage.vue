@@ -18,6 +18,10 @@
       <!-- ✅ 外置审核工具条：下拉 + 提交审核（手动流转） -->
       <template v-if="showAuditToolbar" #footer-left>
         <div class="audit-toolbar">
+          <div class="nav-toolbar">
+            <el-button @click="handlePrev">上一个</el-button>
+            <el-button @click="handleNext">下一个</el-button>
+          </div>
           <span class="audit-label">审核后状态</span>
 
           <el-select
@@ -56,6 +60,7 @@
 <script setup name="ReviewPage">
 import { computed, onMounted, onActivated, ref, getCurrentInstance, watch, nextTick } from "vue";
 import { useRoute, useRouter } from "vue-router";
+import useUserStore from "@/store/modules/user";
 
 import AchievementForm from "@/views/achievement/component/AchievementForm.vue";
 
@@ -68,6 +73,7 @@ import { getSchool_level_reviewed, addSchool_level_reviewed, updateSchool_level_
 const { proxy } = getCurrentInstance();
 const route = useRoute();
 const router = useRouter();
+const userStore = useUserStore();
 
 const dlgRef = ref(null);
 const formKey = ref(0);
@@ -117,6 +123,182 @@ const nextStatusOptions = computed(() => {
 const selectedAuditStatus = ref("");
 const rejectReason = ref("");
 const auditInitialized = ref(false);
+
+const pageKey = computed(() => String(route.query.pageKey || ""));
+const pageIdsRef = ref([]);
+
+const historyRef = ref([]);
+const cursorRef = ref(-1);
+
+const historyKey = computed(() => `review_history_${userStore.id || "anon"}`);
+const cursorKey = computed(() => `review_history_cursor_${userStore.id || "anon"}`);
+
+function readJson(key, fallback) {
+  try {
+    const raw = sessionStorage.getItem(key);
+    if (!raw) return fallback;
+    return JSON.parse(raw);
+  } catch (e) {
+    return fallback;
+  }
+}
+
+function writeJson(key, value) {
+  try {
+    sessionStorage.setItem(key, JSON.stringify(value));
+  } catch (e) {
+    // ignore storage errors
+  }
+}
+
+function parsePageIds(value) {
+  if (!value) return [];
+  return String(value)
+    .split(",")
+    .map((v) => Number(v))
+    .filter((v) => !Number.isNaN(v))
+    .sort((a, b) => a - b);
+}
+
+function loadPageIds() {
+  const fromQuery = parsePageIds(route.query.pageIds);
+  if (fromQuery.length > 0) {
+    pageIdsRef.value = fromQuery;
+    if (pageKey.value) {
+      try {
+        sessionStorage.setItem(`review_page_${pageKey.value}`, fromQuery.join(","));
+      } catch (e) {
+        // ignore storage errors
+      }
+    }
+    return;
+  }
+  if (pageKey.value) {
+    const stored = parsePageIds(sessionStorage.getItem(`review_page_${pageKey.value}`));
+    pageIdsRef.value = stored;
+  } else {
+    pageIdsRef.value = [];
+  }
+}
+
+function persistPageIds() {
+  if (!pageKey.value) return;
+  try {
+    sessionStorage.setItem(`review_page_${pageKey.value}`, pageIdsRef.value.join(","));
+  } catch (e) {
+    // ignore storage errors
+  }
+}
+
+function loadHistory() {
+  historyRef.value = readJson(historyKey.value, []);
+  const rawCursor = sessionStorage.getItem(cursorKey.value);
+  const parsed = Number(rawCursor);
+  cursorRef.value = Number.isFinite(parsed) ? parsed : -1;
+  if (cursorRef.value >= historyRef.value.length) {
+    cursorRef.value = historyRef.value.length - 1;
+  }
+}
+
+function saveHistory() {
+  writeJson(historyKey.value, historyRef.value);
+  try {
+    sessionStorage.setItem(cursorKey.value, String(cursorRef.value));
+  } catch (e) {
+    // ignore storage errors
+  }
+}
+
+function syncHistoryOnEnter() {
+  loadHistory();
+  const id = route.query.id;
+  if (!id) {
+    saveHistory();
+    return;
+  }
+
+  const nav = String(route.query.nav || "");
+  const hIndex = Number(route.query.hIndex);
+  if (nav === "history" && Number.isFinite(hIndex)) {
+    cursorRef.value = hIndex;
+    if (cursorRef.value < 0) cursorRef.value = 0;
+    if (cursorRef.value >= historyRef.value.length) {
+      cursorRef.value = historyRef.value.length - 1;
+    }
+    saveHistory();
+    return;
+  }
+
+  if (cursorRef.value >= 0 && cursorRef.value < historyRef.value.length - 1) {
+    historyRef.value = historyRef.value.slice(0, cursorRef.value + 1);
+  }
+
+  const entry = {
+    id: String(id),
+    source: source.value,
+    mode: mode.value,
+    path: route.path,
+    time: Date.now(),
+    pageKey: pageKey.value,
+    pageIds: route.query.pageIds || pageIdsRef.value.join(",")
+  };
+
+  const last = historyRef.value[historyRef.value.length - 1];
+  if (!last || String(last.id) !== String(entry.id) || String(last.source) !== String(entry.source) ||
+    String(last.path) !== String(entry.path) || String(last.mode) !== String(entry.mode)) {
+    historyRef.value.push(entry);
+  }
+  cursorRef.value = historyRef.value.length - 1;
+  saveHistory();
+}
+
+function handlePrev() {
+  loadHistory();
+  if (cursorRef.value <= 0 || historyRef.value.length === 0) {
+    proxy.$modal?.msgWarning?.("当前页面没有上一个审核记录");
+    return;
+  }
+  const newCursor = cursorRef.value - 1;
+  const target = historyRef.value[newCursor];
+  if (!target || !target.id) {
+    proxy.$modal?.msgWarning?.("当前页面没有上一个审核记录");
+    return;
+  }
+  cursorRef.value = newCursor;
+  saveHistory();
+  const query = {
+    id: target.id,
+    source: target.source,
+    mode: target.mode || "view",
+    nav: "history",
+    hIndex: newCursor
+  };
+  if (target.pageKey) query.pageKey = target.pageKey;
+  if (target.pageIds) query.pageIds = target.pageIds;
+  router.push({ path: target.path || route.path, query });
+}
+
+function handleNext() {
+  const currentId = Number(route.query.id);
+  const ids = pageIdsRef.value || [];
+  if (Number.isNaN(currentId) || ids.length === 0) {
+    proxy.$modal?.msgWarning?.("当前页面没有需要审核的成果");
+    return;
+  }
+  const nextId = ids.find((id) => id > currentId);
+  if (!nextId) {
+    proxy.$modal?.msgWarning?.("当前页面没有需要审核的成果");
+    return;
+  }
+  const query = {
+    id: nextId,
+    source: source.value,
+    mode: mode.value
+  };
+  if (pageKey.value) query.pageKey = pageKey.value;
+  if (pageIdsRef.value.length > 0) query.pageIds = pageIdsRef.value.join(",");
+  router.push({ path: route.path, query });
+}
 
 // 是否为院级来源
 const isCollegeSource = computed(() => source.value.startsWith("college"));
@@ -222,6 +404,25 @@ function handleBack() {
   router.back();
 }
 
+function jumpToNextAfterAudit(currentId) {
+  loadPageIds();
+  const ids = pageIdsRef.value || [];
+  const nextId = ids.find((id) => Number(id) > Number(currentId));
+  if (!nextId) {
+    proxy.$modal?.msgWarning?.("当前页面没有需要审核的成果");
+    handleBack();
+    return;
+  }
+  const query = {
+    id: nextId,
+    source: source.value,
+    mode: mode.value
+  };
+  if (pageKey.value) query.pageKey = pageKey.value;
+  if (pageIdsRef.value.length > 0) query.pageIds = pageIdsRef.value.join(",");
+  router.push({ path: route.path, query });
+}
+
 /**
  * ✅ 手动流转归档推送（前端负责）：
  * 1) 院级未审核(college_level_unreviewed)
@@ -289,8 +490,13 @@ async function submitAudit() {
         });
       }
 
+    if (source.value.endsWith("unreviewed")) {
+      pageIdsRef.value = pageIdsRef.value.filter((pid) => String(pid) !== String(id));
+      persistPageIds();
+    }
+
       proxy.$modal?.msgSuccess?.("院级审核成功");
-      handleBack();
+      jumpToNextAfterAudit(id);
       return;
     }
 
@@ -312,8 +518,13 @@ async function submitAudit() {
         });
       }
 
+      if (source.value.endsWith("unreviewed")) {
+        pageIdsRef.value = pageIdsRef.value.filter((pid) => String(pid) !== String(id));
+        persistPageIds();
+      }
+
       proxy.$modal?.msgSuccess?.("院级审核成功");
-      handleBack();
+      jumpToNextAfterAudit(id);
       return;
     }
 
@@ -329,8 +540,13 @@ async function submitAudit() {
         schoolAuditBy: auditUser
       });
 
+      if (source.value.endsWith("unreviewed")) {
+        pageIdsRef.value = pageIdsRef.value.filter((pid) => String(pid) !== String(id));
+        persistPageIds();
+      }
+
       proxy.$modal?.msgSuccess?.("校级审核成功");
-      handleBack();
+      jumpToNextAfterAudit(id);
       return;
     }
 
@@ -343,6 +559,8 @@ async function submitAudit() {
 function loadCurrent() {
   formKey.value = Date.now();
   auditInitialized.value = false;
+  loadPageIds();
+  syncHistoryOnEnter();
   nextTick(() => {
     const id = route.query.id;
     dlgRef.value?.open(id);
@@ -364,6 +582,13 @@ watch(
     loadCurrent();
   }
 );
+
+watch(
+  () => [route.query.pageKey, route.query.pageIds],
+  () => {
+    loadPageIds();
+  }
+);
 </script>
 
 <style scoped>
@@ -375,6 +600,10 @@ watch(
   align-items: center;
   gap: 8px;
   flex-wrap: wrap;
+}
+.nav-toolbar {
+  display: flex;
+  gap: 8px;
 }
 .audit-label {
   margin-right: 4px;
