@@ -11,23 +11,20 @@ import com.ruoyi.common.utils.StringUtils;
 import org.springframework.transaction.annotation.Transactional;
 import com.ruoyi.achievement.domain.SamAchievementParticipant;
 import com.ruoyi.achievement.mapper.reviewedMapper;
-import com.ruoyi.achievement.mapper.SamAchievementMapper;
 import com.ruoyi.achievement.domain.reviewed;
 import com.ruoyi.achievement.service.IreviewedService;
 
 /**
- * 成果审核Service业务层处�? * 
+ * 成果审核Service业务层处理
+ *
  * @author cyy
  * @date 2026-02-03
  */
 @Service
-public class reviewedServiceImpl implements IreviewedService 
+public class reviewedServiceImpl implements IreviewedService
 {
     @Autowired
     private reviewedMapper reviewedMapper;
-
-    @Autowired
-    private SamAchievementMapper samAchievementMapper;
 
     private static final String STAGE_COLLEGE = "college";
     private static final String STAGE_SCHOOL = "school";
@@ -44,7 +41,7 @@ public class reviewedServiceImpl implements IreviewedService
 
     /**
      * 查询成果审核
-     * 
+     *
      * @param achievementId 成果ID
      * @return 成果审核
      */
@@ -56,7 +53,7 @@ public class reviewedServiceImpl implements IreviewedService
 
     /**
      * 查询成果审核列表
-     * 
+     *
      * @param reviewed 成果审核
      * @return 成果审核
      */
@@ -68,7 +65,7 @@ public class reviewedServiceImpl implements IreviewedService
 
     /**
      * 新增成果审核
-     * 
+     *
      * @param reviewed 成果审核
      * @return 结果
      */
@@ -85,13 +82,6 @@ public class reviewedServiceImpl implements IreviewedService
         }
         sanitizeReasons(reviewed);
         validateInsertByStage(reviewed, stage, status);
-        if (!StringUtils.hasText(reviewed.getAchievementId()))
-        {
-            Long nextId = samAchievementMapper.selectNextAchievementId();
-            samAchievementMapper.incrementNextAchievementId();
-            reviewed.setAchievementId(String.valueOf(nextId));
-        }
-
         reviewed.setCreateTime(DateUtils.getNowDate());
         int rows = reviewedMapper.insertreviewed(reviewed);
         insertSamAchievementParticipant(reviewed);
@@ -100,7 +90,7 @@ public class reviewedServiceImpl implements IreviewedService
 
     /**
      * 修改成果审核
-     * 
+     *
      * @param reviewed 成果审核
      * @return 结果
      */
@@ -126,7 +116,7 @@ public class reviewedServiceImpl implements IreviewedService
 
     /**
      * 批量删除成果审核
-     * 
+     *
      * @param achievementIds 需要删除的成果ID
      * @return 结果
      */
@@ -140,7 +130,7 @@ public class reviewedServiceImpl implements IreviewedService
 
     /**
      * 删除成果审核信息
-     * 
+     *
      * @param achievementId 成果ID
      * @return 结果
      */
@@ -154,7 +144,7 @@ public class reviewedServiceImpl implements IreviewedService
 
     /**
      * 新增参赛选手信息
-     * 
+     *
      * @param reviewed 成果审核对象
      */
     public void insertSamAchievementParticipant(reviewed reviewed)
@@ -218,7 +208,7 @@ public class reviewedServiceImpl implements IreviewedService
             }
             if (Objects.equals(reviewResult, COLLEGE_REJECT))
             {
-        if (!StringUtils.hasText(incoming.getReviewReason()))
+                if (!StringUtils.hasText(incoming.getReviewReason()))
                 {
                     throw new ServiceException("College rejection reason is required.");
                 }
@@ -273,7 +263,7 @@ public class reviewedServiceImpl implements IreviewedService
             }
             if (Objects.equals(schoolResult, SCHOOL_REJECT))
             {
-        if (!StringUtils.hasText(incoming.getSchoolReviewReason()))
+                if (!StringUtils.hasText(incoming.getSchoolReviewReason()))
                 {
                     throw new ServiceException("School rejection reason is required.");
                 }
@@ -343,13 +333,13 @@ public class reviewedServiceImpl implements IreviewedService
         if (stageCollege)
         {
             if (requestedSchool != null
-                && !Objects.equals(requestedSchool, SCHOOL_PENDING)
-                && !Objects.equals(requestedSchool, existingSchool))
+                    && !Objects.equals(requestedSchool, SCHOOL_PENDING)
+                    && !Objects.equals(requestedSchool, existingSchool))
             {
                 incoming.setSchooiReviewResult(existingSchool);
             }
             if (incoming.getSchoolReviewReason() != null
-                && !Objects.equals(incoming.getSchoolReviewReason(), existing.getSchoolReviewReason()))
+                    && !Objects.equals(incoming.getSchoolReviewReason(), existing.getSchoolReviewReason()))
             {
                 incoming.setSchoolReviewReason(existing.getSchoolReviewReason());
             }
@@ -359,18 +349,18 @@ public class reviewedServiceImpl implements IreviewedService
         requestedSchool = incoming.getSchooiReviewResult();
 
         boolean allowCollegeReAudit = stageCollege
-            && isCollegeReviewedValue(existingCollege)
-            && requestedCollege != null
-            && isCollegeReviewedValue(requestedCollege);
+                && isCollegeReviewedValue(existingCollege)
+                && requestedCollege != null
+                && isCollegeReviewedValue(requestedCollege);
         boolean allowSchoolReAudit = stageSchool
-            && isSchoolReviewedValue(existingSchool)
-            && requestedSchool != null
-            && isSchoolReviewedValue(requestedSchool);
+                && isSchoolReviewedValue(existingSchool)
+                && requestedSchool != null
+                && isSchoolReviewedValue(requestedSchool);
 
         if (!stageCollege
-            && requestedCollege != null
-            && Objects.equals(requestedCollege, COLLEGE_PENDING)
-            && !Objects.equals(existingCollege, COLLEGE_PENDING))
+                && requestedCollege != null
+                && Objects.equals(requestedCollege, COLLEGE_PENDING)
+                && !Objects.equals(existingCollege, COLLEGE_PENDING))
         {
             incoming.setReviewResult(existingCollegeRaw);
             requestedCollege = incoming.getReviewResult();
@@ -382,9 +372,9 @@ public class reviewedServiceImpl implements IreviewedService
         if (stageCollege)
         {
             if (requestedCollege != null
-                && Objects.equals(requestedCollege, COLLEGE_PENDING)
-                && !Objects.equals(existingCollege, COLLEGE_PENDING)
-                && !allowCollegeReAudit)
+                    && Objects.equals(requestedCollege, COLLEGE_PENDING)
+                    && !Objects.equals(existingCollege, COLLEGE_PENDING)
+                    && !allowCollegeReAudit)
             {
                 incoming.setReviewResult(existingCollegeRaw);
                 requestedCollege = incoming.getReviewResult();
@@ -403,7 +393,7 @@ public class reviewedServiceImpl implements IreviewedService
                 }
                 if (Objects.equals(requestedCollege, COLLEGE_REJECT))
                 {
-        if (!StringUtils.hasText(incoming.getReviewReason()))
+                    if (!StringUtils.hasText(incoming.getReviewReason()))
                     {
                         throw new ServiceException("College rejection reason is required.");
                     }
@@ -464,7 +454,7 @@ public class reviewedServiceImpl implements IreviewedService
                     }
                     if (Objects.equals(requestedSchool, SCHOOL_REJECT))
                     {
-        if (!StringUtils.hasText(incoming.getSchoolReviewReason()))
+                        if (!StringUtils.hasText(incoming.getSchoolReviewReason()))
                         {
                             throw new ServiceException("School rejection reason is required.");
                         }
@@ -490,7 +480,7 @@ public class reviewedServiceImpl implements IreviewedService
                     }
                     if (Objects.equals(requestedSchool, SCHOOL_REJECT))
                     {
-        if (!StringUtils.hasText(incoming.getSchoolReviewReason()))
+                        if (!StringUtils.hasText(incoming.getSchoolReviewReason()))
                         {
                             throw new ServiceException("School rejection reason is required.");
                         }
@@ -505,7 +495,8 @@ public class reviewedServiceImpl implements IreviewedService
             {
                 incoming.setSchoolReviewReason(existing.getSchoolReviewReason());
             }
-        if (!StringUtils.hasText(incoming.getReviewReason()))
+
+            if (!StringUtils.hasText(incoming.getReviewReason()))
             {
                 incoming.setReviewReason(null);
             }
@@ -536,5 +527,3 @@ public class reviewedServiceImpl implements IreviewedService
         return Objects.equals(value, SCHOOL_REJECT) || Objects.equals(value, SCHOOL_PASS);
     }
 }
-
-
