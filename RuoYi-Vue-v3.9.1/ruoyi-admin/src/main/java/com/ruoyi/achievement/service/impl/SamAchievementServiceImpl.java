@@ -3,6 +3,11 @@ package com.ruoyi.achievement.service.impl;
 import java.util.Calendar;
 import java.util.List;
 import java.util.ArrayList;
+import com.ruoyi.achievement.domain.SamAchievementAdvisor;
+import com.ruoyi.achievement.domain.SamStudent;
+import com.ruoyi.achievement.domain.SamTeacher;
+import com.ruoyi.achievement.service.ISamStudentService;
+import com.ruoyi.achievement.service.ISamTeacherService;
 import com.ruoyi.common.utils.DateUtils;
 import com.ruoyi.common.utils.StringUtils;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -22,22 +27,32 @@ public class SamAchievementServiceImpl implements ISamAchievementService
     @Autowired
     private SamAchievementMapper samAchievementMapper;
 
-    /**
-     * 查询成果录入
-     */
+    @Autowired
+    private ISamStudentService samStudentService; // 注入学生服务
+
+    @Autowired
+    private ISamTeacherService samTeacherService; // 注入教师服务
+
+    // ... (查询方法的代码保持不变，省略以节省篇幅) ...
     @Override
     public SamAchievement selectSamAchievementByAchievementId(String achievementId)
     {
         return samAchievementMapper.selectSamAchievementByAchievementId(achievementId);
     }
-
-    /**
-     * 查询成果录入列表
-     */
     @Override
     public List<SamAchievement> selectSamAchievementList(SamAchievement samAchievement)
     {
         return samAchievementMapper.selectSamAchievementList(samAchievement);
+    }
+    @Override
+    public List<SamAchievement> selectSamAchievementListByStudentId(SamAchievement samAchievement)
+    {
+        return samAchievementMapper.selectSamAchievementListByStudentId(samAchievement);
+    }
+    @Override
+    public List<SamAchievement> selectSamAchievementListByTeacherId(SamAchievement samAchievement)
+    {
+        return samAchievementMapper.selectSamAchievementListByTeacherId(samAchievement);
     }
 
     /**
@@ -47,22 +62,22 @@ public class SamAchievementServiceImpl implements ISamAchievementService
     @Override
     public int insertSamAchievement(SamAchievement samAchievement)
     {
-        // 1. 自动提取年份 (数据库字段为 int，此处根据 awardTime 计算)
+        // 1. 自动提取年份
         if (samAchievement.getAwardTime() != null) {
             Calendar cal = Calendar.getInstance();
             cal.setTime(samAchievement.getAwardTime());
             samAchievement.setYear((long) cal.get(Calendar.YEAR));
         }
-
-        // 2. 注意：数据库是 auto_increment，不要手动 setAchievementId
-        // 必须依靠 XML 中的 useGeneratedKeys="true" 来回填 ID
         samAchievement.setCreateTime(DateUtils.getNowDate());
 
-        // 3. 执行主表插入
+        // 2. 插入主表
         int rows = samAchievementMapper.insertSamAchievement(samAchievement);
 
-        // 4. 执行子表插入 (此时 samAchievement 已经拿到了回填的自增 ID)
+        // 3. 处理参赛选手 (包含自动补录学生档案)
         insertSamAchievementParticipant(samAchievement);
+
+        // 4. 处理指导老师 (包含自动补录教师档案) -> 你之前漏掉了这个
+        insertSamAchievementAdvisor(samAchievement);
 
         return rows;
     }
@@ -75,66 +90,135 @@ public class SamAchievementServiceImpl implements ISamAchievementService
     public int updateSamAchievement(SamAchievement samAchievement)
     {
         samAchievement.setUpdateTime(DateUtils.getNowDate());
-        // 修改时先删除旧的关联选手，再重新插入
+
+        // 1. 处理参赛选手：先删后加
         samAchievementMapper.deleteSamAchievementParticipantByParticipantId(samAchievement.getAchievementId());
         insertSamAchievementParticipant(samAchievement);
+
+        // 2. 处理指导老师：先删后加 -> 你之前漏掉了这个
+        samAchievementMapper.deleteSamAchievementAdvisorByAchievementId(samAchievement.getAchievementId());
+        insertSamAchievementAdvisor(samAchievement);
+
         return samAchievementMapper.updateSamAchievement(samAchievement);
     }
+
+    /**
+     * 核心逻辑：插入选手并同步学生档案
+     */
     public void insertSamAchievementParticipant(SamAchievement samAchievement)
     {
-        List<SamAchievementParticipant> samAchievementParticipantList = samAchievement.getSamAchievementParticipantList();
-        // 获取主表自动生成的 ID
+        List<SamAchievementParticipant> list = samAchievement.getSamAchievementParticipantList();
         String achievementId = samAchievement.getAchievementId();
 
-        if (StringUtils.isNotNull(samAchievementParticipantList))
+        if (StringUtils.isNotNull(list))
         {
-            List<SamAchievementParticipant> list = new ArrayList<SamAchievementParticipant>();
-            for (SamAchievementParticipant participant : samAchievementParticipantList)
+            List<SamAchievementParticipant> insertList = new ArrayList<>();
+            for (SamAchievementParticipant participant : list)
             {
-                // 1. 设置外键关联
+                // Logic A: 检查并自动同步到学生档案表 (sam_student)
+                checkAndInsertStudent(participant.getStudentId(), participant.getStudentName());
+                // Logic B: 准备插入关系表
                 participant.setAchievementId(achievementId);
-
-                // 2. 清空子表主键 (让数据库自增)
-                participant.setParticipantId(null);
-
-                // 3. 补全基础字段
+                participant.setParticipantId(null); // 让数据库自增
                 participant.setCreateBy(samAchievement.getCreateBy());
                 participant.setCreateTime(DateUtils.getNowDate());
-                participant.setUpdateTime(DateUtils.getNowDate()); // 刚才补的
-
-                // --- 核心修复：设置删除标志 (0代表正常，2代表删除) ---
-                // 如果你的实体类里 delFlag 是 String 类型，就填 "0"
-                // 如果是 Integer/Long 类型，就填 0
-                participant.setDelFlag(0L); // 这里的类型(0 或 "0")请根据你的实体类定义自行调整
-
-                list.add(participant);
+                participant.setUpdateTime(DateUtils.getNowDate());
+                participant.setDelFlag(0L);
+                insertList.add(participant);
             }
-            if (list.size() > 0)
+            if (insertList.size() > 0)
             {
-                samAchievementMapper.batchSamAchievementParticipant(list);
+                samAchievementMapper.batchSamAchievementParticipant(insertList);
             }
         }
     }
 
     /**
-     * 批量删除成果录入
+     * 核心逻辑：插入老师并同步教师档案
      */
+    public void insertSamAchievementAdvisor(SamAchievement samAchievement)
+    {
+        List<SamAchievementAdvisor> list = samAchievement.getSamAchievementAdvisorList();
+        String achievementId = samAchievement.getAchievementId();
+
+        if (StringUtils.isNotNull(list))
+        {
+            List<SamAchievementAdvisor> insertList = new ArrayList<>();
+            for (SamAchievementAdvisor advisor : list)
+            {
+                // Logic A: 检查并自动同步到教师档案表 (sam_teacher)
+                checkAndInsertTeacher(advisor.getTeacherId(), advisor.getTeacherName());
+
+                // Logic B: 准备插入关系表
+                advisor.setAchievementId(achievementId);
+                advisor.setAdvisorId(null);
+                advisor.setCreateBy(samAchievement.getCreateBy());
+                advisor.setCreateTime(DateUtils.getNowDate());
+                advisor.setUpdateTime(DateUtils.getNowDate());
+                advisor.setDelFlag(0L);
+                insertList.add(advisor);
+            }
+            if (insertList.size() > 0)
+            {
+                samAchievementMapper.batchSamAchievementAdvisor(insertList);
+            }
+        }
+    }
+
+    /**
+     * 辅助方法：检查学生是否存在，不存在则新增
+     */
+    private void checkAndInsertStudent(String studentNo, String studentName) {
+        if (StringUtils.isEmpty(studentNo)) return;
+
+        SamStudent query = new SamStudent();
+        query.setNo(studentNo);
+        // 使用 list 查询避免报错，如果只有一条也兼容
+        List<SamStudent> exists = samStudentService.selectSamStudentList(query);
+
+        if (exists == null || exists.isEmpty()) {
+            SamStudent newStudent = new SamStudent();
+            newStudent.setNo(studentNo);
+            newStudent.setName(studentName);
+            // 可以设置一些默认值，例如暂时设为"未知学院"或空
+            samStudentService.insertSamStudent(newStudent);
+        }
+    }
+
+    /**
+     * 辅助方法：检查教师是否存在，不存在则新增
+     */
+    private void checkAndInsertTeacher(String teacherNo, String teacherName) {
+        if (StringUtils.isEmpty(teacherNo)) return;
+
+        SamTeacher query = new SamTeacher();
+        query.setNo(teacherNo);
+        List<SamTeacher> exists = samTeacherService.selectSamTeacherList(query);
+
+        if (exists == null || exists.isEmpty()) {
+            SamTeacher newTeacher = new SamTeacher();
+            newTeacher.setNo(teacherNo);
+            newTeacher.setTeacherName(teacherName);
+            samTeacherService.insertSamTeacher(newTeacher);
+        }
+    }
+
     @Transactional
     @Override
     public int deleteSamAchievementByAchievementIds(String[] achievementIds)
     {
+        // 删除关联的选手和老师
         samAchievementMapper.deleteSamAchievementParticipantByParticipantIds(achievementIds);
+        samAchievementMapper.deleteSamAchievementAdvisorByAchievementIds(achievementIds); // 记得加这个方法
         return samAchievementMapper.deleteSamAchievementByAchievementIds(achievementIds);
     }
 
-    /**
-     * 删除成果录入信息
-     */
     @Transactional
     @Override
     public int deleteSamAchievementByAchievementId(String achievementId)
     {
         samAchievementMapper.deleteSamAchievementParticipantByParticipantId(achievementId);
+        samAchievementMapper.deleteSamAchievementAdvisorByAchievementId(achievementId); // 记得加这个方法
         return samAchievementMapper.deleteSamAchievementByAchievementId(achievementId);
     }
 }

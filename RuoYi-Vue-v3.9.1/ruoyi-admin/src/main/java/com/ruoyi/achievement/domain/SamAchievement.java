@@ -11,8 +11,7 @@ import com.ruoyi.common.core.domain.BaseEntity;
 
 /**
  * 成果录入对象 sam_achievement
- * 
- * @author 王璨
+ * * @author 王璨
  * @date 2026-02-03
  */
 public class SamAchievement extends BaseEntity
@@ -130,322 +129,339 @@ public class SamAchievement extends BaseEntity
     /** 参赛选手信息 */
     private List<SamAchievementParticipant> samAchievementParticipantList;
 
-    public void setAchievementId(String achievementId) 
+    /** 指导老师信息 (新增) */
+    private List<SamAchievementAdvisor> samAchievementAdvisorList;
+    /** 关联的赛事ID (非数据库表字段，通过关联查询获取) */
+    private String competitionId;
+
+    public void setCompetitionId(String competitionId)
+    {
+        this.competitionId = competitionId;
+    }
+
+    public String getCompetitionId()
+    {
+        return competitionId;
+    }
+
+    // ================= Getters and Setters =================
+
+    public void setAchievementId(String achievementId)
     {
         this.achievementId = achievementId;
     }
 
-    public String getAchievementId() 
+    public String getAchievementId()
     {
         return achievementId;
     }
 
-    public void setSessionId(String sessionId) 
+    public void setSessionId(String sessionId)
     {
         this.sessionId = sessionId;
     }
 
-    public String getSessionId() 
+    public String getSessionId()
     {
         return sessionId;
     }
 
-    public void setCategory(String category) 
+    public void setCategory(String category)
     {
         this.category = category;
     }
 
-    public String getCategory() 
+    public String getCategory()
     {
         return category;
     }
 
-    public void setName(String name) 
+    public void setName(String name)
     {
         this.name = name;
     }
 
-    public String getName() 
+    public String getName()
     {
         return name;
     }
 
-    public void setTeamName(String teamName) 
+    public void setTeamName(String teamName)
     {
         this.teamName = teamName;
     }
 
-    public String getTeamName() 
+    public String getTeamName()
     {
         return teamName;
     }
 
-    public void setLevel(String level) 
+    public void setLevel(String level)
     {
         this.level = level;
     }
 
-    public String getLevel() 
+    public String getLevel()
     {
         return level;
     }
 
-    public void setGrade(Long grade) 
+    public void setGrade(Long grade)
     {
         this.grade = grade;
     }
 
-    public Long getGrade() 
+    public Long getGrade()
     {
         return grade;
     }
 
-    public void setTrack(String track) 
+    public void setTrack(String track)
     {
         this.track = track;
     }
 
-    public String getTrack() 
+    public String getTrack()
     {
         return track;
     }
 
-    public void setCertificateNo(String certificateNo) 
+    public void setCertificateNo(String certificateNo)
     {
         this.certificateNo = certificateNo;
     }
 
-    public String getCertificateNo() 
+    public String getCertificateNo()
     {
         return certificateNo;
     }
 
-    public void setGroupId(Long groupId) 
+    public void setGroupId(Long groupId)
     {
         this.groupId = groupId;
     }
 
-    public Long getGroupId() 
+    public Long getGroupId()
     {
         return groupId;
     }
 
-    public void setAwardTime(Date awardTime) 
+    public void setAwardTime(Date awardTime)
     {
         this.awardTime = awardTime;
     }
 
-    public Date getAwardTime() 
+    public Date getAwardTime()
     {
         return awardTime;
     }
 
-    public void setYear(Long year) 
+    public void setYear(Long year)
     {
         this.year = year;
     }
 
-    public Long getYear() 
+    public Long getYear()
     {
         return year;
     }
 
-    public void setOwnerDepId(String ownerDepId) 
+    public void setOwnerDepId(String ownerDepId)
     {
         this.ownerDepId = ownerDepId;
     }
 
-    public String getOwnerDepId() 
+    public String getOwnerDepId()
     {
         return ownerDepId;
     }
 
-    public void setIsReimburse(Integer isReimburse) 
+    public void setIsReimburse(Integer isReimburse)
     {
         this.isReimburse = isReimburse;
     }
 
-    public Integer getIsReimburse() 
+    public Integer getIsReimburse()
     {
         return isReimburse;
     }
 
-    public void setIsSupplement(Integer isSupplement) 
+    public void setIsSupplement(Integer isSupplement)
     {
         this.isSupplement = isSupplement;
     }
 
-    public Integer getIsSupplement() 
+    public Integer getIsSupplement()
     {
         return isSupplement;
     }
 
-    public void setFee(BigDecimal fee) 
+    public void setFee(BigDecimal fee)
     {
         this.fee = fee;
     }
 
-    public BigDecimal getFee() 
+    public BigDecimal getFee()
     {
         return fee;
     }
 
-    public void setReimbursementFee(BigDecimal reimbursementFee) 
+    public void setReimbursementFee(BigDecimal reimbursementFee)
     {
         this.reimbursementFee = reimbursementFee;
     }
 
-    public BigDecimal getReimbursementFee() 
+    public BigDecimal getReimbursementFee()
     {
         return reimbursementFee;
     }
 
-    public void setReimbursementRatio(String reimbursementRatio) 
+    public void setReimbursementRatio(String reimbursementRatio)
     {
         this.reimbursementRatio = reimbursementRatio;
     }
 
-    public String getReimbursementRatio() 
+    public String getReimbursementRatio()
     {
         return reimbursementRatio;
     }
 
-    public void setReimbursementItemId(String reimbursementItemId) 
+    public void setReimbursementItemId(String reimbursementItemId)
     {
         this.reimbursementItemId = reimbursementItemId;
     }
 
-    public String getReimbursementItemId() 
+    public String getReimbursementItemId()
     {
         return reimbursementItemId;
     }
 
-    public void setReimbursementDate(Date reimbursementDate) 
+    public void setReimbursementDate(Date reimbursementDate)
     {
         this.reimbursementDate = reimbursementDate;
     }
 
-    public Date getReimbursementDate() 
+    public Date getReimbursementDate()
     {
         return reimbursementDate;
     }
 
-    public void setItemIndex(Long itemIndex) 
+    public void setItemIndex(Long itemIndex)
     {
         this.itemIndex = itemIndex;
     }
 
-    public Long getItemIndex() 
+    public Long getItemIndex()
     {
         return itemIndex;
     }
 
-    public void setQualityIndex(Long qualityIndex) 
+    public void setQualityIndex(Long qualityIndex)
     {
         this.qualityIndex = qualityIndex;
     }
 
-    public Long getQualityIndex() 
+    public Long getQualityIndex()
     {
         return qualityIndex;
     }
 
-    public void setSubmittedAt(Date submittedAt) 
+    public void setSubmittedAt(Date submittedAt)
     {
         this.submittedAt = submittedAt;
     }
 
-    public Date getSubmittedAt() 
+    public Date getSubmittedAt()
     {
         return submittedAt;
     }
 
-    public void setReviewedAt(Date reviewedAt) 
+    public void setReviewedAt(Date reviewedAt)
     {
         this.reviewedAt = reviewedAt;
     }
 
-    public Date getReviewedAt() 
+    public Date getReviewedAt()
     {
         return reviewedAt;
     }
 
-    public void setSchoolReviewedAt(Date schoolReviewedAt) 
+    public void setSchoolReviewedAt(Date schoolReviewedAt)
     {
         this.schoolReviewedAt = schoolReviewedAt;
     }
 
-    public Date getSchoolReviewedAt() 
+    public Date getSchoolReviewedAt()
     {
         return schoolReviewedAt;
     }
 
-    public void setReviewResult(Long reviewResult) 
+    public void setReviewResult(Long reviewResult)
     {
         this.reviewResult = reviewResult;
     }
 
-    public Long getReviewResult() 
+    public Long getReviewResult()
     {
         return reviewResult;
     }
 
-    public void setSchooiReviewResult(Long schooiReviewResult) 
+    public void setSchooiReviewResult(Long schooiReviewResult)
     {
         this.schooiReviewResult = schooiReviewResult;
     }
 
-    public Long getSchooiReviewResult() 
+    public Long getSchooiReviewResult()
     {
         return schooiReviewResult;
     }
 
-    public void setReviewReason(String reviewReason) 
+    public void setReviewReason(String reviewReason)
     {
         this.reviewReason = reviewReason;
     }
 
-    public String getReviewReason() 
+    public String getReviewReason()
     {
         return reviewReason;
     }
 
-    public void setSchoolReviewReason(String schoolReviewReason) 
+    public void setSchoolReviewReason(String schoolReviewReason)
     {
         this.schoolReviewReason = schoolReviewReason;
     }
 
-    public String getSchoolReviewReason() 
+    public String getSchoolReviewReason()
     {
         return schoolReviewReason;
     }
 
-    public void setAuditBy(String auditBy) 
+    public void setAuditBy(String auditBy)
     {
         this.auditBy = auditBy;
     }
 
-    public String getAuditBy() 
+    public String getAuditBy()
     {
         return auditBy;
     }
 
-    public void setSchoolAuditBy(String schoolAuditBy) 
+    public void setSchoolAuditBy(String schoolAuditBy)
     {
         this.schoolAuditBy = schoolAuditBy;
     }
 
-    public String getSchoolAuditBy() 
+    public String getSchoolAuditBy()
     {
         return schoolAuditBy;
     }
 
-    public void setDelFlag(Integer delFlag) 
+    public void setDelFlag(Integer delFlag)
     {
         this.delFlag = delFlag;
     }
 
-    public Integer getDelFlag() 
+    public Integer getDelFlag()
     {
         return delFlag;
     }
@@ -460,47 +476,60 @@ public class SamAchievement extends BaseEntity
         this.samAchievementParticipantList = samAchievementParticipantList;
     }
 
+    // ============= 新增的方法 =============
+    public List<SamAchievementAdvisor> getSamAchievementAdvisorList()
+    {
+        return samAchievementAdvisorList;
+    }
+
+    public void setSamAchievementAdvisorList(List<SamAchievementAdvisor> samAchievementAdvisorList)
+    {
+        this.samAchievementAdvisorList = samAchievementAdvisorList;
+    }
+    // ======================================
+
     @Override
     public String toString() {
         return new ToStringBuilder(this,ToStringStyle.MULTI_LINE_STYLE)
-            .append("achievementId", getAchievementId())
-            .append("sessionId", getSessionId())
-            .append("category", getCategory())
-            .append("name", getName())
-            .append("teamName", getTeamName())
-            .append("level", getLevel())
-            .append("grade", getGrade())
-            .append("track", getTrack())
-            .append("certificateNo", getCertificateNo())
-            .append("groupId", getGroupId())
-            .append("awardTime", getAwardTime())
-            .append("year", getYear())
-            .append("ownerDepId", getOwnerDepId())
-            .append("isReimburse", getIsReimburse())
-            .append("isSupplement", getIsSupplement())
-            .append("fee", getFee())
-            .append("reimbursementFee", getReimbursementFee())
-            .append("reimbursementRatio", getReimbursementRatio())
-            .append("reimbursementItemId", getReimbursementItemId())
-            .append("reimbursementDate", getReimbursementDate())
-            .append("itemIndex", getItemIndex())
-            .append("qualityIndex", getQualityIndex())
-            .append("submittedAt", getSubmittedAt())
-            .append("reviewedAt", getReviewedAt())
-            .append("schoolReviewedAt", getSchoolReviewedAt())
-            .append("reviewResult", getReviewResult())
-            .append("schooiReviewResult", getSchooiReviewResult())
-            .append("reviewReason", getReviewReason())
-            .append("schoolReviewReason", getSchoolReviewReason())
-            .append("auditBy", getAuditBy())
-            .append("schoolAuditBy", getSchoolAuditBy())
-            .append("createBy", getCreateBy())
-            .append("updateBy", getUpdateBy())
-            .append("createTime", getCreateTime())
-            .append("updateTime", getUpdateTime())
-            .append("delFlag", getDelFlag())
-            .append("remark", getRemark())
-            .append("samAchievementParticipantList", getSamAchievementParticipantList())
-            .toString();
+                .append("achievementId", getAchievementId())
+                .append("sessionId", getSessionId())
+                .append("category", getCategory())
+                .append("name", getName())
+                .append("teamName", getTeamName())
+                .append("level", getLevel())
+                .append("grade", getGrade())
+                .append("track", getTrack())
+                .append("certificateNo", getCertificateNo())
+                .append("groupId", getGroupId())
+                .append("awardTime", getAwardTime())
+                .append("year", getYear())
+                .append("ownerDepId", getOwnerDepId())
+                .append("isReimburse", getIsReimburse())
+                .append("isSupplement", getIsSupplement())
+                .append("fee", getFee())
+                .append("reimbursementFee", getReimbursementFee())
+                .append("reimbursementRatio", getReimbursementRatio())
+                .append("reimbursementItemId", getReimbursementItemId())
+                .append("reimbursementDate", getReimbursementDate())
+                .append("itemIndex", getItemIndex())
+                .append("qualityIndex", getQualityIndex())
+                .append("submittedAt", getSubmittedAt())
+                .append("reviewedAt", getReviewedAt())
+                .append("schoolReviewedAt", getSchoolReviewedAt())
+                .append("reviewResult", getReviewResult())
+                .append("schooiReviewResult", getSchooiReviewResult())
+                .append("reviewReason", getReviewReason())
+                .append("schoolReviewReason", getSchoolReviewReason())
+                .append("auditBy", getAuditBy())
+                .append("schoolAuditBy", getSchoolAuditBy())
+                .append("createBy", getCreateBy())
+                .append("updateBy", getUpdateBy())
+                .append("createTime", getCreateTime())
+                .append("updateTime", getUpdateTime())
+                .append("delFlag", getDelFlag())
+                .append("remark", getRemark())
+                .append("samAchievementParticipantList", getSamAchievementParticipantList())
+                .append("samAchievementAdvisorList", getSamAchievementAdvisorList())
+                .toString();
     }
 }

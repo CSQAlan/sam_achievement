@@ -38,7 +38,7 @@
                       <el-form-item label="关联比赛" prop="competitionId">
                         <el-select 
                           v-model="form.competitionId" 
-                          placeholder="请选择关联的赛事" 
+                          placeholder="请选择赛事" 
                           filterable 
                           clearable 
                           style="width: 100%"
@@ -61,7 +61,7 @@
           <el-form-item label="届次" prop="sessionId">
   <el-select 
     v-model="form.sessionId" 
-    placeholder="请先选择关联赛事" 
+    placeholder="请选择赛事" 
     filterable 
     clearable 
     style="width: 100%"
@@ -313,7 +313,7 @@
            <el-form-item label="届次" prop="sessionId">
   <el-select 
     v-model="form.sessionId" 
-    placeholder="请先选择关联赛事" 
+    placeholder="请先选择赛事" 
     filterable 
     clearable 
     style="width: 100%"

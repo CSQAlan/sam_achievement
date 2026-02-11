@@ -1,7 +1,10 @@
 package com.ruoyi.achievement.controller;
 
+import java.util.HashMap;
 import java.util.List;
 import javax.servlet.http.HttpServletResponse;
+
+import com.ruoyi.common.utils.SecurityUtils;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -100,5 +103,43 @@ public class SamAchievementController extends BaseController
     public AjaxResult remove(@PathVariable String[] achievementIds)
     {
         return toAjax(samAchievementService.deleteSamAchievementByAchievementIds(achievementIds));
+    }
+    /**
+     * 查询我参与的成果列表（学生端-非负责人）
+     */
+    @PreAuthorize("@ss.hasRole('student')") // 确保只有学生能调
+    @GetMapping("/list-participated")
+    public TableDataInfo listParticipated(SamAchievement samAchievement)
+    {
+        startPage();
+        // 获取当前登录用户的学号 (假设 username 即学号)
+        String studentId = SecurityUtils.getUsername();
+        if (samAchievement.getParams() == null) {
+            samAchievement.setParams(new HashMap<>());
+        }
+        samAchievement.getParams().put("studentId", studentId);
+
+        // 调用你在 Service 层新增的方法 (需同步在 Service/ServiceImpl 中添加)
+        List<SamAchievement> list = samAchievementService.selectSamAchievementListByStudentId(samAchievement);
+        return getDataTable(list);
+    }
+
+    /**
+     * 查询我指导的成果列表（教师端）
+     */
+    @PreAuthorize("@ss.hasRole('teacher')") // 确保只有老师能调
+    @GetMapping("/list-guided")
+    public TableDataInfo listGuided(SamAchievement samAchievement)
+    {
+        startPage();
+        // 获取当前登录用户的工号
+        String teacherId = SecurityUtils.getUsername();
+        if (samAchievement.getParams() == null) {
+            samAchievement.setParams(new HashMap<>());
+        }
+        samAchievement.getParams().put("teacherId", teacherId);
+
+        List<SamAchievement> list = samAchievementService.selectSamAchievementListByTeacherId(samAchievement);
+        return getDataTable(list);
     }
 }
