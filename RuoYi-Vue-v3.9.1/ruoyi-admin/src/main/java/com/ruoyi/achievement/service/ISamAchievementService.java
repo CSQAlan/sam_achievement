@@ -58,4 +58,17 @@ public interface ISamAchievementService
      * @return 结果
      */
     public int deleteSamAchievementByAchievementId(String achievementId);
+    /**
+     * 查询我参与的成果列表
+     * * @param samAchievement 成果录入
+     * @return 成果录入集合
+     */
+    public List<SamAchievement> selectSamAchievementListByStudentId(SamAchievement samAchievement);
+
+    /**
+     * 查询我指导的成果列表
+     * * @param samAchievement 成果录入
+     * @return 成果录入集合
+     */
+    public List<SamAchievement> selectSamAchievementListByTeacherId(SamAchievement samAchievement);
 }

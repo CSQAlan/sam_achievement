@@ -6,50 +6,50 @@ import com.ruoyi.common.annotation.Excel;
 import com.ruoyi.common.core.domain.BaseEntity;
 
 /**
- * 参赛选手对象 sam_achievement_participant
- * * @author cyy
- * @date 2026-02-03
+ * 指导老师对象 sam_achievement_advisor
+ * * @author ruoyi
+ * @date 2026-02-11
  */
-public class SamAchievementParticipant extends BaseEntity
+public class SamAchievementAdvisor extends BaseEntity
 {
     private static final long serialVersionUID = 1L;
 
     /** 主键 */
-    private String participantId; // 注意：数据库通常是 Long 自增，这里你定义为 String，需确保匹配
+    private Long advisorId;
 
     /** 成果ID */
     @Excel(name = "成果ID")
     private String achievementId;
 
-    /** 学生学号 */
-    @Excel(name = "学生学号")
-    private String studentId;
+    /** 教师工号 */
+    @Excel(name = "教师工号")
+    private String teacherId;
 
-    /** 学生姓名 (数据库无此字段，用于前端传值和业务逻辑) */
-    @Excel(name = "学生姓名")
-    private String studentName;  // <--- 必须要加上这个字段！！！
+    /** 教师姓名 (数据库表中无此字段，通过关联查询获取，或用于前端回显) */
+    @Excel(name = "教师姓名")
+    private String teacherName;
 
-    /** 排序 */
+    /** 排序（1=主指导） */
     @Excel(name = "排序")
-    private Integer orderNo; // 建议用 Integer 对应数据库 int
+    private Integer orderNo;
 
-    /** 是否负责人 (1=是, 0=否) */
-    @Excel(name = "是否负责人", readConverterExp = "0=否,1=是")
-    private Integer manager; // 建议用 Integer 对应数据库 tinyint
+    /** 是否主要指导 (0=否, 1=是) */
+    @Excel(name = "是否主要指导", readConverterExp = "0=否,1=是")
+    private Integer manager;
 
     /** 删除标志 */
     private Long delFlag;
 
     // ================= Getters and Setters =================
 
-    public void setParticipantId(String participantId)
+    public void setAdvisorId(Long advisorId)
     {
-        this.participantId = participantId;
+        this.advisorId = advisorId;
     }
 
-    public String getParticipantId()
+    public Long getAdvisorId()
     {
-        return participantId;
+        return advisorId;
     }
 
     public void setAchievementId(String achievementId)
@@ -62,27 +62,25 @@ public class SamAchievementParticipant extends BaseEntity
         return achievementId;
     }
 
-    public void setStudentId(String studentId)
+    public void setTeacherId(String teacherId)
     {
-        this.studentId = studentId;
+        this.teacherId = teacherId;
     }
 
-    public String getStudentId()
+    public String getTeacherId()
     {
-        return studentId;
+        return teacherId;
     }
 
-    // --- 新增的 getStudentName / setStudentName ---
-    public void setStudentName(String studentName)
+    public void setTeacherName(String teacherName)
     {
-        this.studentName = studentName;
+        this.teacherName = teacherName;
     }
 
-    public String getStudentName()
+    public String getTeacherName()
     {
-        return studentName;
+        return teacherName;
     }
-    // -------------------------------------------
 
     public void setOrderNo(Integer orderNo)
     {
@@ -117,15 +115,15 @@ public class SamAchievementParticipant extends BaseEntity
     @Override
     public String toString() {
         return new ToStringBuilder(this,ToStringStyle.MULTI_LINE_STYLE)
-                .append("participantId", getParticipantId())
+                .append("advisorId", getAdvisorId())
                 .append("achievementId", getAchievementId())
-                .append("studentId", getStudentId())
-                .append("studentName", getStudentName()) // toString 也加上
+                .append("teacherId", getTeacherId())
+                .append("teacherName", getTeacherName())
                 .append("orderNo", getOrderNo())
                 .append("manager", getManager())
                 .append("createBy", getCreateBy())
-                .append("updateBy", getUpdateBy())
                 .append("createTime", getCreateTime())
+                .append("updateBy", getUpdateBy())
                 .append("updateTime", getUpdateTime())
                 .append("delFlag", getDelFlag())
                 .append("remark", getRemark())
