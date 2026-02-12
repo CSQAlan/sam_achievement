@@ -129,6 +129,7 @@
     <el-row :gutter="10" class="mb8">
       <el-col :span="1.5">
         <el-button
+            v-if="showAdd"
             type="primary"
             plain
             icon="Plus"
@@ -138,6 +139,7 @@
       </el-col>
       <el-col :span="1.5">
         <el-button
+            v-if="showEdit"
             type="success"
             plain
             icon="Edit"
@@ -148,6 +150,7 @@
       </el-col>
       <el-col :span="1.5">
         <el-button
+            v-if="showDelete"
             type="danger"
             plain
             icon="Delete"
@@ -158,6 +161,7 @@
       </el-col>
       <el-col :span="1.5">
         <el-button
+            v-if="showExport"
             type="warning"
             plain
             icon="Download"
@@ -212,6 +216,7 @@
     <el-button link type="primary" icon="View" @click="handleReview(scope.row)" v-hasPermi="permReview">详情</el-button>
     
     <el-button 
+      v-if="showEdit"
       link 
       type="primary" 
       icon="Edit" 
@@ -221,6 +226,7 @@
     >修改</el-button>
     
     <el-button 
+      v-if="showDelete"
       link 
       type="primary" 
       icon="Delete" 
@@ -289,7 +295,11 @@ const props = defineProps({
   showSearch: { type: Boolean, default: true },
   pageMode: { type: Boolean, default: false },
   reviewRoute: { type: String, default: '' },
-  reviewSource: { type: String, default: '' }
+  reviewSource: { type: String, default: '' },
+  showAdd: { type: Boolean, default: true },
+  showEdit: { type: Boolean, default: true },
+  showDelete: { type: Boolean, default: true },
+  showExport: { type: Boolean, default: true }
 });
 
 const { proxy } = getCurrentInstance();
