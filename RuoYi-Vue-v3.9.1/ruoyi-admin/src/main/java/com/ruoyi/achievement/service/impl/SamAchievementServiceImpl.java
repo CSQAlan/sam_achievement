@@ -102,31 +102,53 @@ public class SamAchievementServiceImpl implements ISamAchievementService
         samAchievementMapper.deleteSamAchievementParticipantByParticipantId(samAchievement.getAchievementId());
         insertSamAchievementParticipant(samAchievement);
 
-        // 2. 处理指导老师：先删后加 -> 你之前漏掉了这个
+        // 2. 处理指导老师：先删后加
         samAchievementMapper.deleteSamAchievementAdvisorByAchievementId(samAchievement.getAchievementId());
         insertSamAchievementAdvisor(samAchievement);
 
-        // 3. 处理附件转正
+        // 3. 处理附件：先删后加
+        samAchievementMapper.deleteSamAchievementAttachmentByAchievementId(samAchievement.getAchievementId());
         processAttachments(samAchievement);
 
         return samAchievementMapper.updateSamAchievement(samAchievement);
     }
 
     /**
-     * 附件转正逻辑：将关联的 UUID 在 sys_file_uuid 表中标记为正式 (is_temp = 0)
+     * 附件处理逻辑：
+     * 1. 将关联的 UUID 在 sys_file_uuid 表中标记为正式 (is_temp = 0)
+     * 2. 将附件关联关系存入 sam_achievement_attachment 表
      */
     private void processAttachments(SamAchievement samAchievement) {
         List<java.util.Map<String, Object>> attachments = samAchievement.getSamAchievementAttachmentList();
+        String achievementId = samAchievement.getAchievementId();
+
         if (StringUtils.isNotNull(attachments) && attachments.size() > 0) {
             List<String> uuids = new ArrayList<>();
+            List<java.util.Map<String, Object>> insertList = new ArrayList<>();
+
             for (java.util.Map<String, Object> attachment : attachments) {
                 String uuid = (String) attachment.get("fileUuid");
                 if (StringUtils.isNotEmpty(uuid)) {
                     uuids.add(uuid);
+                    
+                    // 补全附件表所需字段
+                    attachment.put("achievementId", achievementId);
+                    // 如果前端没传 fileType，这里给个默认值 (根据 SQL 定义它是必填项)
+                    if (attachment.get("fileType") == null) {
+                        attachment.put("fileType", 1); 
+                    }
+                    insertList.add(attachment);
                 }
             }
+
+            // A. 更新 UUID 状态为正式
             if (uuids.size() > 0) {
                 fileUuidMapper.updateFileUuidStatus(uuids.toArray(new String[0]), 0);
+            }
+
+            // B. 批量插入附件中间表
+            if (insertList.size() > 0) {
+                samAchievementMapper.batchSamAchievementAttachment(insertList);
             }
         }
     }
@@ -236,9 +258,10 @@ public class SamAchievementServiceImpl implements ISamAchievementService
     @Override
     public int deleteSamAchievementByAchievementIds(String[] achievementIds)
     {
-        // 删除关联的选手和老师
+        // 删除关联的选手、老师和附件
         samAchievementMapper.deleteSamAchievementParticipantByParticipantIds(achievementIds);
-        samAchievementMapper.deleteSamAchievementAdvisorByAchievementIds(achievementIds); // 记得加这个方法
+        samAchievementMapper.deleteSamAchievementAdvisorByAchievementIds(achievementIds);
+        samAchievementMapper.deleteSamAchievementAttachmentByAchievementIds(achievementIds);
         return samAchievementMapper.deleteSamAchievementByAchievementIds(achievementIds);
     }
 
@@ -247,7 +270,8 @@ public class SamAchievementServiceImpl implements ISamAchievementService
     public int deleteSamAchievementByAchievementId(String achievementId)
     {
         samAchievementMapper.deleteSamAchievementParticipantByParticipantId(achievementId);
-        samAchievementMapper.deleteSamAchievementAdvisorByAchievementId(achievementId); // 记得加这个方法
+        samAchievementMapper.deleteSamAchievementAdvisorByAchievementId(achievementId);
+        samAchievementMapper.deleteSamAchievementAttachmentByAchievementId(achievementId);
         return samAchievementMapper.deleteSamAchievementByAchievementId(achievementId);
     }
 }
