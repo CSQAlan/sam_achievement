@@ -142,7 +142,12 @@
                     <el-col :span="1.5"><el-button type="primary" :icon="Plus" @click="handleAddParticipant">添加学生</el-button></el-col>
                     <el-col :span="1.5"><el-button type="danger" :icon="Delete" @click="handleDeleteParticipant">删除选中</el-button></el-col>
                   </el-row>
-                  <el-table :data="samAchievementParticipantList" :row-class-name="rowParticipantIndex" @selection-change="handleParticipantSelectionChange">
+                  <el-table ref="participantTable" :data="samAchievementParticipantList" :row-class-name="rowParticipantIndex" @selection-change="handleParticipantSelectionChange">
+                    <el-table-column v-if="!readOnly" width="40" align="center">
+                      <template #default="scope">
+                        <el-icon v-if="scope.row.manager !== 1" class="drag-handle" style="cursor: move"><Rank /></el-icon>
+                      </template>
+                    </el-table-column>
                     <el-table-column v-if="!readOnly" type="selection" width="50" align="center" />
                     <el-table-column label="学生学号" prop="studentId">
                       <template #default="scope">
@@ -181,7 +186,12 @@
                     <el-col :span="1.5"><el-button type="primary" :icon="Plus" @click="handleAddAdvisor">添加老师</el-button></el-col>
                     <el-col :span="1.5"><el-button type="danger" :icon="Delete" @click="handleDeleteAdvisor">删除选中</el-button></el-col>
                   </el-row>
-                  <el-table :data="samAchievementAdvisorList" @selection-change="handleAdvisorSelectionChange">
+                  <el-table ref="advisorTable" :data="samAchievementAdvisorList" @selection-change="handleAdvisorSelectionChange">
+                    <el-table-column v-if="!readOnly" width="40" align="center">
+                      <template #default="scope">
+                        <el-icon class="drag-handle" style="cursor: move"><Rank /></el-icon>
+                      </template>
+                    </el-table-column>
                     <el-table-column v-if="!readOnly" type="selection" width="50" align="center" />
                     <el-table-column label="教师工号" prop="teacherId">
                       <template #default="scope">
@@ -397,7 +407,12 @@
                 <el-col :span="1.5"><el-button type="primary" :icon="Plus" @click="handleAddParticipant">添加学生</el-button></el-col>
                 <el-col :span="1.5"><el-button type="danger" :icon="Delete" @click="handleDeleteParticipant">删除选中</el-button></el-col>
               </el-row>
-              <el-table :data="samAchievementParticipantList" :row-class-name="rowParticipantIndex" @selection-change="handleParticipantSelectionChange">
+              <el-table ref="participantTableDialog" :data="samAchievementParticipantList" :row-class-name="rowParticipantIndex" @selection-change="handleParticipantSelectionChange">
+                <el-table-column v-if="!readOnly" width="40" align="center">
+                  <template #default="scope">
+                    <el-icon v-if="scope.row.manager !== 1" class="drag-handle" style="cursor: move"><Rank /></el-icon>
+                  </template>
+                </el-table-column>
                 <el-table-column v-if="!readOnly" type="selection" width="50" align="center" />
                 <el-table-column label="学生学号" prop="studentId">
                   <template #default="scope">
@@ -436,7 +451,12 @@
                 <el-col :span="1.5"><el-button type="primary" :icon="Plus" @click="handleAddAdvisor">添加老师</el-button></el-col>
                 <el-col :span="1.5"><el-button type="danger" :icon="Delete" @click="handleDeleteAdvisor">删除选中</el-button></el-col>
               </el-row>
-              <el-table :data="samAchievementAdvisorList" @selection-change="handleAdvisorSelectionChange">
+              <el-table ref="advisorTableDialog" :data="samAchievementAdvisorList" @selection-change="handleAdvisorSelectionChange">
+                <el-table-column v-if="!readOnly" width="40" align="center">
+                  <template #default="scope">
+                    <el-icon class="drag-handle" style="cursor: move"><Rank /></el-icon>
+                  </template>
+                </el-table-column>
                 <el-table-column v-if="!readOnly" type="selection" width="50" align="center" />
                 <el-table-column label="教师工号" prop="teacherId">
                   <template #default="scope">
@@ -550,13 +570,49 @@
       </div>
     </template>
   </el-dialog>
+
+  <!-- 学生信息补全弹窗 -->
+  <el-dialog title="完善学生信息" v-model="studentRegVisible" width="500px" append-to-body :close-on-click-modal="false">
+    <el-form ref="studentRegRef" :model="studentRegForm" :rules="studentRegRules" label-width="80px">
+      <el-form-item label="学号" prop="no">
+        <el-input v-model="studentRegForm.no" disabled />
+      </el-form-item>
+      <el-form-item label="姓名" prop="name">
+        <el-input v-model="studentRegForm.name" placeholder="请输入学生姓名" />
+      </el-form-item>
+      <el-form-item label="学院" prop="school">
+        <el-input v-model="studentRegForm.school" placeholder="请输入学院" />
+      </el-form-item>
+      <el-form-item label="院系" prop="department">
+        <el-input v-model="studentRegForm.department" placeholder="请输入院系" />
+      </el-form-item>
+      <el-form-item label="专业" prop="major">
+        <el-input v-model="studentRegForm.major" placeholder="请输入专业" />
+      </el-form-item>
+      <el-form-item label="班级" prop="class_name">
+        <el-input v-model="studentRegForm.class_name" placeholder="请输入班级" />
+      </el-form-item>
+      <el-form-item label="年级" prop="class_year">
+        <el-input v-model="studentRegForm.class_year" placeholder="请输入年级 (例如: 2022)" />
+      </el-form-item>
+    </el-form>
+    <template #footer>
+      <div class="dialog-footer">
+        <el-button type="primary" @click="submitStudentReg">确 定</el-button>
+        <el-button @click="studentRegVisible = false">取 消</el-button>
+      </div>
+    </template>
+  </el-dialog>
 </template>
 
 <script setup name="AchievementForm">
 import { getCurrentInstance, ref, reactive, toRefs, computed, onMounted, watch } from "vue";
 import { onBeforeRouteLeave } from "vue-router";
-import { Plus, Delete, Document, Download, View, UploadFilled } from "@element-plus/icons-vue";
-import { listStudent } from "@/api/achievement/student";
+import draggable from "vuedraggable";
+import Sortable from "sortablejs";
+import useUserStore from "@/store/modules/user";
+import { Plus, Delete, Document, Download, View, UploadFilled, Rank } from "@element-plus/icons-vue";
+import { listStudent, addStudent } from "@/api/achievement/student";
 import { listTeacher } from "@/api/achievement/teacher";
 import { listDept } from "@/api/system/dept";
 import { handleTree } from "@/utils/ruoyi";
@@ -589,8 +645,21 @@ const activeAttachmentTab = ref('award');
 
 const uploadUrl = ref("/dev-api/attachment/upload");
 
+const userStore = useUserStore();
+const studentRegVisible = ref(false);
+const studentRegForm = ref({ no: "", name: "", school: "", department: "", major: "", class_name: "", class_year: "" });
+const studentRegRules = {
+  name: [{ required: true, message: "姓名不能为空", trigger: "blur" }],
+  school: [{ required: true, message: "学院不能为空", trigger: "blur" }]
+};
+let currentPendingRow = null; // 记录当前正在录入的学生行
+
 const samAchievementParticipantList = ref([]);
 const samAchievementAdvisorList = ref([]);
+const participantTable = ref(null);
+const advisorTable = ref(null);
+const participantTableDialog = ref(null);
+const advisorTableDialog = ref(null);
 const checkedParticipant = ref([]);
 const checkedAdvisor = ref([]);
 const competitionOptions = ref([]);
@@ -699,9 +768,33 @@ function handleStudentBlur(row) {
       row.studentName = response.rows[0].name;
       row.isManual = false; 
     } else {
-      row.studentName = ""; 
-      row.isManual = true; 
-      proxy.$modal.msgInfo(`未找到学号 ${row.studentId}，请手动输入姓名`);
+      // 未找到学生，弹出补全窗口
+      currentPendingRow = row;
+      studentRegForm.value = { 
+        no: row.studentId, 
+        name: "", 
+        school: "", 
+        department: "", 
+        major: "", 
+        class_name: "", 
+        class_year: "" 
+      };
+      studentRegVisible.value = true;
+    }
+  });
+}
+
+function submitStudentReg() {
+  proxy.$refs.studentRegRef.validate(valid => {
+    if (valid) {
+      addStudent(studentRegForm.value).then(response => {
+        proxy.$modal.msgSuccess("学生信息已录入");
+        if (currentPendingRow) {
+          currentPendingRow.studentName = studentRegForm.value.name;
+          currentPendingRow.isManual = false;
+        }
+        studentRegVisible.value = false;
+      });
     }
   });
 }
@@ -887,8 +980,17 @@ function open(id) {
     loadDetail(id);
   } else {
     title.value = props.titleAdd;
-    // 新增模式下，不需要初始加载届次，因为赛事还没选
+    // 自动填充当前用户为负责人
+    samAchievementParticipantList.value.push({
+      studentId: userStore.name,
+      studentName: userStore.nickName,
+      orderNo: 1,
+      manager: 1,
+      isManual: false
+    });
+    updateSnapshot();
   }
+  initSortable(); // 开启拖拽
 }
 
 function getForm() { return form.value; }
@@ -898,8 +1000,57 @@ onMounted(() => {
   if (isPageMode.value) {
     getDeptTree();
     getCompetitionList();
+    initSortable();
   }
 });
+
+/** 初始化拖拽 */
+function initSortable() {
+  setTimeout(() => {
+    // 1. 尝试获取参与者表格（支持页面或弹窗模式）
+    const pTable = participantTable.value || participantTableDialog.value;
+    if (pTable) {
+      const el = pTable.$el.querySelector('.el-table__body-wrapper tbody') || pTable.$el.querySelector('tbody');
+      if (el) {
+        Sortable.create(el, {
+          handle: '.drag-handle',
+          filter: '.el-table__row:first-child', // 负责人不动
+          onEnd: ({ newIndex, oldIndex }) => {
+            const list = [...samAchievementParticipantList.value];
+            const currRow = list.splice(oldIndex, 1)[0];
+            list.splice(newIndex, 0, currRow);
+            samAchievementParticipantList.value = [];
+            nextTick(() => {
+              samAchievementParticipantList.value = list;
+              reIndexList(samAchievementParticipantList.value);
+            });
+          }
+        });
+      }
+    }
+
+    // 2. 尝试获取老师表格
+    const aTable = advisorTable.value || advisorTableDialog.value;
+    if (aTable) {
+      const el = aTable.$el.querySelector('.el-table__body-wrapper tbody') || aTable.$el.querySelector('tbody');
+      if (el) {
+        Sortable.create(el, {
+          handle: '.drag-handle',
+          onEnd: ({ newIndex, oldIndex }) => {
+            const list = [...samAchievementAdvisorList.value];
+            const currRow = list.splice(oldIndex, 1)[0];
+            list.splice(newIndex, 0, currRow);
+            samAchievementAdvisorList.value = [];
+            nextTick(() => {
+              samAchievementAdvisorList.value = list;
+              reIndexList(samAchievementAdvisorList.value);
+            });
+          }
+        });
+      }
+    }
+  }, 500);
+}
 
 function loadDetail(id) {
   if (!props.getFn) return;
@@ -1013,8 +1164,10 @@ function handleBeforeClose(done) {
       cancelButtonText: "取消",
       type: "warning"
     }).then(() => {
-      done();
-    }).catch(() => {});
+      done(); // 执行 done 才会真正关闭
+    }).catch(() => {
+      // 点击取消不执行 done，弹窗保持打开
+    });
   } else {
     done();
   }
@@ -1055,8 +1208,18 @@ function getDeptTree() {
 function reIndexList(list) {
   list.forEach((item, index) => {
     item.orderNo = index + 1;
+    // 只有第一个始终是负责人
     item.manager = (index === 0) ? 1 : 0;
   });
+}
+
+// 拖拽结束后的处理函数
+function onDragEnd() {
+  reIndexList(samAchievementParticipantList.value);
+}
+
+function onAdvisorDragEnd() {
+  reIndexList(samAchievementAdvisorList.value);
 }
 
 function getFileName(url) { return url ? url.substring(url.lastIndexOf("/") + 1) : ""; }
