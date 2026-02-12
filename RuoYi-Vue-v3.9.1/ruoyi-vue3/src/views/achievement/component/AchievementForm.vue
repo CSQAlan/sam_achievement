@@ -262,7 +262,8 @@
     width="1200px"
     append-to-body
     :close-on-click-modal="false"
-    @close="handleCancel"
+    :before-close="handleBeforeClose"
+    @closed="reset"
     top="5vh"
   >
     <div class="outcome-body">
@@ -386,7 +387,7 @@
                   <el-radio :label="1">是 (需要上传凭证)</el-radio>
                   <el-radio :label="0">否</el-radio>
                 </el-radio-group>
-                <div style="color: #F56C6C; font-size: 12px; margin-top: 5px; font-weight: bold;">
+                <div style="color: #F56C6C; font-size: 12px;font-weight: bold;">
                   如果报名者没有通过其他途径报销，请上传发票（PDF）和填写报名金额。注意：同一张发票只能报销一次
                 </div>
               </el-form-item>
@@ -553,6 +554,7 @@
 
 <script setup name="AchievementForm">
 import { getCurrentInstance, ref, reactive, toRefs, computed, onMounted, watch } from "vue";
+import { onBeforeRouteLeave } from "vue-router";
 import { Plus, Delete, Document, Download, View, UploadFilled } from "@element-plus/icons-vue";
 import { listStudent } from "@/api/achievement/student";
 import { listTeacher } from "@/api/achievement/teacher";
@@ -596,6 +598,7 @@ const sessionOptions = ref([]);
 
 const data = reactive({
   form: { competitionId: null },
+  formSnapshot: "",
   rules: {
     competitionId: [{ required: true, message: "比赛不能为空", trigger: "change" }],
     category: [{ required: true, message: "类别不能为空", trigger: "change" }],
@@ -610,7 +613,26 @@ const data = reactive({
     fee: [{ pattern: /^[0-9]+(\.[0-9]{1,2})?$/, message: "请输入正确的金额" }]
   }
 });
-const { form, rules } = toRefs(data);
+const { form, formSnapshot, rules } = toRefs(data);
+
+const isModified = computed(() => {
+  if (props.readOnly) return false;
+  const currentData = {
+    form: form.value,
+    participants: samAchievementParticipantList.value,
+    advisors: samAchievementAdvisorList.value
+  };
+  return JSON.stringify(currentData) !== formSnapshot.value;
+});
+
+function updateSnapshot() {
+  const currentData = {
+    form: form.value,
+    participants: samAchievementParticipantList.value,
+    advisors: samAchievementAdvisorList.value
+  };
+  formSnapshot.value = JSON.stringify(currentData);
+}
 
 const submitTextComputed = computed(() => {
   if (props.submitText) return props.submitText;
@@ -906,6 +928,7 @@ function loadDetail(id) {
        });
     }
     if (form.value.isReimburse == null) form.value.isReimburse = 0;
+    updateSnapshot();
   });
 }
 
@@ -932,6 +955,7 @@ function reset() {
   });
   if(outcomeRefPage.value) outcomeRefPage.value.resetFields();
   if(outcomeRefDialog.value) outcomeRefDialog.value.resetFields();
+  updateSnapshot();
 }
 
 function submitForm() {
@@ -970,6 +994,7 @@ function submitForm() {
       if (apiFn) {
         apiFn(form.value).then(response => {
           proxy.$modal.msgSuccess(isEdit ? "修改成功" : "新增成功");
+          updateSnapshot(); // 保存后更新快照
           if (!isPageMode.value) visible.value = false;
           emit('ok');
         });
@@ -980,10 +1005,45 @@ function submitForm() {
   });
 }
 
+/** 拦截右上角叉号或点击遮罩层 */
+function handleBeforeClose(done) {
+  if (isModified.value) {
+    proxy.$modal.confirm('系统检测到您有未保存的修改，确定要离开吗？', "提示", {
+      confirmButtonText: "确定",
+      cancelButtonText: "取消",
+      type: "warning"
+    }).then(() => {
+      done();
+    }).catch(() => {});
+  } else {
+    done();
+  }
+}
+
 function handleCancel() {
-  if (!isPageMode.value) visible.value = false;
-  reset();
-  emit('cancel');
+  if (isModified.value) {
+    proxy.$modal.confirm('系统检测到您有未保存的修改，确定要离开吗？', "提示", {
+      confirmButtonText: "确定",
+      cancelButtonText: "取消",
+      type: "warning"
+    }).then(() => {
+      if (isPageMode.value) {
+         reset();
+         emit('cancel');
+      } else {
+         visible.value = false; // 这将触发 @closed="reset"
+         emit('cancel');
+      }
+    }).catch(() => {});
+  } else {
+    if (isPageMode.value) {
+       reset();
+       emit('cancel');
+    } else {
+       visible.value = false;
+       emit('cancel');
+    }
+  }
 }
 
 function getDeptTree() {
@@ -1003,6 +1063,23 @@ function getFileName(url) { return url ? url.substring(url.lastIndexOf("/") + 1)
 function handleDownload(uuid) {
   if (uuid) proxy.$download.resource(uuid);
 }
+
+onBeforeRouteLeave((to, from, next) => {
+  if (isPageMode.value && isModified.value) {
+    proxy.$modal.confirm('系统检测到您有未保存的修改，确定要离开吗？', "提示", {
+      confirmButtonText: "确定",
+      cancelButtonText: "取消",
+      type: "warning"
+    }).then(() => {
+      next();
+    }).catch(() => {
+      next(false);
+    });
+  } else {
+    next();
+  }
+});
+
 function goToCompetitionApply() {
   proxy.$router.push('/views/competition-apply/index');
 }
