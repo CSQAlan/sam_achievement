@@ -5,26 +5,8 @@
         <div class="header-left">
           <div class="page-title">{{ title }}</div>
         </div>
-        <div class="page-actions">
-          <slot name="footer-left" :form="form"></slot>
-          <el-button v-if="showSubmit && !readOnly" type="warning" plain @click="handleSaveDraft">
-            暂存草稿 (本地)
-          </el-button>
-          <el-button v-if="showSubmit && !readOnly" type="primary" @click="submitForm">
-            {{ submitTextComputed }}
-          </el-button>
-          <el-button @click="handleCancel">{{ cancelText }}</el-button>
-        </div>
       </div>
       <el-divider style="margin: 10px 0 20px 0"></el-divider>
-      
-      <el-alert v-if="hasDraft" title="检测到本地有未提交的草稿" type="warning" show-icon :closable="false" style="margin-bottom: 15px;">
-        <template #default>
-          <el-button link type="primary" @click="recoverDraft">点击恢复草稿</el-button>
-          <el-button link type="danger" @click="clearDraft">丢弃</el-button>
-        </template>
-      </el-alert>
-
       <div class="outcome-body">
         <el-form ref="outcomeRefPage" :model="form" :rules="rules" label-width="110px" :disabled="readOnly">
           <div class="common-form-content">
@@ -35,7 +17,7 @@
                 <el-col :span="12">
                   <el-row>
                     <el-col :span="24">
-                      <el-form-item label="关联比赛" prop="competitionId">
+                      <el-form-item label="比赛" prop="competitionId">
                         <el-select 
                           v-model="form.competitionId" 
                           placeholder="请选择赛事" 
@@ -46,6 +28,9 @@
                         >
                           <el-option v-for="item in competitionOptions" :key="item.competitionId" :label="item.competitionName" :value="item.competitionId" />
                         </el-select>
+                        <div style="margin-top: 5px;">
+    <el-link type="primary" @click="goToCompetitionApply">比赛找不到？点击这里申请赛事！</el-link>
+  </div>
                       </el-form-item>
                     </el-col>
                   </el-row>
@@ -94,9 +79,10 @@
                     </el-col>
                     <el-col :span="12">
                       <el-form-item label="奖项等级" prop="grade">
-                        <el-select v-model="form.grade" placeholder="请选择">
+                        <el-select v-model="form.grade" placeholder="请选择" style="width: 100%">
                           <el-option v-for="dict in award_rank" :key="dict.value" :label="dict.label" :value="dict.value" />
                         </el-select>
+                        <div style="color: #909399; font-size: 12px; margin-top: 5px;">如果比赛或者表彰没有区分等级，请选择一等奖。</div>
                       </el-form-item>
                     </el-col>
                   </el-row>
@@ -104,11 +90,12 @@
                     <el-col :span="12">
                       <el-form-item label="赛道" prop="track">
                         <el-input v-model="form.track" placeholder="请输入赛道" />
+                        <div style="color: #909399; font-size: 12px; margin-top: 5px;">例如蓝桥杯有c++，java数学竞赛有数学类与非数A等</div>
                       </el-form-item>
                     </el-col>
                     <el-col :span="12">
                       <el-form-item label="组别" prop="groupId">
-                        <el-select v-model="form.groupId" placeholder="请选择组别">
+                        <el-select v-model="form.groupId" placeholder="请选择组别" style="width: 100%">
                           <el-option v-for="dict in group_type" :key="dict.value" :label="dict.label" :value="dict.value" />
                         </el-select>
                       </el-form-item>
@@ -123,6 +110,7 @@
                     <el-col :span="12">
                       <el-form-item label="获奖时间" prop="awardTime">
                         <el-date-picker clearable v-model="form.awardTime" type="date" value-format="YYYY-MM-DD" placeholder="选择日期" style="width: 100%" />
+                        <div style="color: #909399; font-size: 12px; margin-top: 5px;">获奖时间为奖状上日期为准，若只有年月，请填写当月最后一天。</div>
                       </el-form-item>
                     </el-col>
                   </el-row>
@@ -144,6 +132,9 @@
                       <el-radio :label="1">是 (需要上传凭证)</el-radio>
                       <el-radio :label="0">否</el-radio>
                     </el-radio-group>
+                    <div style="color: #F56C6C; font-size: 12px; margin-top: 5px; font-weight: bold;">
+                      如果报名者没有通过其他途径报销，请上传发票（PDF）和填写报名金额。注意：同一张发票只能报销一次
+                    </div>
                   </el-form-item>
 
                   <el-divider content-position="center">参赛选手信息</el-divider>
@@ -274,20 +265,13 @@
     @close="handleCancel"
     top="5vh"
   >
-    <el-alert v-if="hasDraft" title="检测到本地有未提交的草稿" type="warning" show-icon :closable="false" style="margin-bottom: 10px;">
-      <template #default>
-        <el-button link type="primary" @click="recoverDraft">点击恢复草稿</el-button>
-        <el-button link type="danger" @click="clearDraft">丢弃</el-button>
-      </template>
-    </el-alert>
-
     <div class="outcome-body">
       <el-form ref="outcomeRefDialog" :model="form" :rules="rules" label-width="110px" :disabled="readOnly">
         <el-row :gutter="20">
             <el-col :span="12">
               <el-row>
                 <el-col :span="24">
-                  <el-form-item label="关联比赛" prop="competitionId">
+                 <el-form-item label="比赛" prop="competitionId">
                     <el-select 
                       v-model="form.competitionId" 
                       placeholder="请选择关联的赛事" 
@@ -298,6 +282,9 @@
                     >
                       <el-option v-for="item in competitionOptions" :key="item.competitionId" :label="item.competitionName" :value="item.competitionId" />
                     </el-select>
+                    <div style="margin-top: 5px;">
+    <el-link type="primary" @click="goToCompetitionApply">比赛找不到？点击这里申请赛事！</el-link>
+  </div>
                   </el-form-item>
                 </el-col>
               </el-row>
@@ -346,9 +333,10 @@
                 </el-col>
                 <el-col :span="12">
                   <el-form-item label="奖项等级" prop="grade">
-                    <el-select v-model="form.grade" placeholder="请选择">
+                    <el-select v-model="form.grade" placeholder="请选择" style="width: 100%">
                       <el-option v-for="dict in award_rank" :key="dict.value" :label="dict.label" :value="dict.value" />
                     </el-select>
+                    <div style="color: #909399; font-size: 12px; margin-top: 5px;">如果比赛或者表彰没有区分等级，请选择一等奖。</div>
                   </el-form-item>
                 </el-col>
               </el-row>
@@ -356,11 +344,12 @@
                 <el-col :span="12">
                   <el-form-item label="赛道" prop="track">
                     <el-input v-model="form.track" placeholder="请输入赛道" />
+                    <div style="color: #909399; font-size: 12px; margin-top: 5px;">例如蓝桥杯有c++，java数学竞赛有数学类与非数A等</div>
                   </el-form-item>
                 </el-col>
                 <el-col :span="12">
                   <el-form-item label="组别" prop="groupId">
-                    <el-select v-model="form.groupId" placeholder="请选择组别">
+                    <el-select v-model="form.groupId" placeholder="请选择组别" style="width: 100%">
                       <el-option v-for="dict in group_type" :key="dict.value" :label="dict.label" :value="dict.value" />
                     </el-select>
                   </el-form-item>
@@ -375,6 +364,7 @@
                 <el-col :span="12">
                   <el-form-item label="获奖时间" prop="awardTime">
                     <el-date-picker clearable v-model="form.awardTime" type="date" value-format="YYYY-MM-DD" placeholder="选择日期" style="width: 100%" />
+                    <div style="color: #909399; font-size: 12px; margin-top: 5px;">获奖时间为奖状上日期为准，若只有年月，请填写当月最后一天。</div>
                   </el-form-item>
                 </el-col>
               </el-row>
@@ -396,6 +386,9 @@
                   <el-radio :label="1">是 (需要上传凭证)</el-radio>
                   <el-radio :label="0">否</el-radio>
                 </el-radio-group>
+                <div style="color: #F56C6C; font-size: 12px; margin-top: 5px; font-weight: bold;">
+                  如果报名者没有通过其他途径报销，请上传发票（PDF）和填写报名金额。注意：同一张发票只能报销一次
+                </div>
               </el-form-item>
 
               <el-divider content-position="center">参赛选手信息</el-divider>
@@ -519,9 +512,6 @@
           <slot name="footer-left" :form="form"></slot>
         </div>
         <div class="footer-right">
-          <el-button v-if="showSubmit && !readOnly" type="warning" plain @click="handleSaveDraft">
-            暂存草稿 (本地)
-          </el-button>
           <el-button v-if="showSubmit && !readOnly" type="primary" @click="submitForm">
             {{ submitTextComputed }}
           </el-button>
@@ -601,14 +591,13 @@ const samAchievementParticipantList = ref([]);
 const samAchievementAdvisorList = ref([]);
 const checkedParticipant = ref([]);
 const checkedAdvisor = ref([]);
-const DRAFT_KEY = 'achievement_form_draft';
-const hasDraft = ref(false);
 const competitionOptions = ref([]);
 const sessionOptions = ref([]);
 
 const data = reactive({
   form: { competitionId: null },
   rules: {
+    competitionId: [{ required: true, message: "比赛不能为空", trigger: "change" }],
     category: [{ required: true, message: "类别不能为空", trigger: "change" }],
     sessionId: [{ required: true, message: "届次不能为空", trigger: "change" }],
     ownerDepId: [{ required: true, message: "所属学院不能为空", trigger: "change" }],
@@ -874,10 +863,8 @@ function open(id) {
   if (id) {
     title.value = props.titleEdit;
     loadDetail(id);
-    hasDraft.value = false;
   } else {
     title.value = props.titleAdd;
-    checkDraft();
     // 新增模式下，不需要初始加载届次，因为赛事还没选
   }
 }
@@ -889,12 +876,6 @@ onMounted(() => {
   if (isPageMode.value) {
     getDeptTree();
     getCompetitionList();
-    if (!form.value.achievementId) {
-      checkDraft();
-    } else {
-        // 如果是页面模式且正在编辑，需要加载详情
-        // 这里如果是路由参数带 ID 的情况，通常在 created 或 activated 里有逻辑，这里仅作演示
-    }
   }
 });
 
@@ -953,53 +934,6 @@ function reset() {
   if(outcomeRefDialog.value) outcomeRefDialog.value.resetFields();
 }
 
-function checkDraft() {
-  const draftStr = localStorage.getItem(DRAFT_KEY);
-  hasDraft.value = !!draftStr;
-}
-
-function recoverDraft() {
-  try {
-    const draftStr = localStorage.getItem(DRAFT_KEY);
-    if (draftStr) {
-      const draftData = JSON.parse(draftStr);
-      form.value = { ...form.value, ...draftData.form };
-      
-      // 恢复草稿时，如果保存了 competitionId，也需要加载届次
-      if (form.value.competitionId) {
-          getSessionList(form.value.competitionId);
-      }
-      
-      samAchievementParticipantList.value = draftData.participants || [];
-      samAchievementAdvisorList.value = draftData.advisors || [];
-      proxy.$modal.msgSuccess("草稿已恢复");
-      hasDraft.value = false; 
-    }
-  } catch (e) {
-    console.error("恢复草稿失败", e);
-    proxy.$modal.msgError("草稿数据损坏，无法恢复");
-    clearDraft();
-  }
-}
-
-function clearDraft() {
-  localStorage.removeItem(DRAFT_KEY);
-  hasDraft.value = false;
-  proxy.$modal.msgSuccess("草稿已清除");
-}
-
-function handleSaveDraft() {
-  const draftData = {
-    form: form.value,
-    participants: samAchievementParticipantList.value,
-    advisors: samAchievementAdvisorList.value,
-    timestamp: new Date().getTime()
-  };
-  localStorage.setItem(DRAFT_KEY, JSON.stringify(draftData));
-  proxy.$modal.msgSuccess("草稿已保存至浏览器缓存，下次进入页面可恢复");
-  hasDraft.value = true;
-}
-
 function submitForm() {
   if (props.readOnly) return;
   const activeRef = isPageMode.value ? outcomeRefPage.value : outcomeRefDialog.value;
@@ -1036,10 +970,6 @@ function submitForm() {
       if (apiFn) {
         apiFn(form.value).then(response => {
           proxy.$modal.msgSuccess(isEdit ? "修改成功" : "新增成功");
-          if (!isEdit) {
-             localStorage.removeItem(DRAFT_KEY);
-             hasDraft.value = false;
-          }
           if (!isPageMode.value) visible.value = false;
           emit('ok');
         });
@@ -1072,6 +1002,9 @@ function reIndexList(list) {
 function getFileName(url) { return url ? url.substring(url.lastIndexOf("/") + 1) : ""; }
 function handleDownload(uuid) {
   if (uuid) proxy.$download.resource(uuid);
+}
+function goToCompetitionApply() {
+  proxy.$router.push('/views/competition-apply/index');
 }
 </script>
 
@@ -1143,4 +1076,5 @@ function handleDownload(uuid) {
   width: 100%; /* 设置宽度为 100%，使其占满容器 */
   box-sizing: border-box; /* 确保 padding 和 border 不会影响总宽度 */
 }
+
 </style>
