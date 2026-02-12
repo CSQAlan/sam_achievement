@@ -47,6 +47,7 @@ PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
     <resultMap id="SamAchievementSamAchievementParticipantResult" type="SamAchievement" extends="SamAchievementResult">
         <collection property="samAchievementParticipantList" ofType="SamAchievementParticipant" column="achievement_id" select="selectSamAchievementParticipantList" />
         <collection property="samAchievementAdvisorList" ofType="SamAchievementAdvisor" column="achievement_id" select="selectSamAchievementAdvisorList" />
+        <collection property="samAchievementAttachmentList" ofType="java.util.Map" column="achievement_id" select="selectSamAchievementAttachmentList" />
     </resultMap>
     <resultMap type="SamAchievementAdvisor" id="SamAchievementAdvisorResult">
         <result property="advisorId"    column="advisor_id"    />
@@ -73,6 +74,14 @@ PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
         <result property="updateTime"    column="update_time"    />
         <result property="delFlag"    column="del_flag"    />
         <result property="remark"    column="remark"    />
+    </resultMap>
+
+    <resultMap type="java.util.Map" id="SamAchievementAttachmentResult">
+        <result property="attachmentId" column="attachment_id" />
+        <result property="achievementId" column="achievement_id" />
+        <result property="type" column="type" />
+        <result property="fileType" column="file_type" />
+        <result property="fileUuid" column="file_uuid" />
     </resultMap>
 
     <sql id="selectSamAchievementVo">
@@ -342,6 +351,30 @@ PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
 
     <delete id="deleteSamAchievementAdvisorByAchievementIds" parameterType="String">
         delete from sam_achievement_advisor where achievement_id in
+        <foreach item="achievementId" collection="array" open="(" separator="," close=")">
+            #{achievementId}
+        </foreach>
+    </delete>
+
+    <select id="selectSamAchievementAttachmentList" resultMap="SamAchievementAttachmentResult">
+        select attachment_id, achievement_id, type, file_type, file_uuid
+        from sam_achievement_attachment
+        where achievement_id = #{achievement_id}
+    </select>
+
+    <insert id="batchSamAchievementAttachment">
+        insert into sam_achievement_attachment( achievement_id, type, file_type, file_uuid, create_time, update_time) values
+        <foreach item="item" index="index" collection="list" separator=",">
+            ( #{item.achievementId}, #{item.type}, #{item.fileType}, #{item.fileUuid}, sysdate(), sysdate())
+        </foreach>
+    </insert>
+
+    <delete id="deleteSamAchievementAttachmentByAchievementId" parameterType="String">
+        delete from sam_achievement_attachment where achievement_id = #{achievementId}
+    </delete>
+
+    <delete id="deleteSamAchievementAttachmentByAchievementIds" parameterType="String">
+        delete from sam_achievement_attachment where achievement_id in
         <foreach item="achievementId" collection="array" open="(" separator="," close=")">
             #{achievementId}
         </foreach>

@@ -1127,7 +1127,15 @@ function submitForm() {
        }
 
       let attachments = [];
-      const pushFile = (type, path) => { if (path) attachments.push({ type: type, fileUuid: path }); };
+      const pushFile = (type, path) => { 
+        if (path) {
+          attachments.push({ 
+            type: type, 
+            fileUuid: path, 
+            fileType: 1 // 增加默认文件类型，防止数据库非空约束报错
+          }); 
+        } 
+      };
       pushFile(1, form.value.fileAward);
       pushFile(2, form.value.fileNotice);
       pushFile(3, form.value.fileWork);

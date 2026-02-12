@@ -103,4 +103,19 @@ public interface SamAchievementMapper
      * 批量通过成果ID删除指导老师
      */
     public int deleteSamAchievementAdvisorByAchievementIds(String[] achievementIds);
+
+    /**
+     * 批量新增成果附件
+     */
+    public int batchSamAchievementAttachment(List<java.util.Map<String, Object>> samAchievementAttachmentList);
+
+    /**
+     * 通过成果ID删除成果附件
+     */
+    public int deleteSamAchievementAttachmentByAchievementId(String achievementId);
+
+    /**
+     * 批量通过成果ID删除成果附件
+     */
+    public int deleteSamAchievementAttachmentByAchievementIds(String[] achievementIds);
 }
