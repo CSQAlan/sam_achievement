@@ -15,6 +15,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import com.ruoyi.achievement.domain.SamAchievement;
 import com.ruoyi.achievement.domain.SamAchievementParticipant;
+import com.ruoyi.achievement.mapper.FileUuidMapper;
 import com.ruoyi.achievement.mapper.SamAchievementMapper;
 import com.ruoyi.achievement.service.ISamAchievementService;
 
@@ -26,6 +27,9 @@ public class SamAchievementServiceImpl implements ISamAchievementService
 {
     @Autowired
     private SamAchievementMapper samAchievementMapper;
+
+    @Autowired
+    private FileUuidMapper fileUuidMapper;
 
     @Autowired
     private ISamStudentService samStudentService; // 注入学生服务
@@ -79,6 +83,9 @@ public class SamAchievementServiceImpl implements ISamAchievementService
         // 4. 处理指导老师 (包含自动补录教师档案) -> 你之前漏掉了这个
         insertSamAchievementAdvisor(samAchievement);
 
+        // 5. 处理附件转正 (标记为非临时文件)
+        processAttachments(samAchievement);
+
         return rows;
     }
 
@@ -99,7 +106,29 @@ public class SamAchievementServiceImpl implements ISamAchievementService
         samAchievementMapper.deleteSamAchievementAdvisorByAchievementId(samAchievement.getAchievementId());
         insertSamAchievementAdvisor(samAchievement);
 
+        // 3. 处理附件转正
+        processAttachments(samAchievement);
+
         return samAchievementMapper.updateSamAchievement(samAchievement);
+    }
+
+    /**
+     * 附件转正逻辑：将关联的 UUID 在 sys_file_uuid 表中标记为正式 (is_temp = 0)
+     */
+    private void processAttachments(SamAchievement samAchievement) {
+        List<java.util.Map<String, Object>> attachments = samAchievement.getSamAchievementAttachmentList();
+        if (StringUtils.isNotNull(attachments) && attachments.size() > 0) {
+            List<String> uuids = new ArrayList<>();
+            for (java.util.Map<String, Object> attachment : attachments) {
+                String uuid = (String) attachment.get("fileUuid");
+                if (StringUtils.isNotEmpty(uuid)) {
+                    uuids.add(uuid);
+                }
+            }
+            if (uuids.size() > 0) {
+                fileUuidMapper.updateFileUuidStatus(uuids.toArray(new String[0]), 0);
+            }
+        }
     }
 
     /**

@@ -25,4 +25,22 @@
                    #{fileUuid}, #{realPath}, #{originName}, #{isTemp}, #{createBy}, sysdate()
                )
     </insert>
+
+    <update id="updateFileUuidStatus">
+        update sys_file_uuid set is_temp = #{isTemp}
+        where file_uuid in
+        <foreach item="uuid" collection="uuids" open="(" separator="," close=")">
+            #{uuid}
+        </foreach>
+    </update>
+
+    <select id="selectTempFilesOlderThan" resultMap="FileUuidResult">
+        select file_uuid, real_path, origin_name, is_temp from sys_file_uuid
+        where is_temp = 1
+        and create_time &lt; date_sub(sysdate(), interval #{hours} hour)
+    </select>
+
+    <delete id="deleteFileUuidByUuid" parameterType="String">
+        delete from sys_file_uuid where file_uuid = #{fileUuid}
+    </delete>
 </mapper>

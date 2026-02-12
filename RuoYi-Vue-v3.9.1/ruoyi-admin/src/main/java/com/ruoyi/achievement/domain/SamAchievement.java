@@ -131,8 +131,22 @@ public class SamAchievement extends BaseEntity
 
     /** 指导老师信息 (新增) */
     private List<SamAchievementAdvisor> samAchievementAdvisorList;
+
+    /** 附件信息列表 (临时字段，用于接收前端上传的 UUID) */
+    private List<java.util.Map<String, Object>> samAchievementAttachmentList;
+
     /** 关联的赛事ID (非数据库表字段，通过关联查询获取) */
     private String competitionId;
+
+    public List<java.util.Map<String, Object>> getSamAchievementAttachmentList()
+    {
+        return samAchievementAttachmentList;
+    }
+
+    public void setSamAchievementAttachmentList(List<java.util.Map<String, Object>> samAchievementAttachmentList)
+    {
+        this.samAchievementAttachmentList = samAchievementAttachmentList;
+    }
 
     public void setCompetitionId(String competitionId)
     {
