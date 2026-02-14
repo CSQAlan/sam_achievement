@@ -134,3 +134,7 @@ xss:
   excludes: /system/notice
   # 匹配链接
   urlPatterns: /system/*,/monitor/*,/tool/*
+  # 微信开放平台配置
+  wechat:
+    appid: appid
+    secret: secret
