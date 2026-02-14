@@ -2,10 +2,9 @@ package com.ruoyi.common.core.domain.entity;
 
 import java.util.Date;
 import java.util.List;
-import javax.validation.constraints.*;
+import  javax.validation.constraints.*;
 import org.apache.commons.lang3.builder.ToStringBuilder;
 import org.apache.commons.lang3.builder.ToStringStyle;
-import com.fasterxml.jackson.annotation.JsonProperty;
 import com.ruoyi.common.annotation.Excel;
 import com.ruoyi.common.annotation.Excel.ColumnType;
 import com.ruoyi.common.annotation.Excel.Type;
@@ -15,7 +14,7 @@ import com.ruoyi.common.xss.Xss;
 
 /**
  * 用户对象 sys_user
- * 
+ *
  * @author ruoyi
  */
 public class SysUser extends BaseEntity
@@ -45,6 +44,15 @@ public class SysUser extends BaseEntity
     /** 手机号码 */
     @Excel(name = "手机号码", cellType = ColumnType.TEXT)
     private String phonenumber;
+
+    /** 微信昵称 */
+    @Excel(name = "微信昵称")
+    private String wxNickName;
+    /*是否初始化 */
+    private int profileInitialized; // 0 未初始化，1 已初始化
+    /** 微信openid */
+    @Excel(name = "微信openid")
+    private String openid;
 
     /** 用户性别 */
     @Excel(name = "用户性别", readConverterExp = "0=男,1=女,2=未知")
@@ -76,8 +84,8 @@ public class SysUser extends BaseEntity
 
     /** 部门对象 */
     @Excels({
-        @Excel(name = "部门名称", targetAttr = "deptName", type = Type.EXPORT),
-        @Excel(name = "部门负责人", targetAttr = "leader", type = Type.EXPORT)
+            @Excel(name = "部门名称", targetAttr = "deptName", type = Type.EXPORT),
+            @Excel(name = "部门负责人", targetAttr = "leader", type = Type.EXPORT)
     })
     private SysDept dept;
 
@@ -181,6 +189,11 @@ public class SysUser extends BaseEntity
         this.phonenumber = phonenumber;
     }
 
+    public String getWxNickName() { return wxNickName; }
+    public void setWxNickName(String wxNickName) { this.wxNickName = wxNickName; }
+    public String getOpenid() { return openid; }
+    public void setOpenid(String openid) { this.openid = openid; }
+
     public String getSex()
     {
         return sex;
@@ -201,7 +214,6 @@ public class SysUser extends BaseEntity
         this.avatar = avatar;
     }
 
-    @JsonProperty(access = JsonProperty.Access.WRITE_ONLY)
     public String getPassword()
     {
         return password;
@@ -315,26 +327,34 @@ public class SysUser extends BaseEntity
     @Override
     public String toString() {
         return new ToStringBuilder(this,ToStringStyle.MULTI_LINE_STYLE)
-            .append("userId", getUserId())
-            .append("deptId", getDeptId())
-            .append("userName", getUserName())
-            .append("nickName", getNickName())
-            .append("email", getEmail())
-            .append("phonenumber", getPhonenumber())
-            .append("sex", getSex())
-            .append("avatar", getAvatar())
-            .append("password", getPassword())
-            .append("status", getStatus())
-            .append("delFlag", getDelFlag())
-            .append("loginIp", getLoginIp())
-            .append("loginDate", getLoginDate())
-            .append("pwdUpdateDate", getPwdUpdateDate())
-            .append("createBy", getCreateBy())
-            .append("createTime", getCreateTime())
-            .append("updateBy", getUpdateBy())
-            .append("updateTime", getUpdateTime())
-            .append("remark", getRemark())
-            .append("dept", getDept())
-            .toString();
+                .append("userId", getUserId())
+                .append("deptId", getDeptId())
+                .append("userName", getUserName())
+                .append("nickName", getNickName())
+                .append("email", getEmail())
+                .append("phonenumber", getPhonenumber())
+                .append("sex", getSex())
+                .append("avatar", getAvatar())
+                .append("password", getPassword())
+                .append("status", getStatus())
+                .append("delFlag", getDelFlag())
+                .append("loginIp", getLoginIp())
+                .append("loginDate", getLoginDate())
+                .append("pwdUpdateDate", getPwdUpdateDate())
+                .append("createBy", getCreateBy())
+                .append("createTime", getCreateTime())
+                .append("updateBy", getUpdateBy())
+                .append("updateTime", getUpdateTime())
+                .append("remark", getRemark())
+                .append("dept", getDept())
+                .toString();
+    }
+
+    public Integer getProfileInitialized() {
+        return profileInitialized;
+    }
+
+    public void setProfileInitialized(int profileInitialized) {
+        this.profileInitialized = profileInitialized;
     }
 }

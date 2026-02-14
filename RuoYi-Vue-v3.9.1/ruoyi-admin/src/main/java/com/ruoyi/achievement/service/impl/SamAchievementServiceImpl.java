@@ -1,6 +1,5 @@
 package com.ruoyi.achievement.service.impl;
 
-import java.util.Calendar;
 import java.util.List;
 import java.util.ArrayList;
 import com.ruoyi.achievement.domain.SamAchievementAdvisor;
@@ -9,18 +8,21 @@ import com.ruoyi.achievement.domain.SamTeacher;
 import com.ruoyi.achievement.service.ISamStudentService;
 import com.ruoyi.achievement.service.ISamTeacherService;
 import com.ruoyi.common.utils.DateUtils;
-import com.ruoyi.common.utils.StringUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
+import java.util.ArrayList;
+import com.ruoyi.common.utils.StringUtils;
 import org.springframework.transaction.annotation.Transactional;
-import com.ruoyi.achievement.domain.SamAchievement;
 import com.ruoyi.achievement.domain.SamAchievementParticipant;
 import com.ruoyi.achievement.mapper.FileUuidMapper;
 import com.ruoyi.achievement.mapper.SamAchievementMapper;
 import com.ruoyi.achievement.service.ISamAchievementService;
 
 /**
- * 成果录入Service业务层处理
+ * 成果录入Service业务层处�?
+ *
+ * @author 王璨
+ * @date 2026-02-03
  */
 @Service
 public class SamAchievementServiceImpl implements ISamAchievementService
@@ -38,11 +40,24 @@ public class SamAchievementServiceImpl implements ISamAchievementService
     private ISamTeacherService samTeacherService; // 注入教师服务
 
     // ... (查询方法的代码保持不变，省略以节省篇幅) ...
+    /**
+     * 查询成果录入
+     *
+     * @param achievementId 成果录入主键
+     * @return 成果录入
+     */
     @Override
     public SamAchievement selectSamAchievementByAchievementId(String achievementId)
     {
         return samAchievementMapper.selectSamAchievementByAchievementId(achievementId);
     }
+
+    /**
+     * 查询成果录入列表
+     *
+     * @param samAchievement 成果录入
+     * @return 成果录入
+     */
     @Override
     public List<SamAchievement> selectSamAchievementList(SamAchievement samAchievement)
     {
@@ -61,6 +76,9 @@ public class SamAchievementServiceImpl implements ISamAchievementService
 
     /**
      * 新增成果录入
+     *
+     * @param samAchievement 成果录入
+     * @return 结果
      */
     @Transactional
     @Override
@@ -71,7 +89,14 @@ public class SamAchievementServiceImpl implements ISamAchievementService
             Calendar cal = Calendar.getInstance();
             cal.setTime(samAchievement.getAwardTime());
             samAchievement.setYear((long) cal.get(Calendar.YEAR));
+
+        if (!StringUtils.hasText(samAchievement.getAchievementId()))
+        {
+            Long nextId = samAchievementMapper.selectNextAchievementId();
+            samAchievementMapper.incrementNextAchievementId();
+            samAchievement.setAchievementId(String.valueOf(nextId));
         }
+
         samAchievement.setCreateTime(DateUtils.getNowDate());
 
         // 2. 插入主表
@@ -91,6 +116,9 @@ public class SamAchievementServiceImpl implements ISamAchievementService
 
     /**
      * 修改成果录入
+     *
+     * @param samAchievement 成果录入
+     * @return 结果
      */
     @Transactional
     @Override
@@ -130,12 +158,12 @@ public class SamAchievementServiceImpl implements ISamAchievementService
                 String uuid = (String) attachment.get("fileUuid");
                 if (StringUtils.isNotEmpty(uuid)) {
                     uuids.add(uuid);
-                    
+
                     // 补全附件表所需字段
                     attachment.put("achievementId", achievementId);
                     // 如果前端没传 fileType，这里给个默认值 (根据 SQL 定义它是必填项)
                     if (attachment.get("fileType") == null) {
-                        attachment.put("fileType", 1); 
+                        attachment.put("fileType", 1);
                     }
                     insertList.add(attachment);
                 }
@@ -217,6 +245,10 @@ public class SamAchievementServiceImpl implements ISamAchievementService
     }
 
     /**
+     * 批量删除成果录入
+     *
+     * @param achievementIds 需要删除的成果录入主键
+     * @return 结果
      * 辅助方法：检查学生是否存在，不存在则新增
      */
     private void checkAndInsertStudent(String studentNo, String studentName) {
@@ -265,6 +297,12 @@ public class SamAchievementServiceImpl implements ISamAchievementService
         return samAchievementMapper.deleteSamAchievementByAchievementIds(achievementIds);
     }
 
+    /**
+     * 删除成果录入信息
+     *
+     * @param achievementId 成果录入主键
+     * @return 结果
+     */
     @Transactional
     @Override
     public int deleteSamAchievementByAchievementId(String achievementId)
@@ -274,4 +312,31 @@ public class SamAchievementServiceImpl implements ISamAchievementService
         samAchievementMapper.deleteSamAchievementAttachmentByAchievementId(achievementId);
         return samAchievementMapper.deleteSamAchievementByAchievementId(achievementId);
     }
+
+    /**
+     * 新增参赛选手信息
+     *
+     * @param samAchievement 成果录入对象
+     */
+    public void insertSamAchievementParticipant(SamAchievement samAchievement)
+    {
+        List<SamAchievementParticipant> samAchievementParticipantList = samAchievement.getSamAchievementParticipantList();
+        String achievementId = samAchievement.getAchievementId();
+        if (StringUtils.isNotNull(samAchievementParticipantList))
+        {
+            List<SamAchievementParticipant> list = new ArrayList<SamAchievementParticipant>();
+            for (SamAchievementParticipant samAchievementParticipant : samAchievementParticipantList)
+            {
+                samAchievementParticipant.setParticipantId(achievementId);
+                list.add(samAchievementParticipant);
+            }
+            if (list.size() > 0)
+            {
+                samAchievementMapper.batchSamAchievementParticipant(list);
+            }
+        }
+    }
 }
+
+
+

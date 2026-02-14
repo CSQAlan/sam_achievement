@@ -1,13 +1,18 @@
 package com.ruoyi.system.service.impl;
 
+import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.Date;
 import java.util.List;
 import java.util.stream.Collectors;
-import javax.validation.Validator;
+
+import com.alibaba.fastjson2.JSONObject;
+import  javax.validation.Validator;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Value;
+import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.util.CollectionUtils;
@@ -31,15 +36,21 @@ import com.ruoyi.system.mapper.SysUserRoleMapper;
 import com.ruoyi.system.service.ISysConfigService;
 import com.ruoyi.system.service.ISysDeptService;
 import com.ruoyi.system.service.ISysUserService;
+import org.springframework.web.client.RestTemplate;
 
 /**
  * 用户 业务层处理
- * 
+ *
  * @author ruoyi
  */
 @Service
-public class SysUserServiceImpl implements ISysUserService
-{
+public class SysUserServiceImpl implements ISysUserService {
+    // 注入公众号配置
+    @Value("${wechat.appid:}")
+    private String appId;
+    @Value("${wechat.secret:}")
+    private String secret;
+
     private static final Logger log = LoggerFactory.getLogger(SysUserServiceImpl.class);
 
     @Autowired
@@ -66,9 +77,139 @@ public class SysUserServiceImpl implements ISysUserService
     @Autowired
     protected Validator validator;
 
+
+    /**
+     * 获取微信授权连接
+     */
+    @Override
+    public String getQrcode(String uuid) {
+        try {
+            // 生成微信授权链接
+            String redirectUri = "https://localhost/common/wx/bind-openid?key=" + uuid; // 替换为实际的回调地址
+            // 对redirectUri进行URL编码
+            String encodedRedirectUri = java.net.URLEncoder.encode(redirectUri, StandardCharsets.UTF_8);
+            String scope = "snsapi_userinfo"; // 授权作用域
+            String state = uuid; // 用于防止csrf攻击的状态值
+
+            String wechatAuthUrl = "https://open.weixin.qq.com/connect/oauth2/authorize" +
+                    "?appid=" + appId +
+                    "&redirect_uri=" + encodedRedirectUri +
+                    "&response_type=code" +
+                    "&scope=" + scope +
+                    "&state=" + state +
+                    "#wechat_redirect";
+
+            return wechatAuthUrl;
+        } catch (Exception e) {
+            log.error("URL编码异常", e);
+            return null;
+        }
+    }
+
+    @Override
+    public String getConfirQrcode(String uuid) {
+        try {
+            // 获取微信授权连接
+            String redirectUri = "https://localhost/common/wx/confirm-openid?key=" + uuid; // 替换为实际的回调地址
+            // 对redirectUri进行URL编码
+            String encodedRedirectUri = java.net.URLEncoder.encode(redirectUri, StandardCharsets.UTF_8);
+            String scope = "snsapi_userinfo"; // 授权作用域
+            String state = uuid; // 用于防止csrf攻击的状态值
+
+            String wechatAuthUrl = "https://open.weixin.qq.com/connect/oauth2/authorize" +
+                    "?appid=" + appId +
+                    "&redirect_uri=" + encodedRedirectUri +
+                    "&response_type=code" +
+                    "&scope=" + scope +
+                    "&state=" + state +
+                    "#wechat_redirect";
+
+            return wechatAuthUrl;
+        }catch (Exception e){
+            log.error("URL编码异常", e);
+            return null;
+        }
+    }
+
+    @Override
+    public SysUser selectUserByOpenid(String openid) {
+        return userMapper.selectUserByOpenId(openid);
+
+    }
+
+    /** 通过微信授权code获取用户openid和昵称 */
+    @Override
+    public SysUser getOpenid(String code) {
+        try {
+            // 1. 获取access_token和openid
+            String accessTokenUrl = "https://api.weixin.qq.com/sns/oauth2/access_token" +
+                    "?appid=" + appId +
+                    "&secret=" + secret +
+                    "&code=" + code +
+                    "&grant_type=authorization_code";
+            RestTemplate restTemplate = new RestTemplate();
+            ResponseEntity<String> response = restTemplate.getForEntity(accessTokenUrl, String.class);
+            JSONObject tokenJson = JSONObject.parseObject(response.getBody());
+
+            // 检查微信接口错误
+            if (tokenJson.containsKey("errcode")) {
+                String errMsg = tokenJson.getString("errmsg");
+                log.error("微信授权错误（code换token）: {}", errMsg);
+                return null;
+            }
+
+            String openid = tokenJson.getString("openid");
+            String accessToken = tokenJson.getString("access_token");
+            if (StringUtils.isEmpty(openid) || StringUtils.isEmpty(accessToken)) {
+                log.error("微信返回openid为空或access_token为空");
+                return null;
+            }
+
+            // 2. 获取用户信息
+            String userInfoUrl = "https://api.weixin.qq.com/sns/userinfo" +
+                    "?access_token=" + accessToken +
+                    "&openid=" + openid +
+                    "&lang=zh_CN";
+            ResponseEntity<String> userResponse = restTemplate.getForEntity(userInfoUrl, String.class);
+            JSONObject userJson = JSONObject.parseObject(userResponse.getBody());
+
+            if (userJson.containsKey("errcode")) {
+                String errMsg = userJson.getString("errmsg");
+                log.error("微信授权错误（获取用户信息）: {}", errMsg);
+                return null;
+            }
+
+            SysUser user = new SysUser();
+            user.setOpenid(openid);
+            user.setWxNickName(userJson.getString("nickname"));
+            return user;
+        } catch (Exception e) {
+            log.error("微信接口调用异常", e);
+            return null;
+        }
+    }
+
+    /** 更新用户微信信息 */
+    @Override
+    public int updateUserOpenid(SysUser user) {
+        System.out.println(user.toString());
+        return userMapper.updateUser(user);
+    }
+
+    /** 通过openid查询用户 */
+    @Override
+    public SysUser selectUserByOpenId(String openId) {
+        if (StringUtils.isEmpty(openId)) {
+            return null;
+        }
+        return userMapper.selectUserByOpenId(openId);
+    }
+
+
+
     /**
      * 根据条件分页查询用户列表
-     * 
+     *
      * @param user 用户信息
      * @return 用户信息集合信息
      */
@@ -81,7 +222,7 @@ public class SysUserServiceImpl implements ISysUserService
 
     /**
      * 根据条件分页查询已分配用户角色列表
-     * 
+     *
      * @param user 用户信息
      * @return 用户信息集合信息
      */
@@ -94,7 +235,7 @@ public class SysUserServiceImpl implements ISysUserService
 
     /**
      * 根据条件分页查询未分配用户角色列表
-     * 
+     *
      * @param user 用户信息
      * @return 用户信息集合信息
      */
@@ -107,7 +248,7 @@ public class SysUserServiceImpl implements ISysUserService
 
     /**
      * 通过用户名查询用户
-     * 
+     *
      * @param userName 用户名
      * @return 用户对象信息
      */
@@ -119,7 +260,7 @@ public class SysUserServiceImpl implements ISysUserService
 
     /**
      * 通过用户ID查询用户
-     * 
+     *
      * @param userId 用户ID
      * @return 用户对象信息
      */
@@ -131,7 +272,7 @@ public class SysUserServiceImpl implements ISysUserService
 
     /**
      * 查询用户所属角色组
-     * 
+     *
      * @param userName 用户名
      * @return 结果
      */
@@ -148,7 +289,7 @@ public class SysUserServiceImpl implements ISysUserService
 
     /**
      * 查询用户所属岗位组
-     * 
+     *
      * @param userName 用户名
      * @return 结果
      */
@@ -165,7 +306,7 @@ public class SysUserServiceImpl implements ISysUserService
 
     /**
      * 校验用户名称是否唯一
-     * 
+     *
      * @param user 用户信息
      * @return 结果
      */
@@ -219,7 +360,7 @@ public class SysUserServiceImpl implements ISysUserService
 
     /**
      * 校验用户是否允许操作
-     * 
+     *
      * @param user 用户信息
      */
     @Override
@@ -233,7 +374,7 @@ public class SysUserServiceImpl implements ISysUserService
 
     /**
      * 校验用户是否有数据权限
-     * 
+     *
      * @param userId 用户id
      */
     @Override
@@ -253,7 +394,7 @@ public class SysUserServiceImpl implements ISysUserService
 
     /**
      * 新增保存用户信息
-     * 
+     *
      * @param user 用户信息
      * @return 结果
      */
@@ -272,19 +413,25 @@ public class SysUserServiceImpl implements ISysUserService
 
     /**
      * 注册用户信息
-     * 
+     *
      * @param user 用户信息
      * @return 结果
      */
     @Override
     public boolean registerUser(SysUser user)
     {
-        return userMapper.insertUser(user) > 0;
+        // 新增用户信息
+        int rows = userMapper.insertUser(user);
+        // 如果有角色信息，则处理用户角色关联
+        if (user.getRoles() != null && !user.getRoles().isEmpty()) {
+            insertUserRole(user);
+        }
+        return rows > 0;
     }
 
     /**
      * 修改保存用户信息
-     * 
+     *
      * @param user 用户信息
      * @return 结果
      */
@@ -306,7 +453,7 @@ public class SysUserServiceImpl implements ISysUserService
 
     /**
      * 用户授权角色
-     * 
+     *
      * @param userId 用户ID
      * @param roleIds 角色组
      */
@@ -320,7 +467,7 @@ public class SysUserServiceImpl implements ISysUserService
 
     /**
      * 修改用户状态
-     * 
+     *
      * @param user 用户信息
      * @return 结果
      */
@@ -332,7 +479,7 @@ public class SysUserServiceImpl implements ISysUserService
 
     /**
      * 修改用户基本信息
-     * 
+     *
      * @param user 用户信息
      * @return 结果
      */
@@ -344,7 +491,7 @@ public class SysUserServiceImpl implements ISysUserService
 
     /**
      * 修改用户头像
-     * 
+     *
      * @param userId 用户ID
      * @param avatar 头像地址
      * @return 结果
@@ -357,7 +504,7 @@ public class SysUserServiceImpl implements ISysUserService
 
     /**
      * 更新用户登录信息（IP和登录时间）
-     * 
+     *
      * @param userId 用户ID
      * @param loginIp 登录IP地址
      * @param loginDate 登录时间
@@ -370,7 +517,7 @@ public class SysUserServiceImpl implements ISysUserService
 
     /**
      * 重置用户密码
-     * 
+     *
      * @param user 用户信息
      * @return 结果
      */
@@ -382,7 +529,7 @@ public class SysUserServiceImpl implements ISysUserService
 
     /**
      * 重置用户密码
-     * 
+     *
      * @param userId 用户ID
      * @param password 密码
      * @return 结果
@@ -395,17 +542,30 @@ public class SysUserServiceImpl implements ISysUserService
 
     /**
      * 新增用户角色信息
-     * 
+     *
      * @param user 用户对象
      */
     public void insertUserRole(SysUser user)
     {
-        this.insertUserRole(user.getUserId(), user.getRoleIds());
+        Long userId = user.getUserId();
+        // 新增用户与角色管理
+        if (user.getRoles() != null) {
+            List<SysUserRole> list = new ArrayList<>();
+            for (SysRole role : user.getRoles()) {
+                SysUserRole ur = new SysUserRole();
+                ur.setUserId(userId);
+                ur.setRoleId(role.getRoleId());
+                list.add(ur);
+            }
+            if (list.size() > 0) {
+                userRoleMapper.batchUserRole(list);
+            }
+        }
     }
 
     /**
      * 新增用户岗位信息
-     * 
+     *
      * @param user 用户对象
      */
     public void insertUserPost(SysUser user)
@@ -428,7 +588,7 @@ public class SysUserServiceImpl implements ISysUserService
 
     /**
      * 新增用户角色信息
-     * 
+     *
      * @param userId 用户ID
      * @param roleIds 角色组
      */
@@ -451,7 +611,7 @@ public class SysUserServiceImpl implements ISysUserService
 
     /**
      * 通过用户ID删除用户
-     * 
+     *
      * @param userId 用户ID
      * @return 结果
      */
@@ -468,7 +628,7 @@ public class SysUserServiceImpl implements ISysUserService
 
     /**
      * 批量删除用户信息
-     * 
+     *
      * @param userIds 需要删除的用户ID
      * @return 结果
      */
@@ -490,7 +650,7 @@ public class SysUserServiceImpl implements ISysUserService
 
     /**
      * 导入用户数据
-     * 
+     *
      * @param userList 用户数据列表
      * @param isUpdateSupport 是否更新支持，如果已存在，则进行更新数据
      * @param operName 操作用户
@@ -562,4 +722,6 @@ public class SysUserServiceImpl implements ISysUserService
         }
         return successMsg.toString();
     }
+
+
 }

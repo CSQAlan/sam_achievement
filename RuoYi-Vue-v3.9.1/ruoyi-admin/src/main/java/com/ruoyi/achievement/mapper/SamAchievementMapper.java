@@ -30,6 +30,20 @@ public interface SamAchievementMapper
     public List<SamAchievement> selectSamAchievementList(SamAchievement samAchievement);
 
     /**
+     * Get next achievement id (row-locked in transaction).
+     *
+     * @return next id
+     */
+    public Long selectNextAchievementId();
+
+    /**
+     * Increment achievement id sequence (row-locked in transaction).
+     *
+     * @return affected rows
+     */
+    public int incrementNextAchievementId();
+
+    /**
      * 新增成果录入
      * 
      * @param samAchievement 成果录入
@@ -119,3 +133,4 @@ public interface SamAchievementMapper
      */
     public int deleteSamAchievementAttachmentByAchievementIds(String[] achievementIds);
 }
+

@@ -217,15 +217,15 @@
     
     <el-button 
       v-if="showEdit"
-      link 
-      type="primary" 
-      icon="Edit" 
-      @click="handleRowUpdate(scope.row)" 
+      link
+      type="primary"
+      icon="Edit"
+      @click="handleRowUpdate(scope.row)"
       v-hasPermi="permEdit"
-      :disabled="!checkEditable(scope.row)" 
+      :disabled="!checkEditable(scope.row)"
     >修改</el-button>
-    
-    <el-button 
+
+    <el-button
       v-if="showDelete"
       link 
       type="primary" 

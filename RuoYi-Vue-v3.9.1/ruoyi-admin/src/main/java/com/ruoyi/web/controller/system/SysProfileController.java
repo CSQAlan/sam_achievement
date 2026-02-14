@@ -28,7 +28,7 @@ import com.ruoyi.system.service.ISysUserService;
 
 /**
  * 个人信息 业务处理
- * 
+ *
  * @author ruoyi
  */
 @RestController
@@ -63,11 +63,18 @@ public class SysProfileController extends BaseController
     public AjaxResult updateProfile(@RequestBody SysUser user)
     {
         LoginUser loginUser = getLoginUser();
+        if(user.getProfileInitialized()==0){
+            user.setProfileInitialized(1);
+            System.out.println("初始化成功");
+        }
         SysUser currentUser = loginUser.getUser();
         currentUser.setNickName(user.getNickName());
+        currentUser.setWxNickName(user.getWxNickName());
+        currentUser.setOpenid(user.getOpenid());
         currentUser.setEmail(user.getEmail());
         currentUser.setPhonenumber(user.getPhonenumber());
         currentUser.setSex(user.getSex());
+        currentUser.setProfileInitialized(user.getProfileInitialized());
         if (StringUtils.isNotEmpty(user.getPhonenumber()) && !userService.checkPhoneUnique(currentUser))
         {
             return error("修改用户'" + loginUser.getUsername() + "'失败，手机号码已存在");
@@ -96,8 +103,7 @@ public class SysProfileController extends BaseController
         String newPassword = params.get("newPassword");
         LoginUser loginUser = getLoginUser();
         Long userId = loginUser.getUserId();
-        SysUser user = userService.selectUserById(userId);
-        String password = user.getPassword();
+        String password = loginUser.getPassword();
         if (!SecurityUtils.matchesPassword(oldPassword, password))
         {
             return error("修改密码失败，旧密码错误");
