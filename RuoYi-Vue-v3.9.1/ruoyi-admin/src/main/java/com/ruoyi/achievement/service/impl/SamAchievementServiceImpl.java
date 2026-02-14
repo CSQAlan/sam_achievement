@@ -2,6 +2,8 @@ package com.ruoyi.achievement.service.impl;
 
 import java.util.List;
 import java.util.ArrayList;
+import java.util.Calendar;
+import com.ruoyi.achievement.domain.SamAchievement;
 import com.ruoyi.achievement.domain.SamAchievementAdvisor;
 import com.ruoyi.achievement.domain.SamStudent;
 import com.ruoyi.achievement.domain.SamTeacher;
@@ -89,6 +91,7 @@ public class SamAchievementServiceImpl implements ISamAchievementService
             Calendar cal = Calendar.getInstance();
             cal.setTime(samAchievement.getAwardTime());
             samAchievement.setYear((long) cal.get(Calendar.YEAR));
+        }
 
         if (!StringUtils.hasText(samAchievement.getAchievementId()))
         {
@@ -311,30 +314,6 @@ public class SamAchievementServiceImpl implements ISamAchievementService
         samAchievementMapper.deleteSamAchievementAdvisorByAchievementId(achievementId);
         samAchievementMapper.deleteSamAchievementAttachmentByAchievementId(achievementId);
         return samAchievementMapper.deleteSamAchievementByAchievementId(achievementId);
-    }
-
-    /**
-     * 新增参赛选手信息
-     *
-     * @param samAchievement 成果录入对象
-     */
-    public void insertSamAchievementParticipant(SamAchievement samAchievement)
-    {
-        List<SamAchievementParticipant> samAchievementParticipantList = samAchievement.getSamAchievementParticipantList();
-        String achievementId = samAchievement.getAchievementId();
-        if (StringUtils.isNotNull(samAchievementParticipantList))
-        {
-            List<SamAchievementParticipant> list = new ArrayList<SamAchievementParticipant>();
-            for (SamAchievementParticipant samAchievementParticipant : samAchievementParticipantList)
-            {
-                samAchievementParticipant.setParticipantId(achievementId);
-                list.add(samAchievementParticipant);
-            }
-            if (list.size() > 0)
-            {
-                samAchievementMapper.batchSamAchievementParticipant(list);
-            }
-        }
     }
 }
 
