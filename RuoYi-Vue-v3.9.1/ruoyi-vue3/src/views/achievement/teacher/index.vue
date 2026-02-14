@@ -17,10 +17,10 @@
           @keyup.enter="handleQuery"
         />
       </el-form-item>
-      <el-form-item label="${comment}" prop="no">
+      <el-form-item label="工号" prop="no">
         <el-input
           v-model="queryParams.no"
-          placeholder="请输入${comment}"
+          placeholder="请输入工号"
           clearable
           @keyup.enter="handleQuery"
         />
@@ -93,7 +93,7 @@
       <el-table-column type="selection" width="55" align="center" />
       <el-table-column label="教师id" align="center" prop="id" />
       <el-table-column label="教师姓名" align="center" prop="teacherName" />
-      <el-table-column label="${comment}" align="center" prop="no" />
+      <el-table-column label="工号" align="center" prop="no" />
       <el-table-column label="学院" align="center" prop="school" />
       <el-table-column label="院系" align="center" prop="department" />
       <el-table-column label="操作" align="center" class-name="small-padding fixed-width">
@@ -118,8 +118,8 @@
         <el-form-item label="教师姓名" prop="teacherName">
           <el-input v-model="form.teacherName" placeholder="请输入教师姓名" />
         </el-form-item>
-        <el-form-item label="${comment}" prop="no">
-          <el-input v-model="form.no" placeholder="请输入${comment}" />
+        <el-form-item label="工号" prop="no">
+          <el-input v-model="form.no" placeholder="请输入工号" />
         </el-form-item>
         <el-form-item label="学院" prop="school">
           <el-input v-model="form.school" placeholder="请输入学院" />
@@ -169,7 +169,7 @@ const data = reactive({
       { required: true, message: "教师姓名不能为空", trigger: "blur" }
     ],
     no: [
-      { required: true, message: "$comment不能为空", trigger: "blur" }
+      { required: true, message: "工号不能为空", trigger: "blur" }
     ],
   }
 })
