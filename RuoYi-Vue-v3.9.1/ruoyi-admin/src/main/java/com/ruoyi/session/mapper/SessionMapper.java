@@ -2,6 +2,7 @@ package com.ruoyi.session.mapper;
 
 import java.util.List;
 import com.ruoyi.session.domain.Session;
+import com.ruoyi.session.domain.Tag;
 
 /**
  * 赛事届次Mapper接口
@@ -58,4 +59,55 @@ public interface SessionMapper
      * @return 结果
      */
     public int deleteSessionByIds(Long[] ids);
+
+    // ====================== 新增：删除成果表的方法（解决爆红） ======================
+    /**
+     * 根据届次ID删除关联的成果表数据
+     * @param sessionId 届次主键ID
+     * @return 影响行数
+     */
+    public int deleteAchievementBySessionId(Long sessionId);
+
+    /**
+     * 批量删除关联的成果表数据
+     * @param ids 届次主键ID数组
+     * @return 影响行数
+     */
+    public int deleteAchievementBySessionIds(Long[] ids);
+
+    // ====================== 原有：标签子表操作方法 ======================
+    /**
+     * 根据届次ID删除关联的标签子表数据
+     * @param sessionId 届次主键ID
+     * @return 影响行数
+     */
+    public int deleteTagBySessionId(Long sessionId);
+
+    /**
+     * 批量删除关联的标签子表数据
+     * @param ids 届次主键ID数组
+     * @return 影响行数
+     */
+    public int deleteTagBySessionIds(Long[] ids); // 这个也补上，批量删标签用
+
+    /**
+     * 新增单条标签数据
+     * @param tag 标签实体
+     * @return 影响行数
+     */
+    public int insertTag(Tag tag);
+
+    /**
+     * 批量新增标签数据（可选：优化批量插入性能）
+     * @param tagList 标签列表
+     * @return 影响行数
+     */
+    public int batchInsertTag(List<Tag> tagList);
+
+    /**
+     * 根据届次ID查询关联的标签列表
+     * @param sessionId 届次主键ID
+     * @return 标签列表
+     */
+    public List<Tag> selectTagListBySessionId(Long sessionId);
 }
