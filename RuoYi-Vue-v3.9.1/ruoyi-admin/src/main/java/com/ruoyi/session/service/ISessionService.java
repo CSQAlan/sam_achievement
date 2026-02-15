@@ -69,4 +69,12 @@ public interface ISessionService
      * @throws com.ruoyi.common.exception.ServiceException 导入失败时抛出业务异常（如无数据、重复数据、主表新增失败等）
      */
     public String importSession(List<Session> sessionList, boolean updateSupport);
+
+    /**
+     * 处理单条届次数据（新增/更新），同步处理标签子表
+     * @param session 届次数据
+     * @param updateSupport 是否开启更新模式（true=更新，false=新增）
+     * @param operName 操作人
+     */
+    void processSingleSession(Session session, boolean updateSupport, String operName);
 }
