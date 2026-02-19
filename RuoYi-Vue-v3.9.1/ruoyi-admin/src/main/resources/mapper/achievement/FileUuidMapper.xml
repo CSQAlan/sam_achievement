@@ -1,0 +1,46 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper
+        PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.ruoyi.achievement.mapper.FileUuidMapper">
+
+    <resultMap type="FileUuid" id="FileUuidResult">
+        <result property="fileUuid"    column="file_uuid"    />
+        <result property="realPath"    column="real_path"    />
+        <result property="originName"  column="origin_name"  />
+        <result property="isTemp"      column="is_temp"      />
+        <result property="createBy"    column="create_by"    />
+        <result property="createTime"  column="create_time"  />
+    </resultMap>
+
+    <select id="selectFileUuidById" parameterType="String" resultMap="FileUuidResult">
+        select file_uuid, real_path, origin_name, is_temp from sys_file_uuid
+        where file_uuid = #{fileUuid}
+    </select>
+
+    <insert id="insertFileUuid" parameterType="FileUuid">
+        insert into sys_file_uuid (
+            file_uuid, real_path, origin_name, is_temp, create_by, create_time
+        )values(
+                   #{fileUuid}, #{realPath}, #{originName}, #{isTemp}, #{createBy}, sysdate()
+               )
+    </insert>
+
+    <update id="updateFileUuidStatus">
+        update sys_file_uuid set is_temp = #{isTemp}
+        where file_uuid in
+        <foreach item="uuid" collection="uuids" open="(" separator="," close=")">
+            #{uuid}
+        </foreach>
+    </update>
+
+    <select id="selectTempFilesOlderThan" resultMap="FileUuidResult">
+        select file_uuid, real_path, origin_name, is_temp from sys_file_uuid
+        where is_temp = 1
+        and create_time &lt; date_sub(sysdate(), interval #{hours} hour)
+    </select>
+
+    <delete id="deleteFileUuidByUuid" parameterType="String">
+        delete from sys_file_uuid where file_uuid = #{fileUuid}
+    </delete>
+</mapper>

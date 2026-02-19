@@ -42,3 +42,20 @@ export function delManage(achievementId) {
     method: 'delete'
   })
 }
+// 查询我参与的列表
+export function listParticipatedAchievement(query) {
+  return request({
+    url: '/achievement/manage/list-participated',
+    method: 'get',
+    params: query
+  })
+}
+
+// 查询我指导的列表
+export function listGuidedAchievement(query) {
+  return request({
+    url: '/achievement/manage/list-guided',
+    method: 'get',
+    params: query
+  })
+}

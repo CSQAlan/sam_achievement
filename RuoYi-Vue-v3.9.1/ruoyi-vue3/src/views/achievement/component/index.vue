@@ -129,6 +129,7 @@
     <el-row :gutter="10" class="mb8">
       <el-col :span="1.5">
         <el-button
+            v-if="showAdd"
             type="primary"
             plain
             icon="Plus"
@@ -138,6 +139,7 @@
       </el-col>
       <el-col :span="1.5">
         <el-button
+            v-if="showEdit"
             type="success"
             plain
             icon="Edit"
@@ -148,6 +150,7 @@
       </el-col>
       <el-col :span="1.5">
         <el-button
+            v-if="showDelete"
             type="danger"
             plain
             icon="Delete"
@@ -158,6 +161,7 @@
       </el-col>
       <el-col :span="1.5">
         <el-button
+            v-if="showExport"
             type="warning"
             plain
             icon="Download"
@@ -207,13 +211,31 @@
           <span>{{ parseTime(scope.row.awardTime, '{y}-{m}-{d}') }}</span>
         </template>
       </el-table-column>
-      <el-table-column label="操作" align="center" class-name="small-padding fixed-width">
-        <template #default="scope">
-          <el-button link type="primary" icon="View" @click="handleReview(scope.row)" v-hasPermi="permReview">详情</el-button>
-          <el-button link type="primary" icon="Edit" @click="handleRowUpdate(scope.row)" v-hasPermi="permEdit">修改</el-button>
-          <el-button link type="primary" icon="Delete" @click="handleDelete(scope.row)" v-hasPermi="permRemove">删除</el-button>
-        </template>
-      </el-table-column>
+ <el-table-column label="操作" align="center" class-name="small-padding fixed-width">
+  <template #default="scope">
+    <el-button link type="primary" icon="View" @click="handleReview(scope.row)" v-hasPermi="permReview">详情</el-button>
+    
+    <el-button 
+      v-if="showEdit"
+      link
+      type="primary"
+      icon="Edit"
+      @click="handleRowUpdate(scope.row)"
+      v-hasPermi="permEdit"
+      :disabled="!checkEditable(scope.row)"
+    >修改</el-button>
+
+    <el-button
+      v-if="showDelete"
+      link 
+      type="primary" 
+      icon="Delete" 
+      @click="handleDelete(scope.row)" 
+      v-hasPermi="permRemove"
+      :disabled="!checkEditable(scope.row)"
+    >删除</el-button>
+  </template>
+</el-table-column>
 
     </el-table>
     <pagination
@@ -258,7 +280,7 @@
 import { ref, reactive, computed, getCurrentInstance, nextTick, watch, onActivated } from 'vue';
 import { useRoute, useRouter } from 'vue-router';
 import { useDict } from '@/utils/dict';
-import AchievementForm from './AchievementForm.vue';
+import AchievementForm from '../component/AchievementForm.vue';
 import { listManage, getManage, addManage, updateManage, delManage } from '@/api/achievement/manage';
 
 const props = defineProps({
@@ -273,7 +295,11 @@ const props = defineProps({
   showSearch: { type: Boolean, default: true },
   pageMode: { type: Boolean, default: false },
   reviewRoute: { type: String, default: '' },
-  reviewSource: { type: String, default: '' }
+  reviewSource: { type: String, default: '' },
+  showAdd: { type: Boolean, default: true },
+  showEdit: { type: Boolean, default: true },
+  showDelete: { type: Boolean, default: true },
+  showExport: { type: Boolean, default: true }
 });
 
 const { proxy } = getCurrentInstance();
@@ -388,15 +414,24 @@ function getList() {
 }
 
 function normalizeRowStatus(row) {
+  // 1. 获取后端可能返回的各种字段名
   const reviewResult = row.reviewResult ?? row.review_result ?? row.reviewStatus;
   const schoolResult = row.schooiReviewResult ?? row.schoolReviewResult ?? row.schooi_review_result ?? row.school_review_result;
+
   row.reviewResult = reviewResult;
   row.schooiReviewResult = schoolResult;
+
+  // 2. 根据场景决定表格里的“审核状态(reviewStatus)”列到底显示哪个值
   if (reviewSource.value.startsWith('college')) {
+    // 场景A：院级审核员 -> 显示院级结果
     row.reviewStatus = reviewResult ?? 0;
   } else if (reviewSource.value.startsWith('school')) {
+    // 场景B：校级审核员 -> 显示校级结果
     row.reviewStatus = schoolResult ?? 2;
+  } else {
+    row.reviewStatus = reviewResult; 
   }
+  
   return row;
 }
 
@@ -446,9 +481,18 @@ function handleUpdate() {
   if (_achievementId) openDialog(_achievementId, { readOnly: false });
 }
 
+/** 行内修改按钮操作 */
 function handleRowUpdate(row) {
   const _achievementId = row?.achievementId;
-  if (_achievementId) openReviewPage(_achievementId, 'edit');
+  if (!_achievementId) return;
+
+  // 【核心修改】：如果是审核模式，可能需要跳转去审核修改（保留同学逻辑）
+  if (reviewSource.value) {
+    openReviewPage(_achievementId, 'edit');
+  } else {
+    // 否则是普通用户，直接打开本地弹窗进行编辑
+    openDialog(_achievementId, { readOnly: false });
+  }
 }
 
 function handleDelete(row) {
@@ -473,7 +517,11 @@ function handleExport() {
 function handleReview(row) {
   const id = row?.achievementId;
   if (!id) return;
-  openReviewPage(id, 'view');
+  if (reviewSource.value) {
+    openReviewPage(id, 'view');
+  } else {
+    openDialog(id, { readOnly: true });
+  }
 }
 
 function refreshFromRoute() {
@@ -550,6 +598,25 @@ function handleFormOk() {
 
 function handleFormCancel() {
   pageModeActive.value = false;
+}
+
+/**
+ * 核心逻辑：检查是否可以修改
+ */
+function checkEditable(row) {
+  if (reviewSource.value) return true; 
+  // 防空判断
+  if (!row) return false;
+  // 获取状态值
+  const collegeStatus = String(row.reviewResult); 
+  const schoolStatus = String(row.schooiReviewResult); 
+  if (schoolStatus === '0') {
+    return true; 
+  }
+  if (collegeStatus === '2' ) {
+    return false;
+  }
+  return true;
 }
 
 getList();

@@ -2,6 +2,7 @@ package com.ruoyi.achievement.mapper;
 
 import java.util.List;
 import com.ruoyi.achievement.domain.SamAchievement;
+import com.ruoyi.achievement.domain.SamAchievementAdvisor;
 import com.ruoyi.achievement.domain.SamAchievementParticipant;
 
 /**
@@ -98,5 +99,38 @@ public interface SamAchievementMapper
      * @return 结果
      */
     public int deleteSamAchievementParticipantByParticipantId(String achievementId);
+    public List<SamAchievement> selectSamAchievementListByStudentId(SamAchievement samAchievement);
+    public List<SamAchievement> selectSamAchievementListByTeacherId(SamAchievement samAchievement);
+    // 在 SamAchievementMapper 接口中添加以下方法
+
+    /**
+     * 批量新增指导老师
+     */
+    public int batchSamAchievementAdvisor(List<SamAchievementAdvisor> samAchievementAdvisorList);
+
+    /**
+     * 通过成果ID删除指导老师
+     */
+    public int deleteSamAchievementAdvisorByAchievementId(String achievementId);
+
+    /**
+     * 批量通过成果ID删除指导老师
+     */
+    public int deleteSamAchievementAdvisorByAchievementIds(String[] achievementIds);
+
+    /**
+     * 批量新增成果附件
+     */
+    public int batchSamAchievementAttachment(List<java.util.Map<String, Object>> samAchievementAttachmentList);
+
+    /**
+     * 通过成果ID删除成果附件
+     */
+    public int deleteSamAchievementAttachmentByAchievementId(String achievementId);
+
+    /**
+     * 批量通过成果ID删除成果附件
+     */
+    public int deleteSamAchievementAttachmentByAchievementIds(String[] achievementIds);
 }
 
