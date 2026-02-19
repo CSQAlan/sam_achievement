@@ -99,6 +99,13 @@ const isView = computed(() => mode.value === "view");
 const showAuditToolbar = computed(() => true);
 const currentApi = computed(() => apiMap[source.value] || apiMap.college_level_unreviewed);
 
+const backRouteMap = {
+  college_level_unreviewed: "CollegeLevelUnreviewed",
+  college_level_reviewed: "CollegeLevelReviewed",
+  school_level_unreviewed: "SchoolLevelUnreviewed",
+  school_level_reviewed: "SchoolLevelReviewed"
+};
+
 // ✅ 根据来源决定使用哪套字典
 const currentAuditDict = computed(() => {
   if (source.value.startsWith("college")) return college_audit_status?.value || [];
@@ -401,6 +408,24 @@ watch(
 );
 
 function handleBack() {
+  const fromName = route.query.fromName || route.query.from;
+  if (fromName) {
+    router.push({ name: String(fromName) }).catch(() => router.back());
+    return;
+  }
+
+  const fromPath = route.query.fromPath;
+  if (fromPath) {
+    router.push({ path: String(fromPath) }).catch(() => router.back());
+    return;
+  }
+
+  const mappedName = backRouteMap[source.value];
+  if (mappedName) {
+    router.push({ name: mappedName }).catch(() => router.back());
+    return;
+  }
+
   router.back();
 }
 
@@ -409,7 +434,9 @@ function jumpToNextAfterAudit(currentId) {
   const ids = pageIdsRef.value || [];
   const nextId = ids.find((id) => Number(id) > Number(currentId));
   if (!nextId) {
-    proxy.$modal?.msgWarning?.("当前页面没有需要审核的成果");
+    if (!source.value.endsWith("reviewed")) {
+      proxy.$modal?.msgWarning?.("当前页面没有需要审核的成果");
+    }
     handleBack();
     return;
   }
@@ -427,12 +454,10 @@ function jumpToNextAfterAudit(currentId) {
  * ✅ 手动流转归档推送（前端负责）：
  * 1) 院级未审核(college_level_unreviewed)
  *    - updateCollege_level_unreviewed：auditStatus 0 -> 1/2
- *    - addCollege_level_reviewed：归档到院级已审核
- *    - 若通过(2)：addSchool_level_unreviewed：推送到校级未审核（auditStatus=2 待校级审核）
+ *    - 若通过(2)：updateSchool_level_unreviewed：推送到校级未审核（auditStatus=2 待校级审核）
  *
  * 2) 校级未审核(school_level_unreviewed)
  *    - updateSchool_level_unreviewed：auditStatus 2 -> 0/1
- *    - addSchool_level_reviewed：归档到校级已审核
  *
  * ✅ 关键修复：
  * - 归档到校级已审核时必须写 schoolAuditTime（你的 mapper 有 school_audit_time is not null 的过滤）
@@ -468,6 +493,16 @@ async function submitAudit() {
   const now = new Date();
   const collegeAuditReason = isCollegeReject.value ? rejectReason.value.trim() : "";
   const schoolAuditReason = isSchoolReject.value ? rejectReason.value.trim() : "";
+  const currentSchoolStatus =
+    baseForm?.schooiReviewResult ??
+    baseForm?.schooi_review_result ??
+    baseForm?.schoolReviewResult ??
+    baseForm?.school_review_result;
+  const canPushSchoolPending =
+    currentSchoolStatus === null ||
+    currentSchoolStatus === undefined ||
+    String(currentSchoolStatus) === "" ||
+    String(currentSchoolStatus) === "2";
 
   try {
     // ===== 院级审核 =====
@@ -483,17 +518,17 @@ async function submitAudit() {
       });
 
       // 2) 院级通过(2) -> 推送到校级未审核（待校级审核=2）
-      if (next === "2") {
+      if (next === "2" && canPushSchoolPending) {
         await updateSchool_level_unreviewed({
           achievementId: id,
           schooiReviewResult: "2"
         });
       }
 
-    if (source.value.endsWith("unreviewed")) {
-      pageIdsRef.value = pageIdsRef.value.filter((pid) => String(pid) !== String(id));
-      persistPageIds();
-    }
+      if (source.value.endsWith("unreviewed")) {
+        pageIdsRef.value = pageIdsRef.value.filter((pid) => String(pid) !== String(id));
+        persistPageIds();
+      }
 
       proxy.$modal?.msgSuccess?.("院级审核成功");
       jumpToNextAfterAudit(id);
@@ -511,7 +546,7 @@ async function submitAudit() {
         auditBy: auditUser
       });
 
-      if (next === "2" && (baseForm?.schooiReviewResult == null || baseForm?.schooiReviewResult === "")) {
+      if (next === "2" && canPushSchoolPending) {
         await updateSchool_level_unreviewed({
           achievementId: id,
           schooiReviewResult: "2"
