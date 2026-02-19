@@ -528,15 +528,18 @@ function openReviewPage(id, mode) {
       // ignore storage errors
     }
   }
+  const query = {
+    id,
+    source: reviewSource.value,
+    mode,
+    pageKey,
+    pageIds
+  };
+  if (route?.name) query.fromName = String(route.name);
+  if (route?.path) query.fromPath = String(route.path);
   router.push({
     path: reviewRoute.value,
-    query: {
-      id,
-      source: reviewSource.value,
-      mode,
-      pageKey,
-      pageIds
-    }
+    query
   });
 }
 
