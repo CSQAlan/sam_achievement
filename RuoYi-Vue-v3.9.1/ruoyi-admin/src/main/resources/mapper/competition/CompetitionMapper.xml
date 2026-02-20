@@ -51,7 +51,7 @@
             <if test="name != null  and name != ''"> and name like concat('%', #{name}, '%')</if>
             <if test="category != null  and category != ''"> and category like concat('%', #{category}, '%')</if>
             <if test="level != null  and level != ''"> and level like concat('%', #{level}, '%')</if>
-            <if test="organizations != null  and organizations != ''"> and organizations = #{organizations}</if>
+            <if test="organizations != null  and organizations != ''"> and organizations like concat('%', #{organizations}, '%')</if>
             <if test="tags != null  and tags != ''"> and tags like concat('%', #{tags}, '%')</if>
             <if test="scopeType != null  and scopeType != ''"> and scope_type = #{scopeType}</if>
             <if test="status != null  and status != ''"> and status = #{status}</if>
