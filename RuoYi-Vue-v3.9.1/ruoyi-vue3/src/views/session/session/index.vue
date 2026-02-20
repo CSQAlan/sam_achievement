@@ -341,13 +341,17 @@ function handleAdd() {
   title.value = "添加赛事届次"
 }
 
+
 /** 修改按钮操作 */
 function handleUpdate(row) {
   reset()
   getCompetitionList()
-  const _id = row.id || ids.value
+  const _id = row.id || ids.value // 1. 先获取要修改的记录ID
   getSession(_id).then(response => {
     form.value = response.data
+    // 2. 强制把ID赋值回去，这是最关键的一步！
+    form.value.id = _id
+    // 处理tags字段，将字符串转为数组
     if (form.value.tags && typeof form.value.tags === 'string') {
       form.value.tags = form.value.tags.split(',')
     } else {
