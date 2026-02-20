@@ -8,20 +8,22 @@
       <el-form-item label="盖章单位" prop="organizations">
         <el-input v-model="queryParams.organizations" placeholder="请输入盖章单位" clearable @keyup.enter="handleQuery" />
       </el-form-item>
+      <!-- 查询表单中，把 v-model 改为绑定到 List 字段 -->
       <el-form-item label="赛事类别" prop="category">
-        <el-select v-model="queryParams.category" placeholder="请选择赛事类别" clearable>
+        <el-select v-model="queryParams.categoryList" placeholder="请选择赛事类别" clearable multiple>
           <el-option v-for="dict in sys_competition_category" :key="dict.value" :label="dict.label"
             :value="dict.value" />
         </el-select>
       </el-form-item>
+
       <el-form-item label="赛事级别" prop="level">
-        <el-select v-model="queryParams.level" placeholder="请选择赛事级别" clearable>
+        <el-select v-model="queryParams.levelList" placeholder="请选择赛事级别" clearable multiple>
           <el-option v-for="dict in sys_competition_level" :key="dict.value" :label="dict.label" :value="dict.value" />
         </el-select>
       </el-form-item>
+
       <el-form-item label="标签" prop="tags">
-        <!-- 新增multiple属性，支持多选 -->
-        <el-select v-model="queryParams.tags" placeholder="请选择赛事标签" clearable multiple>
+        <el-select v-model="queryParams.tagsList" placeholder="请选择赛事标签" clearable multiple>
           <el-option v-for="dict in sys_competition_tag" :key="dict.value" :label="dict.label" :value="dict.value" />
         </el-select>
       </el-form-item>
@@ -236,12 +238,16 @@ const data = reactive({
     pageNum: 1,
     pageSize: 10,
     name: null,
-    category: null,
+    // category: null,
     organizations: null,
-    level: null,
-    tags: null,
+    // level: null,
+    // tags: null,
     scopeType: null,
     status: null,
+    // 新增：多选接收字段
+    categoryList: [],
+    levelList: [],
+    tagsList: []
   },
   rules: {
     name: [

@@ -53,6 +53,22 @@ public class Competition extends BaseEntity
     /** 删除标记 */
     private String delFlag;
 
+    // 新增：多选接收字段（数组或List，用于接收前端多选）
+    private List<String> categoryList;
+    private List<String> levelList;
+    private List<String> tagsList;
+
+    // 生成 getter/setter
+    public List<String> getCategoryList() { return categoryList; }
+    public void setCategoryList(List<String> categoryList) { this.categoryList = categoryList; }
+
+    public List<String> getLevelList() { return levelList; }
+    public void setLevelList(List<String> levelList) { this.levelList = levelList; }
+
+    public List<String> getTagsList() { return tagsList; }
+    public void setTagsList(List<String> tagsList) { this.tagsList = tagsList; }
+
+
     /** 赛事-部门关系信息 */
     private List<CompetitionDeptRel> competitionDeptRelList;
 
