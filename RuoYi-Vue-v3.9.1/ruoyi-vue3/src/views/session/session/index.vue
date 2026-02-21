@@ -24,7 +24,7 @@
         </el-select>
       </el-form-item>
       <el-form-item label="赛事名称" prop="competitionId">
-        <el-select v-model="queryParams.competitionId" placeholder="请选择赛事名称" clearable>
+        <el-select v-model="queryParams.competitionId" placeholder="请选择赛事名称" clearable filterable>
           <el-option v-for="comp in competitionList" :key="comp.id" :label="comp.name" :value="comp.id" />
         </el-select>
       </el-form-item>
@@ -110,7 +110,7 @@
     <el-dialog :title="title" v-model="open" width="500px" append-to-body>
       <el-form ref="sessionRef" :model="form" :rules="rules" label-width="80px">
         <el-form-item label="赛事名称" prop="competitionId">
-          <el-select v-model="form.competitionId" placeholder="请选择赛事名称" clearable style="width:100%;">
+          <el-select v-model="form.competitionId" placeholder="请选择赛事名称" clearable filterable style="width:100%;">
             <el-option v-for="comp in competitionList" :key="comp.id" :label="comp.name" :value="comp.id" />
           </el-select>
         </el-form-item>

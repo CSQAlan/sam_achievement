@@ -362,6 +362,10 @@ function handleQuery() {
 /** 重置按钮操作 */
 function resetQuery() {
   proxy.resetForm("queryRef")
+  // 手动清空多选数组，确保重置后下拉框无选中值
+  queryParams.value.categoryList = []
+  queryParams.value.levelList = []
+  queryParams.value.tagsList = []
   handleQuery()
 }
 
