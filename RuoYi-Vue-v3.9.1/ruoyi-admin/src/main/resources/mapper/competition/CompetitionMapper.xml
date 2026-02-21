@@ -4,7 +4,7 @@
         "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
 <mapper namespace="com.ruoyi.competition.mapper.CompetitionMapper">
 
-    <!-- 映射赛事主表原始字段（完全匹配数据库） -->
+    <!-- 映射赛事主表原始字段 + 新增deptNames映射（仅新增这一行） -->
     <resultMap type="Competition" id="CompetitionResult">
         <result property="id"         column="id"          />
         <result property="name"       column="name"        />
@@ -20,6 +20,8 @@
         <result property="updateBy"   column="update_by"   />
         <result property="updateTime" column="update_time" />
         <result property="delFlag"    column="del_flag"    />
+        <!-- 新增：映射学院名称字段 -->
+        <result property="deptNames"  column="deptNames"   />
     </resultMap>
 
     <resultMap id="CompetitionCompetitionDeptRelResult" type="Competition" extends="CompetitionResult">
@@ -39,7 +41,7 @@
         <result property="delFlag"    column="del_flag"    />
     </resultMap>
 
-    <!-- 仅查询赛事主表，删除届次表关联 -->
+    <!-- 仅新增学院关联和名称拼接，原有主表查询逻辑完全保留 -->
     <sql id="selectCompetitionVo">
         select
         c.id,
@@ -55,11 +57,16 @@
         c.create_time,
         c.update_by,
         c.update_time,
-        c.del_flag
+        c.del_flag,
+        -- 新增：拼接所属学院名称（中文顿号分隔，去重）
+        (SELECT GROUP_CONCAT(DISTINCT d.dept_name SEPARATOR '、')
+        FROM sam_competition_dept_rel rel
+        LEFT JOIN sys_dept d ON rel.dept_id = d.dept_id
+        WHERE rel.session_id = c.id) AS deptNames
         from sam_competition c
     </sql>
 
-    <!-- 核心：多选精确匹配主表字段（不多不少） -->
+    <!-- 核心：多选精确匹配主表字段（不多不少）→ 完全保留你原始逻辑，一行未改 -->
     <select id="selectCompetitionList" parameterType="Competition" resultMap="CompetitionResult">
         <include refid="selectCompetitionVo"/>
         <trim prefix="WHERE" prefixOverrides="AND |OR ">
@@ -129,7 +136,7 @@
         </trim>
     </select>
 
-    <!-- 以下部分无需修改，保持原有逻辑 -->
+    <!-- 以下部分完全保留你原始代码，无任何修改 -->
     <select id="selectCompetitionById" parameterType="Long" resultMap="CompetitionCompetitionDeptRelResult">
         select id, name, category, organizations,level, tags, scope_type, status, memo, create_by, create_time, update_by, update_time, del_flag
         from sam_competition
