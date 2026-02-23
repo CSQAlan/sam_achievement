@@ -68,11 +68,19 @@ public class SamAchievementServiceImpl implements ISamAchievementService
     @Override
     public List<SamAchievement> selectSamAchievementListByStudentId(SamAchievement samAchievement)
     {
+        // 验证学生ID
+        if (samAchievement.getParams() == null || StringUtils.isEmpty((String) samAchievement.getParams().get("studentId"))) {
+            throw new com.ruoyi.common.exception.ServiceException("学生ID不能为空");
+        }
         return samAchievementMapper.selectSamAchievementListByStudentId(samAchievement);
     }
     @Override
     public List<SamAchievement> selectSamAchievementListByTeacherId(SamAchievement samAchievement)
     {
+        // 验证教师ID
+        if (samAchievement.getParams() == null || StringUtils.isEmpty((String) samAchievement.getParams().get("teacherId"))) {
+            throw new com.ruoyi.common.exception.ServiceException("教师ID不能为空");
+        }
         return samAchievementMapper.selectSamAchievementListByTeacherId(samAchievement);
     }
 
@@ -86,7 +94,13 @@ public class SamAchievementServiceImpl implements ISamAchievementService
     @Override
     public int insertSamAchievement(SamAchievement samAchievement)
     {
-        // 1. 自动提取年份
+        // 1. 验证成果录入主表信息
+        validateSamAchievement(samAchievement);
+
+        // 2. 验证PDF文件上传
+        validatePDFAttachments(samAchievement);
+
+        // 3. 自动提取年份
         if (samAchievement.getAwardTime() != null) {
             Calendar cal = Calendar.getInstance();
             cal.setTime(samAchievement.getAwardTime());
@@ -102,16 +116,16 @@ public class SamAchievementServiceImpl implements ISamAchievementService
 
         samAchievement.setCreateTime(DateUtils.getNowDate());
 
-        // 2. 插入主表
+        // 4. 插入主表
         int rows = samAchievementMapper.insertSamAchievement(samAchievement);
 
-        // 3. 处理参赛选手 (包含自动补录学生档案)
+        // 5. 处理参赛选手 (包含自动补录学生档案)
         insertSamAchievementParticipant(samAchievement);
 
-        // 4. 处理指导老师 (包含自动补录教师档案) -> 你之前漏掉了这个
+        // 6. 处理指导老师 (包含自动补录教师档案)
         insertSamAchievementAdvisor(samAchievement);
 
-        // 5. 处理附件转正 (标记为非临时文件)
+        // 7. 处理附件转正 (标记为非临时文件)
         processAttachments(samAchievement);
 
         return rows;
@@ -127,21 +141,159 @@ public class SamAchievementServiceImpl implements ISamAchievementService
     @Override
     public int updateSamAchievement(SamAchievement samAchievement)
     {
+        // 1. 验证成果录入主表信息
+        validateSamAchievement(samAchievement);
+
+        // 2. 验证PDF文件上传
+        validatePDFAttachments(samAchievement);
+
         samAchievement.setUpdateTime(DateUtils.getNowDate());
 
-        // 1. 处理参赛选手：先删后加
+        // 3. 处理参赛选手：先删后加
         samAchievementMapper.deleteSamAchievementParticipantByParticipantId(samAchievement.getAchievementId());
         insertSamAchievementParticipant(samAchievement);
 
-        // 2. 处理指导老师：先删后加
+        // 4. 处理指导老师：先删后加
         samAchievementMapper.deleteSamAchievementAdvisorByAchievementId(samAchievement.getAchievementId());
         insertSamAchievementAdvisor(samAchievement);
 
-        // 3. 处理附件：先删后加
+        // 5. 处理附件：先删后加
         samAchievementMapper.deleteSamAchievementAttachmentByAchievementId(samAchievement.getAchievementId());
         processAttachments(samAchievement);
 
         return samAchievementMapper.updateSamAchievement(samAchievement);
+    }
+
+    /**
+     * 验证PDF文件上传
+     * @param samAchievement 成果录入
+     */
+    private void validatePDFAttachments(SamAchievement samAchievement) {
+        List<java.util.Map<String, Object>> attachments = samAchievement.getSamAchievementAttachmentList();
+        if (attachments == null || attachments.isEmpty()) {
+            throw new com.ruoyi.common.exception.ServiceException("请上传必要的PDF文件");
+        }
+
+        // 检查基础PDF文件（无论是否报销都需要）
+        boolean hasAward = false; // 奖状
+        boolean hasNotice = false; // 通知
+        boolean hasWork = false; // 作品
+
+        // 检查报销相关PDF文件
+        boolean hasPayment = false; // 支付记录
+        boolean hasInvoice = false; // 发票
+        boolean hasReceipt = false; // 收款码
+
+        for (java.util.Map<String, Object> attachment : attachments) {
+            Integer type = (Integer) attachment.get("type");
+            switch (type) {
+                case 1:
+                    hasAward = true;
+                    break;
+                case 2:
+                    hasNotice = true;
+                    break;
+                case 3:
+                    hasWork = true;
+                    break;
+                case 4:
+                    hasPayment = true;
+                    break;
+                case 5:
+                    hasInvoice = true;
+                    break;
+                case 6:
+                    hasReceipt = true;
+                    break;
+            }
+        }
+
+        // 验证基础PDF文件
+        if (!hasAward) {
+            throw new com.ruoyi.common.exception.ServiceException("请上传奖状(证书)PDF文件");
+        }
+        if (!hasNotice) {
+            throw new com.ruoyi.common.exception.ServiceException("请上传比赛通知PDF文件");
+        }
+        if (!hasWork) {
+            throw new com.ruoyi.common.exception.ServiceException("请上传参赛作品PDF文件");
+        }
+
+        // 验证报销相关PDF文件
+        if (samAchievement.getIsReimburse() != null && samAchievement.getIsReimburse() == 1) {
+            if (!hasPayment) {
+                throw new com.ruoyi.common.exception.ServiceException("请上传支付记录PDF文件");
+            }
+            if (!hasInvoice) {
+                throw new com.ruoyi.common.exception.ServiceException("请上传正规发票PDF文件");
+            }
+            if (!hasReceipt) {
+                throw new com.ruoyi.common.exception.ServiceException("请上传收款码PDF文件");
+            }
+        }
+
+        // 验证PDF文件个数
+        int expectedCount = (samAchievement.getIsReimburse() != null && samAchievement.getIsReimburse() == 1) ? 6 : 3;
+        int actualCount = 0;
+        if (hasAward) actualCount++;
+        if (hasNotice) actualCount++;
+        if (hasWork) actualCount++;
+        if (hasPayment) actualCount++;
+        if (hasInvoice) actualCount++;
+        if (hasReceipt) actualCount++;
+
+        if (actualCount != expectedCount) {
+            throw new com.ruoyi.common.exception.ServiceException("PDF文件个数不正确，" + (samAchievement.getIsReimburse() != null && samAchievement.getIsReimburse() == 1 ? "报销情况下需要6个PDF文件" : "非报销情况下需要3个PDF文件"));
+        }
+    }
+
+    /**
+     * 验证成果录入主表信息
+     * @param samAchievement 成果录入
+     */
+    private void validateSamAchievement(SamAchievement samAchievement) {
+        // 验证比赛ID
+        if (StringUtils.isEmpty(samAchievement.getCompetitionId())) {
+            throw new com.ruoyi.common.exception.ServiceException("比赛ID不能为空");
+        }
+
+        // 验证获奖时间
+        if (samAchievement.getAwardTime() == null) {
+            throw new com.ruoyi.common.exception.ServiceException("获奖时间不能为空");
+        }
+
+        // 验证证书编号
+        if (StringUtils.isEmpty(samAchievement.getCertificateNo())) {
+            throw new com.ruoyi.common.exception.ServiceException("证书编号不能为空");
+        }
+
+        // 验证参赛选手列表
+        List<SamAchievementParticipant> participants = samAchievement.getSamAchievementParticipantList();
+        if (participants == null || participants.isEmpty()) {
+            throw new com.ruoyi.common.exception.ServiceException("参赛选手列表不能为空");
+        }
+
+        // 验证是否至少有一个负责人
+        boolean hasManager = false;
+        for (SamAchievementParticipant participant : participants) {
+            if (participant.getManager() != null && participant.getManager() == 1) {
+                hasManager = true;
+                break;
+            }
+        }
+        if (!hasManager) {
+            throw new com.ruoyi.common.exception.ServiceException("参赛选手列表中至少需要有一个负责人");
+        }
+
+        // 验证报销金额
+        if (samAchievement.getIsReimburse() != null && samAchievement.getIsReimburse() == 1) {
+            if (samAchievement.getFee() == null) {
+                throw new com.ruoyi.common.exception.ServiceException("报销金额不能为空");
+            }
+            if (samAchievement.getFee().compareTo(java.math.BigDecimal.ZERO) <= 0) {
+                throw new com.ruoyi.common.exception.ServiceException("报销金额必须大于0");
+            }
+        }
     }
 
     /**
@@ -255,7 +407,13 @@ public class SamAchievementServiceImpl implements ISamAchievementService
      * 辅助方法：检查学生是否存在，不存在则新增
      */
     private void checkAndInsertStudent(String studentNo, String studentName) {
-        if (StringUtils.isEmpty(studentNo)) return;
+        if (StringUtils.isEmpty(studentNo)) {
+            throw new com.ruoyi.common.exception.ServiceException("学生学号不能为空");
+        }
+
+        if (StringUtils.isEmpty(studentName)) {
+            throw new com.ruoyi.common.exception.ServiceException("学生姓名不能为空");
+        }
 
         SamStudent query = new SamStudent();
         query.setNo(studentNo);
@@ -275,7 +433,13 @@ public class SamAchievementServiceImpl implements ISamAchievementService
      * 辅助方法：检查教师是否存在，不存在则新增
      */
     private void checkAndInsertTeacher(String teacherNo, String teacherName) {
-        if (StringUtils.isEmpty(teacherNo)) return;
+        if (StringUtils.isEmpty(teacherNo)) {
+            throw new com.ruoyi.common.exception.ServiceException("教师工号不能为空");
+        }
+
+        if (StringUtils.isEmpty(teacherName)) {
+            throw new com.ruoyi.common.exception.ServiceException("教师姓名不能为空");
+        }
 
         SamTeacher query = new SamTeacher();
         query.setNo(teacherNo);

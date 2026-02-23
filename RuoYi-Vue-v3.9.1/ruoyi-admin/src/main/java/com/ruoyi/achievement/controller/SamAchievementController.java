@@ -114,6 +114,9 @@ public class SamAchievementController extends BaseController
         startPage();
         // 获取当前登录用户的学号 (假设 username 即学号)
         String studentId = SecurityUtils.getUsername();
+        if (StringUtils.isEmpty(studentId)) {
+            throw new com.ruoyi.common.exception.ServiceException("当前用户学号不能为空");
+        }
         if (samAchievement.getParams() == null) {
             samAchievement.setParams(new HashMap<>());
         }
@@ -134,6 +137,9 @@ public class SamAchievementController extends BaseController
         startPage();
         // 获取当前登录用户的工号
         String teacherId = SecurityUtils.getUsername();
+        if (StringUtils.isEmpty(teacherId)) {
+            throw new com.ruoyi.common.exception.ServiceException("当前用户工号不能为空");
+        }
         if (samAchievement.getParams() == null) {
             samAchievement.setParams(new HashMap<>());
         }
