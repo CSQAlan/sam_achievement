@@ -1,10 +1,33 @@
-<template>
+﻿<template>
   <div class="flow-filter-wrapper">
     <div class="flow-filter-bar">
-      <el-select v-model="flowValue" placeholder="流程筛选" style="width: 220px;" @change="handleFlowChange">
-        <el-option v-for="opt in flowOptions" :key="opt.value" :label="opt.label" :value="opt.value" />
+      <span class="flow-filter-title">流程导航</span>
+      <el-select
+        v-model="flowValue"
+        class="flow-select"
+        placeholder="请选择流程页面"
+        @change="handleFlowChange"
+      >
+        <el-option-group
+          v-for="group in flowGroups"
+          :key="group.label"
+          :label="group.label"
+        >
+          <el-option
+            v-for="opt in group.options"
+            :key="opt.value"
+            :label="opt.label"
+            :value="opt.value"
+          >
+            <div class="flow-option-row">
+              <span class="flow-option-name">{{ opt.label }}</span>
+              <el-tag size="small" :type="opt.tagType" effect="plain">{{ opt.tagText }}</el-tag>
+            </div>
+          </el-option>
+        </el-option-group>
       </el-select>
     </div>
+
     <ManageIndex
       :list-fn="listCollege_level_unreviewed"
       :get-fn="getCollege_level_unreviewed"
@@ -37,11 +60,21 @@ const { college_audit_status } = useDict('college_audit_status');
 const route = useRoute();
 const router = useRouter();
 
-const flowOptions = [
-  { label: '院级未审核', value: 'CollegeLevelUnreviewed' },
-  { label: '院级已审核', value: 'CollegeLevelReviewed' },
-  { label: '校级未审核', value: 'SchoolLevelUnreviewed' },
-  { label: '校级已审核', value: 'SchoolLevelReviewed' }
+const flowGroups = [
+  {
+    label: '院级流程',
+    options: [
+      { label: '院级未审核', value: 'CollegeLevelUnreviewed', tagText: '待处理', tagType: 'warning' },
+      { label: '院级已审核', value: 'CollegeLevelReviewed', tagText: '已完成', tagType: 'success' }
+    ]
+  },
+  {
+    label: '校级流程',
+    options: [
+      { label: '校级未审核', value: 'SchoolLevelUnreviewed', tagText: '待处理', tagType: 'warning' },
+      { label: '校级已审核', value: 'SchoolLevelReviewed', tagText: '已完成', tagType: 'success' }
+    ]
+  }
 ];
 
 const flowValue = ref(route.name || 'CollegeLevelUnreviewed');
@@ -64,3 +97,52 @@ export default {
   name: 'CollegeLevelUnreviewed'
 }
 </script>
+
+<style scoped>
+.flow-filter-wrapper {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.flow-filter-bar {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 10px 12px;
+  border: 1px solid var(--el-border-color-light);
+  border-radius: 10px;
+  background: linear-gradient(180deg, #fbfdff 0%, #f3f8ff 100%);
+}
+
+.flow-filter-title {
+  font-size: 13px;
+  color: var(--el-text-color-secondary);
+  white-space: nowrap;
+}
+
+.flow-select {
+  width: 280px;
+}
+
+.flow-option-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+}
+
+.flow-option-name {
+  color: var(--el-text-color-primary);
+}
+
+@media (max-width: 992px) {
+  .flow-filter-bar {
+    flex-wrap: wrap;
+  }
+
+  .flow-select {
+    width: 100%;
+  }
+}
+</style>

@@ -4,11 +4,11 @@
         "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
 <mapper namespace="com.ruoyi.session.mapper.SessionMapper">
 
-    <!-- 关键修改1：新增tagsList关联标签子表，解决标签列表查询 -->
+    <!-- 关键修改1：新增competitionName字段映射，解决赛事名称导出为空 -->
     <resultMap type="Session" id="SessionResult">
         <result property="id"           column="session_id"    />
         <result property="competitionId" column="competition_id" />
-        <!-- 映射赛事名称（从competition表关联查询） -->
+        <!-- 新增：映射赛事名称（从competition表关联查询的name字段） -->
         <result property="competitionName" column="competition_name" />
         <result property="session"      column="session"       />
         <result property="category"     column="category"      />
@@ -22,11 +22,6 @@
         <result property="updateTime"   column="update_time"   />
         <result property="remark"       column="remark"        />
         <result property="delFlag"      column="del_flag"      />
-        <!-- 新增：关联查询标签子表，自动赋值到Session的tagsList字段 -->
-        <collection property="tagsList"
-                    ofType="com.ruoyi.session.domain.Tag"
-                    select="com.ruoyi.session.mapper.SessionMapper.selectTagListBySessionId"
-                    column="session_id"/>
     </resultMap>
 
     <!-- 关键修改2：公共SQL关联competition表，查询赛事名称 -->
@@ -35,7 +30,7 @@
         s.session, s.category, s.organizations, s.level, s.status, s.tags,
         s.create_by, s.create_time, s.update_by, s.update_time, s.remark, s.del_flag
         from sam_competition_session s
-        <!-- 左关联赛事主表（left join保证即使赛事表无数据，届次数据也能返回） -->
+        <!-- 左关联赛事主表（替换成你的competition表名，比如sam_competition） -->
         left join sam_competition c on s.competition_id = c.id
     </sql>
 
@@ -43,7 +38,7 @@
     <select id="selectSessionList" parameterType="Session" resultMap="SessionResult">
         <include refid="selectSessionVo"/>
         <where>
-            s.del_flag = '0' <!-- 只查询未删除的数据 -->
+            s.del_flag = '0' <!-- 新增：只查询未删除的数据，重复校验更严谨 -->
             <if test="competitionId != null "> and s.competition_id = #{competitionId}</if>
             <if test="competitionName != null and competitionName != ''">
                 and c.name like concat('%', #{competitionName}, '%')
@@ -56,13 +51,13 @@
         </where>
     </select>
 
-    <!-- 单条查询：关联competition表，获取赛事名称 + 自动关联标签子表 -->
+    <!-- 单条查询：关联competition表，获取赛事名称 -->
     <select id="selectSessionById" parameterType="Long" resultMap="SessionResult">
         <include refid="selectSessionVo"/>
         where s.session_id = #{id} and s.del_flag = '0'
     </select>
 
-    <!-- 原有增删改操作：拆分删除方法，避免多语句执行 -->
+    <!-- 以下增删改操作完全保留，无需改动 -->
     <insert id="insertSession" parameterType="Session" useGeneratedKeys="true" keyProperty="id">
         insert into sam_competition_session
         <trim prefix="(" suffix=")" suffixOverrides=",">
@@ -117,32 +112,10 @@
         where session_id = #{id}
     </update>
 
-    <!-- 拆分删除方法1：删除成果表 -->
-    <delete id="deleteAchievementBySessionId" parameterType="Long">
-        delete from sam_achievement where session_id = #{sessionId} and del_flag = '0'
-    </delete>
-    <delete id="deleteAchievementBySessionIds" parameterType="Long[]">
-        delete from sam_achievement where session_id in
-        <foreach item="id" collection="array" open="(" separator="," close=")">
-            #{id}
-        </foreach> and del_flag = '0'
-    </delete>
-
-    <!-- 拆分删除方法2：删除标签表 -->
-    <delete id="deleteTagBySessionId" parameterType="Long">
-        delete from sam_tag where competition_session_id = #{sessionId} and del_flag = '0'
-    </delete>
-    <delete id="deleteTagBySessionIds" parameterType="Long[]">
-        delete from sam_tag where competition_session_id in
-        <foreach item="id" collection="array" open="(" separator="," close=")">
-            #{id}
-        </foreach> and del_flag = '0'
-    </delete>
-
-    <!-- 拆分删除方法3：删除届次主表 -->
     <delete id="deleteSessionById" parameterType="Long">
         delete from sam_competition_session where session_id = #{id}
     </delete>
+
     <delete id="deleteSessionByIds" parameterType="Long[]">
         delete from sam_competition_session where session_id in
         <foreach item="id" collection="array" open="(" separator="," close=")">
@@ -150,33 +123,4 @@
         </foreach>
     </delete>
 
-    <!-- ====================== 标签子表核心SQL ====================== -->
-    <insert id="insertTag" parameterType="com.ruoyi.session.domain.Tag" useGeneratedKeys="true" keyProperty="id">
-        insert into sam_tag (
-        competition_session_id, tag_name, create_by, create_time, del_flag
-        ) values (
-        #{competitionSessionId}, #{tagName}, #{createBy}, #{createTime}, #{delFlag}
-        )
-    </insert>
-
-    <insert id="batchInsertTag" parameterType="java.util.List">
-        insert into sam_tag (
-        competition_session_id, tag_name, create_by, create_time, del_flag
-        ) values
-        <foreach collection="list" item="item" separator=",">
-            (
-            #{item.competitionSessionId}, #{item.tagName},
-            #{item.createBy}, #{item.createTime}, #{item.delFlag}
-            )
-        </foreach>
-    </insert>
-
-    <select id="selectTagListBySessionId" parameterType="Long" resultType="com.ruoyi.session.domain.Tag">
-        select
-        id, competition_session_id as competitionSessionId, tag_name as tagName,
-        create_by as createBy, create_time as createTime,
-        update_by as updateBy, update_time as updateTime, remark, del_flag as delFlag
-        from sam_tag
-        where competition_session_id = #{sessionId} and del_flag = '0'
-    </select>
 </mapper>

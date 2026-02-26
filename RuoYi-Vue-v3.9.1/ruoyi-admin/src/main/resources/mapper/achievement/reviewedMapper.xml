@@ -7,6 +7,8 @@ PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
     <resultMap type="reviewed" id="reviewedResult">
         <result property="achievementId"    column="achievement_id"    />
         <result property="sessionId"    column="session_id"    />
+        <result property="competitionId"    column="competition_id"    />
+        <result property="competitionName"    column="competition_name"    />
         <result property="category"    column="category"    />
         <result property="name"    column="name"    />
         <result property="teamName"    column="team_name"    />
@@ -63,47 +65,89 @@ PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
     </resultMap>
 
     <sql id="selectreviewedVo">
-        select achievement_id, session_id, category, name, team_name, level, grade, track, certificate_no, group_id, award_time, year, owner_dep_id, is_reimburse, is_supplement, fee, reimbursement_fee, reimbursement_ratio, reimbursement_item_id, reimbursement_date, item_index, quality_index, submitted_at, reviewed_at, school_reviewed_at, review_result, schooi_review_result, review_reason, school_review_reason, audit_by, school_audit_by, create_by, update_by, create_time, update_time, del_flag, remark from sam_achievement
+        select
+            a.achievement_id,
+            a.session_id,
+            s.competition_id as competition_id,
+            c.name as competition_name,
+            a.category,
+            a.name,
+            a.team_name,
+            a.level,
+            a.grade,
+            a.track,
+            a.certificate_no,
+            a.group_id,
+            a.award_time,
+            a.year,
+            a.owner_dep_id,
+            a.is_reimburse,
+            a.is_supplement,
+            a.fee,
+            a.reimbursement_fee,
+            a.reimbursement_ratio,
+            a.reimbursement_item_id,
+            a.reimbursement_date,
+            a.item_index,
+            a.quality_index,
+            a.submitted_at,
+            a.reviewed_at,
+            a.school_reviewed_at,
+            a.review_result,
+            a.schooi_review_result,
+            a.review_reason,
+            a.school_review_reason,
+            a.audit_by,
+            a.school_audit_by,
+            a.create_by,
+            a.update_by,
+            a.create_time,
+            a.update_time,
+            a.del_flag,
+            a.remark
+        from sam_achievement a
+        left join sam_competition_session s on a.session_id = s.session_id
+        left join sam_competition c on s.competition_id = c.id
     </sql>
 
     <select id="selectreviewedList" parameterType="reviewed" resultMap="reviewedResult">
         <include refid="selectreviewedVo"/>
         <where>  
-            <if test="achievementId != null  and achievementId != ''"> and achievement_id = #{achievementId}</if>
-            <if test="sessionId != null  and sessionId != ''"> and session_id = #{sessionId}</if>
-            <if test="category != null  and category != ''"> and category like concat('%', #{category}, '%')</if>
-            <if test="name != null  and name != ''"> and name like concat('%', #{name}, '%')</if>
-            <if test="teamName != null  and teamName != ''"> and team_name like concat('%', #{teamName}, '%')</if>
-            <if test="level != null  and level != ''"> and level = #{level}</if>
-            <if test="grade != null "> and grade = #{grade}</if>
-            <if test="track != null  and track != ''"> and track like concat('%', #{track}, '%')</if>
-            <if test="certificateNo != null  and certificateNo != ''"> and certificate_no = #{certificateNo}</if>
-            <if test="groupId != null "> and group_id = #{groupId}</if>
-            <if test="awardTime != null "> and award_time = #{awardTime}</if>
+            <if test="achievementId != null  and achievementId != ''"> and a.achievement_id = #{achievementId}</if>
+            <if test="sessionId != null  and sessionId != ''"> and a.session_id = #{sessionId}</if>
+            <if test="category != null  and category != ''"> and a.category like concat('%', #{category}, '%')</if>
+            <if test="name != null  and name != ''"> and a.name like concat('%', #{name}, '%')</if>
+            <if test="teamName != null  and teamName != ''"> and a.team_name like concat('%', #{teamName}, '%')</if>
+            <if test="level != null  and level != ''"> and a.level = #{level}</if>
+            <if test="grade != null "> and a.grade = #{grade}</if>
+            <if test="track != null  and track != ''"> and a.track like concat('%', #{track}, '%')</if>
+            <if test="certificateNo != null  and certificateNo != ''"> and a.certificate_no = #{certificateNo}</if>
+            <if test="groupId != null "> and a.group_id = #{groupId}</if>
+            <if test="awardTime != null "> and a.award_time = #{awardTime}</if>
         
             <if test="reviewStage != null and reviewStage != '' and reviewStatus != null and reviewStatus != ''">
                 <choose>
                     <when test="reviewStage == 'college'">
                         <choose>
-                            <when test="reviewStatus == 'unreviewed'"> and (review_result is null or review_result = 0)</when>
-                            <when test="reviewStatus == 'reviewed'"> and review_result in (1, 2)</when>
+                            <when test="reviewStatus == 'unreviewed'"> and (a.review_result is null or a.review_result = 0)</when>
+                            <when test="reviewStatus == 'reviewed'"> and a.review_result in (1, 2)</when>
                         </choose>
                     </when>
                     <when test="reviewStage == 'school'">
                         <choose>
-                            <when test="reviewStatus == 'unreviewed'"> and schooi_review_result = 2</when>
-                            <when test="reviewStatus == 'reviewed'"> and schooi_review_result in (0, 1)</when>
+                            <when test="reviewStatus == 'unreviewed'"> and a.review_result = 2 and a.schooi_review_result = 2</when>
+                            <when test="reviewStatus == 'reviewed'"> and a.review_result = 2 and a.schooi_review_result in (0, 1)</when>
                         </choose>
                     </when>
                 </choose>
             </if>
         </where>
+        order by coalesce(a.update_time, a.create_time) desc, a.achievement_id desc
     </select>
     
     <select id="selectreviewedByAchievementId" parameterType="String" resultMap="reviewedSamAchievementParticipantResult">
-        select achievement_id, session_id, category, name, team_name, level, grade, track, certificate_no, group_id, award_time, year, owner_dep_id, is_reimburse, is_supplement, fee, reimbursement_fee, reimbursement_ratio, reimbursement_item_id, reimbursement_date, item_index, quality_index, submitted_at, reviewed_at, school_reviewed_at, review_result, schooi_review_result, review_reason, school_review_reason, audit_by, school_audit_by, create_by, update_by, create_time, update_time, del_flag, remark
-        from sam_achievement
-        where achievement_id = #{achievementId}
+        <include refid="selectreviewedVo"/>
+        where a.achievement_id = #{achievementId}
     </select>
 
     <select id="selectSamAchievementParticipantList" resultMap="SamAchievementParticipantResult">
@@ -112,7 +156,7 @@ PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
         where participant_id = #{participant_id}
     </select>
 
-    <insert id="insertreviewed" parameterType="reviewed">
+    <insert id="insertreviewed" parameterType="reviewed" useGeneratedKeys="true" keyProperty="achievementId" keyColumn="achievement_id">
         insert into sam_achievement
         <trim prefix="(" suffix=")" suffixOverrides=",">
             achievement_id,
