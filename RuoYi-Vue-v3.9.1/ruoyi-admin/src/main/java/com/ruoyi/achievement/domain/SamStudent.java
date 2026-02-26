@@ -23,8 +23,8 @@ public class SamStudent extends BaseEntity
     @Excel(name = "学生姓名")
     private String name;
 
-    /** 学号 */
-    @Excel(name = "学号")
+    /** $column.columnComment */
+    @Excel(name = "${comment}", readConverterExp = "$column.readConverterExp()")
     private String no;
 
     /** 学院 */

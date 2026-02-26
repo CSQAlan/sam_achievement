@@ -33,7 +33,7 @@ import org.springframework.web.multipart.MultipartFile;
  */
 @RestController
 @RequestMapping("/session/session")
-public class SessionController extends BaseController
+public class  SessionController extends BaseController
 {
     // 新增：日志对象，方便排查导入异常
     private static final Logger log = LoggerFactory.getLogger(SessionController.class);
@@ -82,16 +82,9 @@ public class SessionController extends BaseController
     @PreAuthorize("@ss.hasPermi('session:session:add')")
     @Log(title = "赛事届次", businessType = BusinessType.INSERT)
     @PostMapping
-    public AjaxResult add(@RequestBody Session session) {
-        try {
-            String operName = getUsername(); // 获取当前登录人
-            // 调用处理子表的方法，false=新增模式
-            sessionService.processSingleSession(session, false, operName);
-            return success("新增赛事届次成功");
-        } catch (Exception e) {
-            log.error("新增赛事届次失败", e);
-            return error("新增赛事届次失败：" + e.getMessage());
-        }
+    public AjaxResult add(@RequestBody Session session)
+    {
+        return toAjax(sessionService.insertSession(session));
     }
 
     /**
@@ -100,16 +93,9 @@ public class SessionController extends BaseController
     @PreAuthorize("@ss.hasPermi('session:session:edit')")
     @Log(title = "赛事届次", businessType = BusinessType.UPDATE)
     @PutMapping
-    public AjaxResult edit(@RequestBody Session session) {
-        try {
-            String operName = getUsername();
-            // 调用处理子表的方法，true=更新模式（会先删旧标签，再插新标签）
-            sessionService.processSingleSession(session, true, operName);
-            return success("修改赛事届次成功");
-        } catch (Exception e) {
-            log.error("修改赛事届次失败", e);
-            return error("修改赛事届次失败：" + e.getMessage());
-        }
+    public AjaxResult edit(@RequestBody Session session)
+    {
+        return toAjax(sessionService.updateSession(session));
     }
 
     /**
