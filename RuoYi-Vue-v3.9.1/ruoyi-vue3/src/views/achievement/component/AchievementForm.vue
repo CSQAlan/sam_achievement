@@ -533,10 +533,29 @@
           <slot name="footer-left" :form="form"></slot>
         </div>
         <div class="footer-right">
-          <el-button v-if="showSubmit && !readOnly" type="primary" @click="submitForm">
-            {{ submitTextComputed }}
-          </el-button>
-          <el-button @click="handleCancel">{{ cancelText }}</el-button>
+          <div
+            v-if="showSubmit && !readOnly"
+            class="footer-action"
+            role="button"
+            tabindex="0"
+            @click="submitForm"
+            @keydown.enter.prevent="submitForm"
+            @keydown.space.prevent="submitForm"
+          >
+            <el-button type="primary" class="footer-action-btn">
+              {{ submitTextComputed }}
+            </el-button>
+          </div>
+          <div
+            class="footer-action"
+            role="button"
+            tabindex="0"
+            @click="handleCancel"
+            @keydown.enter.prevent="handleCancel"
+            @keydown.space.prevent="handleCancel"
+          >
+            <el-button class="footer-action-btn">{{ cancelText }}</el-button>
+          </div>
         </div>
       </div>
     </template>
@@ -1303,12 +1322,26 @@ function goToCompetitionApply() {
 }
 .outcome-page .page-title { font-size: 18px; font-weight: 600; }
 .outcome-page .page-actions { display: flex; align-items: center; gap: 10px; }
-.dialog-footer-wrapper { display: flex; justify-content: space-between; align-items: center; }
+.dialog-footer-wrapper { display: flex; justify-content: space-between; align-items: center; position: relative; z-index: 3; }
+.footer-right { display: flex; align-items: center; gap: 12px; }
+.footer-action {
+  display: inline-flex;
+  align-items: stretch;
+  cursor: pointer;
+  border-radius: 6px;
+}
+.footer-action :deep(.footer-action-btn) {
+  min-width: 108px;
+  height: 40px;
+  padding: 0 22px;
+  pointer-events: none;
+}
 .attach-card { background: #f8f8f9; padding: 10px; border-radius: 4px; border: 1px solid #d9d9d9; height: 100%; }
 .upload-pane-content { padding: 5px 10px; }
 .mb10 { margin-bottom: 15px; }
 .mr5 { margin-right: 5px; }
 :deep(.el-tabs__content) { height: 100%; }
+:deep(.el-dialog__footer) { position: relative; z-index: 3; }
 
 .hide-file-list :deep(.el-upload-list) { display: none !important; }
 
