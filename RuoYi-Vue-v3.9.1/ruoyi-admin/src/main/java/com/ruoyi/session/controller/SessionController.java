@@ -77,25 +77,47 @@ public class  SessionController extends BaseController
     }
 
     /**
-     * 新增赛事届次
+     * 新增赛事届次（改回原生insert，和导入逻辑隔离）
      */
     @PreAuthorize("@ss.hasPermi('session:session:add')")
     @Log(title = "赛事届次", businessType = BusinessType.INSERT)
     @PostMapping
-    public AjaxResult add(@RequestBody Session session)
-    {
-        return toAjax(sessionService.insertSession(session));
+    public AjaxResult add(@RequestBody Session session) {
+        try {
+            // 核心修改：调用原生insertSession，不碰导入的processSingleSession
+            session.setCreateBy(getUsername());
+            int result = sessionService.insertSession(session);
+            if (result > 0) {
+                return success("新增赛事届次成功");
+            } else {
+                return error("新增赛事届次失败：未插入任何数据");
+            }
+        } catch (Exception e) {
+            log.error("新增赛事届次失败", e);
+            return error("新增赛事届次失败：" + e.getMessage());
+        }
     }
 
     /**
-     * 修改赛事届次
+     * 修改赛事届次（改回原生update，和导入逻辑隔离）
      */
     @PreAuthorize("@ss.hasPermi('session:session:edit')")
     @Log(title = "赛事届次", businessType = BusinessType.UPDATE)
     @PutMapping
-    public AjaxResult edit(@RequestBody Session session)
-    {
-        return toAjax(sessionService.updateSession(session));
+    public AjaxResult edit(@RequestBody Session session) {
+        try {
+            // 核心修改：调用原生updateSession，不碰导入的processSingleSession
+            session.setUpdateBy(getUsername());
+            int result = sessionService.updateSession(session);
+            if (result > 0) {
+                return success("修改赛事届次成功");
+            } else {
+                return error("修改赛事届次失败：未更新任何数据");
+            }
+        } catch (Exception e) {
+            log.error("修改赛事届次失败", e);
+            return error("修改赛事届次失败：" + e.getMessage());
+        }
     }
 
     /**
@@ -137,7 +159,7 @@ public class  SessionController extends BaseController
             ExcelUtil<Session> util = new ExcelUtil<Session>(Session.class);
             // 2. 解析Excel：指定表头在第0行（Excel实际第1行），数据从第1行开始，和Service层行号提示一致
             List<Session> sessionList = util.importExcel(file.getInputStream(), 0);
-            // 3. 调用Service处理导入逻辑
+            // 3. 调用Service处理导入逻辑（仅导入用processSingleSession，普通增改不用）
             String message = sessionService.importSession(sessionList, updateSupport);
             return AjaxResult.success(message);
         } catch (Exception e) {
