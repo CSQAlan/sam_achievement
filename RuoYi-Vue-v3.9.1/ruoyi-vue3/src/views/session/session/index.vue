@@ -66,9 +66,9 @@
 
     <el-table v-loading="loading" :data="sessionList" @selection-change="handleSelectionChange">
       <el-table-column type="selection" width="55" align="center" />
-      <el-table-column label="赛事名称" align="center" prop="competitionId">
+      <el-table-column label="赛事名称" align="center" prop="competitionName">
         <template #default="scope">
-          {{ getCompetitionName(scope.row.competitionId) || scope.row.competitionId }}
+          {{ scope.row.competitionName || CompetitionName(scope.row.competitionId) || scope.row.competitionId }}
         </template>
       </el-table-column>
       <el-table-column label="届次" align="center" prop="session" />
@@ -254,16 +254,12 @@ const data = reactive({
 const { queryParams, form, rules } = toRefs(data)
 
 // 获取赛事主表列表并去重
+// 获取赛事主表列表（修复去重逻辑，保留全量数据）
 function getCompetitionList() {
-  listCompetition({}).then(response => {
+  // 关键：传入分页参数，拉取全量数据
+  listCompetition({ pageNum: 1, pageSize: 9999 }).then(response => {
     const originList = response.rows || response.data || []
-    const uniqueMap = new Map()
-    originList.forEach(item => {
-      if (item.name && !uniqueMap.has(item.name)) {
-        uniqueMap.set(item.name, item)
-      }
-    })
-    competitionList.value = Array.from(uniqueMap.values())
+    competitionList.value = originList.filter(item => item.name && item.id)
   }).catch(error => {
     console.error("获取赛事主表列表失败：", error)
     proxy.$modal.msgError("获取赛事列表失败，请先添加赛事主表数据")
@@ -317,6 +313,7 @@ function reset() {
 /** 搜索按钮操作 */
 function handleQuery() {
   queryParams.value.pageNum = 1
+  getCompetitionList() // 新增：搜索前刷新赛事列表
   getList()
 }
 
@@ -373,12 +370,14 @@ function submitForm() {
           proxy.$modal.msgSuccess("修改成功")
           open.value = false
           getList()
+          getCompetitionList() // 新增：刷新赛事列表
         })
       } else {
         addSession(form.value).then(response => {
           proxy.$modal.msgSuccess("新增成功")
           open.value = false
           getList()
+          getCompetitionList() // 新增：刷新赛事列表
         })
       }
     }
