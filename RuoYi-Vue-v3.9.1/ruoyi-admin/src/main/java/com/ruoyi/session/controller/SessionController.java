@@ -82,6 +82,7 @@ public class  SessionController extends BaseController
     @PreAuthorize("@ss.hasPermi('session:session:add')")
     @Log(title = "赛事届次", businessType = BusinessType.INSERT)
     @PostMapping
+<<<<<<< HEAD
     public AjaxResult add(@RequestBody Session session) {
         try {
             // 核心修改：调用原生insertSession，不碰导入的processSingleSession
@@ -96,6 +97,11 @@ public class  SessionController extends BaseController
             log.error("新增赛事届次失败", e);
             return error("新增赛事届次失败：" + e.getMessage());
         }
+=======
+    public AjaxResult add(@RequestBody Session session)
+    {
+        return toAjax(sessionService.insertSession(session));
+>>>>>>> db5e218f4385e2d6dedd67f13d8565757edea1c6
     }
 
     /**
@@ -104,6 +110,7 @@ public class  SessionController extends BaseController
     @PreAuthorize("@ss.hasPermi('session:session:edit')")
     @Log(title = "赛事届次", businessType = BusinessType.UPDATE)
     @PutMapping
+<<<<<<< HEAD
     public AjaxResult edit(@RequestBody Session session) {
         try {
             // 核心修改：调用原生updateSession，不碰导入的processSingleSession
@@ -118,6 +125,11 @@ public class  SessionController extends BaseController
             log.error("修改赛事届次失败", e);
             return error("修改赛事届次失败：" + e.getMessage());
         }
+=======
+    public AjaxResult edit(@RequestBody Session session)
+    {
+        return toAjax(sessionService.updateSession(session));
+>>>>>>> db5e218f4385e2d6dedd67f13d8565757edea1c6
     }
 
     /**

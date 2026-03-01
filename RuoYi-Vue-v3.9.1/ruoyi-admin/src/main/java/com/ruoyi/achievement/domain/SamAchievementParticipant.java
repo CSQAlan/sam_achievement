@@ -22,19 +22,27 @@ public class SamAchievementParticipant extends BaseEntity
     @Excel(name = "成果ID")
     private String achievementId;
 
-    /** $column.columnComment */
-    @Excel(name = "${comment}", readConverterExp = "$column.readConverterExp()")
+    /** 学生ID */
+    @Excel(name = "学生ID")
     private String studentId;
 
+    /** 学号 */
+    @Excel(name = "学号")
+    private String studentNo;
+
+    /** 姓名 */
+    @Excel(name = "姓名")
+    private String studentName;
+
     /** 排序（负责人 1） */
-    @Excel(name = "排序", readConverterExp = "负=责人,1=")
+    @Excel(name = "排序")
     private Long orderNo;
 
     /** 是否负责人 */
     @Excel(name = "是否负责人")
     private String manager;
 
-    /** $column.columnComment */
+    /** 删除标志 */
     private Long delFlag;
 
     public void setParticipantId(String participantId) 
@@ -63,6 +71,24 @@ public class SamAchievementParticipant extends BaseEntity
     public String getStudentId() 
     {
         return studentId;
+    }
+    public void setStudentNo(String studentNo) 
+    {
+        this.studentNo = studentNo;
+    }
+
+    public String getStudentNo() 
+    {
+        return studentNo;
+    }
+    public void setStudentName(String studentName) 
+    {
+        this.studentName = studentName;
+    }
+
+    public String getStudentName() 
+    {
+        return studentName;
     }
     public void setOrderNo(Long orderNo) 
     {
@@ -98,6 +124,8 @@ public class SamAchievementParticipant extends BaseEntity
             .append("participantId", getParticipantId())
             .append("achievementId", getAchievementId())
             .append("studentId", getStudentId())
+            .append("studentNo", getStudentNo())
+            .append("studentName", getStudentName())
             .append("orderNo", getOrderNo())
             .append("manager", getManager())
             .append("createBy", getCreateBy())
