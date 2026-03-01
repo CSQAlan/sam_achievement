@@ -1,0 +1,5 @@
+{
+  "dependencies": {
+    "@riophae/vue-treeselect": "^0.4.0"
+  }
+}
