@@ -27,7 +27,7 @@
     </insert>
 
     <update id="updateFileUuidStatus">
-        update sys_file_uuid set is_temp = #{isTemp}
+        update sys_file_uuid set is_temp = #{status}
         where file_uuid in
         <foreach item="uuid" collection="uuids" open="(" separator="," close=")">
             #{uuid}

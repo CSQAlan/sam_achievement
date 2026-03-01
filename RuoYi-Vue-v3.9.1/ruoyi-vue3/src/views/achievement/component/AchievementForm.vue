@@ -603,6 +603,30 @@
       </div>
     </template>
   </el-dialog>
+
+  <!-- 教师信息补全弹窗 -->
+  <el-dialog title="完善教师信息" v-model="teacherRegVisible" width="500px" append-to-body :close-on-click-modal="false">
+    <el-form ref="teacherRegRef" :model="teacherRegForm" :rules="teacherRegRules" label-width="80px">
+      <el-form-item label="工号" prop="no">
+        <el-input v-model="teacherRegForm.no" disabled />
+      </el-form-item>
+      <el-form-item label="姓名" prop="name">
+        <el-input v-model="teacherRegForm.name" placeholder="请输入教师姓名" />
+      </el-form-item>
+      <el-form-item label="学院" prop="school">
+        <el-input v-model="teacherRegForm.school" placeholder="请输入学院" />
+      </el-form-item>
+      <el-form-item label="院系" prop="department">
+        <el-input v-model="teacherRegForm.department" placeholder="请输入院系" />
+      </el-form-item>
+    </el-form>
+    <template #footer>
+      <div class="dialog-footer">
+        <el-button type="primary" @click="submitTeacherReg">确 定</el-button>
+        <el-button @click="teacherRegVisible = false">取 消</el-button>
+      </div>
+    </template>
+  </el-dialog>
 </template>
 
 <script setup name="AchievementForm">
@@ -613,7 +637,7 @@ import Sortable from "sortablejs";
 import useUserStore from "@/store/modules/user";
 import { Plus, Delete, Document, Download, View, UploadFilled, Rank } from "@element-plus/icons-vue";
 import { listStudent, addStudent } from "@/api/achievement/student";
-import { listTeacher } from "@/api/achievement/teacher";
+import { listTeacher, addTeacher } from "@/api/achievement/teacher";
 import { listDept } from "@/api/system/dept";
 import { handleTree } from "@/utils/ruoyi";
 import request from '@/utils/request';
@@ -824,13 +848,26 @@ function submitTeacherReg() {
 
 function handleAddParticipant() {
   samAchievementParticipantList.value.push({ 
-    studentId: "", 
-    studentName: "", 
-    orderNo: 0, 
-    manager: 0,
+    studentId: '', 
+    studentName: '', 
+    orderNo: samAchievementParticipantList.value.length + 1, 
+    manager: 0, 
     isManual: false 
   });
-  reIndexList(samAchievementParticipantList.value);
+}
+
+function handleAddAdvisor() {
+  samAchievementAdvisorList.value.push({ 
+    teacherId: '', 
+    teacherName: '', 
+    orderNo: samAchievementAdvisorList.value.length + 1, 
+    isManual: false 
+  });
+}
+
+function handleBeforeCloseSub(done, type) {
+  // 此函数现在仅用于补全弹窗，如果需要的话
+  done();
 }
 
 function handleTeacherBlur(row) {
@@ -845,21 +882,17 @@ function handleTeacherBlur(row) {
       row.teacherName = response.rows[0].teacherName;
       row.isManual = false;
     } else {
-      row.teacherName = "";
-      row.isManual = true;
-      proxy.$modal.msgInfo(`未找到工号 ${row.teacherId}，请手动输入姓名`);
+      // 未找到教师，弹出补全窗口
+      currentPendingTeacherRow = row;
+      teacherRegForm.value = { 
+        no: row.teacherId, 
+        name: "", 
+        school: "", 
+        department: ""
+      };
+      teacherRegVisible.value = true;
     }
   });
-}
-
-function handleAddAdvisor() {
-  samAchievementAdvisorList.value.push({ 
-    teacherId: "", 
-    teacherName: "", 
-    orderNo: 0,
-    isManual: false 
-  }); 
-  reIndexList(samAchievementAdvisorList.value);
 }
 
 function handleDeleteParticipant() {
@@ -1164,6 +1197,46 @@ function reset() {
   updateSnapshot();
 }
 
+function validatePDFUpload() {
+  const f = form.value;
+  // 基础 3 个 PDF 验证 (无论是否报销都必须上传)
+  if (!f.fileAward) {
+    proxy.$modal.msgWarning("请上传【奖状(证书)】PDF文件！");
+    activeAttachmentTab.value = 'award';
+    return false;
+  }
+  if (!f.fileNotice) {
+    proxy.$modal.msgWarning("请上传【比赛通知】PDF文件！");
+    activeAttachmentTab.value = 'notice';
+    return false;
+  }
+  if (!f.fileWork) {
+    proxy.$modal.msgWarning("请上传【参赛作品】PDF文件！");
+    activeAttachmentTab.value = 'work';
+    return false;
+  }
+
+  // 报销额外 3 个 PDF 验证
+  if (f.isReimburse === 1) {
+    if (!f.filePayment) {
+      proxy.$modal.msgWarning("申请报销必须上传【支付记录】PDF文件！");
+      activeAttachmentTab.value = 'payment';
+      return false;
+    }
+    if (!f.fileInvoice) {
+      proxy.$modal.msgWarning("申请报销必须上传【正规发票】PDF文件！");
+      activeAttachmentTab.value = 'invoice';
+      return false;
+    }
+    if (!f.fileReceiptCode) {
+      proxy.$modal.msgWarning("申请报销必须上传【收款码】PDF文件！");
+      activeAttachmentTab.value = 'receipt';
+      return false;
+    }
+  }
+  return true;
+}
+
 function submitForm() {
   if (props.readOnly) return;
   const activeRef = isPageMode.value ? outcomeRefPage.value : outcomeRefDialog.value;
@@ -1173,16 +1246,6 @@ function submitForm() {
       // 验证PDF文件上传
       if (!validatePDFUpload()) {
         return;
-      }
-      if (form.value.isReimburse === 1) {
-        if (!form.value.fileReceiptCode) {
-          proxy.$modal.msgWarning("申请报销必须上传【收款码】！");
-          return;
-        }
-        if (!form.value.fileAward && !form.value.fileInvoice) {
-          proxy.$modal.msgWarning("申请报销时，请至少上传一份凭证(奖状或发票)！");
-          return;
-        }
       }
 
       let attachments = [];

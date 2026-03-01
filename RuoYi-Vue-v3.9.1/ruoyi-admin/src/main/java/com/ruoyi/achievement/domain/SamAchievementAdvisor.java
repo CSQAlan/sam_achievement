@@ -7,7 +7,8 @@ import com.ruoyi.common.core.domain.BaseEntity;
 
 /**
  * 指导老师对象 sam_achievement_advisor
- * * @author ruoyi
+ * 
+ * @author ruoyi
  * @date 2026-02-11
  */
 public class SamAchievementAdvisor extends BaseEntity
@@ -21,11 +22,15 @@ public class SamAchievementAdvisor extends BaseEntity
     @Excel(name = "成果ID")
     private String achievementId;
 
-    /** 教师工号 */
-    @Excel(name = "教师工号")
+    /** 教师ID */
+    @Excel(name = "教师ID")
     private String teacherId;
 
-    /** 教师姓名 (数据库表中无此字段，通过关联查询获取，或用于前端回显) */
+    /** 教师工号 */
+    @Excel(name = "教师工号")
+    private String teacherNo;
+
+    /** 教师姓名 */
     @Excel(name = "教师姓名")
     private String teacherName;
 
@@ -39,8 +44,6 @@ public class SamAchievementAdvisor extends BaseEntity
 
     /** 删除标志 */
     private Long delFlag;
-
-    // ================= Getters and Setters =================
 
     public void setAdvisorId(Long advisorId)
     {
@@ -70,6 +73,16 @@ public class SamAchievementAdvisor extends BaseEntity
     public String getTeacherId()
     {
         return teacherId;
+    }
+
+    public void setTeacherNo(String teacherNo)
+    {
+        this.teacherNo = teacherNo;
+    }
+
+    public String getTeacherNo()
+    {
+        return teacherNo;
     }
 
     public void setTeacherName(String teacherName)
@@ -118,6 +131,7 @@ public class SamAchievementAdvisor extends BaseEntity
                 .append("advisorId", getAdvisorId())
                 .append("achievementId", getAchievementId())
                 .append("teacherId", getTeacherId())
+                .append("teacherNo", getTeacherNo())
                 .append("teacherName", getTeacherName())
                 .append("orderNo", getOrderNo())
                 .append("manager", getManager())

@@ -2,6 +2,7 @@ package com.ruoyi.achievement.mapper;
 
 import com.ruoyi.achievement.domain.FileUuid;
 import org.apache.ibatis.annotations.Mapper;
+import org.apache.ibatis.annotations.Param;
 
 @Mapper
 public interface FileUuidMapper {
@@ -13,5 +14,10 @@ public interface FileUuidMapper {
     /**
      * 根据UUID查询真实路径
      */
-    public  FileUuid selectFileUuidById(String fileUuid);
+    public FileUuid selectFileUuidById(String fileUuid);
+
+    /**
+     * 批量更新文件状态 (0正式 1临时)
+     */
+    public int updateFileUuidStatus(@Param("uuids") String[] uuids, @Param("status") int status);
 }

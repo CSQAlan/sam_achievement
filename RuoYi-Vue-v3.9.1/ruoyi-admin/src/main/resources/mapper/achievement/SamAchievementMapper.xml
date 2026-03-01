@@ -48,14 +48,32 @@ PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
 
     <resultMap id="SamAchievementSamAchievementParticipantResult" type="SamAchievement" extends="SamAchievementResult">
         <collection property="samAchievementParticipantList" ofType="SamAchievementParticipant" column="achievement_id" select="selectSamAchievementParticipantList" />
+        <collection property="samAchievementAdvisorList" ofType="SamAchievementAdvisor" column="achievement_id" select="selectSamAchievementAdvisorList" />
+        <collection property="samAchievementAttachmentList" ofType="java.util.HashMap" column="achievement_id" select="selectSamAchievementAttachmentList" />
     </resultMap>
 
     <resultMap type="SamAchievementParticipant" id="SamAchievementParticipantResult">
         <result property="participantId"    column="participant_id"    />
         <result property="achievementId"    column="achievement_id"    />
         <result property="studentId"    column="student_id"    />
+        <result property="studentNo"    column="student_no"    />
+        <result property="studentName"    column="student_name"    />
         <result property="orderNo"    column="order_no"    />
         <result property="manager"    column="manager"    />
+        <result property="createBy"    column="create_by"    />
+        <result property="updateBy"    column="update_by"    />
+        <result property="createTime"    column="create_time"    />
+        <result property="updateTime"    column="update_time"    />
+        <result property="delFlag"    column="del_flag"    />
+        <result property="remark"    column="remark"    />
+    </resultMap>
+
+    <resultMap type="SamAchievementAdvisor" id="SamAchievementAdvisorResult">
+        <result property="advisorId"    column="advisor_id"    />
+        <result property="achievementId"    column="achievement_id"    />
+        <result property="teacherId"    column="teacher_id"    />
+        <result property="teacherNo"    column="teacher_no"    />
+        <result property="teacherName"    column="teacher_name"    />
         <result property="createBy"    column="create_by"    />
         <result property="updateBy"    column="update_by"    />
         <result property="createTime"    column="create_time"    />
@@ -126,6 +144,26 @@ PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
             <if test="awardTime != null "> and a.award_time = #{awardTime}</if>
         </where>
     </select>
+
+    <select id="selectSamAchievementListByStudentId" parameterType="SamAchievement" resultMap="SamAchievementResult">
+        <include refid="selectSamAchievementVo"/>
+        inner join sam_achievement_participant p on a.achievement_id = p.achievement_id
+        <where>
+            and p.student_no = #{params.studentId}
+            <if test="name != null  and name != ''"> and a.name like concat('%', #{name}, '%')</if>
+            <if test="reviewResult != null  and reviewResult != ''"> and a.review_result = #{reviewResult}</if>
+        </where>
+    </select>
+
+    <select id="selectSamAchievementListByTeacherId" parameterType="SamAchievement" resultMap="SamAchievementResult">
+        <include refid="selectSamAchievementVo"/>
+        inner join sam_achievement_advisor ad on a.achievement_id = ad.achievement_id
+        <where>
+            and ad.teacher_no = #{params.teacherId}
+            <if test="name != null  and name != ''"> and a.name like concat('%', #{name}, '%')</if>
+            <if test="reviewResult != null  and reviewResult != ''"> and a.review_result = #{reviewResult}</if>
+        </where>
+    </select>
     
     <select id="selectSamAchievementByAchievementId" parameterType="String" resultMap="SamAchievementSamAchievementParticipantResult">
         <include refid="selectSamAchievementVo"/>
@@ -133,9 +171,21 @@ PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
     </select>
 
     <select id="selectSamAchievementParticipantList" resultMap="SamAchievementParticipantResult">
-        select participant_id, achievement_id, student_id, order_no, manager, create_by, update_by, create_time, update_time, del_flag, remark
+        select participant_id, achievement_id, student_id, student_no, student_name, order_no, manager, create_by, update_by, create_time, update_time, del_flag, remark
         from sam_achievement_participant
-        where participant_id = #{participant_id}
+        where achievement_id = #{achievement_id}
+    </select>
+
+    <select id="selectSamAchievementAdvisorList" resultMap="SamAchievementAdvisorResult">
+        select advisor_id, achievement_id, teacher_id, teacher_no, teacher_name, create_by, update_by, create_time, update_time, del_flag, remark
+        from sam_achievement_advisor
+        where achievement_id = #{achievement_id}
+    </select>
+
+    <select id="selectSamAchievementAttachmentList" resultType="java.util.HashMap">
+        select attachment_id, achievement_id, file_uuid as fileUuid, type, file_type as fileType
+        from sam_achievement_attachment
+        where achievement_id = #{achievement_id}
     </select>
 
     <insert id="insertSamAchievement" parameterType="SamAchievement" useGeneratedKeys="true" keyProperty="achievementId">
@@ -273,20 +323,56 @@ PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
     </delete>
     
     <delete id="deleteSamAchievementParticipantByParticipantIds" parameterType="String">
-        delete from sam_achievement_participant where participant_id in 
-        <foreach item="participantId" collection="array" open="(" separator="," close=")">
-            #{participantId}
+        delete from sam_achievement_participant where achievement_id in 
+        <foreach item="achievementId" collection="array" open="(" separator="," close=")">
+            #{achievementId}
         </foreach>
     </delete>
 
     <delete id="deleteSamAchievementParticipantByParticipantId" parameterType="String">
-        delete from sam_achievement_participant where participant_id = #{participantId}
+        delete from sam_achievement_participant where achievement_id = #{achievementId}
     </delete>
 
     <insert id="batchSamAchievementParticipant">
-        insert into sam_achievement_participant( participant_id, achievement_id, student_id, order_no, manager, create_by, update_by, create_time, update_time, del_flag, remark) values
+        insert into sam_achievement_participant( participant_id, achievement_id, student_id, student_no, student_name, order_no, manager, create_by, update_by, create_time, update_time, del_flag, remark) values
         <foreach item="item" index="index" collection="list" separator=",">
-            ( #{item.participantId}, #{item.achievementId}, #{item.studentId}, #{item.orderNo}, #{item.manager}, #{item.createBy}, #{item.updateBy}, #{item.createTime}, #{item.updateTime}, #{item.delFlag}, #{item.remark})
+            ( #{item.participantId}, #{item.achievementId}, #{item.studentId}, #{item.studentNo}, #{item.studentName}, #{item.orderNo}, #{item.manager}, #{item.createBy}, #{item.updateBy}, #{item.createTime}, #{item.updateTime}, #{item.delFlag}, #{item.remark})
         </foreach>
     </insert>
+
+    <insert id="batchSamAchievementAdvisor">
+        insert into sam_achievement_advisor( advisor_id, achievement_id, teacher_id, teacher_no, teacher_name, create_by, update_by, create_time, update_time, del_flag, remark) values
+        <foreach item="item" index="index" collection="list" separator=",">
+            ( #{item.advisorId}, #{item.achievementId}, #{item.teacherId}, #{item.teacherNo}, #{item.teacherName}, #{item.createBy}, #{item.updateBy}, #{item.createTime}, #{item.updateTime}, #{item.delFlag}, #{item.remark})
+        </foreach>
+    </insert>
+
+    <delete id="deleteSamAchievementAdvisorByAchievementId" parameterType="String">
+        delete from sam_achievement_advisor where achievement_id = #{achievementId}
+    </delete>
+
+    <delete id="deleteSamAchievementAdvisorByAchievementIds" parameterType="String">
+        delete from sam_achievement_advisor where achievement_id in 
+        <foreach item="achievementId" collection="array" open="(" separator="," close=")">
+            #{achievementId}
+        </foreach>
+    </delete>
+
+    <insert id="batchSamAchievementAttachment">
+        insert into sam_achievement_attachment( achievement_id, file_uuid, type, file_type ) values
+        <foreach item="item" index="index" collection="list" separator=",">
+            ( #{item.achievementId}, #{item.fileUuid}, #{item.type}, #{item.fileType})
+        </foreach>
+    </insert>
+
+    <delete id="deleteSamAchievementAttachmentByAchievementId" parameterType="String">
+        delete from sam_achievement_attachment where achievement_id = #{achievementId}
+    </delete>
+
+    <delete id="deleteSamAchievementAttachmentByAchievementIds" parameterType="String">
+        delete from sam_achievement_attachment where achievement_id in 
+        <foreach item="achievementId" collection="array" open="(" separator="," close=")">
+            #{achievementId}
+        </foreach>
+    </delete>
 </mapper>
