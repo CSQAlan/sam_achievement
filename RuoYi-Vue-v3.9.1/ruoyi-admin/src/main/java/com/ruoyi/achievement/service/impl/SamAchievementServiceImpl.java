@@ -3,29 +3,27 @@ package com.ruoyi.achievement.service.impl;
 import java.util.Calendar;
 import java.util.List;
 import java.util.ArrayList;
-import java.util.Calendar;
-import com.ruoyi.achievement.domain.SamAchievement;
-import com.ruoyi.achievement.domain.SamAchievementAdvisor;
-import com.ruoyi.achievement.domain.SamStudent;
-import com.ruoyi.achievement.domain.SamTeacher;
-import com.ruoyi.achievement.service.ISamStudentService;
-import com.ruoyi.achievement.service.ISamTeacherService;
+import java.util.Map;
 import com.ruoyi.common.utils.DateUtils;
 import com.ruoyi.common.utils.StringUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
-import java.util.ArrayList;
-import com.ruoyi.common.utils.StringUtils;
 import org.springframework.transaction.annotation.Transactional;
 import com.ruoyi.achievement.domain.SamAchievement;
 import com.ruoyi.achievement.domain.SamAchievementParticipant;
-import com.ruoyi.achievement.mapper.FileUuidMapper;
+import com.ruoyi.achievement.domain.SamAchievementAdvisor;
+import com.ruoyi.achievement.domain.SamStudent;
+import com.ruoyi.achievement.domain.SamTeacher;
 import com.ruoyi.achievement.mapper.SamAchievementMapper;
 import com.ruoyi.achievement.service.ISamAchievementService;
+import com.ruoyi.achievement.service.ISamStudentService;
+import com.ruoyi.achievement.service.ISamTeacherService;
+import com.ruoyi.achievement.mapper.FileUuidMapper;
+import com.ruoyi.common.exception.ServiceException;
 
 /**
- * 成果录入Service业务层处�?
- *
+ * 成果录入Service业务层处理
+ * 
  * @author 王璨
  * @date 2026-02-03
  */
@@ -36,18 +34,17 @@ public class SamAchievementServiceImpl implements ISamAchievementService
     private SamAchievementMapper samAchievementMapper;
 
     @Autowired
+    private ISamStudentService samStudentService;
+
+    @Autowired
+    private ISamTeacherService samTeacherService;
+
+    @Autowired
     private FileUuidMapper fileUuidMapper;
 
-    @Autowired
-    private ISamStudentService samStudentService; // 注入学生服务
-
-    @Autowired
-    private ISamTeacherService samTeacherService; // 注入教师服务
-
-    // ... (查询方法的代码保持不变，省略以节省篇幅) ...
     /**
      * 查询成果录入
-     *
+     * 
      * @param achievementId 成果录入主键
      * @return 成果录入
      */
@@ -59,7 +56,7 @@ public class SamAchievementServiceImpl implements ISamAchievementService
 
     /**
      * 查询成果录入列表
-     *
+     * 
      * @param samAchievement 成果录入
      * @return 成果录入
      */
@@ -68,28 +65,30 @@ public class SamAchievementServiceImpl implements ISamAchievementService
     {
         return samAchievementMapper.selectSamAchievementList(samAchievement);
     }
+
     @Override
     public List<SamAchievement> selectSamAchievementListByStudentId(SamAchievement samAchievement)
     {
         // 验证学生ID
         if (samAchievement.getParams() == null || StringUtils.isEmpty((String) samAchievement.getParams().get("studentId"))) {
-            throw new com.ruoyi.common.exception.ServiceException("学生ID不能为空");
+            throw new ServiceException("学生ID不能为空");
         }
         return samAchievementMapper.selectSamAchievementListByStudentId(samAchievement);
     }
+
     @Override
     public List<SamAchievement> selectSamAchievementListByTeacherId(SamAchievement samAchievement)
     {
         // 验证教师ID
         if (samAchievement.getParams() == null || StringUtils.isEmpty((String) samAchievement.getParams().get("teacherId"))) {
-            throw new com.ruoyi.common.exception.ServiceException("教师ID不能为空");
+            throw new ServiceException("教师ID不能为空");
         }
         return samAchievementMapper.selectSamAchievementListByTeacherId(samAchievement);
     }
 
     /**
      * 新增成果录入
-     *
+     * 
      * @param samAchievement 成果录入
      * @return 结果
      */
@@ -108,13 +107,6 @@ public class SamAchievementServiceImpl implements ISamAchievementService
             Calendar cal = Calendar.getInstance();
             cal.setTime(samAchievement.getAwardTime());
             samAchievement.setYear((long) cal.get(Calendar.YEAR));
-        }
-
-        if (!StringUtils.hasText(samAchievement.getAchievementId()))
-        {
-            Long nextId = samAchievementMapper.selectNextAchievementId();
-            samAchievementMapper.incrementNextAchievementId();
-            samAchievement.setAchievementId(String.valueOf(nextId));
         }
 
         samAchievement.setCreateTime(DateUtils.getNowDate());
@@ -136,7 +128,7 @@ public class SamAchievementServiceImpl implements ISamAchievementService
 
     /**
      * 修改成果录入
-     *
+     * 
      * @param samAchievement 成果录入
      * @return 结果
      */
@@ -152,7 +144,7 @@ public class SamAchievementServiceImpl implements ISamAchievementService
 
         samAchievement.setUpdateTime(DateUtils.getNowDate());
 
-        // 1. 处理参赛选手：先删后加
+        // 3. 处理参赛选手：先删后加
         samAchievementMapper.deleteSamAchievementParticipantByParticipantId(samAchievement.getAchievementId());
         insertSamAchievementParticipant(samAchievement);
 
@@ -172,9 +164,9 @@ public class SamAchievementServiceImpl implements ISamAchievementService
      * @param samAchievement 成果录入
      */
     private void validatePDFAttachments(SamAchievement samAchievement) {
-        List<java.util.Map<String, Object>> attachments = samAchievement.getSamAchievementAttachmentList();
+        List<Map<String, Object>> attachments = samAchievement.getSamAchievementAttachmentList();
         if (attachments == null || attachments.isEmpty()) {
-            throw new com.ruoyi.common.exception.ServiceException("请上传必要的PDF文件");
+            throw new ServiceException("请上传必要的PDF文件");
         }
 
         // 检查基础PDF文件（无论是否报销都需要）
@@ -187,8 +179,9 @@ public class SamAchievementServiceImpl implements ISamAchievementService
         boolean hasInvoice = false; // 发票
         boolean hasReceipt = false; // 收款码
 
-        for (java.util.Map<String, Object> attachment : attachments) {
+        for (Map<String, Object> attachment : attachments) {
             Integer type = (Integer) attachment.get("type");
+            if (type == null) continue;
             switch (type) {
                 case 1:
                     hasAward = true;
@@ -213,40 +206,26 @@ public class SamAchievementServiceImpl implements ISamAchievementService
 
         // 验证基础PDF文件
         if (!hasAward) {
-            throw new com.ruoyi.common.exception.ServiceException("请上传奖状(证书)PDF文件");
+            throw new ServiceException("请上传奖状(证书)PDF文件");
         }
         if (!hasNotice) {
-            throw new com.ruoyi.common.exception.ServiceException("请上传比赛通知PDF文件");
+            throw new ServiceException("请上传比赛通知PDF文件");
         }
         if (!hasWork) {
-            throw new com.ruoyi.common.exception.ServiceException("请上传参赛作品PDF文件");
+            throw new ServiceException("请上传参赛作品PDF文件");
         }
 
         // 验证报销相关PDF文件
         if (samAchievement.getIsReimburse() != null && samAchievement.getIsReimburse() == 1) {
             if (!hasPayment) {
-                throw new com.ruoyi.common.exception.ServiceException("请上传支付记录PDF文件");
+                throw new ServiceException("请上传支付记录PDF文件");
             }
             if (!hasInvoice) {
-                throw new com.ruoyi.common.exception.ServiceException("请上传正规发票PDF文件");
+                throw new ServiceException("请上传正规发票PDF文件");
             }
             if (!hasReceipt) {
-                throw new com.ruoyi.common.exception.ServiceException("请上传收款码PDF文件");
+                throw new ServiceException("请上传收款码PDF文件");
             }
-        }
-
-        // 验证PDF文件个数
-        int expectedCount = (samAchievement.getIsReimburse() != null && samAchievement.getIsReimburse() == 1) ? 6 : 3;
-        int actualCount = 0;
-        if (hasAward) actualCount++;
-        if (hasNotice) actualCount++;
-        if (hasWork) actualCount++;
-        if (hasPayment) actualCount++;
-        if (hasInvoice) actualCount++;
-        if (hasReceipt) actualCount++;
-
-        if (actualCount != expectedCount) {
-            throw new com.ruoyi.common.exception.ServiceException("PDF文件个数不正确，" + (samAchievement.getIsReimburse() != null && samAchievement.getIsReimburse() == 1 ? "报销情况下需要6个PDF文件" : "非报销情况下需要3个PDF文件"));
         }
     }
 
@@ -257,23 +236,23 @@ public class SamAchievementServiceImpl implements ISamAchievementService
     private void validateSamAchievement(SamAchievement samAchievement) {
         // 验证比赛ID
         if (StringUtils.isEmpty(samAchievement.getCompetitionId())) {
-            throw new com.ruoyi.common.exception.ServiceException("比赛ID不能为空");
+            throw new ServiceException("比赛ID不能为空");
         }
 
         // 验证获奖时间
         if (samAchievement.getAwardTime() == null) {
-            throw new com.ruoyi.common.exception.ServiceException("获奖时间不能为空");
+            throw new ServiceException("获奖时间不能为空");
         }
 
         // 验证证书编号
         if (StringUtils.isEmpty(samAchievement.getCertificateNo())) {
-            throw new com.ruoyi.common.exception.ServiceException("证书编号不能为空");
+            throw new ServiceException("证书编号不能为空");
         }
 
         // 验证参赛选手列表
         List<SamAchievementParticipant> participants = samAchievement.getSamAchievementParticipantList();
         if (participants == null || participants.isEmpty()) {
-            throw new com.ruoyi.common.exception.ServiceException("参赛选手列表不能为空");
+            throw new ServiceException("参赛选手列表不能为空");
         }
 
         // 验证是否至少有一个负责人
@@ -285,16 +264,16 @@ public class SamAchievementServiceImpl implements ISamAchievementService
             }
         }
         if (!hasManager) {
-            throw new com.ruoyi.common.exception.ServiceException("参赛选手列表中至少需要有一个负责人");
+            throw new ServiceException("参赛选手列表中至少需要有一个负责人");
         }
 
         // 验证报销金额
         if (samAchievement.getIsReimburse() != null && samAchievement.getIsReimburse() == 1) {
             if (samAchievement.getFee() == null) {
-                throw new com.ruoyi.common.exception.ServiceException("报销金额不能为空");
+                throw new ServiceException("报销金额不能为空");
             }
             if (samAchievement.getFee().compareTo(java.math.BigDecimal.ZERO) <= 0) {
-                throw new com.ruoyi.common.exception.ServiceException("报销金额必须大于0");
+                throw new ServiceException("报销金额必须大于0");
             }
         }
     }
@@ -305,21 +284,21 @@ public class SamAchievementServiceImpl implements ISamAchievementService
      * 2. 将附件关联关系存入 sam_achievement_attachment 表
      */
     private void processAttachments(SamAchievement samAchievement) {
-        List<java.util.Map<String, Object>> attachments = samAchievement.getSamAchievementAttachmentList();
+        List<Map<String, Object>> attachments = samAchievement.getSamAchievementAttachmentList();
         String achievementId = samAchievement.getAchievementId();
 
         if (StringUtils.isNotNull(attachments) && attachments.size() > 0) {
             List<String> uuids = new ArrayList<>();
-            List<java.util.Map<String, Object>> insertList = new ArrayList<>();
+            List<Map<String, Object>> insertList = new ArrayList<>();
 
-            for (java.util.Map<String, Object> attachment : attachments) {
+            for (Map<String, Object> attachment : attachments) {
                 String uuid = (String) attachment.get("fileUuid");
                 if (StringUtils.isNotEmpty(uuid)) {
                     uuids.add(uuid);
 
                     // 补全附件表所需字段
                     attachment.put("achievementId", achievementId);
-                    // 如果前端没传 fileType，这里给个默认值 (根据 SQL 定义它是必填项)
+                    // 如果前端没传 fileType，这里给个默认值
                     if (attachment.get("fileType") == null) {
                         attachment.put("fileType", 1);
                     }
@@ -344,90 +323,85 @@ public class SamAchievementServiceImpl implements ISamAchievementService
      */
     public void insertSamAchievementParticipant(SamAchievement samAchievement)
     {
-        List<SamAchievementParticipant> list = samAchievement.getSamAchievementParticipantList();
+        List<SamAchievementParticipant> samAchievementParticipantList = samAchievement.getSamAchievementParticipantList();
+        // 获取主表自动生成的 ID
         String achievementId = samAchievement.getAchievementId();
 
-        if (StringUtils.isNotNull(list))
+        if (StringUtils.isNotNull(samAchievementParticipantList))
         {
-            List<SamAchievementParticipant> insertList = new ArrayList<>();
-            for (SamAchievementParticipant participant : list)
+            List<SamAchievementParticipant> list = new ArrayList<SamAchievementParticipant>();
+            for (SamAchievementParticipant participant : samAchievementParticipantList)
             {
-                // Logic A: 检查并自动同步到学生档案表 (sam_student)
-                checkAndInsertStudent(participant.getStudentId(), participant.getStudentName());
-                // Logic B: 准备插入关系表
+                // 1. 设置外键关联
                 participant.setAchievementId(achievementId);
-                participant.setParticipantId(null); // 让数据库自增
+
+                // 2. 清空子表主键 (让数据库自增)
+                participant.setParticipantId(null);
+
+                // 3. 补全基础字段
                 participant.setCreateBy(samAchievement.getCreateBy());
                 participant.setCreateTime(DateUtils.getNowDate());
                 participant.setUpdateTime(DateUtils.getNowDate());
                 participant.setDelFlag(0L);
-                insertList.add(participant);
+
+                // 4. 自动补录学生档案
+                checkAndInsertStudent(participant.getStudentNo(), participant.getStudentName());
+
+                list.add(participant);
             }
-            if (insertList.size() > 0)
+            if (list.size() > 0)
             {
-                samAchievementMapper.batchSamAchievementParticipant(insertList);
+                samAchievementMapper.batchSamAchievementParticipant(list);
             }
         }
     }
 
     /**
-     * 核心逻辑：插入老师并同步教师档案
+     * 插入指导老师并同步教师档案
      */
     public void insertSamAchievementAdvisor(SamAchievement samAchievement)
     {
-        List<SamAchievementAdvisor> list = samAchievement.getSamAchievementAdvisorList();
+        List<SamAchievementAdvisor> samAchievementAdvisorList = samAchievement.getSamAchievementAdvisorList();
         String achievementId = samAchievement.getAchievementId();
 
-        if (StringUtils.isNotNull(list))
+        if (StringUtils.isNotNull(samAchievementAdvisorList))
         {
-            List<SamAchievementAdvisor> insertList = new ArrayList<>();
-            for (SamAchievementAdvisor advisor : list)
+            List<SamAchievementAdvisor> list = new ArrayList<SamAchievementAdvisor>();
+            for (SamAchievementAdvisor advisor : samAchievementAdvisorList)
             {
-                // Logic A: 检查并自动同步到教师档案表 (sam_teacher)
-                checkAndInsertTeacher(advisor.getTeacherId(), advisor.getTeacherName());
-
-                // Logic B: 准备插入关系表
                 advisor.setAchievementId(achievementId);
                 advisor.setAdvisorId(null);
                 advisor.setCreateBy(samAchievement.getCreateBy());
                 advisor.setCreateTime(DateUtils.getNowDate());
-                advisor.setUpdateTime(DateUtils.getNowDate());
-                advisor.setDelFlag(0L);
-                insertList.add(advisor);
+
+                // 自动补录教师档案
+                checkAndInsertTeacher(advisor.getTeacherNo(), advisor.getTeacherName());
+
+                list.add(advisor);
             }
-            if (insertList.size() > 0)
+            if (list.size() > 0)
             {
-                samAchievementMapper.batchSamAchievementAdvisor(insertList);
+                samAchievementMapper.batchSamAchievementAdvisor(list);
             }
         }
     }
 
     /**
-     * 批量删除成果录入
-     *
-     * @param achievementIds 需要删除的成果录入主键
-     * @return 结果
      * 辅助方法：检查学生是否存在，不存在则新增
      */
     private void checkAndInsertStudent(String studentNo, String studentName) {
-        if (StringUtils.isEmpty(studentNo)) {
-            throw new com.ruoyi.common.exception.ServiceException("学生学号不能为空");
-        }
-
-        if (StringUtils.isEmpty(studentName)) {
-            throw new com.ruoyi.common.exception.ServiceException("学生姓名不能为空");
+        if (StringUtils.isEmpty(studentNo) || StringUtils.isEmpty(studentName)) {
+            return;
         }
 
         SamStudent query = new SamStudent();
         query.setNo(studentNo);
-        // 使用 list 查询避免报错，如果只有一条也兼容
         List<SamStudent> exists = samStudentService.selectSamStudentList(query);
 
         if (exists == null || exists.isEmpty()) {
             SamStudent newStudent = new SamStudent();
             newStudent.setNo(studentNo);
             newStudent.setName(studentName);
-            // 可以设置一些默认值，例如暂时设为"未知学院"或空
             samStudentService.insertSamStudent(newStudent);
         }
     }
@@ -436,12 +410,8 @@ public class SamAchievementServiceImpl implements ISamAchievementService
      * 辅助方法：检查教师是否存在，不存在则新增
      */
     private void checkAndInsertTeacher(String teacherNo, String teacherName) {
-        if (StringUtils.isEmpty(teacherNo)) {
-            throw new com.ruoyi.common.exception.ServiceException("教师工号不能为空");
-        }
-
-        if (StringUtils.isEmpty(teacherName)) {
-            throw new com.ruoyi.common.exception.ServiceException("教师姓名不能为空");
+        if (StringUtils.isEmpty(teacherNo) || StringUtils.isEmpty(teacherName)) {
+            return;
         }
 
         SamTeacher query = new SamTeacher();
@@ -456,11 +426,16 @@ public class SamAchievementServiceImpl implements ISamAchievementService
         }
     }
 
+    /**
+     * 批量删除成果录入
+     * 
+     * @param achievementIds 需要删除的成果录入主键集合
+     * @return 结果
+     */
     @Transactional
     @Override
     public int deleteSamAchievementByAchievementIds(String[] achievementIds)
     {
-        // 删除关联的选手、老师和附件
         samAchievementMapper.deleteSamAchievementParticipantByParticipantIds(achievementIds);
         samAchievementMapper.deleteSamAchievementAdvisorByAchievementIds(achievementIds);
         samAchievementMapper.deleteSamAchievementAttachmentByAchievementIds(achievementIds);
@@ -469,7 +444,7 @@ public class SamAchievementServiceImpl implements ISamAchievementService
 
     /**
      * 删除成果录入信息
-     *
+     * 
      * @param achievementId 成果录入主键
      * @return 结果
      */
@@ -483,6 +458,3 @@ public class SamAchievementServiceImpl implements ISamAchievementService
         return samAchievementMapper.deleteSamAchievementByAchievementId(achievementId);
     }
 }
-
-
-
