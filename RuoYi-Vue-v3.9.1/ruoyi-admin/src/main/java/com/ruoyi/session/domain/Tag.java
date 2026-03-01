@@ -27,8 +27,8 @@ public class Tag extends BaseEntity
     private String tagName;
 
     /** 适用学院（关联sys_dept.dept_id，为空表示全校共享） */
-//    @Excel(name = "适用学院", readConverterExp = "关=联sys_dept.dept_id，为空表示全校共享")
-//    private Long depId;
+    @Excel(name = "适用学院", readConverterExp = "关=联sys_dept.dept_id，为空表示全校共享")
+    private Long depId;
 
     /** 删除标记（0=存在，2=删除） */
     private String delFlag;
@@ -60,15 +60,15 @@ public class Tag extends BaseEntity
     {
         return tagName;
     }
-//    public void setDepId(Long depId)
-//    {
-//        this.depId = depId;
-//    }
-//
-//    public Long getDepId()
-//    {
-//        return depId;
-//    }
+    public void setDepId(Long depId) 
+    {
+        this.depId = depId;
+    }
+
+    public Long getDepId() 
+    {
+        return depId;
+    }
     public void setDelFlag(String delFlag) 
     {
         this.delFlag = delFlag;
@@ -85,7 +85,7 @@ public class Tag extends BaseEntity
             .append("id", getId())
             .append("competitionSessionId", getCompetitionSessionId())
             .append("tagName", getTagName())
-//            .append("depId", getDepId())
+            .append("depId", getDepId())
             .append("createBy", getCreateBy())
             .append("createTime", getCreateTime())
             .append("updateBy", getUpdateBy())

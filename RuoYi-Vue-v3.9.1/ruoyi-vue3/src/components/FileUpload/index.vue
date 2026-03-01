@@ -65,7 +65,6 @@
 <script setup>
 import { getToken } from "@/utils/auth"
 import Sortable from 'sortablejs'
-import PdfThumbnail from './PdfThumbnail.vue'
 
 const props = defineProps({
 // ... (omitted props for brevity in thought, but I must include them in new_string as per tool requirements if I replace the whole script, but I'll target the script body)

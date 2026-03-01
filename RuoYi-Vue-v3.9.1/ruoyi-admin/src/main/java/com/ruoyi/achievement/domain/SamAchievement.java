@@ -27,6 +27,12 @@ public class SamAchievement extends BaseEntity
     @Excel(name = "届次 ")
     private String sessionId;
 
+    /** derived from session relation for frontend display */
+    private String competitionId;
+
+    /** derived from session relation for frontend display */
+    private String competitionName;
+
     /** 类别 */
     @Excel(name = "类别")
     private String category;
@@ -130,6 +136,10 @@ public class SamAchievement extends BaseEntity
     /** 参赛选手信息 */
     private List<SamAchievementParticipant> samAchievementParticipantList;
 
+    private List<SamAchievementAdvisor> samAchievementAdvisorList;
+
+    private List<java.util.Map<String, Object>> samAchievementAttachmentList;
+
     public void setAchievementId(String achievementId) 
     {
         this.achievementId = achievementId;
@@ -148,6 +158,26 @@ public class SamAchievement extends BaseEntity
     public String getSessionId() 
     {
         return sessionId;
+    }
+
+    public void setCompetitionId(String competitionId)
+    {
+        this.competitionId = competitionId;
+    }
+
+    public String getCompetitionId()
+    {
+        return competitionId;
+    }
+
+    public void setCompetitionName(String competitionName)
+    {
+        this.competitionName = competitionName;
+    }
+
+    public String getCompetitionName()
+    {
+        return competitionName;
     }
 
     public void setCategory(String category) 
@@ -460,11 +490,33 @@ public class SamAchievement extends BaseEntity
         this.samAchievementParticipantList = samAchievementParticipantList;
     }
 
+    public List<SamAchievementAdvisor> getSamAchievementAdvisorList()
+    {
+        return samAchievementAdvisorList;
+    }
+
+    public void setSamAchievementAdvisorList(List<SamAchievementAdvisor> samAchievementAdvisorList)
+    {
+        this.samAchievementAdvisorList = samAchievementAdvisorList;
+    }
+
+    public List<java.util.Map<String, Object>> getSamAchievementAttachmentList()
+    {
+        return samAchievementAttachmentList;
+    }
+
+    public void setSamAchievementAttachmentList(List<java.util.Map<String, Object>> samAchievementAttachmentList)
+    {
+        this.samAchievementAttachmentList = samAchievementAttachmentList;
+    }
+
     @Override
     public String toString() {
         return new ToStringBuilder(this,ToStringStyle.MULTI_LINE_STYLE)
             .append("achievementId", getAchievementId())
             .append("sessionId", getSessionId())
+            .append("competitionId", getCompetitionId())
+            .append("competitionName", getCompetitionName())
             .append("category", getCategory())
             .append("name", getName())
             .append("teamName", getTeamName())
@@ -501,6 +553,8 @@ public class SamAchievement extends BaseEntity
             .append("delFlag", getDelFlag())
             .append("remark", getRemark())
             .append("samAchievementParticipantList", getSamAchievementParticipantList())
+            .append("samAchievementAdvisorList", getSamAchievementAdvisorList())
+            .append("samAchievementAttachmentList", getSamAchievementAttachmentList())
             .toString();
     }
 }

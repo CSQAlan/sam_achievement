@@ -1,7 +1,7 @@
 <template>
   <div>
     <el-upload
-       :upload-url="uploadurl"
+      :action="uploadUrl"
       :before-upload="handleBeforeUpload"
       :on-success="handleUploadSuccess"
       :on-error="handleUploadError"

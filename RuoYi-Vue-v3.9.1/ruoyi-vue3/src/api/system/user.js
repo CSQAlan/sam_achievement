@@ -134,3 +134,22 @@ export function deptTreeSelect() {
     method: 'get'
   })
 }
+// 导入学生数据
+export function importStudentData(data) {
+    return request({
+        url: '/achievement/student/importStudentData',
+        method: 'post',
+        data: data,
+        headers: { 'Content-Type': 'multipart/form-data' }
+    })
+}
+
+// 导入教师数据
+export function importTeacherData(data) {
+    return request({
+        url: '/achievement/teacher/importTeacherData',
+        method: 'post',
+        data: data,
+        headers: { 'Content-Type': 'multipart/form-data' }
+    })
+}
