@@ -1,5 +1,6 @@
 package com.ruoyi.achievement.service.impl;
 
+import java.util.Calendar;
 import java.util.List;
 import java.util.ArrayList;
 import java.util.Calendar;
@@ -10,11 +11,13 @@ import com.ruoyi.achievement.domain.SamTeacher;
 import com.ruoyi.achievement.service.ISamStudentService;
 import com.ruoyi.achievement.service.ISamTeacherService;
 import com.ruoyi.common.utils.DateUtils;
+import com.ruoyi.common.utils.StringUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import java.util.ArrayList;
 import com.ruoyi.common.utils.StringUtils;
 import org.springframework.transaction.annotation.Transactional;
+import com.ruoyi.achievement.domain.SamAchievement;
 import com.ruoyi.achievement.domain.SamAchievementParticipant;
 import com.ruoyi.achievement.mapper.FileUuidMapper;
 import com.ruoyi.achievement.mapper.SamAchievementMapper;
@@ -149,7 +152,7 @@ public class SamAchievementServiceImpl implements ISamAchievementService
 
         samAchievement.setUpdateTime(DateUtils.getNowDate());
 
-        // 3. 处理参赛选手：先删后加
+        // 1. 处理参赛选手：先删后加
         samAchievementMapper.deleteSamAchievementParticipantByParticipantId(samAchievement.getAchievementId());
         insertSamAchievementParticipant(samAchievement);
 

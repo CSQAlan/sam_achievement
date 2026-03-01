@@ -572,7 +572,7 @@
   </el-dialog>
 
   <!-- 学生信息补全弹窗 -->
-  <el-dialog title="完善学生信息" v-model="studentRegVisible" width="500px" append-to-body :close-on-click-modal="false" :before-close="handleStudentRegBeforeClose">
+  <el-dialog title="完善学生信息" v-model="studentRegVisible" width="500px" append-to-body :close-on-click-modal="false">
     <el-form ref="studentRegRef" :model="studentRegForm" :rules="studentRegRules" label-width="80px">
       <el-form-item label="学号" prop="no">
         <el-input v-model="studentRegForm.no" disabled />
@@ -599,31 +599,7 @@
     <template #footer>
       <div class="dialog-footer">
         <el-button type="primary" @click="submitStudentReg">确 定</el-button>
-        <el-button @click="handleStudentRegCancel">取 消</el-button>
-      </div>
-    </template>
-  </el-dialog>
-
-  <!-- 教师信息补全弹窗 -->
-  <el-dialog title="完善教师信息" v-model="teacherRegVisible" width="500px" append-to-body :close-on-click-modal="false" :before-close="handleTeacherRegBeforeClose">
-    <el-form ref="teacherRegRef" :model="teacherRegForm" :rules="teacherRegRules" label-width="80px">
-      <el-form-item label="工号" prop="no">
-        <el-input v-model="teacherRegForm.no" disabled />
-      </el-form-item>
-      <el-form-item label="姓名" prop="name">
-        <el-input v-model="teacherRegForm.name" placeholder="请输入教师姓名" />
-      </el-form-item>
-      <el-form-item label="学院" prop="school">
-        <el-input v-model="teacherRegForm.school" placeholder="请输入学院" />
-      </el-form-item>
-      <el-form-item label="院系" prop="department">
-        <el-input v-model="teacherRegForm.department" placeholder="请输入院系" />
-      </el-form-item>
-    </el-form>
-    <template #footer>
-      <div class="dialog-footer">
-        <el-button type="primary" @click="submitTeacherReg">确 定</el-button>
-        <el-button @click="handleTeacherRegCancel">取 消</el-button>
+        <el-button @click="studentRegVisible = false">取 消</el-button>
       </div>
     </template>
   </el-dialog>
@@ -637,7 +613,7 @@ import Sortable from "sortablejs";
 import useUserStore from "@/store/modules/user";
 import { Plus, Delete, Document, Download, View, UploadFilled, Rank } from "@element-plus/icons-vue";
 import { listStudent, addStudent } from "@/api/achievement/student";
-import { listTeacher, addTeacher } from "@/api/achievement/teacher";
+import { listTeacher } from "@/api/achievement/teacher";
 import { listDept } from "@/api/system/dept";
 import { handleTree } from "@/utils/ruoyi";
 import request from '@/utils/request';
@@ -866,18 +842,12 @@ function handleTeacherBlur(row) {
   
   listTeacher({ no: row.teacherId }).then(response => {
     if (response.rows && response.rows.length > 0) {
-      row.teacherName = response.rows[0].name;
+      row.teacherName = response.rows[0].teacherName;
       row.isManual = false;
     } else {
-      // 未找到教师，弹出补全窗口
-      currentPendingTeacherRow = row;
-      teacherRegForm.value = { 
-        no: row.teacherId, 
-        name: "", 
-        school: "", 
-        department: "" 
-      };
-      teacherRegVisible.value = true;
+      row.teacherName = "";
+      row.isManual = true;
+      proxy.$modal.msgInfo(`未找到工号 ${row.teacherId}，请手动输入姓名`);
     }
   });
 }
@@ -959,6 +929,38 @@ watch(() => form.value.fileReceiptCode, (uuid) => loadSafePreview(uuid, 'receipt
 // =========================================================
 
 // 获取比赛列表
+function normalizeId(val) {
+  if (val === null || val === undefined || val === "") return null;
+  return String(val);
+}
+
+function mergeCompetitionOptions(list) {
+  const normalized = (list || [])
+    .map(item => ({
+      competitionId: normalizeId(item.id || item.competitionId),
+      competitionName: item.name || item.competitionName,
+      ...item
+    }))
+    .filter(item => item.competitionId);
+
+  const existingOnly = competitionOptions.value.filter(item =>
+    item?.competitionId && !normalized.some(x => String(x.competitionId) === String(item.competitionId))
+  );
+  competitionOptions.value = [...normalized, ...existingOnly];
+}
+
+function ensureCurrentCompetitionOption(detail) {
+  const currentId = normalizeId(detail?.competitionId);
+  if (!currentId) return;
+  const exists = competitionOptions.value.some(item => String(item.competitionId) === currentId);
+  if (!exists) {
+    competitionOptions.value.unshift({
+      competitionId: currentId,
+      competitionName: detail?.competitionName || `赛事(${currentId})`
+    });
+  }
+}
+
 function getCompetitionList() {
   request({
     url: '/competition/competition/list',
@@ -1172,6 +1174,16 @@ function submitForm() {
       if (!validatePDFUpload()) {
         return;
       }
+      if (form.value.isReimburse === 1) {
+        if (!form.value.fileReceiptCode) {
+          proxy.$modal.msgWarning("申请报销必须上传【收款码】！");
+          return;
+        }
+        if (!form.value.fileAward && !form.value.fileInvoice) {
+          proxy.$modal.msgWarning("申请报销时，请至少上传一份凭证(奖状或发票)！");
+          return;
+        }
+      }
 
       let attachments = [];
       const pushFile = (type, path) => { 
@@ -1209,40 +1221,6 @@ function submitForm() {
       }
     }
   });
-}
-
-function validatePDFUpload() {
-  // 基础PDF文件验证（无论是否报销都需要）
-  if (!form.value.fileAward) {
-    proxy.$modal.msgError("请上传奖状(证书)PDF文件");
-    return false;
-  }
-  if (!form.value.fileNotice) {
-    proxy.$modal.msgError("请上传比赛通知PDF文件");
-    return false;
-  }
-  if (!form.value.fileWork) {
-    proxy.$modal.msgError("请上传参赛作品PDF文件");
-    return false;
-  }
-  
-  // 报销相关PDF文件验证
-  if (form.value.isReimburse === 1) {
-    if (!form.value.filePayment) {
-      proxy.$modal.msgError("请上传支付记录PDF文件");
-      return false;
-    }
-    if (!form.value.fileInvoice) {
-      proxy.$modal.msgError("请上传正规发票PDF文件");
-      return false;
-    }
-    if (!form.value.fileReceiptCode) {
-      proxy.$modal.msgError("请上传收款码PDF文件");
-      return false;
-    }
-  }
-  
-  return true;
 }
 
 /** 拦截右上角叉号或点击遮罩层 */
@@ -1286,80 +1264,6 @@ function handleCancel() {
        emit('cancel');
     }
   }
-}
-
-// 学生信息补全弹窗关闭前验证
-function handleStudentRegBeforeClose(done) {
-  // 验证是否填写了必填信息
-  proxy.$refs.studentRegRef.validate(valid => {
-    if (valid) {
-      done();
-    } else {
-      proxy.$modal.confirm('您还未完成学生信息填写，确定要取消吗？取消后将无法添加该学生。', "提示", {
-        confirmButtonText: "确定",
-        cancelButtonText: "取消",
-        type: "warning"
-      }).then(() => {
-        // 清除当前待处理的学生行
-        if (currentPendingRow) {
-          // 从列表中移除该行
-          const index = samAchievementParticipantList.value.indexOf(currentPendingRow);
-          if (index > -1) {
-            samAchievementParticipantList.value.splice(index, 1);
-            reIndexList(samAchievementParticipantList.value);
-          }
-          currentPendingRow = null;
-        }
-        done();
-      }).catch(() => {
-        // 点击取消不执行 done，弹窗保持打开
-      });
-    }
-  });
-}
-
-// 学生信息补全弹窗取消按钮
-function handleStudentRegCancel() {
-  handleStudentRegBeforeClose(() => {
-    studentRegVisible.value = false;
-  });
-}
-
-// 教师信息补全弹窗关闭前验证
-function handleTeacherRegBeforeClose(done) {
-  // 验证是否填写了必填信息
-  proxy.$refs.teacherRegRef.validate(valid => {
-    if (valid) {
-      done();
-    } else {
-      proxy.$modal.confirm('您还未完成教师信息填写，确定要取消吗？取消后将无法添加该教师。', "提示", {
-        confirmButtonText: "确定",
-        cancelButtonText: "取消",
-        type: "warning"
-      }).then(() => {
-        // 清除当前待处理的教师行
-        if (currentPendingTeacherRow) {
-          // 从列表中移除该行
-          const index = samAchievementAdvisorList.value.indexOf(currentPendingTeacherRow);
-          if (index > -1) {
-            samAchievementAdvisorList.value.splice(index, 1);
-            reIndexList(samAchievementAdvisorList.value);
-          }
-          currentPendingTeacherRow = null;
-        }
-        done();
-      }).catch(() => {
-        // 点击取消不执行 done，弹窗保持打开
-      });
-    }
-  });
-}
-
-// 教师信息补全弹窗取消按钮
-function handleTeacherRegCancel() {
-  handleTeacherRegBeforeClose(() => {
-    teacherRegVisible.value = false;
-  });
 }
 
 function getDeptTree() {

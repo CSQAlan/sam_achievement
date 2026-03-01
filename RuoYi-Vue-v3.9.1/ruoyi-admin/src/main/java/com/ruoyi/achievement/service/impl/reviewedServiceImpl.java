@@ -1,11 +1,11 @@
 package com.ruoyi.achievement.service.impl;
 
-import java.util.List;
+import java.util.*;
+
 import com.ruoyi.common.utils.DateUtils;
+import com.ruoyi.common.utils.SecurityUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
-import java.util.ArrayList;
-import java.util.Objects;
 import com.ruoyi.common.exception.ServiceException;
 import com.ruoyi.common.utils.StringUtils;
 import org.springframework.transaction.annotation.Transactional;
@@ -80,6 +80,7 @@ public class reviewedServiceImpl implements IreviewedService
             stage = STAGE_COLLEGE;
             status = STATUS_UNREVIEWED;
         }
+        applyDefaultYear(reviewed);
         sanitizeReasons(reviewed);
         validateInsertByStage(reviewed, stage, status);
         reviewed.setCreateTime(DateUtils.getNowDate());
@@ -107,6 +108,7 @@ public class reviewedServiceImpl implements IreviewedService
         {
             throw new ServiceException("??????????");
         }
+        applyDefaultYear(reviewed);
         validateReviewFlow(existing, reviewed);
         reviewed.setUpdateTime(DateUtils.getNowDate());
         reviewedMapper.deleteSamAchievementParticipantByParticipantId(reviewed.getAchievementId());
@@ -154,9 +156,47 @@ public class reviewedServiceImpl implements IreviewedService
         if (StringUtils.isNotNull(samAchievementParticipantList))
         {
             List<SamAchievementParticipant> list = new ArrayList<SamAchievementParticipant>();
+            Date now = DateUtils.getNowDate();
+            String username = null;
+            try
+            {
+                username = SecurityUtils.getUsername();
+            }
+            catch (Exception e)
+            {
+                username = null;
+            }
+            String fallbackCreateBy = StringUtils.hasText(reviewed.getCreateBy()) ? reviewed.getCreateBy() : username;
+            String fallbackUpdateBy = StringUtils.hasText(reviewed.getUpdateBy()) ? reviewed.getUpdateBy() : username;
+            String fallbackRemark = StringUtils.hasText(reviewed.getRemark()) ? reviewed.getRemark() : "";
             for (SamAchievementParticipant samAchievementParticipant : samAchievementParticipantList)
             {
-                samAchievementParticipant.setParticipantId(achievementId);
+                samAchievementParticipant.setAchievementId(achievementId);
+                samAchievementParticipant.setParticipantId(null);
+                if (!StringUtils.hasText(samAchievementParticipant.getCreateBy()))
+                {
+                    samAchievementParticipant.setCreateBy(fallbackCreateBy);
+                }
+                if (!StringUtils.hasText(samAchievementParticipant.getUpdateBy()))
+                {
+                    samAchievementParticipant.setUpdateBy(fallbackUpdateBy);
+                }
+                if (samAchievementParticipant.getCreateTime() == null)
+                {
+                    samAchievementParticipant.setCreateTime(now);
+                }
+                if (samAchievementParticipant.getUpdateTime() == null)
+                {
+                    samAchievementParticipant.setUpdateTime(now);
+                }
+                if (samAchievementParticipant.getRemark() == null)
+                {
+                    samAchievementParticipant.setRemark(fallbackRemark);
+                }
+                if (samAchievementParticipant.getDelFlag() == null)
+                {
+                    samAchievementParticipant.setDelFlag(0L);
+                }
                 list.add(samAchievementParticipant);
             }
             if (list.size() > 0)
@@ -176,6 +216,22 @@ public class reviewedServiceImpl implements IreviewedService
         {
             incoming.setSchoolReviewReason(null);
         }
+    }
+
+    private void applyDefaultYear(reviewed incoming)
+    {
+        if (incoming.getYear() != null)
+        {
+            return;
+        }
+        Date awardTime = incoming.getAwardTime();
+        if (awardTime == null)
+        {
+            return;
+        }
+        Calendar calendar = Calendar.getInstance();
+        calendar.setTime(awardTime);
+        incoming.setYear((long) calendar.get(Calendar.YEAR));
     }
 
     private void validateInsertByStage(reviewed incoming, String stage, String status)
@@ -314,7 +370,7 @@ public class reviewedServiceImpl implements IreviewedService
         boolean stageSchool = STAGE_SCHOOL.equals(stage);
         Long existingCollegeRaw = existing.getReviewResult();
         Long existingCollege = existingCollegeRaw == null ? COLLEGE_PENDING : existingCollegeRaw;
-        Long existingSchool = existing.getSchooiReviewResult();
+        Long existingSchool = normalizeExistingSchoolStatus(existing);
 
         Long requestedCollege = incoming.getReviewResult();
         Long requestedSchool = incoming.getSchooiReviewResult();
@@ -347,6 +403,16 @@ public class reviewedServiceImpl implements IreviewedService
 
         requestedCollege = incoming.getReviewResult();
         requestedSchool = incoming.getSchooiReviewResult();
+
+        // College pass must flow into school pending when school has not been reviewed yet.
+        if (stageCollege
+                && Objects.equals(requestedCollege, COLLEGE_PASS)
+                && requestedSchool == null
+                && (existingSchool == null || Objects.equals(existingSchool, SCHOOL_PENDING)))
+        {
+            incoming.setSchooiReviewResult(SCHOOL_PENDING);
+            requestedSchool = incoming.getSchooiReviewResult();
+        }
 
         boolean allowCollegeReAudit = stageCollege
                 && isCollegeReviewedValue(existingCollege)
@@ -414,14 +480,14 @@ public class reviewedServiceImpl implements IreviewedService
                 {
                     throw new ServiceException("School review status can only be set to pending by college review.");
                 }
-                if (existingSchool != null && !Objects.equals(existingSchool, SCHOOL_PENDING))
-                {
-                    throw new ServiceException("School review status cannot be changed after reviewed.");
-                }
                 Long effectiveCollege = collegeChanged ? requestedCollege : existingCollege;
                 if (!Objects.equals(effectiveCollege, COLLEGE_PASS))
                 {
                     throw new ServiceException("School review can only start after college pass.");
+                }
+                if (existingSchool != null && !Objects.equals(existingSchool, SCHOOL_PENDING))
+                {
+                    throw new ServiceException("School review status cannot be changed after reviewed.");
                 }
             }
             else if (!StringUtils.hasText(incoming.getSchoolReviewReason()))
@@ -525,5 +591,32 @@ public class reviewedServiceImpl implements IreviewedService
     private boolean isSchoolReviewedValue(Long value)
     {
         return Objects.equals(value, SCHOOL_REJECT) || Objects.equals(value, SCHOOL_PASS);
+    }
+
+    private Long normalizeExistingSchoolStatus(reviewed existing)
+    {
+        Long raw = existing.getSchooiReviewResult();
+        if (isSchoolReviewedValue(raw) && !hasSchoolReviewTrace(existing))
+        {
+            // Compatible with legacy data where status was initialized as 0/1 but never actually reviewed.
+            return SCHOOL_PENDING;
+        }
+        return raw;
+    }
+
+    private boolean hasSchoolReviewTrace(reviewed existing)
+    {
+        return hasEffectiveText(existing.getSchoolAuditBy())
+                || hasEffectiveText(existing.getSchoolReviewReason());
+    }
+
+    private boolean hasEffectiveText(String value)
+    {
+        if (!StringUtils.hasText(value))
+        {
+            return false;
+        }
+        String normalized = value.trim().toLowerCase();
+        return !"null".equals(normalized) && !"undefined".equals(normalized);
     }
 }
