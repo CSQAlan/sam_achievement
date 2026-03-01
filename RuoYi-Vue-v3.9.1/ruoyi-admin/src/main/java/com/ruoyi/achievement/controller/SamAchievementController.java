@@ -105,6 +105,7 @@ public class SamAchievementController extends BaseController
     {
         return toAjax(samAchievementService.deleteSamAchievementByAchievementIds(achievementIds));
     }
+
     /**
      * 查询我参与的成果列表（学生端-非负责人）
      */
