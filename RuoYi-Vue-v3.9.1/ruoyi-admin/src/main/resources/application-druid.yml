@@ -1,0 +1,48 @@
+# 数据源配置
+spring:
+    datasource:
+        type: com.alibaba.druid.pool.DruidDataSource
+        driverClassName: com.mysql.cj.jdbc.Driver
+        druid:
+            # 主库数据源（已修改为本地数据库）
+            master:
+                url: jdbc:mysql://localhost:3306/sam_baoxiao?useUnicode=true&characterEncoding=utf8&serverTimezone=Asia/Shanghai&useSSL=false
+                username: root
+                password: cxc06120
+            # 从库数据源（保持默认关闭）
+            slave:
+                enabled: false
+                url: 
+                username: 
+                password: 
+            # 连接池配置保持不变
+            initialSize: 5
+            minIdle: 10
+            maxActive: 20
+            maxWait: 60000
+            connectTimeout: 30000
+            socketTimeout: 60000
+            timeBetweenEvictionRunsMillis: 60000
+            minEvictableIdleTimeMillis: 300000
+            maxEvictableIdleTimeMillis: 900000
+            validationQuery: SELECT 1 FROM DUAL
+            testWhileIdle: true
+            testOnBorrow: false
+            testOnReturn: false
+            webStatFilter: 
+                enabled: true
+            statViewServlet:
+                enabled: true
+                allow:
+                url-pattern: /druid/*
+                login-username: ruoyi
+                login-password: 123456
+            filter:
+                stat:
+                    enabled: true
+                    log-slow-sql: true
+                    slow-sql-millis: 1000
+                    merge-sql: true
+                wall:
+                    config:
+                        multi-statement-allow: true
