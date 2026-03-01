@@ -27,6 +27,12 @@ public class reviewed extends BaseEntity
     @Excel(name = "届次 ")
     private String sessionId;
 
+    /** derived from session relation for frontend display */
+    private String competitionId;
+
+    /** derived from session relation for frontend display */
+    private String competitionName;
+
     /** 类别 */
     @Excel(name = "类别")
     private String category;
@@ -154,6 +160,26 @@ public class reviewed extends BaseEntity
     public String getSessionId() 
     {
         return sessionId;
+    }
+
+    public void setCompetitionId(String competitionId)
+    {
+        this.competitionId = competitionId;
+    }
+
+    public String getCompetitionId()
+    {
+        return competitionId;
+    }
+
+    public void setCompetitionName(String competitionName)
+    {
+        this.competitionName = competitionName;
+    }
+
+    public String getCompetitionName()
+    {
+        return competitionName;
     }
 
     public void setCategory(String category) 
@@ -491,6 +517,8 @@ public class reviewed extends BaseEntity
         return new ToStringBuilder(this,ToStringStyle.MULTI_LINE_STYLE)
             .append("achievementId", getAchievementId())
             .append("sessionId", getSessionId())
+            .append("competitionId", getCompetitionId())
+            .append("competitionName", getCompetitionName())
             .append("category", getCategory())
             .append("name", getName())
             .append("teamName", getTeamName())

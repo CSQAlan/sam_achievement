@@ -371,6 +371,25 @@ const pageModeKey = ref(0);
 const formReadOnly = ref(false);
 const formShowSubmit = ref(true);
 
+function hashString(input) {
+  let hash = 0;
+  for (let i = 0; i < input.length; i++) {
+    hash = ((hash << 5) - hash) + input.charCodeAt(i);
+    hash |= 0;
+  }
+  return String(hash >>> 0);
+}
+
+function buildPageKey() {
+  const payload = {
+    source: reviewSource.value,
+    pageNum: queryParams.pageNum,
+    pageSize: queryParams.pageSize,
+    filters: { ...queryParams }
+  };
+  return hashString(JSON.stringify(payload));
+}
+
 const auditStatus = computed(() => {
   if (props.auditDict && Array.isArray(props.auditDict)) return props.auditDict;
   return queryParams.reviewStatus === 'college'
@@ -378,7 +397,31 @@ const auditStatus = computed(() => {
     : school_audit_status.value;
 });
 
+function normalizeReviewStatusBySource() {
+  const source = reviewSource.value;
+  const current = queryParams.reviewStatus;
+  if (current === null || current === undefined || current === '') return;
+
+  const val = String(current);
+  if (source === 'college_level_unreviewed' && val !== '0') {
+    queryParams.reviewStatus = null;
+    return;
+  }
+  if (source === 'college_level_reviewed' && val !== '1' && val !== '2') {
+    queryParams.reviewStatus = null;
+    return;
+  }
+  if (source === 'school_level_unreviewed' && val !== '2') {
+    queryParams.reviewStatus = null;
+    return;
+  }
+  if (source === 'school_level_reviewed' && val !== '0' && val !== '1') {
+    queryParams.reviewStatus = null;
+  }
+}
+
 function getList() {
+  normalizeReviewStatusBySource();
   loading.value = true;
   listFn.value(queryParams).then(response => {
     const rows = (response.rows || []).map((row) => normalizeRowStatus(row));
@@ -425,10 +468,10 @@ function filterRowsBySource(rows) {
     return rows.filter(r => String(r.reviewResult) === '1' || String(r.reviewResult) === '2');
   }
   if (source === 'school_level_unreviewed') {
-    return rows.filter(r => String(r.schooiReviewResult) === '2');
+    return rows.filter(r => String(r.reviewResult) === '2' && String(r.schooiReviewResult) === '2');
   }
   if (source === 'school_level_reviewed') {
-    return rows.filter(r => String(r.schooiReviewResult) === '0' || String(r.schooiReviewResult) === '1');
+    return rows.filter(r => String(r.reviewResult) === '2' && (String(r.schooiReviewResult) === '0' || String(r.schooiReviewResult) === '1'));
   }
   return rows;
 }
@@ -509,6 +552,7 @@ function refreshFromRoute() {
   pageModeActive.value = false;
   formReadOnly.value = false;
   formShowSubmit.value = true;
+  normalizeReviewStatusBySource();
   nextTick(() => {
     getList();
   });
@@ -541,13 +585,34 @@ function openDialog(id, options = {}) {
 }
 
 function openReviewPage(id, mode) {
+  const ids = (listData.value || [])
+    .map((row) => row?.achievementId)
+    .filter((val) => val !== null && val !== undefined && val !== '');
+  const uniqueIds = Array.from(new Set(ids))
+    .map((val) => Number(val))
+    .filter((val) => !Number.isNaN(val))
+    .sort((a, b) => a - b);
+  const pageIds = uniqueIds.join(',');
+  const pageKey = buildPageKey();
+  if (pageKey) {
+    try {
+      sessionStorage.setItem(`review_page_${pageKey}`, pageIds);
+    } catch (e) {
+      // ignore storage errors
+    }
+  }
+  const query = {
+    id,
+    source: reviewSource.value,
+    mode,
+    pageKey,
+    pageIds
+  };
+  if (route?.name) query.fromName = String(route.name);
+  if (route?.path) query.fromPath = String(route.path);
   router.push({
     path: reviewRoute.value,
-    query: {
-      id,
-      source: reviewSource.value,
-      mode
-    }
+    query
   });
 }
 
@@ -587,4 +652,3 @@ export default {
   name: 'AchievementManageIndex'
 }
 </script>
-
