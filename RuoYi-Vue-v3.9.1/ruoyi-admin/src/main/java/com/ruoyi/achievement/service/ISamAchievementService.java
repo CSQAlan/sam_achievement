@@ -28,6 +28,16 @@ public interface ISamAchievementService
     public List<SamAchievement> selectSamAchievementList(SamAchievement samAchievement);
 
     /**
+     * 查询我参与的成果列表（学生端-非负责人）
+     */
+    public List<SamAchievement> selectSamAchievementListByStudentId(SamAchievement samAchievement);
+
+    /**
+     * 查询我指导的成果列表（教师端）
+     */
+    public List<SamAchievement> selectSamAchievementListByTeacherId(SamAchievement samAchievement);
+
+    /**
      * 新增成果录入
      * 
      * @param samAchievement 成果录入

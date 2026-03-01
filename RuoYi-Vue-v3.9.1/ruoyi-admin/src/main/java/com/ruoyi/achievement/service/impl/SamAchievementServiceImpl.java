@@ -258,7 +258,7 @@ public class SamAchievementServiceImpl implements ISamAchievementService
         // 验证是否至少有一个负责人
         boolean hasManager = false;
         for (SamAchievementParticipant participant : participants) {
-            if (participant.getManager() != null && participant.getManager() == 1) {
+            if ("1".equals(participant.getManager())) {
                 hasManager = true;
                 break;
             }
@@ -308,7 +308,8 @@ public class SamAchievementServiceImpl implements ISamAchievementService
 
             // A. 更新 UUID 状态为正式
             if (uuids.size() > 0) {
-                fileUuidMapper.updateFileUuidStatus(uuids.toArray(new String[0]), 0);
+                fileUuidMapper
+                        .updateFileUuidStatus(uuids.toArray(new String[0]), 0);
             }
 
             // B. 批量插入附件中间表
@@ -394,6 +395,15 @@ public class SamAchievementServiceImpl implements ISamAchievementService
             return;
         }
 
+        // 安全加固：校验学号格式 (只允许字母和数字，长度 4-20)
+        if (!studentNo.matches("^[a-zA-Z0-9]{4,20}$")) {
+            throw new ServiceException("非法学号格式：" + studentNo);
+        }
+        // 安全加固：校验姓名格式 (防止脚本注入)
+        if (studentName.length() > 50 || studentName.contains("<") || studentName.contains(">")) {
+            throw new ServiceException("非法学生姓名");
+        }
+
         SamStudent query = new SamStudent();
         query.setNo(studentNo);
         List<SamStudent> exists = samStudentService.selectSamStudentList(query);
@@ -412,6 +422,15 @@ public class SamAchievementServiceImpl implements ISamAchievementService
     private void checkAndInsertTeacher(String teacherNo, String teacherName) {
         if (StringUtils.isEmpty(teacherNo) || StringUtils.isEmpty(teacherName)) {
             return;
+        }
+
+        // 安全加固：校验工号格式
+        if (!teacherNo.matches("^[a-zA-Z0-9]{4,20}$")) {
+            throw new ServiceException("非法工号格式：" + teacherNo);
+        }
+        // 安全加固：校验姓名格式
+        if (teacherName.length() > 50 || teacherName.contains("<") || teacherName.contains(">")) {
+            throw new ServiceException("非法教师姓名");
         }
 
         SamTeacher query = new SamTeacher();
