@@ -572,7 +572,7 @@
   </el-dialog>
 
   <!-- 学生信息补全弹窗 -->
-  <el-dialog title="完善学生信息" v-model="studentRegVisible" width="500px" append-to-body :close-on-click-modal="false">
+  <el-dialog title="完善学生信息" v-model="studentRegVisible" width="500px" append-to-body :close-on-click-modal="false" :before-close="handleCancelStudentReg">
     <el-form ref="studentRegRef" :model="studentRegForm" :rules="studentRegRules" label-width="80px">
       <el-form-item label="学号" prop="no">
         <el-input v-model="studentRegForm.no" disabled />
@@ -599,13 +599,13 @@
     <template #footer>
       <div class="dialog-footer">
         <el-button type="primary" @click="submitStudentReg">确 定</el-button>
-        <el-button @click="studentRegVisible = false">取 消</el-button>
+        <el-button @click="handleCancelStudentReg">取 消</el-button>
       </div>
     </template>
   </el-dialog>
 
   <!-- 教师信息补全弹窗 -->
-  <el-dialog title="完善教师信息" v-model="teacherRegVisible" width="500px" append-to-body :close-on-click-modal="false">
+  <el-dialog title="完善教师信息" v-model="teacherRegVisible" width="500px" append-to-body :close-on-click-modal="false" :before-close="handleCancelTeacherReg">
     <el-form ref="teacherRegRef" :model="teacherRegForm" :rules="teacherRegRules" label-width="80px">
       <el-form-item label="工号" prop="no">
         <el-input v-model="teacherRegForm.no" disabled />
@@ -623,7 +623,7 @@
     <template #footer>
       <div class="dialog-footer">
         <el-button type="primary" @click="submitTeacherReg">确 定</el-button>
-        <el-button @click="teacherRegVisible = false">取 消</el-button>
+        <el-button @click="handleCancelTeacherReg">取 消</el-button>
       </div>
     </template>
   </el-dialog>
@@ -863,6 +863,32 @@ function handleAddAdvisor() {
     orderNo: samAchievementAdvisorList.value.length + 1, 
     isManual: false 
   });
+}
+
+function handleCancelStudentReg(done) {
+  if (currentPendingRow) {
+    const index = samAchievementParticipantList.value.indexOf(currentPendingRow);
+    if (index > -1) {
+      samAchievementParticipantList.value.splice(index, 1);
+      reIndexList(samAchievementParticipantList.value);
+    }
+    currentPendingRow = null;
+  }
+  studentRegVisible.value = false;
+  if (typeof done === 'function') done();
+}
+
+function handleCancelTeacherReg(done) {
+  if (currentPendingTeacherRow) {
+    const index = samAchievementAdvisorList.value.indexOf(currentPendingTeacherRow);
+    if (index > -1) {
+      samAchievementAdvisorList.value.splice(index, 1);
+      reIndexList(samAchievementAdvisorList.value);
+    }
+    currentPendingTeacherRow = null;
+  }
+  teacherRegVisible.value = false;
+  if (typeof done === 'function') done();
 }
 
 function handleBeforeCloseSub(done, type) {
