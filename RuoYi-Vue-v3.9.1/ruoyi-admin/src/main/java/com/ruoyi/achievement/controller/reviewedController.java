@@ -28,10 +28,45 @@ public class reviewedController extends BaseController
     @Autowired
     private IreviewedService reviewedService;
 
+    public static class BatchReviewStatusRequest
+    {
+        private String[] achievementIds;
+        private Long reviewStatus;
+
+        public String[] getAchievementIds()
+        {
+            return achievementIds;
+        }
+
+        public void setAchievementIds(String[] achievementIds)
+        {
+            this.achievementIds = achievementIds;
+        }
+
+        public Long getReviewStatus()
+        {
+            return reviewStatus;
+        }
+
+        public void setReviewStatus(Long reviewStatus)
+        {
+            this.reviewStatus = reviewStatus;
+        }
+    }
+
     private void applyFilter(reviewed reviewed, String stage, String status)
     {
         reviewed.setReviewStage(stage);
         reviewed.setReviewStatus(status);
+    }
+
+    private AjaxResult batchUpdateStatus(String stage, BatchReviewStatusRequest request)
+    {
+        if (request == null)
+        {
+            return error("请求参数不能为空");
+        }
+        return toAjax(reviewedService.batchUpdateReviewStatus(request.getAchievementIds(), stage, request.getReviewStatus()));
     }
 
     @PreAuthorize("@ss.hasPermi('achievement:college_level_unreviewed:list')")
@@ -78,6 +113,14 @@ public class reviewedController extends BaseController
     {
         applyFilter(reviewed, "college", "unreviewed");
         return toAjax(reviewedService.updatereviewed(reviewed));
+    }
+
+    @PreAuthorize("@ss.hasPermi('achievement:college_level_unreviewed:edit')")
+    @Log(title = "College Unreviewed Batch Review Status", businessType = BusinessType.UPDATE)
+    @PutMapping("/college_level_unreviewed/batchReviewStatus")
+    public AjaxResult batchCollegeUnreviewedStatus(@RequestBody BatchReviewStatusRequest request)
+    {
+        return batchUpdateStatus("college", request);
     }
 
     @PreAuthorize("@ss.hasPermi('achievement:college_level_unreviewed:remove')")
@@ -134,6 +177,14 @@ public class reviewedController extends BaseController
         return toAjax(reviewedService.updatereviewed(reviewed));
     }
 
+    @PreAuthorize("@ss.hasPermi('achievement:college_level_reviewed:edit')")
+    @Log(title = "College Reviewed Batch Review Status", businessType = BusinessType.UPDATE)
+    @PutMapping("/college_level_reviewed/batchReviewStatus")
+    public AjaxResult batchCollegeReviewedStatus(@RequestBody BatchReviewStatusRequest request)
+    {
+        return batchUpdateStatus("college", request);
+    }
+
     @PreAuthorize("@ss.hasPermi('achievement:college_level_reviewed:remove')")
     @Log(title = "College Reviewed", businessType = BusinessType.DELETE)
     @DeleteMapping("/college_level_reviewed/{achievementIds}")
@@ -188,6 +239,14 @@ public class reviewedController extends BaseController
         return toAjax(reviewedService.updatereviewed(reviewed));
     }
 
+    @PreAuthorize("@ss.hasPermi('achievement:school_level_unreviewed:edit')")
+    @Log(title = "School Unreviewed Batch Review Status", businessType = BusinessType.UPDATE)
+    @PutMapping("/school_level_unreviewed/batchReviewStatus")
+    public AjaxResult batchSchoolUnreviewedStatus(@RequestBody BatchReviewStatusRequest request)
+    {
+        return batchUpdateStatus("school", request);
+    }
+
     @PreAuthorize("@ss.hasPermi('achievement:school_level_unreviewed:remove')")
     @Log(title = "School Unreviewed", businessType = BusinessType.DELETE)
     @DeleteMapping("/school_level_unreviewed/{achievementIds}")
@@ -240,6 +299,14 @@ public class reviewedController extends BaseController
     {
         applyFilter(reviewed, "school", "reviewed");
         return toAjax(reviewedService.updatereviewed(reviewed));
+    }
+
+    @PreAuthorize("@ss.hasPermi('achievement:school_level_reviewed:edit')")
+    @Log(title = "School Reviewed Batch Review Status", businessType = BusinessType.UPDATE)
+    @PutMapping("/school_level_reviewed/batchReviewStatus")
+    public AjaxResult batchSchoolReviewedStatus(@RequestBody BatchReviewStatusRequest request)
+    {
+        return batchUpdateStatus("school", request);
     }
 
     @PreAuthorize("@ss.hasPermi('achievement:school_level_reviewed:remove')")
