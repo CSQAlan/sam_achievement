@@ -129,7 +129,6 @@
     <el-row :gutter="10" class="mb8">
       <el-col :span="1.5">
         <el-button
-            v-if="showAdd"
             type="primary"
             plain
             icon="Plus"
@@ -139,7 +138,6 @@
       </el-col>
       <el-col :span="1.5">
         <el-button
-            v-if="showEdit"
             type="success"
             plain
             icon="Edit"
@@ -150,7 +148,6 @@
       </el-col>
       <el-col :span="1.5">
         <el-button
-            v-if="showDelete"
             type="danger"
             plain
             icon="Delete"
@@ -161,7 +158,6 @@
       </el-col>
       <el-col :span="1.5">
         <el-button
-            v-if="showExport"
             type="warning"
             plain
             icon="Download"
@@ -216,17 +212,15 @@
     <el-button link type="primary" icon="View" @click="handleReview(scope.row)" v-hasPermi="permReview">详情</el-button>
     
     <el-button 
-      v-if="showEdit"
-      link
-      type="primary"
-      icon="Edit"
-      @click="handleRowUpdate(scope.row)"
+      link 
+      type="primary" 
+      icon="Edit" 
+      @click="handleRowUpdate(scope.row)" 
       v-hasPermi="permEdit"
-      :disabled="!checkEditable(scope.row)"
+      :disabled="!checkEditable(scope.row)" 
     >修改</el-button>
-
-    <el-button
-      v-if="showDelete"
+    
+    <el-button 
       link 
       type="primary" 
       icon="Delete" 
@@ -295,11 +289,7 @@ const props = defineProps({
   showSearch: { type: Boolean, default: true },
   pageMode: { type: Boolean, default: false },
   reviewRoute: { type: String, default: '' },
-  reviewSource: { type: String, default: '' },
-  showAdd: { type: Boolean, default: true },
-  showEdit: { type: Boolean, default: true },
-  showDelete: { type: Boolean, default: true },
-  showExport: { type: Boolean, default: true }
+  reviewSource: { type: String, default: '' }
 });
 
 const { proxy } = getCurrentInstance();
@@ -371,25 +361,6 @@ const pageModeKey = ref(0);
 const formReadOnly = ref(false);
 const formShowSubmit = ref(true);
 
-function hashString(input) {
-  let hash = 0;
-  for (let i = 0; i < input.length; i++) {
-    hash = ((hash << 5) - hash) + input.charCodeAt(i);
-    hash |= 0;
-  }
-  return String(hash >>> 0);
-}
-
-function buildPageKey() {
-  const payload = {
-    source: reviewSource.value,
-    pageNum: queryParams.pageNum,
-    pageSize: queryParams.pageSize,
-    filters: { ...queryParams }
-  };
-  return hashString(JSON.stringify(payload));
-}
-
 const auditStatus = computed(() => {
   if (props.auditDict && Array.isArray(props.auditDict)) return props.auditDict;
   return queryParams.reviewStatus === 'college'
@@ -397,31 +368,7 @@ const auditStatus = computed(() => {
     : school_audit_status.value;
 });
 
-function normalizeReviewStatusBySource() {
-  const source = reviewSource.value;
-  const current = queryParams.reviewStatus;
-  if (current === null || current === undefined || current === '') return;
-
-  const val = String(current);
-  if (source === 'college_level_unreviewed' && val !== '0') {
-    queryParams.reviewStatus = null;
-    return;
-  }
-  if (source === 'college_level_reviewed' && val !== '1' && val !== '2') {
-    queryParams.reviewStatus = null;
-    return;
-  }
-  if (source === 'school_level_unreviewed' && val !== '2') {
-    queryParams.reviewStatus = null;
-    return;
-  }
-  if (source === 'school_level_reviewed' && val !== '0' && val !== '1') {
-    queryParams.reviewStatus = null;
-  }
-}
-
 function getList() {
-  normalizeReviewStatusBySource();
   loading.value = true;
   listFn.value(queryParams).then(response => {
     const rows = (response.rows || []).map((row) => normalizeRowStatus(row));
@@ -468,10 +415,10 @@ function filterRowsBySource(rows) {
     return rows.filter(r => String(r.reviewResult) === '1' || String(r.reviewResult) === '2');
   }
   if (source === 'school_level_unreviewed') {
-    return rows.filter(r => String(r.reviewResult) === '2' && String(r.schooiReviewResult) === '2');
+    return rows.filter(r => String(r.schooiReviewResult) === '2');
   }
   if (source === 'school_level_reviewed') {
-    return rows.filter(r => String(r.reviewResult) === '2' && (String(r.schooiReviewResult) === '0' || String(r.schooiReviewResult) === '1'));
+    return rows.filter(r => String(r.schooiReviewResult) === '0' || String(r.schooiReviewResult) === '1');
   }
   return rows;
 }
@@ -552,7 +499,6 @@ function refreshFromRoute() {
   pageModeActive.value = false;
   formReadOnly.value = false;
   formShowSubmit.value = true;
-  normalizeReviewStatusBySource();
   nextTick(() => {
     getList();
   });
@@ -585,34 +531,13 @@ function openDialog(id, options = {}) {
 }
 
 function openReviewPage(id, mode) {
-  const ids = (listData.value || [])
-    .map((row) => row?.achievementId)
-    .filter((val) => val !== null && val !== undefined && val !== '');
-  const uniqueIds = Array.from(new Set(ids))
-    .map((val) => Number(val))
-    .filter((val) => !Number.isNaN(val))
-    .sort((a, b) => a - b);
-  const pageIds = uniqueIds.join(',');
-  const pageKey = buildPageKey();
-  if (pageKey) {
-    try {
-      sessionStorage.setItem(`review_page_${pageKey}`, pageIds);
-    } catch (e) {
-      // ignore storage errors
-    }
-  }
-  const query = {
-    id,
-    source: reviewSource.value,
-    mode,
-    pageKey,
-    pageIds
-  };
-  if (route?.name) query.fromName = String(route.name);
-  if (route?.path) query.fromPath = String(route.path);
   router.push({
     path: reviewRoute.value,
-    query
+    query: {
+      id,
+      source: reviewSource.value,
+      mode
+    }
   });
 }
 
@@ -652,3 +577,4 @@ export default {
   name: 'AchievementManageIndex'
 }
 </script>
+

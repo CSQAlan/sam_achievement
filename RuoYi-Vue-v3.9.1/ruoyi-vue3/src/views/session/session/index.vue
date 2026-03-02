@@ -24,7 +24,7 @@
         </el-select>
       </el-form-item>
       <el-form-item label="赛事名称" prop="competitionId">
-        <el-select v-model="queryParams.competitionId" placeholder="请选择赛事名称" clearable filterable>
+        <el-select v-model="queryParams.competitionId" placeholder="请选择赛事名称" clearable>
           <el-option v-for="comp in competitionList" :key="comp.id" :label="comp.name" :value="comp.id" />
         </el-select>
       </el-form-item>
@@ -66,9 +66,9 @@
 
     <el-table v-loading="loading" :data="sessionList" @selection-change="handleSelectionChange">
       <el-table-column type="selection" width="55" align="center" />
-      <el-table-column label="赛事名称" align="center" prop="competitionName">
+      <el-table-column label="赛事名称" align="center" prop="competitionId">
         <template #default="scope">
-          {{ scope.row.competitionName || CompetitionName(scope.row.competitionId) || scope.row.competitionId }}
+          {{ getCompetitionName(scope.row.competitionId) || scope.row.competitionId }}
         </template>
       </el-table-column>
       <el-table-column label="届次" align="center" prop="session" />
@@ -110,7 +110,7 @@
     <el-dialog :title="title" v-model="open" width="500px" append-to-body>
       <el-form ref="sessionRef" :model="form" :rules="rules" label-width="80px">
         <el-form-item label="赛事名称" prop="competitionId">
-          <el-select v-model="form.competitionId" placeholder="请选择赛事名称" clearable filterable style="width:100%;">
+          <el-select v-model="form.competitionId" placeholder="请选择赛事名称" clearable style="width:100%;">
             <el-option v-for="comp in competitionList" :key="comp.id" :label="comp.name" :value="comp.id" />
           </el-select>
         </el-form-item>
@@ -254,12 +254,16 @@ const data = reactive({
 const { queryParams, form, rules } = toRefs(data)
 
 // 获取赛事主表列表并去重
-// 获取赛事主表列表（修复去重逻辑，保留全量数据）
 function getCompetitionList() {
-  // 关键：传入分页参数，拉取全量数据
-  listCompetition({ pageNum: 1, pageSize: 9999 }).then(response => {
+  listCompetition({}).then(response => {
     const originList = response.rows || response.data || []
-    competitionList.value = originList.filter(item => item.name && item.id)
+    const uniqueMap = new Map()
+    originList.forEach(item => {
+      if (item.name && !uniqueMap.has(item.name)) {
+        uniqueMap.set(item.name, item)
+      }
+    })
+    competitionList.value = Array.from(uniqueMap.values())
   }).catch(error => {
     console.error("获取赛事主表列表失败：", error)
     proxy.$modal.msgError("获取赛事列表失败，请先添加赛事主表数据")
@@ -313,7 +317,6 @@ function reset() {
 /** 搜索按钮操作 */
 function handleQuery() {
   queryParams.value.pageNum = 1
-  getCompetitionList() // 新增：搜索前刷新赛事列表
   getList()
 }
 
@@ -338,17 +341,13 @@ function handleAdd() {
   title.value = "添加赛事届次"
 }
 
-
 /** 修改按钮操作 */
 function handleUpdate(row) {
   reset()
   getCompetitionList()
-  const _id = row.id || ids.value // 1. 先获取要修改的记录ID
+  const _id = row.id || ids.value
   getSession(_id).then(response => {
     form.value = response.data
-    // 2. 强制把ID赋值回去，这是最关键的一步！
-    form.value.id = _id
-    // 处理tags字段，将字符串转为数组
     if (form.value.tags && typeof form.value.tags === 'string') {
       form.value.tags = form.value.tags.split(',')
     } else {
@@ -370,14 +369,12 @@ function submitForm() {
           proxy.$modal.msgSuccess("修改成功")
           open.value = false
           getList()
-          getCompetitionList() // 新增：刷新赛事列表
         })
       } else {
         addSession(form.value).then(response => {
           proxy.$modal.msgSuccess("新增成功")
           open.value = false
           getList()
-          getCompetitionList() // 新增：刷新赛事列表
         })
       }
     }
