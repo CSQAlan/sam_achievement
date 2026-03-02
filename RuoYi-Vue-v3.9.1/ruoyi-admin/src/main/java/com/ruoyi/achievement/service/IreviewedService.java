@@ -58,4 +58,14 @@ public interface IreviewedService
      * @return 结果
      */
     public int deletereviewedByAchievementId(String achievementId);
+
+    /**
+     * 批量更新审核状态（仅修改状态字段）
+     *
+     * @param achievementIds 成果ID集合
+     * @param stage 审核归属：college/school
+     * @param reviewStatus 目标状态值
+     * @return 结果
+     */
+    public int batchUpdateReviewStatus(String[] achievementIds, String stage, Long reviewStatus);
 }

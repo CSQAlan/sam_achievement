@@ -145,6 +145,60 @@ public class reviewedServiceImpl implements IreviewedService
     }
 
     /**
+     * 批量更新审核状态
+     */
+    @Transactional
+    @Override
+    public int batchUpdateReviewStatus(String[] achievementIds, String stage, Long reviewStatus)
+    {
+        if (achievementIds == null || achievementIds.length == 0)
+        {
+            throw new ServiceException("请选择需要批量审核的成果");
+        }
+
+        String normalizedStage = resolveStage(stage);
+        if (normalizedStage == null)
+        {
+            throw new ServiceException("审核归属无效");
+        }
+
+        if (reviewStatus == null)
+        {
+            throw new ServiceException("审核状态不能为空");
+        }
+
+        // 处理院级审核
+        if (STAGE_COLLEGE.equals(normalizedStage))
+        {
+            if (!Objects.equals(reviewStatus, COLLEGE_PENDING)
+                    && !Objects.equals(reviewStatus, COLLEGE_REJECT)
+                    && !Objects.equals(reviewStatus, COLLEGE_PASS))
+            {
+                throw new ServiceException("院级审核状态无效");
+            }
+
+            // 批量更新院级审核状态
+            return reviewedMapper.batchUpdateCollegeReviewStatus(achievementIds, reviewStatus);
+        }
+
+        // 处理校级审核
+        if (STAGE_SCHOOL.equals(normalizedStage))
+        {
+            if (!Objects.equals(reviewStatus, SCHOOL_PENDING)
+                    && !Objects.equals(reviewStatus, SCHOOL_REJECT)
+                    && !Objects.equals(reviewStatus, SCHOOL_PASS))
+            {
+                throw new ServiceException("校级审核状态无效");
+            }
+
+            // 批量更新校级审核状态
+            return reviewedMapper.batchUpdateSchoolReviewStatus(achievementIds, reviewStatus);
+        }
+
+        throw new ServiceException("审核归属无效");
+    }
+
+    /**
      * 新增参赛选手信息
      *
      * @param reviewed 成果审核对象
