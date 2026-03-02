@@ -2,6 +2,7 @@ package com.ruoyi.session.mapper;
 
 import java.util.List;
 import com.ruoyi.session.domain.Session;
+import com.ruoyi.session.domain.Tag; // 确保导入了Tag实体
 
 /**
  * 赛事届次Mapper接口
@@ -58,4 +59,21 @@ public interface SessionMapper
      * @return 结果
      */
     public int deleteSessionByIds(Long[] ids);
+
+    // ========== 新增：标签子表操作方法 ==========
+    /**
+     * 批量插入标签
+     *
+     * @param tagList 标签列表
+     * @return 结果
+     */
+    int batchInsertTag(List<Tag> tagList);
+
+    /**
+     * 根据届次ID删除标签
+     *
+     * @param sessionId 届次ID
+     * @return 结果
+     */
+    int deleteTagBySessionId(Long sessionId);
 }

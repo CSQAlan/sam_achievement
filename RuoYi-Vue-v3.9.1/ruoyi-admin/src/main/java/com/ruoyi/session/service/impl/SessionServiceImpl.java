@@ -1,5 +1,6 @@
 package com.ruoyi.session.service.impl;
 
+import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 import org.slf4j.Logger;
@@ -16,6 +17,7 @@ import com.ruoyi.competition.service.ICompetitionService;
 import com.ruoyi.session.mapper.SessionMapper;
 import com.ruoyi.session.domain.Session;
 import com.ruoyi.session.service.ISessionService;
+import com.ruoyi.session.domain.Tag;
 // ========== 新增：导入字典相关类（RuoYi框架自带） ==========
 import com.ruoyi.common.core.domain.entity.SysDictData;
 import com.ruoyi.system.service.ISysDictDataService;
@@ -51,6 +53,7 @@ public class SessionServiceImpl implements ISessionService {
         }
         return session;
     }
+
     // 在 SessionServiceImpl 中修改 selectSessionList 方法
     @Override
     public List<Session> selectSessionList(Session session) {
@@ -66,12 +69,14 @@ public class SessionServiceImpl implements ISessionService {
         }
         return sessionList;
     }
+
     @Transactional
     @Override
     public int insertSession(Session session) {
         session.setCreateTime(DateUtils.getNowDate());
         return sessionMapper.insertSession(session);
     }
+
     @Transactional
     @Override
     public int updateSession(Session session) {
@@ -114,11 +119,13 @@ public class SessionServiceImpl implements ISessionService {
 
         return updateCount;
     }
+
     @Transactional
     @Override
     public int deleteSessionByIds(Long[] ids) {
         return sessionMapper.deleteSessionByIds(ids);
     }
+
     @Transactional
     @Override
     public int deleteSessionById(Long id) {
@@ -126,14 +133,16 @@ public class SessionServiceImpl implements ISessionService {
     }
 
     // ========== 新增：通用工具方法（核心）→ 文字标签自动匹配字典数字 ==========
+
     /**
      * 文字标签转字典数字编码（自动从系统字典查询，无需写死）
-     * @param dictType 字典类型（如sys_competition_category），对应@Excel的dictType
+     *
+     * @param dictType   字典类型（如sys_competition_category），对应@Excel的dictType
      * @param textLabels Excel导入的文字标签（支持多标签，中英文逗号分隔）
      * @return 逗号分隔的数字编码（如"0,1,2"）
      */
     private String convertTextToDictCode(String dictType, String textLabels) {
-        if (textLabels == null || textLabels.trim().isEmpty()) {
+        if (textLabels == null || textLabels.trim().isEmpty() || "null".equals(textLabels.trim())) {
             return "";
         }
         String handleText = textLabels.trim().replaceAll("，", ",");
@@ -189,7 +198,7 @@ public class SessionServiceImpl implements ISessionService {
             codeSb.append(dictValue).append(",");
         }
 
-        return codeSb.length() > 0 ? codeSb.deleteCharAt(codeSb.length()-1).toString() : "";
+        return codeSb.length() > 0 ? codeSb.deleteCharAt(codeSb.length() - 1).toString() : "";
     }
 
     // ========== 原有方法：importSession 完整保留，无需改动 ==========
@@ -230,9 +239,7 @@ public class SessionServiceImpl implements ISessionService {
         }
     }
 
-<<<<<<< HEAD
-    // ========== 核心方法：processSingleSession 修复null校验 ==========
-    // ========== 核心方法：processSingleSession 修复null校验 + 调整字典转码顺序 ==========
+    // ========== 核心方法：processSingleSession 整合所有逻辑，解决冲突 ==========
     @Transactional(rollbackFor = Exception.class)
     private void processSingleSession(Session session, boolean updateSupport, String operName) {
         // ========== 步骤0：先处理字典转码（核心调整：移到创建赛事之前） ==========
@@ -257,7 +264,7 @@ public class SessionServiceImpl implements ISessionService {
             session.setTags(tagsCode);
         }
 
-        // ========== 步骤1：校验赛事（此时session已带转码后的编码） ==========
+        // ========== 步骤1：校验赛事（兼容两种场景：ID选择/名称导入） ==========
         String compName;
         Competition comp;
         if (session.getCompetitionId() != null) {
@@ -294,55 +301,19 @@ public class SessionServiceImpl implements ISessionService {
             throw new ServiceException("赛事名称或ID不能为空");
         }
 
-        // ========== 步骤2：赋值届次表字段（逻辑不变） ==========
-=======
-    // ========== 核心修改：processSingleSession 中的标签处理逻辑 ==========
-    @Transactional(rollbackFor = Exception.class)
-    public void processSingleSession(Session session, boolean updateSupport, String operName) {
-        // 步骤1：校验赛事名称
-        String compName = session.getCompetitionName();
-        if (compName == null || compName.trim().isEmpty()) {
-            throw new ServiceException("赛事名称不能为空");
-        }
-        compName = compName.trim();
-
-        // ====================== 核心：从【导入专用字段】读文字，永远不会被框架转成数字！ ======================
-        String categoryCode = convertTextToDictCode("sys_competition_category", session.getCategoryImport());
-        String levelCode = convertTextToDictCode("sys_competition_level", session.getLevelImport());
-        String tagsCode = convertTextToDictCode("sys_competition_tag", session.getTagsImport());
-
-        // 步骤2：查询赛事总表，无则自动新增
-        Competition comp = competitionService.selectCompetitionByCompName(compName);
-        if (comp == null) {
-            Competition newComp = new Competition();
-            newComp.setName(compName);
-            newComp.setStatus("1"); // 固定0=启用，RuoYi标准
-            newComp.setCategory(categoryCode);
-            newComp.setLevel(levelCode);
-            newComp.setTags(tagsCode);
-            newComp.setOrganizations(session.getOrganizations());
-            newComp.setScopeType("0");
-            newComp.setCreateBy(operName);
-            newComp.setCreateTime(DateUtils.getNowDate());
-            newComp.setDelFlag("0");
-            competitionService.insertCompetition(newComp);
-            comp = competitionService.selectCompetitionByCompName(compName);
-        }
-
-        // 步骤3：赋值给【数据库真实字段】，用于导出和列表显示
->>>>>>> db5e218f4385e2d6dedd67f13d8565757edea1c6
+        // ========== 步骤2：赋值届次表字段 ==========
         session.setCompetitionId(comp.getId());
         session.setCategory(categoryCode);    // 真实字段存数字
         session.setLevel(levelCode);          // 真实字段存数字
         session.setTags(tagsCode);            // 真实字段存数字
         session.setStatus("1");
         session.setDelFlag("0");
+        session.setCreateBy(operName);
+        session.setCreateTime(DateUtils.getNowDate());
+        session.setUpdateBy(operName);
+        session.setUpdateTime(DateUtils.getNowDate());
 
-<<<<<<< HEAD
-        // ========== 步骤3：重复校验 + 新增/更新届次（逻辑不变） ==========
-=======
-        // 步骤4：重复校验
->>>>>>> db5e218f4385e2d6dedd67f13d8565757edea1c6
+        // ========== 步骤3：重复校验 + 新增/更新届次 ==========
         String sessionName = session.getSession();
         if (sessionName == null || sessionName.trim().isEmpty()) {
             throw new ServiceException("赛事届次不能为空");
@@ -352,36 +323,38 @@ public class SessionServiceImpl implements ISessionService {
         query.setSession(sessionName.trim());
         List<Session> existList = sessionMapper.selectSessionList(query);
 
+        Long sessionId = null;
         if (CollectionUtils.isEmpty(existList)) {
             this.insertSession(session);
+            sessionId = session.getId();
         } else if (updateSupport) {
             session.setId(existList.get(0).getId());
             this.updateSession(session);
+            sessionId = session.getId();
         } else {
             throw new ServiceException("该赛事届次已存在，且未开启更新模式");
         }
-<<<<<<< HEAD
 
-        // ========== 步骤4：写入标签子表（逻辑不变） ==========
-        sessionMapper.deleteTagBySessionId(sessionId);
-        if (tagsCode != null && !tagsCode.trim().isEmpty()) {
-            String[] tagArray = tagsCode.split(",");
-            List<Tag> tagList = new ArrayList<>();
-            for (String tagValue : tagArray) {
-                if (tagValue.trim().isEmpty()) continue;
-                Tag tag = new Tag();
-                tag.setCompetitionSessionId(sessionId);
-                tag.setTagName(tagValue.trim());
-                tag.setCreateBy(operName);
-                tag.setCreateTime(DateUtils.getNowDate());
-                tag.setDelFlag("0");
-                tagList.add(tag);
-            }
-            if (!tagList.isEmpty()) {
-                sessionMapper.batchInsertTag(tagList);
+        // ========== 步骤4：写入标签子表 ==========
+        if (sessionId != null) {
+            sessionMapper.deleteTagBySessionId(sessionId);
+            if (tagsCode != null && !tagsCode.trim().isEmpty()) {
+                String[] tagArray = tagsCode.split(",");
+                List<Tag> tagList = new ArrayList<>();
+                for (String tagValue : tagArray) {
+                    if (tagValue.trim().isEmpty()) continue;
+                    Tag tag = new Tag();
+                    tag.setCompetitionSessionId(sessionId);
+                    tag.setTagName(tagValue.trim());
+                    tag.setCreateBy(operName);
+                    tag.setCreateTime(DateUtils.getNowDate());
+                    tag.setDelFlag("0");
+                    tagList.add(tag);
+                }
+                if (!tagList.isEmpty()) {
+                    sessionMapper.batchInsertTag(tagList);
+                }
             }
         }
-=======
->>>>>>> db5e218f4385e2d6dedd67f13d8565757edea1c6
     }
 }
