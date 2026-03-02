@@ -5,8 +5,26 @@
         <div class="header-left">
           <div class="page-title">{{ title }}</div>
         </div>
+        <div class="page-actions">
+          <slot name="footer-left" :form="form"></slot>
+          <el-button v-if="showSubmit && !readOnly" type="warning" plain @click="handleSaveDraft">
+            暂存草稿 (本地)
+          </el-button>
+          <el-button v-if="showSubmit && !readOnly" type="primary" @click="submitForm">
+            {{ submitTextComputed }}
+          </el-button>
+          <el-button @click="handleCancel">{{ cancelText }}</el-button>
+        </div>
       </div>
       <el-divider style="margin: 10px 0 20px 0"></el-divider>
+      
+      <el-alert v-if="hasDraft" title="检测到本地有未提交的草稿" type="warning" show-icon :closable="false" style="margin-bottom: 15px;">
+        <template #default>
+          <el-button link type="primary" @click="recoverDraft">点击恢复草稿</el-button>
+          <el-button link type="danger" @click="clearDraft">丢弃</el-button>
+        </template>
+      </el-alert>
+
       <div class="outcome-body">
         <el-form ref="outcomeRefPage" :model="form" :rules="rules" label-width="110px" :disabled="readOnly">
           <div class="common-form-content">
@@ -17,10 +35,10 @@
                 <el-col :span="12">
                   <el-row>
                     <el-col :span="24">
-                      <el-form-item label="比赛" prop="competitionId">
+                      <el-form-item label="关联比赛" prop="competitionId">
                         <el-select 
                           v-model="form.competitionId" 
-                          placeholder="请选择赛事" 
+                          placeholder="请选择关联的赛事" 
                           filterable 
                           clearable 
                           style="width: 100%"
@@ -28,9 +46,6 @@
                         >
                           <el-option v-for="item in competitionOptions" :key="item.competitionId" :label="item.competitionName" :value="item.competitionId" />
                         </el-select>
-                        <div style="margin-top: 5px;">
-    <el-link type="primary" @click="goToCompetitionApply">比赛找不到？点击这里申请赛事！</el-link>
-  </div>
                       </el-form-item>
                     </el-col>
                   </el-row>
@@ -46,7 +61,7 @@
           <el-form-item label="届次" prop="sessionId">
   <el-select 
     v-model="form.sessionId" 
-    placeholder="请选择赛事" 
+    placeholder="请先选择关联赛事" 
     filterable 
     clearable 
     style="width: 100%"
@@ -79,10 +94,9 @@
                     </el-col>
                     <el-col :span="12">
                       <el-form-item label="奖项等级" prop="grade">
-                        <el-select v-model="form.grade" placeholder="请选择" style="width: 100%">
+                        <el-select v-model="form.grade" placeholder="请选择">
                           <el-option v-for="dict in award_rank" :key="dict.value" :label="dict.label" :value="dict.value" />
                         </el-select>
-                        <div style="color: #909399; font-size: 12px; margin-top: 5px;">如果比赛或者表彰没有区分等级，请选择一等奖。</div>
                       </el-form-item>
                     </el-col>
                   </el-row>
@@ -90,12 +104,11 @@
                     <el-col :span="12">
                       <el-form-item label="赛道" prop="track">
                         <el-input v-model="form.track" placeholder="请输入赛道" />
-                        <div style="color: #909399; font-size: 12px; margin-top: 5px;">例如蓝桥杯有c++，java数学竞赛有数学类与非数A等</div>
                       </el-form-item>
                     </el-col>
                     <el-col :span="12">
                       <el-form-item label="组别" prop="groupId">
-                        <el-select v-model="form.groupId" placeholder="请选择组别" style="width: 100%">
+                        <el-select v-model="form.groupId" placeholder="请选择组别">
                           <el-option v-for="dict in group_type" :key="dict.value" :label="dict.label" :value="dict.value" />
                         </el-select>
                       </el-form-item>
@@ -110,7 +123,6 @@
                     <el-col :span="12">
                       <el-form-item label="获奖时间" prop="awardTime">
                         <el-date-picker clearable v-model="form.awardTime" type="date" value-format="YYYY-MM-DD" placeholder="选择日期" style="width: 100%" />
-                        <div style="color: #909399; font-size: 12px; margin-top: 5px;">获奖时间为奖状上日期为准，若只有年月，请填写当月最后一天。</div>
                       </el-form-item>
                     </el-col>
                   </el-row>
@@ -132,9 +144,6 @@
                       <el-radio :label="1">是 (需要上传凭证)</el-radio>
                       <el-radio :label="0">否</el-radio>
                     </el-radio-group>
-                    <div style="color: #F56C6C; font-size: 12px; margin-top: 5px; font-weight: bold;">
-                      如果报名者没有通过其他途径报销，请上传发票（PDF）和填写报名金额。注意：同一张发票只能报销一次
-                    </div>
                   </el-form-item>
 
                   <el-divider content-position="center">参赛选手信息</el-divider>
@@ -142,12 +151,7 @@
                     <el-col :span="1.5"><el-button type="primary" :icon="Plus" @click="handleAddParticipant">添加学生</el-button></el-col>
                     <el-col :span="1.5"><el-button type="danger" :icon="Delete" @click="handleDeleteParticipant">删除选中</el-button></el-col>
                   </el-row>
-                  <el-table ref="participantTable" :data="samAchievementParticipantList" :row-class-name="rowParticipantIndex" @selection-change="handleParticipantSelectionChange">
-                    <el-table-column v-if="!readOnly" width="40" align="center">
-                      <template #default="scope">
-                        <el-icon v-if="scope.row.manager !== 1" class="drag-handle" style="cursor: move"><Rank /></el-icon>
-                      </template>
-                    </el-table-column>
+                  <el-table :data="samAchievementParticipantList" :row-class-name="rowParticipantIndex" @selection-change="handleParticipantSelectionChange">
                     <el-table-column v-if="!readOnly" type="selection" width="50" align="center" />
                     <el-table-column label="学生学号" prop="studentId">
                       <template #default="scope">
@@ -186,12 +190,7 @@
                     <el-col :span="1.5"><el-button type="primary" :icon="Plus" @click="handleAddAdvisor">添加老师</el-button></el-col>
                     <el-col :span="1.5"><el-button type="danger" :icon="Delete" @click="handleDeleteAdvisor">删除选中</el-button></el-col>
                   </el-row>
-                  <el-table ref="advisorTable" :data="samAchievementAdvisorList" @selection-change="handleAdvisorSelectionChange">
-                    <el-table-column v-if="!readOnly" width="40" align="center">
-                      <template #default="scope">
-                        <el-icon class="drag-handle" style="cursor: move"><Rank /></el-icon>
-                      </template>
-                    </el-table-column>
+                  <el-table :data="samAchievementAdvisorList" @selection-change="handleAdvisorSelectionChange">
                     <el-table-column v-if="!readOnly" type="selection" width="50" align="center" />
                     <el-table-column label="教师工号" prop="teacherId">
                       <template #default="scope">
@@ -272,17 +271,23 @@
     width="1200px"
     append-to-body
     :close-on-click-modal="false"
-    :before-close="handleBeforeClose"
-    @closed="reset"
+    @close="handleCancel"
     top="5vh"
   >
+    <el-alert v-if="hasDraft" title="检测到本地有未提交的草稿" type="warning" show-icon :closable="false" style="margin-bottom: 10px;">
+      <template #default>
+        <el-button link type="primary" @click="recoverDraft">点击恢复草稿</el-button>
+        <el-button link type="danger" @click="clearDraft">丢弃</el-button>
+      </template>
+    </el-alert>
+
     <div class="outcome-body">
       <el-form ref="outcomeRefDialog" :model="form" :rules="rules" label-width="110px" :disabled="readOnly">
         <el-row :gutter="20">
             <el-col :span="12">
               <el-row>
                 <el-col :span="24">
-                 <el-form-item label="比赛" prop="competitionId">
+                  <el-form-item label="关联比赛" prop="competitionId">
                     <el-select 
                       v-model="form.competitionId" 
                       placeholder="请选择关联的赛事" 
@@ -293,9 +298,6 @@
                     >
                       <el-option v-for="item in competitionOptions" :key="item.competitionId" :label="item.competitionName" :value="item.competitionId" />
                     </el-select>
-                    <div style="margin-top: 5px;">
-    <el-link type="primary" @click="goToCompetitionApply">比赛找不到？点击这里申请赛事！</el-link>
-  </div>
                   </el-form-item>
                 </el-col>
               </el-row>
@@ -311,7 +313,7 @@
            <el-form-item label="届次" prop="sessionId">
   <el-select 
     v-model="form.sessionId" 
-    placeholder="请先选择赛事" 
+    placeholder="请先选择关联赛事" 
     filterable 
     clearable 
     style="width: 100%"
@@ -344,10 +346,9 @@
                 </el-col>
                 <el-col :span="12">
                   <el-form-item label="奖项等级" prop="grade">
-                    <el-select v-model="form.grade" placeholder="请选择" style="width: 100%">
+                    <el-select v-model="form.grade" placeholder="请选择">
                       <el-option v-for="dict in award_rank" :key="dict.value" :label="dict.label" :value="dict.value" />
                     </el-select>
-                    <div style="color: #909399; font-size: 12px; margin-top: 5px;">如果比赛或者表彰没有区分等级，请选择一等奖。</div>
                   </el-form-item>
                 </el-col>
               </el-row>
@@ -355,12 +356,11 @@
                 <el-col :span="12">
                   <el-form-item label="赛道" prop="track">
                     <el-input v-model="form.track" placeholder="请输入赛道" />
-                    <div style="color: #909399; font-size: 12px; margin-top: 5px;">例如蓝桥杯有c++，java数学竞赛有数学类与非数A等</div>
                   </el-form-item>
                 </el-col>
                 <el-col :span="12">
                   <el-form-item label="组别" prop="groupId">
-                    <el-select v-model="form.groupId" placeholder="请选择组别" style="width: 100%">
+                    <el-select v-model="form.groupId" placeholder="请选择组别">
                       <el-option v-for="dict in group_type" :key="dict.value" :label="dict.label" :value="dict.value" />
                     </el-select>
                   </el-form-item>
@@ -375,7 +375,6 @@
                 <el-col :span="12">
                   <el-form-item label="获奖时间" prop="awardTime">
                     <el-date-picker clearable v-model="form.awardTime" type="date" value-format="YYYY-MM-DD" placeholder="选择日期" style="width: 100%" />
-                    <div style="color: #909399; font-size: 12px; margin-top: 5px;">获奖时间为奖状上日期为准，若只有年月，请填写当月最后一天。</div>
                   </el-form-item>
                 </el-col>
               </el-row>
@@ -397,9 +396,6 @@
                   <el-radio :label="1">是 (需要上传凭证)</el-radio>
                   <el-radio :label="0">否</el-radio>
                 </el-radio-group>
-                <div style="color: #F56C6C; font-size: 12px;font-weight: bold;">
-                  如果报名者没有通过其他途径报销，请上传发票（PDF）和填写报名金额。注意：同一张发票只能报销一次
-                </div>
               </el-form-item>
 
               <el-divider content-position="center">参赛选手信息</el-divider>
@@ -407,12 +403,7 @@
                 <el-col :span="1.5"><el-button type="primary" :icon="Plus" @click="handleAddParticipant">添加学生</el-button></el-col>
                 <el-col :span="1.5"><el-button type="danger" :icon="Delete" @click="handleDeleteParticipant">删除选中</el-button></el-col>
               </el-row>
-              <el-table ref="participantTableDialog" :data="samAchievementParticipantList" :row-class-name="rowParticipantIndex" @selection-change="handleParticipantSelectionChange">
-                <el-table-column v-if="!readOnly" width="40" align="center">
-                  <template #default="scope">
-                    <el-icon v-if="scope.row.manager !== 1" class="drag-handle" style="cursor: move"><Rank /></el-icon>
-                  </template>
-                </el-table-column>
+              <el-table :data="samAchievementParticipantList" :row-class-name="rowParticipantIndex" @selection-change="handleParticipantSelectionChange">
                 <el-table-column v-if="!readOnly" type="selection" width="50" align="center" />
                 <el-table-column label="学生学号" prop="studentId">
                   <template #default="scope">
@@ -451,12 +442,7 @@
                 <el-col :span="1.5"><el-button type="primary" :icon="Plus" @click="handleAddAdvisor">添加老师</el-button></el-col>
                 <el-col :span="1.5"><el-button type="danger" :icon="Delete" @click="handleDeleteAdvisor">删除选中</el-button></el-col>
               </el-row>
-              <el-table ref="advisorTableDialog" :data="samAchievementAdvisorList" @selection-change="handleAdvisorSelectionChange">
-                <el-table-column v-if="!readOnly" width="40" align="center">
-                  <template #default="scope">
-                    <el-icon class="drag-handle" style="cursor: move"><Rank /></el-icon>
-                  </template>
-                </el-table-column>
+              <el-table :data="samAchievementAdvisorList" @selection-change="handleAdvisorSelectionChange">
                 <el-table-column v-if="!readOnly" type="selection" width="50" align="center" />
                 <el-table-column label="教师工号" prop="teacherId">
                   <template #default="scope">
@@ -533,6 +519,9 @@
           <slot name="footer-left" :form="form"></slot>
         </div>
         <div class="footer-right">
+          <el-button v-if="showSubmit && !readOnly" type="warning" plain @click="handleSaveDraft">
+            暂存草稿 (本地)
+          </el-button>
           <el-button v-if="showSubmit && !readOnly" type="primary" @click="submitForm">
             {{ submitTextComputed }}
           </el-button>
@@ -570,74 +559,13 @@
       </div>
     </template>
   </el-dialog>
-
-  <!-- 学生信息补全弹窗 -->
-  <el-dialog title="完善学生信息" v-model="studentRegVisible" width="500px" append-to-body :close-on-click-modal="false">
-    <el-form ref="studentRegRef" :model="studentRegForm" :rules="studentRegRules" label-width="80px">
-      <el-form-item label="学号" prop="no">
-        <el-input v-model="studentRegForm.no" disabled />
-      </el-form-item>
-      <el-form-item label="姓名" prop="name">
-        <el-input v-model="studentRegForm.name" placeholder="请输入学生姓名" />
-      </el-form-item>
-      <el-form-item label="学院" prop="school">
-        <el-input v-model="studentRegForm.school" placeholder="请输入学院" />
-      </el-form-item>
-      <el-form-item label="院系" prop="department">
-        <el-input v-model="studentRegForm.department" placeholder="请输入院系" />
-      </el-form-item>
-      <el-form-item label="专业" prop="major">
-        <el-input v-model="studentRegForm.major" placeholder="请输入专业" />
-      </el-form-item>
-      <el-form-item label="班级" prop="class_name">
-        <el-input v-model="studentRegForm.class_name" placeholder="请输入班级" />
-      </el-form-item>
-      <el-form-item label="年级" prop="class_year">
-        <el-input v-model="studentRegForm.class_year" placeholder="请输入年级 (例如: 2022)" />
-      </el-form-item>
-    </el-form>
-    <template #footer>
-      <div class="dialog-footer">
-        <el-button type="primary" @click="submitStudentReg">确 定</el-button>
-        <el-button @click="studentRegVisible = false">取 消</el-button>
-      </div>
-    </template>
-  </el-dialog>
-
-  <!-- 教师信息补全弹窗 -->
-  <el-dialog title="完善教师信息" v-model="teacherRegVisible" width="500px" append-to-body :close-on-click-modal="false">
-    <el-form ref="teacherRegRef" :model="teacherRegForm" :rules="teacherRegRules" label-width="80px">
-      <el-form-item label="工号" prop="no">
-        <el-input v-model="teacherRegForm.no" disabled />
-      </el-form-item>
-      <el-form-item label="姓名" prop="name">
-        <el-input v-model="teacherRegForm.name" placeholder="请输入教师姓名" />
-      </el-form-item>
-      <el-form-item label="学院" prop="school">
-        <el-input v-model="teacherRegForm.school" placeholder="请输入学院" />
-      </el-form-item>
-      <el-form-item label="院系" prop="department">
-        <el-input v-model="teacherRegForm.department" placeholder="请输入院系" />
-      </el-form-item>
-    </el-form>
-    <template #footer>
-      <div class="dialog-footer">
-        <el-button type="primary" @click="submitTeacherReg">确 定</el-button>
-        <el-button @click="teacherRegVisible = false">取 消</el-button>
-      </div>
-    </template>
-  </el-dialog>
 </template>
 
 <script setup name="AchievementForm">
 import { getCurrentInstance, ref, reactive, toRefs, computed, onMounted, watch } from "vue";
-import { onBeforeRouteLeave } from "vue-router";
-import draggable from "vuedraggable";
-import Sortable from "sortablejs";
-import useUserStore from "@/store/modules/user";
-import { Plus, Delete, Document, Download, View, UploadFilled, Rank } from "@element-plus/icons-vue";
-import { listStudent, addStudent } from "@/api/achievement/student";
-import { listTeacher, addTeacher } from "@/api/achievement/teacher";
+import { Plus, Delete, Document, Download, View, UploadFilled } from "@element-plus/icons-vue";
+import { listStudent } from "@/api/achievement/student";
+import { listTeacher } from "@/api/achievement/teacher";
 import { listDept } from "@/api/system/dept";
 import { handleTree } from "@/utils/ruoyi";
 import request from '@/utils/request';
@@ -669,39 +597,18 @@ const activeAttachmentTab = ref('award');
 
 const uploadUrl = ref("/dev-api/attachment/upload");
 
-const userStore = useUserStore();
-const studentRegVisible = ref(false);
-const studentRegForm = ref({ no: "", name: "", school: "", department: "", major: "", class_name: "", class_year: "" });
-const studentRegRules = {
-  name: [{ required: true, message: "姓名不能为空", trigger: "blur" }],
-  school: [{ required: true, message: "学院不能为空", trigger: "blur" }]
-};
-let currentPendingRow = null; // 记录当前正在录入的学生行
-
-const teacherRegVisible = ref(false);
-const teacherRegForm = ref({ no: "", name: "", school: "", department: "" });
-const teacherRegRules = {
-  name: [{ required: true, message: "姓名不能为空", trigger: "blur" }],
-  school: [{ required: true, message: "学院不能为空", trigger: "blur" }]
-};
-let currentPendingTeacherRow = null; // 记录当前正在录入的教师行
-
 const samAchievementParticipantList = ref([]);
 const samAchievementAdvisorList = ref([]);
-const participantTable = ref(null);
-const advisorTable = ref(null);
-const participantTableDialog = ref(null);
-const advisorTableDialog = ref(null);
 const checkedParticipant = ref([]);
 const checkedAdvisor = ref([]);
+const DRAFT_KEY = 'achievement_form_draft';
+const hasDraft = ref(false);
 const competitionOptions = ref([]);
 const sessionOptions = ref([]);
 
 const data = reactive({
   form: { competitionId: null },
-  formSnapshot: "",
   rules: {
-    competitionId: [{ required: true, message: "比赛不能为空", trigger: "change" }],
     category: [{ required: true, message: "类别不能为空", trigger: "change" }],
     sessionId: [{ required: true, message: "届次不能为空", trigger: "change" }],
     ownerDepId: [{ required: true, message: "所属学院不能为空", trigger: "change" }],
@@ -714,26 +621,7 @@ const data = reactive({
     fee: [{ pattern: /^[0-9]+(\.[0-9]{1,2})?$/, message: "请输入正确的金额" }]
   }
 });
-const { form, formSnapshot, rules } = toRefs(data);
-
-const isModified = computed(() => {
-  if (props.readOnly) return false;
-  const currentData = {
-    form: form.value,
-    participants: samAchievementParticipantList.value,
-    advisors: samAchievementAdvisorList.value
-  };
-  return JSON.stringify(currentData) !== formSnapshot.value;
-});
-
-function updateSnapshot() {
-  const currentData = {
-    form: form.value,
-    participants: samAchievementParticipantList.value,
-    advisors: samAchievementAdvisorList.value
-  };
-  formSnapshot.value = JSON.stringify(currentData);
-}
+const { form, rules } = toRefs(data);
 
 const submitTextComputed = computed(() => {
   if (props.submitText) return props.submitText;
@@ -800,74 +688,22 @@ function handleStudentBlur(row) {
       row.studentName = response.rows[0].name;
       row.isManual = false; 
     } else {
-      // 未找到学生，弹出补全窗口
-      currentPendingRow = row;
-      studentRegForm.value = { 
-        no: row.studentId, 
-        name: "", 
-        school: "", 
-        department: "", 
-        major: "", 
-        class_name: "", 
-        class_year: "" 
-      };
-      studentRegVisible.value = true;
-    }
-  });
-}
-
-function submitStudentReg() {
-  proxy.$refs.studentRegRef.validate(valid => {
-    if (valid) {
-      addStudent(studentRegForm.value).then(response => {
-        proxy.$modal.msgSuccess("学生信息已录入");
-        if (currentPendingRow) {
-          currentPendingRow.studentName = studentRegForm.value.name;
-          currentPendingRow.isManual = false;
-        }
-        studentRegVisible.value = false;
-      });
-    }
-  });
-}
-
-function submitTeacherReg() {
-  proxy.$refs.teacherRegRef.validate(valid => {
-    if (valid) {
-      addTeacher(teacherRegForm.value).then(response => {
-        proxy.$modal.msgSuccess("教师信息已录入");
-        if (currentPendingTeacherRow) {
-          currentPendingTeacherRow.teacherName = teacherRegForm.value.name;
-          currentPendingTeacherRow.isManual = false;
-        }
-        teacherRegVisible.value = false;
-      });
+      row.studentName = ""; 
+      row.isManual = true; 
+      proxy.$modal.msgInfo(`未找到学号 ${row.studentId}，请手动输入姓名`);
     }
   });
 }
 
 function handleAddParticipant() {
   samAchievementParticipantList.value.push({ 
-    studentId: '', 
-    studentName: '', 
-    orderNo: samAchievementParticipantList.value.length + 1, 
-    manager: 0, 
+    studentId: "", 
+    studentName: "", 
+    orderNo: 0, 
+    manager: 0,
     isManual: false 
   });
-}
-
-function handleAddAdvisor() {
-  samAchievementAdvisorList.value.push({ 
-    teacherId: '', 
-    teacherName: '', 
-    orderNo: samAchievementAdvisorList.value.length + 1, 
-    isManual: false 
-  });
-}
-
-function handleBeforeCloseSub(done, type) {
-  // 此函数现在仅用于补全弹窗，如果需要的话
-  done();
+  reIndexList(samAchievementParticipantList.value);
 }
 
 function handleTeacherBlur(row) {
@@ -882,17 +718,21 @@ function handleTeacherBlur(row) {
       row.teacherName = response.rows[0].teacherName;
       row.isManual = false;
     } else {
-      // 未找到教师，弹出补全窗口
-      currentPendingTeacherRow = row;
-      teacherRegForm.value = { 
-        no: row.teacherId, 
-        name: "", 
-        school: "", 
-        department: ""
-      };
-      teacherRegVisible.value = true;
+      row.teacherName = "";
+      row.isManual = true;
+      proxy.$modal.msgInfo(`未找到工号 ${row.teacherId}，请手动输入姓名`);
     }
   });
+}
+
+function handleAddAdvisor() {
+  samAchievementAdvisorList.value.push({ 
+    teacherId: "", 
+    teacherName: "", 
+    orderNo: 0,
+    isManual: false 
+  }); 
+  reIndexList(samAchievementAdvisorList.value);
 }
 
 function handleDeleteParticipant() {
@@ -962,38 +802,6 @@ watch(() => form.value.fileReceiptCode, (uuid) => loadSafePreview(uuid, 'receipt
 // =========================================================
 
 // 获取比赛列表
-function normalizeId(val) {
-  if (val === null || val === undefined || val === "") return null;
-  return String(val);
-}
-
-function mergeCompetitionOptions(list) {
-  const normalized = (list || [])
-    .map(item => ({
-      competitionId: normalizeId(item.id || item.competitionId),
-      competitionName: item.name || item.competitionName,
-      ...item
-    }))
-    .filter(item => item.competitionId);
-
-  const existingOnly = competitionOptions.value.filter(item =>
-    item?.competitionId && !normalized.some(x => String(x.competitionId) === String(item.competitionId))
-  );
-  competitionOptions.value = [...normalized, ...existingOnly];
-}
-
-function ensureCurrentCompetitionOption(detail) {
-  const currentId = normalizeId(detail?.competitionId);
-  if (!currentId) return;
-  const exists = competitionOptions.value.some(item => String(item.competitionId) === currentId);
-  if (!exists) {
-    competitionOptions.value.unshift({
-      competitionId: currentId,
-      competitionName: detail?.competitionName || `赛事(${currentId})`
-    });
-  }
-}
-
 function getCompetitionList() {
   request({
     url: '/competition/competition/list',
@@ -1066,19 +874,12 @@ function open(id) {
   if (id) {
     title.value = props.titleEdit;
     loadDetail(id);
+    hasDraft.value = false;
   } else {
     title.value = props.titleAdd;
-    // 自动填充当前用户为负责人
-    samAchievementParticipantList.value.push({
-      studentId: userStore.name,
-      studentName: userStore.nickName,
-      orderNo: 1,
-      manager: 1,
-      isManual: false
-    });
-    updateSnapshot();
+    checkDraft();
+    // 新增模式下，不需要初始加载届次，因为赛事还没选
   }
-  initSortable(); // 开启拖拽
 }
 
 function getForm() { return form.value; }
@@ -1088,57 +889,14 @@ onMounted(() => {
   if (isPageMode.value) {
     getDeptTree();
     getCompetitionList();
-    initSortable();
+    if (!form.value.achievementId) {
+      checkDraft();
+    } else {
+        // 如果是页面模式且正在编辑，需要加载详情
+        // 这里如果是路由参数带 ID 的情况，通常在 created 或 activated 里有逻辑，这里仅作演示
+    }
   }
 });
-
-/** 初始化拖拽 */
-function initSortable() {
-  setTimeout(() => {
-    // 1. 尝试获取参与者表格（支持页面或弹窗模式）
-    const pTable = participantTable.value || participantTableDialog.value;
-    if (pTable) {
-      const el = pTable.$el.querySelector('.el-table__body-wrapper tbody') || pTable.$el.querySelector('tbody');
-      if (el) {
-        Sortable.create(el, {
-          handle: '.drag-handle',
-          filter: '.el-table__row:first-child', // 负责人不动
-          onEnd: ({ newIndex, oldIndex }) => {
-            const list = [...samAchievementParticipantList.value];
-            const currRow = list.splice(oldIndex, 1)[0];
-            list.splice(newIndex, 0, currRow);
-            samAchievementParticipantList.value = [];
-            nextTick(() => {
-              samAchievementParticipantList.value = list;
-              reIndexList(samAchievementParticipantList.value);
-            });
-          }
-        });
-      }
-    }
-
-    // 2. 尝试获取老师表格
-    const aTable = advisorTable.value || advisorTableDialog.value;
-    if (aTable) {
-      const el = aTable.$el.querySelector('.el-table__body-wrapper tbody') || aTable.$el.querySelector('tbody');
-      if (el) {
-        Sortable.create(el, {
-          handle: '.drag-handle',
-          onEnd: ({ newIndex, oldIndex }) => {
-            const list = [...samAchievementAdvisorList.value];
-            const currRow = list.splice(oldIndex, 1)[0];
-            list.splice(newIndex, 0, currRow);
-            samAchievementAdvisorList.value = [];
-            nextTick(() => {
-              samAchievementAdvisorList.value = list;
-              reIndexList(samAchievementAdvisorList.value);
-            });
-          }
-        });
-      }
-    }
-  }, 500);
-}
 
 function loadDetail(id) {
   if (!props.getFn) return;
@@ -1167,7 +925,6 @@ function loadDetail(id) {
        });
     }
     if (form.value.isReimburse == null) form.value.isReimburse = 0;
-    updateSnapshot();
   });
 }
 
@@ -1194,47 +951,53 @@ function reset() {
   });
   if(outcomeRefPage.value) outcomeRefPage.value.resetFields();
   if(outcomeRefDialog.value) outcomeRefDialog.value.resetFields();
-  updateSnapshot();
 }
 
-function validatePDFUpload() {
-  const f = form.value;
-  // 基础 3 个 PDF 验证 (无论是否报销都必须上传)
-  if (!f.fileAward) {
-    proxy.$modal.msgWarning("请上传【奖状(证书)】PDF文件！");
-    activeAttachmentTab.value = 'award';
-    return false;
-  }
-  if (!f.fileNotice) {
-    proxy.$modal.msgWarning("请上传【比赛通知】PDF文件！");
-    activeAttachmentTab.value = 'notice';
-    return false;
-  }
-  if (!f.fileWork) {
-    proxy.$modal.msgWarning("请上传【参赛作品】PDF文件！");
-    activeAttachmentTab.value = 'work';
-    return false;
-  }
+function checkDraft() {
+  const draftStr = localStorage.getItem(DRAFT_KEY);
+  hasDraft.value = !!draftStr;
+}
 
-  // 报销额外 3 个 PDF 验证
-  if (f.isReimburse === 1) {
-    if (!f.filePayment) {
-      proxy.$modal.msgWarning("申请报销必须上传【支付记录】PDF文件！");
-      activeAttachmentTab.value = 'payment';
-      return false;
+function recoverDraft() {
+  try {
+    const draftStr = localStorage.getItem(DRAFT_KEY);
+    if (draftStr) {
+      const draftData = JSON.parse(draftStr);
+      form.value = { ...form.value, ...draftData.form };
+      
+      // 恢复草稿时，如果保存了 competitionId，也需要加载届次
+      if (form.value.competitionId) {
+          getSessionList(form.value.competitionId);
+      }
+      
+      samAchievementParticipantList.value = draftData.participants || [];
+      samAchievementAdvisorList.value = draftData.advisors || [];
+      proxy.$modal.msgSuccess("草稿已恢复");
+      hasDraft.value = false; 
     }
-    if (!f.fileInvoice) {
-      proxy.$modal.msgWarning("申请报销必须上传【正规发票】PDF文件！");
-      activeAttachmentTab.value = 'invoice';
-      return false;
-    }
-    if (!f.fileReceiptCode) {
-      proxy.$modal.msgWarning("申请报销必须上传【收款码】PDF文件！");
-      activeAttachmentTab.value = 'receipt';
-      return false;
-    }
+  } catch (e) {
+    console.error("恢复草稿失败", e);
+    proxy.$modal.msgError("草稿数据损坏，无法恢复");
+    clearDraft();
   }
-  return true;
+}
+
+function clearDraft() {
+  localStorage.removeItem(DRAFT_KEY);
+  hasDraft.value = false;
+  proxy.$modal.msgSuccess("草稿已清除");
+}
+
+function handleSaveDraft() {
+  const draftData = {
+    form: form.value,
+    participants: samAchievementParticipantList.value,
+    advisors: samAchievementAdvisorList.value,
+    timestamp: new Date().getTime()
+  };
+  localStorage.setItem(DRAFT_KEY, JSON.stringify(draftData));
+  proxy.$modal.msgSuccess("草稿已保存至浏览器缓存，下次进入页面可恢复");
+  hasDraft.value = true;
 }
 
 function submitForm() {
@@ -1243,21 +1006,19 @@ function submitForm() {
   
   activeRef.validate(valid => {
     if (valid) {
-      // 验证PDF文件上传
-      if (!validatePDFUpload()) {
-        return;
-      }
+       if (form.value.isReimburse === 1) {
+          if (!form.value.fileReceiptCode) {
+             proxy.$modal.msgWarning("申请报销必须上传【收款码】！");
+             return;
+          }
+          if (!form.value.fileAward && !form.value.fileInvoice) {
+             proxy.$modal.msgWarning("申请报销时，请至少上传一份凭证(奖状或发票)！");
+             return;
+          }
+       }
 
       let attachments = [];
-      const pushFile = (type, path) => { 
-        if (path) {
-          attachments.push({ 
-            type: type, 
-            fileUuid: path, 
-            fileType: 1 // 增加默认文件类型，防止数据库非空约束报错
-          }); 
-        } 
-      };
+      const pushFile = (type, path) => { if (path) attachments.push({ type: type, fileUuid: path }); };
       pushFile(1, form.value.fileAward);
       pushFile(2, form.value.fileNotice);
       pushFile(3, form.value.fileWork);
@@ -1275,7 +1036,10 @@ function submitForm() {
       if (apiFn) {
         apiFn(form.value).then(response => {
           proxy.$modal.msgSuccess(isEdit ? "修改成功" : "新增成功");
-          updateSnapshot(); // 保存后更新快照
+          if (!isEdit) {
+             localStorage.removeItem(DRAFT_KEY);
+             hasDraft.value = false;
+          }
           if (!isPageMode.value) visible.value = false;
           emit('ok');
         });
@@ -1286,47 +1050,10 @@ function submitForm() {
   });
 }
 
-/** 拦截右上角叉号或点击遮罩层 */
-function handleBeforeClose(done) {
-  if (isModified.value) {
-    proxy.$modal.confirm('系统检测到您有未保存的修改，确定要离开吗？', "提示", {
-      confirmButtonText: "确定",
-      cancelButtonText: "取消",
-      type: "warning"
-    }).then(() => {
-      done(); // 执行 done 才会真正关闭
-    }).catch(() => {
-      // 点击取消不执行 done，弹窗保持打开
-    });
-  } else {
-    done();
-  }
-}
-
 function handleCancel() {
-  if (isModified.value) {
-    proxy.$modal.confirm('系统检测到您有未保存的修改，确定要离开吗？', "提示", {
-      confirmButtonText: "确定",
-      cancelButtonText: "取消",
-      type: "warning"
-    }).then(() => {
-      if (isPageMode.value) {
-         reset();
-         emit('cancel');
-      } else {
-         visible.value = false; // 这将触发 @closed="reset"
-         emit('cancel');
-      }
-    }).catch(() => {});
-  } else {
-    if (isPageMode.value) {
-       reset();
-       emit('cancel');
-    } else {
-       visible.value = false;
-       emit('cancel');
-    }
-  }
+  if (!isPageMode.value) visible.value = false;
+  reset();
+  emit('cancel');
 }
 
 function getDeptTree() {
@@ -1338,43 +1065,13 @@ function getDeptTree() {
 function reIndexList(list) {
   list.forEach((item, index) => {
     item.orderNo = index + 1;
-    // 只有第一个始终是负责人
     item.manager = (index === 0) ? 1 : 0;
   });
-}
-
-// 拖拽结束后的处理函数
-function onDragEnd() {
-  reIndexList(samAchievementParticipantList.value);
-}
-
-function onAdvisorDragEnd() {
-  reIndexList(samAchievementAdvisorList.value);
 }
 
 function getFileName(url) { return url ? url.substring(url.lastIndexOf("/") + 1) : ""; }
 function handleDownload(uuid) {
   if (uuid) proxy.$download.resource(uuid);
-}
-
-onBeforeRouteLeave((to, from, next) => {
-  if (isPageMode.value && isModified.value) {
-    proxy.$modal.confirm('系统检测到您有未保存的修改，确定要离开吗？', "提示", {
-      confirmButtonText: "确定",
-      cancelButtonText: "取消",
-      type: "warning"
-    }).then(() => {
-      next();
-    }).catch(() => {
-      next(false);
-    });
-  } else {
-    next();
-  }
-});
-
-function goToCompetitionApply() {
-  proxy.$router.push('/views/competition-apply/index');
 }
 </script>
 
@@ -1446,5 +1143,4 @@ function goToCompetitionApply() {
   width: 100%; /* 设置宽度为 100%，使其占满容器 */
   box-sizing: border-box; /* 确保 padding 和 border 不会影响总宽度 */
 }
-
 </style>
