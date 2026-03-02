@@ -8,13 +8,8 @@
     <resultMap type="Session" id="SessionResult">
         <result property="id"           column="session_id"    />
         <result property="competitionId" column="competition_id" />
-<<<<<<< HEAD
         <!-- 映射赛事名称（从competition表关联查询） -->
 <!--        <result property="competitionName" column="competition_name" javaType="java.lang.String" jdbcType="VARCHAR"/>-->
-=======
-        <!-- 新增：映射赛事名称（从competition表关联查询的name字段） -->
-        <result property="competitionName" column="competition_name" />
->>>>>>> db5e218f4385e2d6dedd67f13d8565757edea1c6
         <result property="session"      column="session"       />
         <result property="category"     column="category"      />
         <result property="organizations" column="organizations" />
@@ -35,10 +30,7 @@
         s.session, s.category, s.organizations, s.level, s.status, s.tags,
         s.create_by, s.create_time, s.update_by, s.update_time, s.remark, s.del_flag
         from sam_competition_session s
-<<<<<<< HEAD
-=======
         <!-- 左关联赛事主表（替换成你的competition表名，比如sam_competition） -->
->>>>>>> db5e218f4385e2d6dedd67f13d8565757edea1c6
         left join sam_competition c on s.competition_id = c.id
     </sql>
 
