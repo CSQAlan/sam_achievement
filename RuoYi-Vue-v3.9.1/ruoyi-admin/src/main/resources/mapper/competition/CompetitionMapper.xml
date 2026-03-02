@@ -231,5 +231,4 @@
             ( #{item.id}, #{item.sessionId}, #{item.deptId}, #{item.sort}, #{item.createBy}, #{item.createTime}, #{item.updateBy}, #{item.updateTime}, #{item.remark}, #{item.delFlag})
         </foreach>
     </insert>
-
 </mapper>
