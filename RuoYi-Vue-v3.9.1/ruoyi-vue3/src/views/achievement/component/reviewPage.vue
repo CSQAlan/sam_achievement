@@ -30,15 +30,15 @@
             <div class="audit-field status-field">
               <span class="audit-label">审核后状态</span>
               <el-select
-                v-model="selectedAuditStatus"
-                placeholder="请选择"
-                class="audit-status-select"
+                  v-model="selectedAuditStatus"
+                  placeholder="请选择"
+                  class="audit-status-select"
               >
                 <el-option
-                  v-for="opt in nextStatusOptions"
-                  :key="String(opt.value)"
-                  :label="opt.label"
-                  :value="String(opt.value)"
+                    v-for="opt in nextStatusOptions"
+                    :key="String(opt.value)"
+                    :label="opt.label"
+                    :value="String(opt.value)"
                 />
               </el-select>
             </div>
@@ -46,13 +46,13 @@
             <div v-if="showRejectReason" class="audit-field reason-field">
               <span class="audit-label">驳回原因</span>
               <el-input
-                v-model="rejectReason"
-                type="textarea"
-                :rows="1"
-                maxlength="200"
-                show-word-limit
-                class="audit-reason"
-                :placeholder="rejectReasonPlaceholder"
+                  v-model="rejectReason"
+                  type="textarea"
+                  :rows="1"
+                  maxlength="200"
+                  show-word-limit
+                  class="audit-reason"
+                  :placeholder="rejectReasonPlaceholder"
               />
             </div>
           </div>
@@ -63,6 +63,7 @@
         </div>
       </div>
     </div>
+
   </div>
 </template>
 
@@ -179,10 +180,10 @@ function writeJson(key, value) {
 function parsePageIds(value) {
   if (!value) return [];
   return String(value)
-    .split(",")
-    .map((v) => Number(v))
-    .filter((v) => !Number.isNaN(v))
-    .sort((a, b) => a - b);
+      .split(",")
+      .map((v) => Number(v))
+      .filter((v) => !Number.isNaN(v))
+      .sort((a, b) => a - b);
 }
 
 function loadPageIds() {
@@ -270,7 +271,7 @@ function syncHistoryOnEnter() {
 
   const last = historyRef.value[historyRef.value.length - 1];
   if (!last || String(last.id) !== String(entry.id) || String(last.source) !== String(entry.source) ||
-    String(last.path) !== String(entry.path) || String(last.mode) !== String(entry.mode)) {
+      String(last.path) !== String(entry.path) || String(last.mode) !== String(entry.mode)) {
     historyRef.value.push(entry);
   }
   cursorRef.value = historyRef.value.length - 1;
@@ -409,20 +410,20 @@ function syncAuditFromForm() {
 }
 
 watch(
-  () => {
-    const form = dlgRef.value?.getForm?.();
-    return [
-      form?.achievementId,
-      form?.reviewResult,
-      form?.schooiReviewResult,
-      form?.reviewReason,
-      form?.schoolReviewReason
-    ];
-  },
-  () => {
-    syncAuditFromForm();
-  },
-  { immediate: true }
+    () => {
+      const form = dlgRef.value?.getForm?.();
+      return [
+        form?.achievementId,
+        form?.reviewResult,
+        form?.schooiReviewResult,
+        form?.reviewReason,
+        form?.schoolReviewReason
+      ];
+    },
+    () => {
+      syncAuditFromForm();
+    },
+    { immediate: true }
 );
 
 function handleBack() {
@@ -512,26 +513,23 @@ async function submitAudit() {
   const collegeAuditReason = isCollegeReject.value ? rejectReason.value.trim() : "";
   const schoolAuditReason = isSchoolReject.value ? rejectReason.value.trim() : "";
   const currentSchoolStatusRaw =
-    baseForm?.schooiReviewResult ??
-    baseForm?.schooi_review_result;
+      baseForm?.schooiReviewResult ?? baseForm?.schooi_review_result;
   const currentSchoolStatus =
-    currentSchoolStatusRaw === null || currentSchoolStatusRaw === undefined
-      ? ""
-      : String(currentSchoolStatusRaw).trim();
+      currentSchoolStatusRaw === null || currentSchoolStatusRaw === undefined
+          ? ""
+          : String(currentSchoolStatusRaw).trim();
   const schoolAuditByRaw =
-    baseForm?.schoolAuditBy ??
-    baseForm?.school_audit_by;
+      baseForm?.schoolAuditBy ?? baseForm?.school_audit_by;
   const schoolReviewReasonRaw =
-    baseForm?.schoolReviewReason ??
-    baseForm?.school_review_reason;
+      baseForm?.schoolReviewReason ?? baseForm?.school_review_reason;
   const schoolAuditBy = normalizeLooseText(schoolAuditByRaw);
   const schoolReviewReason = normalizeLooseText(schoolReviewReasonRaw);
   const hasSchoolReviewTrace = !!schoolAuditBy || !!schoolReviewReason;
   const schoolStatusLooksReviewed = currentSchoolStatus === "0" || currentSchoolStatus === "1";
   const canPushSchoolPending =
-    currentSchoolStatus === "" ||
-    currentSchoolStatus === "2" ||
-    (schoolStatusLooksReviewed && !hasSchoolReviewTrace);
+      currentSchoolStatus === "" ||
+      currentSchoolStatus === "2" ||
+      (schoolStatusLooksReviewed && !hasSchoolReviewTrace);
 
   try {
     // ===== 院级审核 =====
@@ -560,7 +558,19 @@ async function submitAudit() {
       }
 
       proxy.$modal?.msgSuccess?.("院级审核成功");
-      jumpToNextAfterAudit(id);
+
+      // 在审核完成后，弹出确认是否跳转到下一个成果的弹窗
+      // 提交审核后弹出确认是否跳转到下一个成果的弹窗
+      proxy.$modal
+          .confirm(`审核成功，是否跳转到下一个成果？`)
+          .then(() => {
+            // 用户点击“是”按钮后跳转到下一个成果
+            jumpToNextAfterAudit(id);
+          })
+          .catch(() => {
+            // 用户点击“否”按钮后留在当前页面
+            proxy.$modal?.msgSuccess?.("已提交审核，留在当前页面");
+          });
       return;
     }
 
@@ -580,15 +590,17 @@ async function submitAudit() {
 
       await updateCollege_level_reviewed(payload);
 
-      // 同表设置校级待审核状态（schooiReviewResult=2）
-
-      if (source.value.endsWith("unreviewed")) {
-        pageIdsRef.value = pageIdsRef.value.filter((pid) => String(pid) !== String(id));
-        persistPageIds();
-      }
-
-      proxy.$modal?.msgSuccess?.("院级审核成功");
-      jumpToNextAfterAudit(id);
+      // 提交审核后弹出确认是否跳转到下一个成果的弹窗
+      proxy.$modal
+          .confirm(`审核成功，是否跳转到下一个成果？`)
+          .then(() => {
+            // 用户点击“是”按钮后跳转到下一个成果
+            jumpToNextAfterAudit(id);
+          })
+          .catch(() => {
+            // 用户点击“否”按钮后留在当前页面
+            proxy.$modal?.msgSuccess?.("已提交审核，留在当前页面");
+          });
       return;
     }
 
@@ -610,7 +622,18 @@ async function submitAudit() {
       }
 
       proxy.$modal?.msgSuccess?.("校级审核成功");
-      jumpToNextAfterAudit(id);
+
+      // 提交审核后弹出确认是否跳转到下一个成果的弹窗
+      proxy.$modal
+          .confirm(`审核成功，是否跳转到下一个成果？`)
+          .then(() => {
+            // 用户点击“是”按钮后跳转到下一个成果
+            jumpToNextAfterAudit(id);
+          })
+          .catch(() => {
+            // 用户点击“否”按钮后留在当前页面
+            proxy.$modal?.msgSuccess?.("已提交审核，留在当前页面");
+          });
       return;
     }
 
@@ -631,16 +654,27 @@ async function submitAudit() {
       }
 
       proxy.$modal?.msgSuccess?.("校级审核成功");
-      jumpToNextAfterAudit(id);
+
+      // 提交审核后弹出确认是否跳转到下一个成果的弹窗
+      proxy.$modal
+          .confirm(`审核成功，是否跳转到下一个成果？`)
+          .then(() => {
+            // 用户点击“是”按钮后跳转到下一个成果
+            jumpToNextAfterAudit(id);
+          })
+          .catch(() => {
+            // 用户点击“否”按钮后留在当前页面
+            proxy.$modal?.msgSuccess?.("已提交审核，留在当前页面");
+          });
       return;
     }
 
     proxy.$modal?.msgError?.("当前来源(source)不支持审核（请从未审核列表进入）");
   } catch (e) {
     const errMsg =
-      e?.response?.data?.msg ||
-      e?.message ||
-      "审核失败";
+        e?.response?.data?.msg ||
+        e?.message ||
+        "审核失败";
     proxy.$modal?.msgError?.(errMsg);
   }
 }
@@ -666,17 +700,17 @@ onActivated(() => {
 });
 
 watch(
-  () => [route.query.id, route.query.source],
-  () => {
-    loadCurrent();
-  }
+    () => [route.query.id, route.query.source],
+    () => {
+      loadCurrent();
+    }
 );
 
 watch(
-  () => [route.query.pageKey, route.query.pageIds],
-  () => {
-    loadPageIds();
-  }
+    () => [route.query.pageKey, route.query.pageIds],
+    () => {
+      loadPageIds();
+    }
 );
 </script>
 
