@@ -281,6 +281,30 @@ PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
         where achievement_id = #{achievementId}
     </update>
 
+    <update id="batchUpdateCollegeReviewStatus">
+        update sam_achievement
+        set review_result = #{reviewStatus},
+            schooi_review_result = case
+                when #{reviewStatus} = 2 and schooi_review_result is null then 2
+                else schooi_review_result
+            end,
+            update_time = now()
+        where achievement_id in
+        <foreach item="achievementId" collection="achievementIds" open="(" separator="," close=")">
+            #{achievementId}
+        </foreach>
+    </update>
+
+    <update id="batchUpdateSchoolReviewStatus">
+        update sam_achievement
+        set schooi_review_result = #{reviewStatus},
+            update_time = now()
+        where achievement_id in
+        <foreach item="achievementId" collection="achievementIds" open="(" separator="," close=")">
+            #{achievementId}
+        </foreach>
+    </update>
+
     <delete id="deletereviewedByAchievementId" parameterType="String">
         delete from sam_achievement where achievement_id = #{achievementId}
     </delete>
