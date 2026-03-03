@@ -344,6 +344,11 @@ public class SamAchievementServiceImpl implements ISamAchievementService
                 participant.setCreateTime(DateUtils.getNowDate());
                 participant.setUpdateTime(DateUtils.getNowDate());
                 participant.setDelFlag(0L);
+                
+                // 核心兼容：如果前端传的是 studentId 而非 studentNo，进行补位
+                if (StringUtils.isEmpty(participant.getStudentNo()) && StringUtils.isNotEmpty(participant.getStudentId())) {
+                    participant.setStudentNo(participant.getStudentId());
+                }
 
                 // 4. 自动补录学生档案
                 checkAndInsertStudent(participant.getStudentNo(), participant.getStudentName());
@@ -374,6 +379,11 @@ public class SamAchievementServiceImpl implements ISamAchievementService
                 advisor.setAdvisorId(null);
                 advisor.setCreateBy(samAchievement.getCreateBy());
                 advisor.setCreateTime(DateUtils.getNowDate());
+
+                // 核心兼容：如果前端传的是 teacherId 而非 teacherNo，进行补位
+                if (StringUtils.isEmpty(advisor.getTeacherNo()) && StringUtils.isNotEmpty(advisor.getTeacherId())) {
+                    advisor.setTeacherNo(advisor.getTeacherId());
+                }
 
                 // 自动补录教师档案
                 checkAndInsertTeacher(advisor.getTeacherNo(), advisor.getTeacherName());
