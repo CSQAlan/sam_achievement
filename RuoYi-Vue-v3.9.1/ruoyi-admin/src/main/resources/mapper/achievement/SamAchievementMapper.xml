@@ -128,7 +128,7 @@
                  left join sam_competition c on s.competition_id = c.id
     </sql>
 
-    <select id="selectSamAchievementList" parameterType="SamAchievement" resultMap="SamAchievementResult">
+    <select id="selectSamAchievementList" parameterType="SamAchievement" resultMap="SamAchievementSamAchievementParticipantResult">
         <include refid="selectSamAchievementVo"/>
         <where>
             <if test="achievementId != null  and achievementId != ''"> and a.achievement_id = #{achievementId}</if>
@@ -145,7 +145,7 @@
         </where>
     </select>
 
-    <select id="selectSamAchievementListByStudentId" parameterType="SamAchievement" resultMap="SamAchievementResult">
+    <select id="selectSamAchievementListByStudentId" parameterType="SamAchievement" resultMap="SamAchievementSamAchievementParticipantResult">
         <include refid="selectSamAchievementVo"/>
         inner join sam_achievement_participant p on a.achievement_id = p.achievement_id
         <where>
@@ -155,7 +155,7 @@
         </where>
     </select>
 
-    <select id="selectSamAchievementListByTeacherId" parameterType="SamAchievement" resultMap="SamAchievementResult">
+    <select id="selectSamAchievementListByTeacherId" parameterType="SamAchievement" resultMap="SamAchievementSamAchievementParticipantResult">
         <include refid="selectSamAchievementVo"/>
         inner join sam_achievement_advisor ad on a.achievement_id = ad.achievement_id
         <where>

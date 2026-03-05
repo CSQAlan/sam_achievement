@@ -5,6 +5,11 @@
         <div class="header-left">
           <div class="page-title">{{ title }}</div>
         </div>
+        <div class="page-actions" v-if="!readOnly">
+          <el-button type="info" :icon="Document" @click="saveDraft">保存草稿</el-button>
+          <el-button v-if="showSubmit" type="primary" @click="submitForm">{{ submitTextComputed }}</el-button>
+          <el-button @click="handleCancel">{{ cancelText }}</el-button>
+        </div>
       </div>
       <el-divider style="margin: 10px 0 20px 0"></el-divider>
       <div class="outcome-body">
@@ -142,7 +147,7 @@
                     <el-col :span="1.5"><el-button type="primary" :icon="Plus" @click="openAddParticipantDialog">添加学生</el-button></el-col>
                     <el-col :span="1.5"><el-button type="danger" :icon="Delete" @click="handleDeleteParticipant">删除选中</el-button></el-col>
                   </el-row>
-                  <el-table ref="participantTable" :data="samAchievementParticipantList" @selection-change="handleParticipantSelectionChange">
+                  <el-table ref="participantTable" :data="samAchievementParticipantList" border style="width: 100%; margin-bottom: 20px;">
                     <el-table-column v-if="!readOnly" width="40" align="center">
                       <template #default="scope">
                         <el-icon v-if="scope.row.manager !== 1" class="drag-handle" style="cursor: move"><Rank /></el-icon>
@@ -164,7 +169,7 @@
                     <el-col :span="1.5"><el-button type="primary" :icon="Plus" @click="openAddAdvisorDialog">添加老师</el-button></el-col>
                     <el-col :span="1.5"><el-button type="danger" :icon="Delete" @click="handleDeleteAdvisor">删除选中</el-button></el-col>
                   </el-row>
-                  <el-table ref="advisorTable" :data="samAchievementAdvisorList" @selection-change="handleAdvisorSelectionChange">
+                  <el-table ref="advisorTable" :data="samAchievementAdvisorList" border style="width: 100%;">
                    <el-table-column v-if="!readOnly" width="40" align="center">
   <template #default="scope">
     <el-icon v-if="scope.$index !== 0" class="drag-handle" style="cursor: move"><Rank /></el-icon>
@@ -206,8 +211,8 @@
                             <div v-if="form[item.prop]" class="custom-file-row">
                               <div class="file-name"><el-icon class="mr5"><Document /></el-icon><span>{{ getFileName(form[item.prop]) }}</span></div>
                               <div class="file-action">
-                                <el-button link type="primary" :icon="View" @click="handleOpenDetail(form[item.prop])">详情</el-button>
-                                <el-button link type="primary" :icon="Download" @click="handleDownload(form[item.prop])">下载</el-button>
+                                <el-button link type="primary" :disabled="false" :icon="View" @click="handleOpenDetail(form[item.prop])">详情</el-button>
+                                <el-button link type="primary" :disabled="false" :icon="Download" @click="handleDownload(form[item.prop])">下载</el-button>
                                 <el-button v-if="!readOnly" link type="danger" :icon="Delete" @click="form[item.prop] = null">删除</el-button>
                               </div>
                             </div>
@@ -366,7 +371,7 @@
                 <el-col :span="1.5"><el-button type="primary" :icon="Plus" @click="openAddParticipantDialog">添加学生</el-button></el-col>
                 <el-col :span="1.5"><el-button type="danger" :icon="Delete" @click="handleDeleteParticipant">删除选中</el-button></el-col>
               </el-row>
-              <el-table ref="participantTableDialog" :data="samAchievementParticipantList" @selection-change="handleParticipantSelectionChange">
+              <el-table ref="participantTableDialog" :data="samAchievementParticipantList" border style="width: 100%; margin-bottom: 20px;">
                 <el-table-column v-if="!readOnly" width="40" align="center">
                   <template #default="scope">
                     <el-icon v-if="scope.row.manager !== 1" class="drag-handle" style="cursor: move"><Rank /></el-icon>
@@ -388,7 +393,7 @@
                 <el-col :span="1.5"><el-button type="primary" :icon="Plus" @click="openAddAdvisorDialog">添加老师</el-button></el-col>
                 <el-col :span="1.5"><el-button type="danger" :icon="Delete" @click="handleDeleteAdvisor">删除选中</el-button></el-col>
               </el-row>
-              <el-table ref="advisorTableDialog" :data="samAchievementAdvisorList" @selection-change="handleAdvisorSelectionChange">
+              <el-table ref="advisorTableDialog" :data="samAchievementAdvisorList" border style="width: 100%;">
              <el-table-column v-if="!readOnly" width="40" align="center">
   <template #default="scope">
     <el-icon v-if="scope.$index !== 0" class="drag-handle" style="cursor: move"><Rank /></el-icon>
@@ -430,8 +435,8 @@
                         <div v-if="form[item.prop]" class="custom-file-row">
                           <div class="file-name"><el-icon class="mr5"><Document /></el-icon><span>{{ getFileName(form[item.prop]) }}</span></div>
                           <div class="file-action">
-                            <el-button link type="primary" :icon="View" @click="handleOpenDetail(form[item.prop])">详情</el-button>
-                            <el-button link type="primary" :icon="Download" @click="handleDownload(form[item.prop])">下载</el-button>
+                            <el-button link type="primary" :disabled="false" :icon="View" @click="handleOpenDetail(form[item.prop])">详情</el-button>
+                            <el-button link type="primary" :disabled="false" :icon="Download" @click="handleDownload(form[item.prop])">下载</el-button>
                             <el-button v-if="!readOnly" link type="danger" :icon="Delete" @click="form[item.prop] = null">删除</el-button>
                           </div>
                         </div>
@@ -451,6 +456,7 @@
           <slot name="footer-left" :form="form"></slot>
         </div>
         <div class="footer-right">
+          <el-button v-if="!readOnly" type="info" :icon="Document" @click="saveDraft">保存草稿</el-button>
           <el-button v-if="showSubmit && !readOnly" type="primary" @click="submitForm">
             {{ submitTextComputed }}
           </el-button>
@@ -598,6 +604,7 @@
 
 <script setup name="AchievementForm">
 import { getCurrentInstance, ref, reactive, toRefs, computed, onMounted, watch, nextTick } from "vue";
+import { useRoute } from "vue-router";
 import { onBeforeRouteLeave } from "vue-router";
 import Sortable from "sortablejs";
 import useUserStore from "@/store/modules/user";
@@ -610,6 +617,7 @@ import request from '@/utils/request';
 import FileUpload from '@/components/FileUpload';
 
 const { proxy } = getCurrentInstance();
+const route = useRoute();
 const emit = defineEmits(["ok", "cancel"]);
 
 const props = defineProps({
@@ -667,6 +675,79 @@ const data = reactive({
   }
 });
 const { form, formSnapshot, rules } = toRefs(data);
+
+// =========================================================
+// 草稿功能逻辑
+// =========================================================
+const DRAFT_KEY_PREFIX = "ACHIEVEMENT_DRAFT_";
+const getDraftKey = () => DRAFT_KEY_PREFIX + route.path;
+
+/** 关闭当前页面或弹窗的通用逻辑 */
+function closeCurrentView() {
+  if (isPageMode.value) {
+    reset();
+    if (proxy.$tab) {
+      proxy.$tab.closePage(route);
+    } else {
+      proxy.$router.back();
+    }
+    emit('cancel');
+  } else {
+    visible.value = false;
+    emit('cancel');
+  }
+}
+
+function saveDraft(silent = false) {
+  const draftData = {
+    form: form.value,
+    participants: samAchievementParticipantList.value,
+    advisors: samAchievementAdvisorList.value
+  };
+  localStorage.setItem(getDraftKey(), JSON.stringify(draftData));
+  
+  if (!silent) {
+    proxy.$modal.msgSuccess("草稿已保存到本地");
+    // 更新快照以避免触发离开时的修改检测
+    updateSnapshot();
+    closeCurrentView();
+  }
+}
+
+function loadDraft() {
+  const draft = localStorage.getItem(getDraftKey());
+  if (draft) {
+    const draftData = JSON.parse(draft);
+    form.value = { ...form.value, ...draftData.form };
+    samAchievementParticipantList.value = draftData.participants || [];
+    samAchievementAdvisorList.value = draftData.advisors || [];
+    
+    if (form.value.competitionId) {
+      getSessionList(form.value.competitionId);
+    }
+    updateSnapshot();
+    proxy.$modal.msgSuccess("草稿已恢复");
+  }
+}
+
+function clearDraft() {
+  localStorage.removeItem(getDraftKey());
+}
+
+function checkDraft() {
+  if (localStorage.getItem(getDraftKey())) {
+    proxy.$modal.confirm('检测到您有未完成的草稿，是否恢复？', "提示", {
+      confirmButtonText: "恢复草稿",
+      cancelButtonText: "开启新表单",
+      type: "info"
+    }).then(() => {
+      loadDraft();
+    }).catch(() => {
+      // 如果不恢复，可以选择不清理，让用户有机会再次恢复，或者清理掉。
+      // 这里建议不清理，除非用户明确想开启新表单并覆盖。
+    });
+  }
+}
 
 const isModified = computed(() => {
   if (props.readOnly) return false;
@@ -1109,6 +1190,8 @@ function open(id) {
       });
     }
     updateSnapshot();
+    // 新增模式下检查草稿
+    checkDraft();
   }
   initSortable();
 }
@@ -1120,6 +1203,12 @@ onMounted(() => {
     getDeptTree();
     getCompetitionList();
     initSortable();
+    
+    // 页面模式且没有 ID 时认为是新增，检查草稿
+    const id = route.query.achievementId || route.params.id;
+    if (!id) {
+       checkDraft();
+    }
   }
 });
 
@@ -1304,6 +1393,8 @@ function submitForm() {
       if (apiFn) {
         apiFn(form.value).then(response => {
           proxy.$modal.msgSuccess(isEdit ? "修改成功" : "新增成功");
+          // 提交成功清除草稿
+          clearDraft();
           updateSnapshot(); 
           if (!isPageMode.value) visible.value = false;
           emit('ok');
@@ -1316,24 +1407,54 @@ function submitForm() {
 }
 
 function handleBeforeClose(done) {
-  if (isModified.value) {
-    proxy.$modal.confirm('系统检测到您有未保存的修改，确定要离开吗？', "提示", {
-      confirmButtonText: "确定", cancelButtonText: "取消", type: "warning"
-    }).then(() => { done(); }).catch(() => {});
+  if (!props.readOnly && isModified.value) {
+    proxy.$confirm('是否保存草稿并退出？', '提示', {
+      confirmButtonText: '保存草稿并退出',
+      cancelButtonText: '不保存直接退出',
+      type: 'warning',
+      distinguishCancelAndClose: true
+    }).then(() => {
+      saveDraft(true);
+      proxy.$modal.msgSuccess("草稿已保存并退出");
+      done();
+    }).catch(action => {
+      if (action === 'cancel') {
+        done();
+      }
+    });
   } else {
     done();
   }
 }
 
 function handleCancel() {
-  if (isModified.value) {
-    proxy.$modal.confirm('系统检测到您有未保存的修改，确定要离开吗？', "提示", {
-      confirmButtonText: "确定", cancelButtonText: "取消", type: "warning"
+  const doExit = () => {
+    if (isPageMode.value) {
+      reset();
+      emit('cancel');
+    } else {
+      visible.value = false;
+      emit('cancel');
+    }
+  };
+
+  if (!props.readOnly && isModified.value) {
+    proxy.$confirm('是否保存草稿并退出？', '提示', {
+      confirmButtonText: '保存草稿并退出',
+      cancelButtonText: '不保存直接退出',
+      type: 'warning',
+      distinguishCancelAndClose: true
     }).then(() => {
-      if (isPageMode.value) { reset(); emit('cancel'); } else { visible.value = false; emit('cancel'); }
-    }).catch(() => {});
+      saveDraft(true);
+      proxy.$modal.msgSuccess("草稿已保存并退出");
+      doExit();
+    }).catch(action => {
+      if (action === 'cancel') {
+        doExit();
+      }
+    });
   } else {
-    if (isPageMode.value) { reset(); emit('cancel'); } else { visible.value = false; emit('cancel'); }
+    doExit();
   }
 }
 
@@ -1353,10 +1474,23 @@ function reIndexList(list) {
 function getFileName(url) { return url ? url.substring(url.lastIndexOf("/") + 1) : ""; }
 
 onBeforeRouteLeave((to, from, next) => {
-  if (isPageMode.value && isModified.value) {
-    proxy.$modal.confirm('系统检测到您有未保存的修改，确定要离开吗？', "提示", {
-      confirmButtonText: "确定", cancelButtonText: "取消", type: "warning"
-    }).then(() => { next(); }).catch(() => { next(false); });
+  if (isPageMode.value && !props.readOnly && isModified.value) {
+    proxy.$confirm('是否保存草稿并退出？', '提示', {
+      confirmButtonText: '保存草稿并退出',
+      cancelButtonText: '不保存直接退出',
+      type: 'warning',
+      distinguishCancelAndClose: true
+    }).then(() => {
+      saveDraft(true);
+      proxy.$modal.msgSuccess("草稿已保存");
+      next();
+    }).catch(action => {
+      if (action === 'cancel') {
+        next();
+      } else {
+        next(false);
+      }
+    });
   } else {
     next();
   }
