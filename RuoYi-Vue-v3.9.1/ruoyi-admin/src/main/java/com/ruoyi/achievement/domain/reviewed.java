@@ -136,6 +136,9 @@ public class reviewed extends BaseEntity
     /** 参赛选手信息 */
     private List<SamAchievementParticipant> samAchievementParticipantList;
 
+    /** 指导老师信息 */
+    private List<SamAchievementAdvisor> samAchievementAdvisorList;
+
     /** Review stage: college or school (query only) */
     private String reviewStage;
 
@@ -510,6 +513,16 @@ public class reviewed extends BaseEntity
     public void setSamAchievementParticipantList(List<SamAchievementParticipant> samAchievementParticipantList)
     {
         this.samAchievementParticipantList = samAchievementParticipantList;
+    }
+
+    public List<SamAchievementAdvisor> getSamAchievementAdvisorList()
+    {
+        return samAchievementAdvisorList;
+    }
+
+    public void setSamAchievementAdvisorList(List<SamAchievementAdvisor> samAchievementAdvisorList)
+    {
+        this.samAchievementAdvisorList = samAchievementAdvisorList;
     }
 
     @Override
