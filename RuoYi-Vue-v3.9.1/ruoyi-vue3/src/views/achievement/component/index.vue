@@ -232,7 +232,43 @@
         </el-table-column>
         <el-table-column label="审核状态" align="center" prop="reviewStatus">
           <template #default="scope">
-            <dict-tag :options="auditStatus" :value="scope.row.reviewStatus" />
+            <div style="display: flex; align-items: center; justify-content: center;">
+              <!-- 如果是管理端（非审核模式），展示合并后的状态流程 -->
+              <template v-if="!reviewSource">
+                <!-- 1. 院级审核中/未审核 -->
+                <el-tag v-if="scope.row.reviewResult === null || scope.row.reviewResult === undefined || String(scope.row.reviewResult) === '0'" type="primary">待审核</el-tag>
+                <!-- 2. 院级驳回 -->
+                <el-tag v-else-if="String(scope.row.reviewResult) === '1'" type="danger">院级驳回</el-tag>
+                <!-- 3. 院级通过 -> 开始看校级状态 -->
+                <template v-else-if="String(scope.row.reviewResult) === '2'">
+                  <!-- 3.1 校级待审核 -->
+                  <el-tag v-if="scope.row.schooiReviewResult === null || scope.row.schooiReviewResult === undefined || String(scope.row.schooiReviewResult) === '2'" type="warning">待校级审核</el-tag>
+                  <!-- 3.2 校级驳回 -->
+                  <el-tag v-else-if="String(scope.row.schooiReviewResult) === '0'" type="danger">校级驳回</el-tag>
+                  <!-- 3.3 校级通过 -->
+                  <el-tag v-else-if="String(scope.row.schooiReviewResult) === '1'" type="success">校级审核通过</el-tag>
+                </template>
+              </template>
+              <!-- 如果是审核端，维持原有逻辑 -->
+              <dict-tag v-else :options="auditStatus" :value="scope.row.reviewStatus" />
+
+              <!-- 院级驳回原因 -->
+              <el-tooltip
+                v-if="String(scope.row.reviewResult) === '1' && scope.row.reviewReason"
+                :content="'院级驳回原因：' + scope.row.reviewReason"
+                placement="top"
+              >
+                <el-icon style="margin-left: 5px; color: #F56C6C; cursor: pointer;"><Warning /></el-icon>
+              </el-tooltip>
+              <!-- 校级驳回原因 -->
+              <el-tooltip
+                v-if="String(scope.row.schooiReviewResult) === '0' && scope.row.schoolReviewReason"
+                :content="'校级驳回原因：' + scope.row.schoolReviewReason"
+                placement="top"
+              >
+                <el-icon style="margin-left: 5px; color: #F56C6C; cursor: pointer;"><Warning /></el-icon>
+              </el-tooltip>
+            </div>
           </template>
         </el-table-column>
         <el-table-column label="获奖时间" align="center" prop="awardTime" width="180">
@@ -309,6 +345,7 @@
 import { ref, reactive, computed, getCurrentInstance, nextTick, watch, onActivated } from 'vue';
 import { useRoute, useRouter } from 'vue-router';
 import { useDict } from '@/utils/dict';
+import { Warning } from '@element-plus/icons-vue';
 import AchievementForm from '../component/AchievementForm.vue';
 import { listManage, getManage, addManage, updateManage, delManage } from '@/api/achievement/manage';
 import { batchUpdateReviewStatus } from '@/api/achievement/review_batch';
@@ -487,6 +524,20 @@ function normalizeRowStatus(row) {
     row.reviewStatus = schoolResult ?? 2;
   } else {
     row.reviewStatus = reviewResult;
+  }
+
+  // 3. 提取参赛选手和指导老师名称用于显示
+  if (row.samAchievementParticipantList && Array.isArray(row.samAchievementParticipantList)) {
+    row.contestant = row.samAchievementParticipantList
+      .sort((a, b) => (a.orderNo || 0) - (b.orderNo || 0))
+      .map(p => p.studentName)
+      .join(', ');
+  }
+  if (row.samAchievementAdvisorList && Array.isArray(row.samAchievementAdvisorList)) {
+    row.instructor = row.samAchievementAdvisorList
+      .sort((a, b) => (a.orderNo || 0) - (b.orderNo || 0))
+      .map(a => a.teacherName)
+      .join(', ');
   }
 
   return row;
