@@ -3,7 +3,7 @@
     <div class="page-card">
       <div class="page-header">
         <div class="header-left">
-          <div class="page-title">{{ title }}</div>
+          <div class="page-title">  {{ isPageMode ? `${title} - 成果ID: ${form?.achievementId || 'ID不存在'}` : title }}</div>
         </div>
       </div>
       <el-divider style="margin: 10px 0 20px 0"></el-divider>
