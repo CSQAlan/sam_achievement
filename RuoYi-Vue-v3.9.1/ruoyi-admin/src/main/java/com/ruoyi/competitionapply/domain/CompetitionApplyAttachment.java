@@ -9,7 +9,7 @@ import com.ruoyi.common.core.domain.BaseEntity;
 
 /**
  * 赛事申请附件对象 competition_apply_attachment
- * 
+ *
  * @author ruoyi
  * @date 2026-02-01
  */
@@ -22,153 +22,92 @@ public class CompetitionApplyAttachment extends BaseEntity
 
     /** 赛事申请ID（关联competition_apply.id） */
     @Excel(name = "赛事申请ID", readConverterExp = "关=联competition_apply.id")
-    private Long applyId;
+    private Long competitionApplyId; // 字段名修改为competitionApplyId，对应数据库competition_apply_id
 
-    /** 附件类型（赛事通知/证明材料/其他） */
-    @Excel(name = "附件类型", readConverterExp = "赛=事通知/证明材料/其他")
-    private String type;
+    /** 文件UUID */
+    @Excel(name = "文件UUID")
+    private String uuid; // 新增字段，对应数据库uuid
 
-    /** 文件类型（PDF等） */
-    @Excel(name = "文件类型", readConverterExp = "P=DF等")
-    private String fileType;
+    /** 文件路径 */
+    @Excel(name = "文件路径")
+    private String path; // 新增字段，对应数据库path
 
-    /** 原始文件名 */
-    @Excel(name = "原始文件名")
-    private String originName;
+    /** 文档名称 */
+    @Excel(name = "文档名称")
+    private String documentName; // 新增字段，对应数据库document_name
 
-    /** 存储文件名（建议UUID） */
-    @Excel(name = "存储文件名", readConverterExp = "建=议UUID")
-    private String storeName;
+    /** 附件类型 */
+    @Excel(name = "附件类型")
+    private Integer attachmentType; // 新增字段，对应数据库attachment_type (tinyint)
 
-    /** 相对路径（不含域名） */
-    @Excel(name = "相对路径", readConverterExp = "不=含域名")
-    private String filePath;
-
-    /** 访问URL（file_path+配置拼接） */
-    @Excel(name = "访问URL", readConverterExp = "f=ile_path+配置拼接")
-    private String fileUrl;
-
-    /** 文件大小（单位Byte） */
-    @Excel(name = "文件大小", readConverterExp = "单=位Byte")
-    private Long fileSize;
-
-    /** 上传人（关联sys_user.user_id） */
-    @Excel(name = "上传人", readConverterExp = "关=联sys_user.user_id")
-    private Long uploadBy;
-
-    /** 上传时间 */
-    @JsonFormat(pattern = "yyyy-MM-dd")
-    @Excel(name = "上传时间", width = 30, dateFormat = "yyyy-MM-dd")
-    private Date uploadTime;
-
-    /** 删除标记（0=存在，2=删除） */
     private String delFlag;
 
-    public void setId(Long id) 
+    public void setId(Long id)
     {
         this.id = id;
     }
 
-    public Long getId() 
+    public Long getId()
     {
         return id;
     }
-    public void setApplyId(Long applyId) 
+
+    public void setCompetitionApplyId(Long competitionApplyId)
     {
-        this.applyId = applyId;
+        this.competitionApplyId = competitionApplyId;
     }
 
-    public Long getApplyId() 
+    public Long getCompetitionApplyId()
     {
-        return applyId;
-    }
-    public void setType(String type) 
-    {
-        this.type = type;
+        return competitionApplyId;
     }
 
-    public String getType() 
+    public void setUuid(String uuid)
     {
-        return type;
-    }
-    public void setFileType(String fileType) 
-    {
-        this.fileType = fileType;
+        this.uuid = uuid;
     }
 
-    public String getFileType() 
+    public String getUuid()
     {
-        return fileType;
-    }
-    public void setOriginName(String originName) 
-    {
-        this.originName = originName;
+        return uuid;
     }
 
-    public String getOriginName() 
+    public void setPath(String path)
     {
-        return originName;
-    }
-    public void setStoreName(String storeName) 
-    {
-        this.storeName = storeName;
+        this.path = path;
     }
 
-    public String getStoreName() 
+    public String getPath()
     {
-        return storeName;
-    }
-    public void setFilePath(String filePath) 
-    {
-        this.filePath = filePath;
+        return path;
     }
 
-    public String getFilePath() 
+    public void setDocumentName(String documentName)
     {
-        return filePath;
-    }
-    public void setFileUrl(String fileUrl) 
-    {
-        this.fileUrl = fileUrl;
+        this.documentName = documentName;
     }
 
-    public String getFileUrl() 
+    public String getDocumentName()
     {
-        return fileUrl;
-    }
-    public void setFileSize(Long fileSize) 
-    {
-        this.fileSize = fileSize;
+        return documentName;
     }
 
-    public Long getFileSize() 
+    public void setAttachmentType(Integer attachmentType)
     {
-        return fileSize;
-    }
-    public void setUploadBy(Long uploadBy) 
-    {
-        this.uploadBy = uploadBy;
+        this.attachmentType = attachmentType;
     }
 
-    public Long getUploadBy() 
+    public Integer getAttachmentType()
     {
-        return uploadBy;
-    }
-    public void setUploadTime(Date uploadTime) 
-    {
-        this.uploadTime = uploadTime;
+        return attachmentType;
     }
 
-    public Date getUploadTime() 
-    {
-        return uploadTime;
-    }
-    public void setDelFlag(String delFlag) 
+    public void setDelFlag(String delFlag)
     {
         this.delFlag = delFlag;
     }
 
-    public String getDelFlag() 
+    public String getDelFlag()
     {
         return delFlag;
     }
@@ -176,19 +115,17 @@ public class CompetitionApplyAttachment extends BaseEntity
     @Override
     public String toString() {
         return new ToStringBuilder(this,ToStringStyle.MULTI_LINE_STYLE)
-            .append("id", getId())
-            .append("applyId", getApplyId())
-            .append("type", getType())
-            .append("fileType", getFileType())
-            .append("originName", getOriginName())
-            .append("storeName", getStoreName())
-            .append("filePath", getFilePath())
-            .append("fileUrl", getFileUrl())
-            .append("fileSize", getFileSize())
-            .append("uploadBy", getUploadBy())
-            .append("uploadTime", getUploadTime())
-            .append("remark", getRemark())
-            .append("delFlag", getDelFlag())
-            .toString();
+                .append("id", getId())
+                .append("competitionApplyId", getCompetitionApplyId())
+                .append("uuid", getUuid())
+                .append("path", getPath())
+                .append("documentName", getDocumentName())
+                .append("attachmentType", getAttachmentType())
+                .append("createBy", getCreateBy())
+                .append("createTime", getCreateTime())
+                .append("updateBy", getUpdateBy())
+                .append("updateTime", getUpdateTime())
+                .append("delFlag", getDelFlag())
+                .toString();
     }
 }

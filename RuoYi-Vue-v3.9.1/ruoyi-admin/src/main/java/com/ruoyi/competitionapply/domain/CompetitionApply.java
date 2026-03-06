@@ -1,5 +1,6 @@
 package com.ruoyi.competitionapply.domain;
 
+import java.beans.Transient;
 import java.util.List;
 import java.util.Date;
 import com.fasterxml.jackson.annotation.JsonFormat;
@@ -10,7 +11,7 @@ import com.ruoyi.common.core.domain.BaseEntity;
 
 /**
  * 赛事申请对象 competition_apply
- * 
+ *
  * @author ruoyi
  * @date 2026-02-01
  */
@@ -22,8 +23,8 @@ public class CompetitionApply extends BaseEntity
     private Long id;
 
     /** 申请编号 */
-    @Excel(name = "申请编号")
-    private String applyNo;
+//    @Excel(name = "申请编号")
+//    private String applyNo;
 
     /** 申请人用户ID */
     @Excel(name = "申请人用户ID")
@@ -80,177 +81,202 @@ public class CompetitionApply extends BaseEntity
     /** 删除标记 */
     private String delFlag;
 
+    /** 附件地址（逗号分隔）- 新增字段，匹配前端upload-file组件 */
+    /** 附件地址（逗号分隔）- 前端传输临时字段，不映射数据库 */
+    private String attachmentUrls;
+
+    /** 申请人用户名（展示用，不映射数据库） */
+    private String userName;
+
+    /** 学院名称（展示用，不映射数据库） */
+    private String deptName;
+
+    // 生成 getter/setter
+    public String getUserName() { return userName; }
+    public void setUserName(String userName) { this.userName = userName; }
+    public String getDeptName() { return deptName; }
+    public void setDeptName(String deptName) { this.deptName = deptName; }
+
     /** 赛事申请附件信息 */
     private List<CompetitionApplyAttachment> competitionApplyAttachmentList;
 
-    public void setId(Long id) 
+    public void setId(Long id)
     {
         this.id = id;
     }
 
-    public Long getId() 
+    public Long getId()
     {
         return id;
     }
 
-    public void setApplyNo(String applyNo) 
-    {
-        this.applyNo = applyNo;
-    }
+//    public void setApplyNo(String applyNo)
+//    {
+//        this.applyNo = applyNo;
+//    }
+//
+//    public String getApplyNo()
+//    {
+//        return applyNo;
+//    }
 
-    public String getApplyNo() 
-    {
-        return applyNo;
-    }
-
-    public void setApplicantUserId(Long applicantUserId) 
+    public void setApplicantUserId(Long applicantUserId)
     {
         this.applicantUserId = applicantUserId;
     }
 
-    public Long getApplicantUserId() 
+    public Long getApplicantUserId()
     {
         return applicantUserId;
     }
 
-    public void setApplicantDepId(Long applicantDepId) 
+    public void setApplicantDepId(Long applicantDepId)
     {
         this.applicantDepId = applicantDepId;
     }
 
-    public Long getApplicantDepId() 
+    public Long getApplicantDepId()
     {
         return applicantDepId;
     }
 
-    public void setName(String name) 
+    public void setName(String name)
     {
         this.name = name;
     }
 
-    public String getName() 
+    public String getName()
     {
         return name;
     }
 
-    public void setCategory(String category) 
+    public void setCategory(String category)
     {
         this.category = category;
     }
 
-    public String getCategory() 
+    public String getCategory()
     {
         return category;
     }
 
-    public void setOrganizations(String organizations) 
+    public void setOrganizations(String organizations)
     {
         this.organizations = organizations;
     }
 
-    public String getOrganizations() 
+    public String getOrganizations()
     {
         return organizations;
     }
 
-    public void setLevel(String level) 
+    public void setLevel(String level)
     {
         this.level = level;
     }
 
-    public String getLevel() 
+    public String getLevel()
     {
         return level;
     }
 
-    public void setScopeType(String scopeType) 
+    public void setScopeType(String scopeType)
     {
         this.scopeType = scopeType;
     }
 
-    public String getScopeType() 
+    public String getScopeType()
     {
         return scopeType;
     }
 
-    public void setStatus(String status) 
+    public void setStatus(String status)
     {
         this.status = status;
     }
 
-    public String getStatus() 
+    public String getStatus()
     {
         return status;
     }
 
-    public void setTags(String tags) 
+    public void setTags(String tags)
     {
         this.tags = tags;
     }
 
-    public String getTags() 
+    public String getTags()
     {
         return tags;
     }
 
-    public void setMemo(String memo) 
+    public void setMemo(String memo)
     {
         this.memo = memo;
     }
 
-    public String getMemo() 
+    public String getMemo()
     {
         return memo;
     }
 
-    public void setAuditBy(Long auditBy) 
+    public void setAuditBy(Long auditBy)
     {
         this.auditBy = auditBy;
     }
 
-    public Long getAuditBy() 
+    public Long getAuditBy()
     {
         return auditBy;
     }
 
-    public void setAuditTime(Date auditTime) 
+    public void setAuditTime(Date auditTime)
     {
         this.auditTime = auditTime;
     }
 
-    public Date getAuditTime() 
+    public Date getAuditTime()
     {
         return auditTime;
     }
 
-    public void setAuditRemark(String auditRemark) 
+    public void setAuditRemark(String auditRemark)
     {
         this.auditRemark = auditRemark;
     }
 
-    public String getAuditRemark() 
+    public String getAuditRemark()
     {
         return auditRemark;
     }
 
-    public void setCompetitionId(Long competitionId) 
+    public void setCompetitionId(Long competitionId)
     {
         this.competitionId = competitionId;
     }
 
-    public Long getCompetitionId() 
+    public Long getCompetitionId()
     {
         return competitionId;
     }
 
-    public void setDelFlag(String delFlag) 
+    public void setDelFlag(String delFlag)
     {
         this.delFlag = delFlag;
     }
 
-    public String getDelFlag() 
+    public String getDelFlag()
     {
         return delFlag;
+    }
+
+    // 新增 attachmentUrls 的 getter/setter 方法
+    public String getAttachmentUrls() {
+        return attachmentUrls;
+    }
+
+    public void setAttachmentUrls(String attachmentUrls) {
+        this.attachmentUrls = attachmentUrls;
     }
 
     public List<CompetitionApplyAttachment> getCompetitionApplyAttachmentList()
@@ -266,29 +292,30 @@ public class CompetitionApply extends BaseEntity
     @Override
     public String toString() {
         return new ToStringBuilder(this,ToStringStyle.MULTI_LINE_STYLE)
-            .append("id", getId())
-            .append("applyNo", getApplyNo())
-            .append("applicantUserId", getApplicantUserId())
-            .append("applicantDepId", getApplicantDepId())
-            .append("name", getName())
-            .append("category", getCategory())
-            .append("organizations", getOrganizations())
-            .append("level", getLevel())
-            .append("scopeType", getScopeType())
-            .append("status", getStatus())
-            .append("tags", getTags())
-            .append("memo", getMemo())
-            .append("auditBy", getAuditBy())
-            .append("auditTime", getAuditTime())
-            .append("auditRemark", getAuditRemark())
-            .append("competitionId", getCompetitionId())
-            .append("createBy", getCreateBy())
-            .append("createTime", getCreateTime())
-            .append("updateBy", getUpdateBy())
-            .append("updateTime", getUpdateTime())
-            .append("remark", getRemark())
-            .append("delFlag", getDelFlag())
-            .append("competitionApplyAttachmentList", getCompetitionApplyAttachmentList())
-            .toString();
+                .append("id", getId())
+//                .append("applyNo", getApplyNo())
+                .append("applicantUserId", getApplicantUserId())
+                .append("applicantDepId", getApplicantDepId())
+                .append("name", getName())
+                .append("category", getCategory())
+                .append("organizations", getOrganizations())
+                .append("level", getLevel())
+                .append("scopeType", getScopeType())
+                .append("status", getStatus())
+                .append("tags", getTags())
+                .append("memo", getMemo())
+                .append("auditBy", getAuditBy())
+                .append("auditTime", getAuditTime())
+                .append("auditRemark", getAuditRemark())
+                .append("competitionId", getCompetitionId())
+                .append("createBy", getCreateBy())
+                .append("createTime", getCreateTime())
+                .append("updateBy", getUpdateBy())
+                .append("updateTime", getUpdateTime())
+                .append("remark", getRemark())
+                .append("delFlag", getDelFlag())
+                .append("attachmentUrls", getAttachmentUrls()) // 新增到toString方法
+                .append("competitionApplyAttachmentList", getCompetitionApplyAttachmentList())
+                .toString();
     }
 }

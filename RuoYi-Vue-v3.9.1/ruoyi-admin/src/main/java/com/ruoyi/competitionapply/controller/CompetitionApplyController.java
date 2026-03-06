@@ -4,14 +4,8 @@ import java.util.List;
 import javax.servlet.http.HttpServletResponse;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.web.bind.annotation.GetMapping;
-import org.springframework.web.bind.annotation.PostMapping;
-import org.springframework.web.bind.annotation.PutMapping;
-import org.springframework.web.bind.annotation.DeleteMapping;
-import org.springframework.web.bind.annotation.PathVariable;
-import org.springframework.web.bind.annotation.RequestBody;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.bind.annotation.*;
+import org.springframework.web.multipart.MultipartFile;
 import com.ruoyi.common.annotation.Log;
 import com.ruoyi.common.core.controller.BaseController;
 import com.ruoyi.common.core.domain.AjaxResult;
@@ -23,7 +17,7 @@ import com.ruoyi.common.core.page.TableDataInfo;
 
 /**
  * 赛事申请Controller
- * 
+ *
  * @author ruoyi
  * @date 2026-02-01
  */
@@ -70,14 +64,17 @@ public class CompetitionApplyController extends BaseController
     }
 
     /**
-     * 新增赛事申请
+     * 新增赛事申请（统一接口：接收文件地址，不接收文件二进制）
      */
     @PreAuthorize("@ss.hasPermi('competition-apply:competitionapply:add')")
     @Log(title = "赛事申请", businessType = BusinessType.INSERT)
-    @PostMapping
-    public AjaxResult add(@RequestBody CompetitionApply competitionApply)
-    {
-        return toAjax(competitionApplyService.insertCompetitionApply(competitionApply));
+    @PostMapping // 根路径，匹配你前端旧的 API 路径
+    public AjaxResult add(@RequestBody CompetitionApply competitionApply) {
+        try {
+            return toAjax(competitionApplyService.insertCompetitionApply(competitionApply));
+        } catch (Exception e) {
+            return AjaxResult.error("新增赛事申请失败：" + e.getMessage());
+        }
     }
 
     /**
@@ -96,7 +93,7 @@ public class CompetitionApplyController extends BaseController
      */
     @PreAuthorize("@ss.hasPermi('competition-apply:competitionapply:remove')")
     @Log(title = "赛事申请", businessType = BusinessType.DELETE)
-	@DeleteMapping("/{ids}")
+    @DeleteMapping("/{ids}")
     public AjaxResult remove(@PathVariable Long[] ids)
     {
         return toAjax(competitionApplyService.deleteCompetitionApplyByIds(ids));
