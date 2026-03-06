@@ -911,4 +911,16 @@ watch(
     width: 100%;
   }
 }
+.header {
+  display: flex;
+  justify-content: flex-start;
+  align-items: center;
+  margin-bottom: 20px; /* 增加一些间距使其更明显 */
+}
+
+.success-id {
+  font-size: 14px;
+  color: #6c757d;
+  margin-left: 10px;
+}
 </style>

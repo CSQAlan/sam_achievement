@@ -1,4 +1,4 @@
-<template>
+﻿<template>
   <div class="app-container">
     <el-row :gutter="20">
       <el-col :span="6" :xs="24">
@@ -52,9 +52,6 @@
             <el-tab-pane label="基本资料" name="userinfo">
               <userInfo :user="state.user" />
             </el-tab-pane>
-            <el-tab-pane label="修改密码" name="resetPwd">
-              <resetPwd />
-            </el-tab-pane>
           </el-tabs>
         </el-card>
       </el-col>
@@ -65,7 +62,6 @@
 <script setup name="Profile">
 import userAvatar from "./userAvatar"
 import userInfo from "./userInfo"
-import resetPwd from "./resetPwd"
 import { getUserProfile } from "@/api/system/user"
 import { ElMessageBox } from 'element-plus'
 
@@ -166,3 +162,5 @@ onMounted(() => {
   padding: 10px 24px;
 }
 </style>
+
+

@@ -1,4 +1,4 @@
-<template>
+﻿<template>
   <div class="achievement-manage-root">
     <div v-show="!pageModeActive" class="app-container">
       <!-- 搜索表单 -->
@@ -109,10 +109,10 @@
               end-placeholder="结束时间"
           />
         </el-form-item>
-        <el-form-item label="审核状态" prop="reviewStatus">
+        <el-form-item label="审核状态" prop="reviewStatus" v-if="showReviewStatusFilter">
           <el-select v-model="queryParams.reviewStatus" placeholder="请选择审核状态" clearable>
             <el-option
-                v-for="dict in auditStatus"
+                v-for="dict in auditStatusFilterOptions"
                 :key="dict.value"
                 :label="dict.label"
                 :value="dict.value"
@@ -146,7 +146,7 @@
               :disabled="single"
               @click="handleUpdate"
               v-hasPermi="permEdit"
-          >修改</el-button>
+          >审核</el-button>
         </el-col>
         <el-col :span="1.5">
           <el-button
@@ -177,7 +177,7 @@
               style="width: 100%;"
           >
             <el-option
-                v-for="dict in auditStatus"
+                v-for="dict in auditStatusBatchOptions"
                 :key="dict.value"
                 :label="dict.label"
                 :value="dict.value"
@@ -252,7 +252,7 @@
                 @click="handleRowUpdate(scope.row)"
                 v-hasPermi="permEdit"
                 :disabled="!checkEditable(scope.row)"
-            >修改</el-button>
+            >审核</el-button>
 
             <el-button
                 v-if="showDelete"
@@ -360,6 +360,10 @@ const permRemove = computed(() => [`${permissionPrefix.value}:remove`]);
 const permExport = computed(() => [`${permissionPrefix.value}:export`]);
 const permReview = computed(() => [`${permissionPrefix.value}:review`]);
 const canBatchReview = computed(() => !!reviewSource.value);
+const isUnreviewedPage = computed(() => {
+  return reviewSource.value === 'college_level_unreviewed' || reviewSource.value === 'school_level_unreviewed';
+});
+const showReviewStatusFilter = computed(() => !isUnreviewedPage.value);
 
 const { achievement_category, group_type, award_rank, award_level_type, college_audit_status, school_audit_status } = useDict(
     'achievement_category',
@@ -425,9 +429,26 @@ function buildPageKey() {
 
 const auditStatus = computed(() => {
   if (props.auditDict && Array.isArray(props.auditDict)) return props.auditDict;
-  return queryParams.reviewStatus === 'college'
+  if (reviewSource.value.startsWith('college')) return college_audit_status.value;
+  if (reviewSource.value.startsWith('school')) return school_audit_status.value;
+  return (college_audit_status.value && college_audit_status.value.length)
       ? college_audit_status.value
       : school_audit_status.value;
+});
+const auditStatusFilterOptions = computed(() => {
+  const options = auditStatus.value || [];
+  if (reviewSource.value === 'college_level_reviewed' || reviewSource.value === 'college_level_unreviewed') {
+    return options.filter((d) => ['1', '2'].includes(String(d.value)));
+  }
+  if (reviewSource.value === 'school_level_reviewed' || reviewSource.value === 'school_level_unreviewed') {
+    return options.filter((d) => ['0', '1'].includes(String(d.value)));
+  }
+  return options;
+});
+const auditStatusBatchOptions = computed(() => {
+  if (reviewSource.value.startsWith('college')) return college_audit_status.value || [];
+  if (reviewSource.value.startsWith('school')) return school_audit_status.value || [];
+  return auditStatus.value || [];
 });
 
 function normalizeReviewStatusBySource() {
@@ -545,12 +566,12 @@ function handleUpdate() {
   if (_achievementId) openDialog(_achievementId, { readOnly: false });
 }
 
-/** 行内修改按钮操作 */
+/** 行内审核按钮操作 */
 function handleRowUpdate(row) {
   const _achievementId = row?.achievementId;
   if (!_achievementId) return;
 
-  // 【核心修改】：如果是审核模式，可能需要跳转去审核修改（保留同学逻辑）
+  // 【核心审核】：如果是审核模式，可能需要跳转去审核修改（保留同学逻辑）
   if (reviewSource.value) {
     openReviewPage(_achievementId, 'edit');
   } else {
@@ -733,3 +754,4 @@ export default {
   name: 'AchievementManageIndex'
 }
 </script>
+
