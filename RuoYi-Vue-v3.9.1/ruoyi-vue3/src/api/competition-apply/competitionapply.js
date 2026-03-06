@@ -17,12 +17,12 @@ export function getCompetitionapply(id) {
   })
 }
 
-// 新增赛事申请
+// api/competition-apply/competitionapply.js
 export function addCompetitionapply(data) {
   return request({
     url: '/competition-apply/competitionapply',
     method: 'post',
-    data: data
+    data: data // 纯 JSON，无需 FormData
   })
 }
 

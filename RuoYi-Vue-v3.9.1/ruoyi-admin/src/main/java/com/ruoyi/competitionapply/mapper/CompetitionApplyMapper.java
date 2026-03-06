@@ -84,4 +84,11 @@ public interface CompetitionApplyMapper
      * @return 结果
      */
     public int deleteCompetitionApplyAttachmentByApplyId(Long id);
+
+    /**
+     * 插入赛事申请附件（单条）
+     * @param attachment 附件对象
+     * @return 结果
+     */
+    int insertCompetitionApplyAttachment(CompetitionApplyAttachment attachment);
 }
