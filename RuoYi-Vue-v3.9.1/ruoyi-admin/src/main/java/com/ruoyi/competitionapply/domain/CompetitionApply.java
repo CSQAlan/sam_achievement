@@ -27,19 +27,26 @@ public class CompetitionApply extends BaseEntity
 //    private String applyNo;
 
     /** 申请人用户ID */
-    @Excel(name = "申请人用户ID")
+//    @Excel(name = "申请人用户ID")
     private Long applicantUserId;
 
     /** 申请人学院 */
-    @Excel(name = "申请人学院")
+//    @Excel(name = "申请人学院")
     private Long applicantDepId;
+    /** 申请人用户名（展示用，不映射数据库） */
+    @Excel(name = "申请人学号")
+    private String userName;
+
+    /** 学院名称（展示用，不映射数据库） */
+    @Excel(name = "申请人学院")
+    private String deptName;
 
     /** 赛事名称 */
     @Excel(name = "赛事名称")
     private String name;
 
     /** 赛事类别 */
-    @Excel(name = "赛事类别")
+    @Excel(name = "赛事类别",dictType = "sys_competition_category")
     private String category;
 
     /** 盖章单位 */
@@ -47,23 +54,23 @@ public class CompetitionApply extends BaseEntity
     private String organizations;
 
     /** 赛事级别 */
-    @Excel(name = "赛事级别")
+    @Excel(name = "赛事级别",dictType = "sys_competition_level")
     private String level;
 
     /** 适用范围 */
-    @Excel(name = "适用范围")
+    @Excel(name = "适用范围",dictType = "sys_competition_scope_type")
     private String scopeType;
 
     /** 审核状态 */
-    @Excel(name = "审核状态")
+    @Excel(name = "审核状态",dictType = "sys_shenhe_status")
     private String status;
 
     /** 标签 */
-    @Excel(name = "标签")
+    @Excel(name = "标签",dictType = "sys_competition_tag")
     private String tags;
 
     /** 赛事说明 */
-    @Excel(name = "赛事说明")
+//    @Excel(name = "赛事说明")
     private String memo;
 
     /** 审核人id */
@@ -85,11 +92,7 @@ public class CompetitionApply extends BaseEntity
     /** 附件地址（逗号分隔）- 前端传输临时字段，不映射数据库 */
     private String attachmentUrls;
 
-    /** 申请人用户名（展示用，不映射数据库） */
-    private String userName;
 
-    /** 学院名称（展示用，不映射数据库） */
-    private String deptName;
 
     // 生成 getter/setter
     public String getUserName() { return userName; }
