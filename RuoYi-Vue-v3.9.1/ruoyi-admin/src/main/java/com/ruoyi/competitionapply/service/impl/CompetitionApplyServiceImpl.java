@@ -230,4 +230,24 @@ public class CompetitionApplyServiceImpl implements ICompetitionApplyService
             }
         }
     }
+
+    // ====================== 新增：文件预览所需的2个方法实现 ======================
+    /**
+     * 根据附件ID查询单个附件信息
+     */
+    @Override
+    public CompetitionApplyAttachment selectCompetitionApplyAttachmentById(Long attachmentId) {
+        // 直接调用Mapper的查询方法（你已在XML里新增该SQL）
+        return competitionApplyMapper.selectCompetitionApplyAttachmentById(attachmentId);
+    }
+
+    /**
+     * 根据赛事申请ID查询所有附件列表
+     */
+    @Override
+    public List<CompetitionApplyAttachment> selectCompetitionApplyAttachmentListByApplyId(Long applyId) {
+        // 直接调用Mapper的查询方法（你已在XML里新增该SQL）
+        return competitionApplyMapper.selectCompetitionApplyAttachmentListByApplyId(applyId);
+    }
+
 }

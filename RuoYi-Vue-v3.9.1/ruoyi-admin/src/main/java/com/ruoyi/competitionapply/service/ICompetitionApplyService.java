@@ -3,6 +3,7 @@ package com.ruoyi.competitionapply.service;
 import java.util.List;
 import org.springframework.web.multipart.MultipartFile; // 新增导入
 import com.ruoyi.competitionapply.domain.CompetitionApply;
+import com.ruoyi.competitionapply.domain.CompetitionApplyAttachment; // 新增导入
 
 /**
  * 赛事申请Service接口
@@ -69,5 +70,20 @@ public interface ICompetitionApplyService
      * @return 结果
      */
     public int deleteCompetitionApplyById(Long id);
+
+    // ====================== 新增：文件预览所需的2个方法 ======================
+    /**
+     * 根据附件ID查询单个附件信息（用于文件预览）
+     * @param attachmentId 附件主键ID
+     * @return 附件信息
+     */
+    public CompetitionApplyAttachment selectCompetitionApplyAttachmentById(Long attachmentId);
+
+    /**
+     * 根据赛事申请ID查询所有附件列表（用于前端展示已上传文件）
+     * @param applyId 赛事申请主键ID
+     * @return 附件列表
+     */
+    public List<CompetitionApplyAttachment> selectCompetitionApplyAttachmentListByApplyId(Long applyId);
 
 }
