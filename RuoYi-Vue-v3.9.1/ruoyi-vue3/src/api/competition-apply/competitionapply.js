@@ -42,3 +42,28 @@ export function delCompetitionapply(id) {
     method: 'delete'
   })
 }
+
+// ====================== 新增：文件预览相关接口 ======================
+/**
+ * 1. 查询指定赛事申请的附件列表
+ * @param {Number} applyId 赛事申请ID
+ * @returns 附件列表数据
+ */
+export function getAttachmentList(applyId) {
+  return request({
+    url: `/competition-apply/competitionapply/attachment/list/${applyId}`,
+    method: 'get'
+  })
+}
+
+/**
+ * 2. 获取文件预览地址（带token鉴权，用于前端渲染预览）
+ * @param {Number} attachmentId 附件ID
+ * @returns 完整的预览地址（带token）
+ */
+export function getPreviewUrl(attachmentId) {
+  // 从本地存储获取RuoYi的token（适配框架的权限校验）
+  const token = localStorage.getItem('Admin-Token') || ''
+  // 拼接预览地址 + token鉴权参数
+  return `${process.env.VUE_APP_BASE_API}/competition-apply/competitionapply/attachment/preview/${attachmentId}?token=${token}`
+}

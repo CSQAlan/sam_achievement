@@ -7,7 +7,7 @@
     <!-- 主表结果映射（完全匹配 CompetitionApply 实体类） -->
     <resultMap type="CompetitionApply" id="CompetitionApplyResult">
         <result property="id"           column="id"                />
-<!--        <result property="applyNo"      column="apply_no"          />-->
+        <!--        <result property="applyNo"      column="apply_no"          />-->
         <result property="applicantUserId" column="applicant_user_id" />
         <result property="applicantDepId"  column="applicant_dep_id"  />
         <result property="name"         column="name"              />
@@ -28,7 +28,7 @@
         <result property="updateTime"   column="update_time"       />
         <result property="remark"       column="remark"            />
         <result property="delFlag"      column="del_flag"          />
-<!--        <result property="attachmentUrls" column="attachment_urls"  />-->
+        <!--        <result property="attachmentUrls" column="attachment_urls"  />-->
         <!-- 新增映射 -->
         <result property="userName"     column="user_name"         />
         <result property="deptName"     column="dept_name"         />
@@ -90,7 +90,7 @@
     <select id="selectCompetitionApplyList" parameterType="CompetitionApply" resultMap="CompetitionApplyResult">
         <include refid="selectCompetitionApplyVo"/>
         <where>
-<!--            <if test="applyNo != null  and applyNo != ''"> and apply_no = #{applyNo}</if>-->
+            <!--            <if test="applyNo != null  and applyNo != ''"> and apply_no = #{applyNo}</if>-->
             <if test="applicantUserId != null "> and applicant_user_id = #{applicantUserId}</if>
             <if test="applicantDepId != null "> and applicant_dep_id = #{applicantDepId}</if>
             <if test="name != null  and name != ''"> and name like concat('%', #{name}, '%')</if>
@@ -120,7 +120,7 @@
     <insert id="insertCompetitionApply" parameterType="CompetitionApply" useGeneratedKeys="true" keyProperty="id">
         insert into sam_competition_apply
         <trim prefix="(" suffix=")" suffixOverrides=",">
-<!--            <if test="applyNo != null and applyNo != ''">apply_no,</if>-->
+            <!--            <if test="applyNo != null and applyNo != ''">apply_no,</if>-->
             <if test="applicantUserId != null">applicant_user_id,</if>
             <if test="applicantDepId != null">applicant_dep_id,</if>
             <if test="name != null and name != ''">name,</if>
@@ -141,10 +141,10 @@
             <if test="updateTime != null">update_time,</if>
             <if test="remark != null">remark,</if>
             <if test="delFlag != null">del_flag,</if>
-<!--            <if test="attachmentUrls != null">attachment_urls,</if>-->
+            <!--            <if test="attachmentUrls != null">attachment_urls,</if>-->
         </trim>
         <trim prefix="values (" suffix=")" suffixOverrides=",">
-<!--            <if test="applyNo != null and applyNo != ''">#{applyNo},</if>-->
+            <!--            <if test="applyNo != null and applyNo != ''">#{applyNo},</if>-->
             <if test="applicantUserId != null">#{applicantUserId},</if>
             <if test="applicantDepId != null">#{applicantDepId},</if>
             <if test="name != null and name != ''">#{name},</if>
@@ -165,7 +165,7 @@
             <if test="updateTime != null">#{updateTime},</if>
             <if test="remark != null">#{remark},</if>
             <if test="delFlag != null">#{delFlag},</if>
-<!--            <if test="attachmentUrls != null">#{attachmentUrls},</if>-->
+            <!--            <if test="attachmentUrls != null">#{attachmentUrls},</if>-->
         </trim>
     </insert>
 
@@ -173,7 +173,7 @@
     <update id="updateCompetitionApply" parameterType="CompetitionApply">
         update sam_competition_apply
         <trim prefix="SET" suffixOverrides=",">
-<!--            <if test="applyNo != null and applyNo != ''">apply_no = #{applyNo},</if>-->
+            <!--            <if test="applyNo != null and applyNo != ''">apply_no = #{applyNo},</if>-->
             <if test="applicantUserId != null">applicant_user_id = #{applicantUserId},</if>
             <if test="applicantDepId != null">applicant_dep_id = #{applicantDepId},</if>
             <if test="name != null and name != ''">name = #{name},</if>
@@ -194,7 +194,7 @@
             <if test="updateTime != null">update_time = #{updateTime},</if>
             <if test="remark != null">remark = #{remark},</if>
             <if test="delFlag != null">del_flag = #{delFlag},</if>
-<!--            <if test="attachmentUrls != null">attachment_urls = #{attachmentUrls},</if>-->
+            <!--            <if test="attachmentUrls != null">attachment_urls = #{attachmentUrls},</if>-->
         </trim>
         where id = #{id}
     </update>
@@ -257,4 +257,20 @@
     </insert>
 
     <!-- 移除了无用的 batchCompetitionApplyAttachment 批量插入（实体类无对应字段） -->
+
+    <!-- ====================== 新增：附件预览相关查询 ====================== -->
+    <!-- 根据附件ID查询单个附件 -->
+    <select id="selectCompetitionApplyAttachmentById" parameterType="Long" resultMap="CompetitionApplyAttachmentResult">
+        select id, competition_apply_id, uuid, path, document_name, attachment_type, create_by, create_time, update_by, update_time, del_flag
+        from sam_competition_apply_attachment
+        where id = #{attachmentId}
+    </select>
+
+    <!-- 根据赛事申请ID查询附件列表 -->
+    <select id="selectCompetitionApplyAttachmentListByApplyId" parameterType="Long" resultMap="CompetitionApplyAttachmentResult">
+        select id, competition_apply_id, uuid, path, document_name, attachment_type, create_by, create_time, update_by, update_time, del_flag
+        from sam_competition_apply_attachment
+        where competition_apply_id = #{applyId} and del_flag = '0'
+    </select>
+
 </mapper>
