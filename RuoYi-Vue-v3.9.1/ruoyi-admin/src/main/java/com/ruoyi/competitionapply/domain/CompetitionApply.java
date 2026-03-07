@@ -28,11 +28,11 @@ public class CompetitionApply extends BaseEntity
 
     /** 申请人用户ID */
 //    @Excel(name = "申请人用户ID")
-    private Long applicantUserId;
+    private String applicantUserId;
 
     /** 申请人学院 */
 //    @Excel(name = "申请人学院")
-    private Long applicantDepId;
+    private String applicantDepId;
     /** 申请人用户名（展示用，不映射数据库） */
     @Excel(name = "申请人学号")
     private String userName;
@@ -123,22 +123,22 @@ public class CompetitionApply extends BaseEntity
 //        return applyNo;
 //    }
 
-    public void setApplicantUserId(Long applicantUserId)
+    public void setApplicantUserId(String applicantUserId)
     {
         this.applicantUserId = applicantUserId;
     }
 
-    public Long getApplicantUserId()
+    public String getApplicantUserId()
     {
         return applicantUserId;
     }
 
-    public void setApplicantDepId(Long applicantDepId)
+    public void setApplicantDepId(String applicantDepId)
     {
         this.applicantDepId = applicantDepId;
     }
 
-    public Long getApplicantDepId()
+    public String getApplicantDepId()
     {
         return applicantDepId;
     }

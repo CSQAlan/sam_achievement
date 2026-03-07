@@ -1,8 +1,8 @@
 <template>
   <div class="app-container">
-    <el-form :model="queryParams" ref="queryRef" :inline="true" v-show="showSearch" label-width="68px">
-      <el-form-item label="申请人用户ID" prop="applicantUserId">
-        <el-input v-model="queryParams.applicantUserId" placeholder="请输入申请人用户ID" clearable @keyup.enter="handleQuery" />
+    <el-form :model="queryParams" ref="queryRef" :inline="true" v-show="showSearch" label-width="90px">
+      <el-form-item label="申请人学号" prop="applicantUserId">
+        <el-input v-model="queryParams.applicantUserId" placeholder="请输入申请人学号" clearable @keyup.enter="handleQuery" />
       </el-form-item>
       <el-form-item label="申请人学院" prop="applicantDepId">
         <el-input v-model="queryParams.applicantDepId" placeholder="请输入申请人学院" clearable @keyup.enter="handleQuery" />
@@ -456,7 +456,7 @@ function handleUpdate(row) {
     if (response.data.competitionApplyAttachmentList && response.data.competitionApplyAttachmentList.length > 0) {
       fileList.value = response.data.competitionApplyAttachmentList
       // 默认预览第一个文件
-      // handlePreviewFile(fileList.value[0])
+      handlePreviewFile(fileList.value[0])
     } else {
       fileList.value = []
       currentPreviewId.value = null

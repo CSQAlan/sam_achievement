@@ -69,8 +69,8 @@ public class CompetitionApplyServiceImpl implements ICompetitionApplyService
         // 1. 自动填充用户/默认值（原有逻辑保留）
         SysUser currentUser = SecurityUtils.getLoginUser().getUser();
         if (StringUtils.isNotNull(currentUser)) {
-            competitionApply.setApplicantUserId(currentUser.getUserId());
-            competitionApply.setApplicantDepId(currentUser.getDeptId());
+            competitionApply.setApplicantUserId(currentUser.getUserId().toString());
+            competitionApply.setApplicantDepId(currentUser.getDeptId().toString());
             competitionApply.setCreateBy(currentUser.getUserName());
             competitionApply.setUpdateBy(currentUser.getUserName());
         }
