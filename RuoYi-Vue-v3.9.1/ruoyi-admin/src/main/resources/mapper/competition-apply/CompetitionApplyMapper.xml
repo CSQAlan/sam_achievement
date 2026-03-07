@@ -97,7 +97,7 @@
             <if test="category != null  and category != ''"> and category = #{category}</if>
             <if test="level != null  and level != ''"> and level = #{level}</if>
             <if test="scopeType != null  and scopeType != ''"> and scope_type = #{scopeType}</if>
-            <if test="status != null  and status != ''"> and status = #{status}</if>
+            <if test="status != null  and status != ''"> and a.status = #{status}</if>
             <if test="memo != null  and memo != ''"> and memo = #{memo}</if>
         </where>
     </select>
@@ -181,7 +181,7 @@
             <if test="organizations != null and organizations != ''">organizations = #{organizations},</if>
             <if test="level != null and level != ''">level = #{level},</if>
             <if test="scopeType != null and scopeType != ''">scope_type = #{scopeType},</if>
-            <if test="status != null and status != ''">status = #{status},</if>
+            <if test="status != null and status != ''">a.status = #{status},</if>
             <if test="tags != null">tags = #{tags},</if>
             <if test="memo != null">memo = #{memo},</if>
             <if test="auditBy != null">audit_by = #{auditBy},</if>
