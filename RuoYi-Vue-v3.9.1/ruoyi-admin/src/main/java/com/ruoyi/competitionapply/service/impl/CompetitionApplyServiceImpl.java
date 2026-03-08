@@ -2,6 +2,7 @@ package com.ruoyi.competitionapply.service.impl;
 
 import java.util.Date;
 import java.util.List;
+import java.util.ArrayList;
 
 import com.ruoyi.common.core.domain.entity.SysUser;
 import com.ruoyi.common.utils.DateUtils;
@@ -11,8 +12,7 @@ import com.ruoyi.common.utils.file.FileUploadUtils;
 import com.ruoyi.system.mapper.SysUserMapper;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
-import org.springframework.web.multipart.MultipartFile; // 新增导入：处理文件上传
-import java.util.ArrayList;
+import org.springframework.web.multipart.MultipartFile;
 import com.ruoyi.common.utils.StringUtils;
 import org.springframework.transaction.annotation.Transactional;
 import com.ruoyi.competitionapply.domain.CompetitionApplyAttachment;
@@ -37,15 +37,36 @@ public class CompetitionApplyServiceImpl implements ICompetitionApplyService
     private SysUserMapper sysUserMapper;
 
     /**
-     * 查询赛事申请
+     * 查询赛事申请（关联查询附件列表，供前端修改页面使用）
      *
      * @param id 赛事申请主键
-     * @return 赛事申请
+     * @return 赛事申请（包含附件列表）
      */
     @Override
     public CompetitionApply selectCompetitionApplyById(Long id)
     {
-        return competitionApplyMapper.selectCompetitionApplyById(id);
+        // 查询主表信息
+        CompetitionApply competitionApply = competitionApplyMapper.selectCompetitionApplyById(id);
+        if (competitionApply != null) {
+            // 关联查询该赛事的所有附件列表，赋值给主表对象
+            List<CompetitionApplyAttachment> attachmentList = competitionApplyMapper.selectCompetitionApplyAttachmentListByApplyId(id);
+            competitionApply.setCompetitionApplyAttachmentList(attachmentList);
+
+            // 拼接附件地址字符串（兼容前端upload-file组件的v-model）
+            if (attachmentList != null && !attachmentList.isEmpty()) {
+                StringBuilder attachmentUrls = new StringBuilder();
+                for (CompetitionApplyAttachment attachment : attachmentList) {
+                    if (StringUtils.isNotBlank(attachment.getPath())) {
+                        attachmentUrls.append(attachment.getPath()).append(",");
+                    }
+                }
+                if (attachmentUrls.length() > 0) {
+                    attachmentUrls.deleteCharAt(attachmentUrls.length() - 1);
+                    competitionApply.setAttachmentUrls(attachmentUrls.toString());
+                }
+            }
+        }
+        return competitionApply;
     }
 
     /**
@@ -78,10 +99,10 @@ public class CompetitionApplyServiceImpl implements ICompetitionApplyService
         if (StringUtils.isNull(competitionApply.getScopeType())) competitionApply.setScopeType("0");
         if (StringUtils.isNull(competitionApply.getCreateTime())) competitionApply.setCreateTime(new Date());
 
-        // 2. 插入主表
+        // 2. 插入主表（确保ID回写）
         int mainResult = competitionApplyMapper.insertCompetitionApply(competitionApply);
         Long mainId = competitionApply.getId();
-        if (mainResult <= 0) return 0;
+        if (mainResult <= 0 || mainId == null) return 0;
 
         // 3. 解析前端传的 attachmentUrls，拆分成子表数据（核心新增）
         String attachmentUrls = competitionApply.getAttachmentUrls();
@@ -101,6 +122,8 @@ public class CompetitionApplyServiceImpl implements ICompetitionApplyService
                 // 填充继承字段
                 attachment.setCreateBy(currentUser.getUserName());
                 attachment.setCreateTime(new Date());
+                attachment.setUpdateBy(currentUser.getUserName());
+                attachment.setUpdateTime(new Date());
                 // 插入子表
                 competitionApplyMapper.insertCompetitionApplyAttachment(attachment);
             }
@@ -160,7 +183,7 @@ public class CompetitionApplyServiceImpl implements ICompetitionApplyService
     }
 
     /**
-     * 修改赛事申请
+     * 修改赛事申请（最终版：适配前端增量操作 + attachmentUrls兜底）
      *
      * @param competitionApply 赛事申请
      * @return 结果
@@ -169,10 +192,78 @@ public class CompetitionApplyServiceImpl implements ICompetitionApplyService
     @Override
     public int updateCompetitionApply(CompetitionApply competitionApply)
     {
+        // 填充更新人、更新时间
+        SysUser currentUser = SecurityUtils.getLoginUser().getUser();
+        if (StringUtils.isNotNull(currentUser)) {
+            competitionApply.setUpdateBy(currentUser.getUserName());
+        }
         competitionApply.setUpdateTime(DateUtils.getNowDate());
-        // 修复：删除附件的方法参数名（applyId → competitionApplyId，需确认Mapper中方法名）
-        competitionApplyMapper.deleteCompetitionApplyAttachmentByApplyId(competitionApply.getId());
-        insertCompetitionApplyAttachment(competitionApply);
+
+        // ========== 核心修复：从attachmentUrls兜底解析附件列表 ==========
+        List<CompetitionApplyAttachment> newAttachmentList = competitionApply.getCompetitionApplyAttachmentList();
+
+        // 如果前端传的列表为空/null，从attachmentUrls解析
+        if (StringUtils.isNull(newAttachmentList) || newAttachmentList.isEmpty()) {
+            newAttachmentList = new ArrayList<>();
+            String attachmentUrls = competitionApply.getAttachmentUrls();
+            if (StringUtils.isNotBlank(attachmentUrls)) {
+                String[] urlArray = attachmentUrls.split(",");
+                for (String url : urlArray) {
+                    if (StringUtils.isBlank(url)) continue;
+                    CompetitionApplyAttachment attachment = new CompetitionApplyAttachment();
+                    attachment.setCompetitionApplyId(competitionApply.getId());
+                    attachment.setUuid(IdUtils.fastUUID()); // 生成新UUID
+                    attachment.setPath(url);
+                    attachment.setDocumentName(url.substring(url.lastIndexOf("/") + 1));
+                    attachment.setAttachmentType(1);
+                    attachment.setDelFlag("0");
+                    // 填充创建/更新信息
+                    if (StringUtils.isNotNull(currentUser)) {
+                        attachment.setCreateBy(currentUser.getUserName());
+                        attachment.setUpdateBy(currentUser.getUserName());
+                    }
+                    attachment.setCreateTime(new Date());
+                    attachment.setUpdateTime(new Date());
+                    newAttachmentList.add(attachment);
+                }
+            }
+            // 把解析后的列表塞回对象，复用后续逻辑
+            competitionApply.setCompetitionApplyAttachmentList(newAttachmentList);
+        }
+
+        // ========== 删旧插新逻辑 ==========
+        if (StringUtils.isNotNull(newAttachmentList)) {
+            // 1. 先删除该赛事原有所有附件
+            competitionApplyMapper.deleteCompetitionApplyAttachmentByApplyId(competitionApply.getId());
+
+            // 2. 只有新列表非空时，才批量插入新附件
+            if (!newAttachmentList.isEmpty()) {
+                for (CompetitionApplyAttachment attachment : newAttachmentList) {
+                    attachment.setCompetitionApplyId(competitionApply.getId());
+                    attachment.setUuid(StringUtils.isBlank(attachment.getUuid()) ? IdUtils.fastUUID() : attachment.getUuid());
+                    attachment.setAttachmentType(StringUtils.isNull(attachment.getAttachmentType()) ? 1 : attachment.getAttachmentType());
+                    attachment.setDelFlag(StringUtils.isNull(attachment.getDelFlag()) ? "0" : attachment.getDelFlag());
+
+                    // 填充更新字段
+                    if (StringUtils.isNotNull(currentUser)) {
+                        attachment.setUpdateBy(currentUser.getUserName());
+                    }
+                    attachment.setUpdateTime(new Date());
+
+                    // 新增附件补充创建字段
+                    if (StringUtils.isNull(attachment.getId())) {
+                        if (StringUtils.isNotNull(currentUser)) {
+                            attachment.setCreateBy(currentUser.getUserName());
+                        }
+                        attachment.setCreateTime(new Date());
+                    }
+                }
+                // 批量插入新附件
+                insertCompetitionApplyAttachment(competitionApply);
+            }
+        }
+
+        // 3. 仅更新主表信息
         return competitionApplyMapper.updateCompetitionApply(competitionApply);
     }
 
@@ -186,7 +277,7 @@ public class CompetitionApplyServiceImpl implements ICompetitionApplyService
     @Override
     public int deleteCompetitionApplyByIds(Long[] ids)
     {
-        // 修复：删除附件的方法参数名（applyIds → competitionApplyIds，需确认Mapper中方法名）
+        // 删除关联的附件
         competitionApplyMapper.deleteCompetitionApplyAttachmentByApplyIds(ids);
         return competitionApplyMapper.deleteCompetitionApplyByIds(ids);
     }
@@ -201,43 +292,29 @@ public class CompetitionApplyServiceImpl implements ICompetitionApplyService
     @Override
     public int deleteCompetitionApplyById(Long id)
     {
-        // 修复：删除附件的方法参数名（applyId → competitionApplyId，需确认Mapper中方法名）
+        // 删除关联的附件
         competitionApplyMapper.deleteCompetitionApplyAttachmentByApplyId(id);
         return competitionApplyMapper.deleteCompetitionApplyById(id);
     }
 
     /**
-     * 新增赛事申请附件信息（批量）- 修复字段名
-     *
-     * @param competitionApply 赛事申请对象
+     * 新增赛事申请附件信息（批量）- 简化逻辑
      */
     public void insertCompetitionApplyAttachment(CompetitionApply competitionApply)
     {
-        List<CompetitionApplyAttachment> competitionApplyAttachmentList = competitionApply.getCompetitionApplyAttachmentList();
-        Long id = competitionApply.getId();
-        if (StringUtils.isNotNull(competitionApplyAttachmentList))
+        List<CompetitionApplyAttachment> attachmentList = competitionApply.getCompetitionApplyAttachmentList();
+        if (StringUtils.isNotNull(attachmentList) && !attachmentList.isEmpty())
         {
-            List<CompetitionApplyAttachment> list = new ArrayList<CompetitionApplyAttachment>();
-            for (CompetitionApplyAttachment competitionApplyAttachment : competitionApplyAttachmentList)
-            {
-                // 修复：子表外键字段名改为competitionApplyId
-                competitionApplyAttachment.setCompetitionApplyId(id);
-                list.add(competitionApplyAttachment);
-            }
-            if (list.size() > 0)
-            {
-                competitionApplyMapper.batchCompetitionApplyAttachment(list);
-            }
+            // 直接批量插入，无需重复设置ID
+            competitionApplyMapper.batchCompetitionApplyAttachment(attachmentList);
         }
     }
 
-    // ====================== 新增：文件预览所需的2个方法实现 ======================
     /**
      * 根据附件ID查询单个附件信息
      */
     @Override
     public CompetitionApplyAttachment selectCompetitionApplyAttachmentById(Long attachmentId) {
-        // 直接调用Mapper的查询方法（你已在XML里新增该SQL）
         return competitionApplyMapper.selectCompetitionApplyAttachmentById(attachmentId);
     }
 
@@ -246,7 +323,6 @@ public class CompetitionApplyServiceImpl implements ICompetitionApplyService
      */
     @Override
     public List<CompetitionApplyAttachment> selectCompetitionApplyAttachmentListByApplyId(Long applyId) {
-        // 直接调用Mapper的查询方法（你已在XML里新增该SQL）
         return competitionApplyMapper.selectCompetitionApplyAttachmentListByApplyId(applyId);
     }
 
