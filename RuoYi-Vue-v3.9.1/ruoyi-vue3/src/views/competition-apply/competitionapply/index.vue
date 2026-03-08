@@ -143,43 +143,55 @@
               <el-input v-model="form.memo" type="textarea" placeholder="请输入赛事说明" />
             </el-form-item>
           </el-form>
-          <!-- 上传区域 -->
+          <!-- 上传区域（若依标准写法） -->
           <div class="upload-area">
             <el-divider content-position="center">赛事申请附件（仅支持PDF）</el-divider>
-            <el-form-item label="佐证文件" prop="attachments">
+            <el-form-item label="佐证文件">
               <upload-file v-model="form.attachmentUrls" :limit="5" :file-size="50" :file-type="['pdf']"
-                :disabled="false" @change="handleFileChange"></upload-file>
+                :disabled="false" @change="handleFileUrlChange">
+              </upload-file>
             </el-form-item>
           </div>
         </el-col>
 
-        <!-- 右侧：文件列表 + 预览区域（占50%宽度） -->
+        <!-- 右侧：文件列表 + 预览提示区域（优化样式） -->
         <el-col :span="12">
-          <el-divider content-position="center">文件预览</el-divider>
+          <el-divider content-position="center">文件操作</el-divider>
 
-          <!-- 文件列表 -->
-          <div class="file-list" v-if="fileList.length > 0">
-            <div v-for="file in fileList" :key="file.id || file.name" class="file-item"
-              :class="{ active: currentPreviewId === (file.id || file.name) }" @click="handlePreviewFile(file)">
-              <span class="file-name">{{ file.documentName || file.name }}</span>
-              <el-icon class="preview-icon">
-                <Document />
-              </el-icon>
+          <!-- 文件列表（优化样式） -->
+          <div class="file-list-container" v-if="fileList.length > 0">
+            <div class="file-list-header">
+              <span class="file-list-title">已上传文件</span>
+              <span class="file-tip-text">点击文件名在新标签页预览</span>
+            </div>
+            <div class="file-list">
+              <div v-for="(file, index) in fileList" :key="index" class="file-item" @click="handlePreviewFile(file)">
+                <el-icon class="file-icon">
+                  <Document />
+                </el-icon>
+                <span class="file-name">{{ file.name }}</span>
+                <el-icon class="delete-icon" color="#F56C6C" @click.stop="handleDeleteFile(file, index)">
+                  <Delete />
+                </el-icon>
+              </div>
             </div>
           </div>
           <div v-else class="no-file-tips">
-            <el-empty description="暂无上传文件，请先上传PDF文件预览"></el-empty>
+            <el-empty description="暂无上传文件，请先上传PDF文件"></el-empty>
           </div>
 
-          <!-- 预览区域 -->
-          <div class="preview-area" v-if="previewUrl">
-            <div ref="pdfContainer" class="pdf-container"></div>
-            <!-- 备用方案：新标签页预览 -->
-            <div class="preview-backup">
-              <el-button type="text" @click="openNewTabPreview(previewUrl)">
-                预览异常？点击在新标签页打开
-              </el-button>
-            </div>
+          <!-- 预览提示区域（优化样式，固定显示） -->
+          <div class="preview-tips-area">
+            <el-card shadow="hover" class="preview-card">
+              <div class="preview-content">
+                <el-icon size="48" color="#409EFF">
+                  <Document />
+                </el-icon>
+                <h3>文件预览说明</h3>
+                <p>点击左侧文件列表中的文件名，将在新标签页中打开PDF文件预览</p>
+                <p class="tips-detail">新标签页预览支持完整的PDF功能（翻页、缩放、下载等）</p>
+              </div>
+            </el-card>
           </div>
         </el-col>
       </el-row>
@@ -195,8 +207,8 @@
 </template>
 
 <script setup name="Competitionapply">
-import { ref, reactive, toRefs, getCurrentInstance, onMounted } from 'vue'
-import { Document } from '@element-plus/icons-vue'
+import { ref, getCurrentInstance } from 'vue'
+import { Document, Delete } from '@element-plus/icons-vue'
 // 引入RuoYi封装的下载方法
 import { download } from '@/utils/request'
 // 引入RuoYi封装的上传组件
@@ -215,7 +227,7 @@ const { sys_competition_tag, sys_competition_del_flag, sys_shenhe_status, sys_co
 // 用户信息
 const userStore = useUserStore()
 
-// 响应式数据
+// ========== 核心修复：独立声明响应式变量（解决响应式失效） ==========
 const competitionapplyList = ref([])
 const open = ref(false)
 const loading = ref(true)
@@ -225,145 +237,119 @@ const single = ref(true)
 const multiple = ref(true)
 const total = ref(0)
 const title = ref("")
-// 预览相关响应式数据
-const previewUrl = ref('')
-const fileList = ref([])          // 所有上传/已存在的文件列表
-const currentPreviewId = ref(null) // 当前预览的文件ID/名称
-const pdfContainer = ref(null)    // PDF渲染容器
-let pdfjsLib = null               // PDF.js 实例
+const fileList = ref([])
 
-// 挂载时加载PDF.js CDN
-onMounted(() => {
-  // 动态加载PDF.js
-  const loadPDFJS = () => {
-    return new Promise((resolve) => {
-      if (window.pdfjsLib) {
-        pdfjsLib = window.pdfjsLib
-        resolve()
-        return
-      }
-      // 加载PDF.js主库
-      const script = document.createElement('script')
-      script.src = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js'
-      script.onload = () => {
-        // 配置worker
-        window.pdfjsLib.GlobalWorkerOptions.workerSrc = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js'
-        pdfjsLib = window.pdfjsLib
-        resolve()
-      }
-      script.onerror = () => {
-        proxy.$modal.msgWarning("PDF预览组件加载失败，将使用新标签页预览")
-        resolve()
-      }
-      document.head.appendChild(script)
-    })
-  }
-  loadPDFJS()
+// 表单数据（若依标准写法，独立声明ref）
+const form = ref({
+  id: null,
+  applicantUserId: userStore.id,
+  applicantDepId: userStore.deptId || '',
+  name: null,
+  category: null,
+  organizations: null,
+  level: null,
+  scopeType: "0",
+  status: "0",
+  tags: [],
+  memo: null,
+  attachmentUrls: "", // 若依upload-file核心绑定字段
+  competitionApplyAttachmentList: [], // 附件列表
+  auditBy: null,
+  auditTime: null,
+  auditRemark: null,
+  competitionId: null,
+  createBy: null,
+  createTime: null,
+  updateBy: null,
+  updateTime: null,
+  remark: null,
+  delFlag: null
 })
 
-const data = reactive({
-  form: {},
-  queryParams: {
-    pageNum: 1,
-    pageSize: 10,
-    applicantUserId: null,
-    applicantDepId: null,
-    name: null,
-    category: null,
-    level: null,
-    scopeType: null,
-    status: null,
-    memo: null,
-  },
-  rules: {
-    name: [{ required: true, message: "赛事名称不能为空", trigger: "blur" }],
-    category: [{ required: true, message: "赛事类别不能为空", trigger: "change" }],
-    organizations: [{ required: true, message: "盖章单位不能为空", trigger: "blur" }],
-    level: [{ required: true, message: "赛事级别不能为空", trigger: "change" }],
-  }
+// 查询参数
+const queryParams = ref({
+  pageNum: 1,
+  pageSize: 10,
+  applicantUserId: null,
+  applicantDepId: null,
+  name: null,
+  category: null,
+  level: null,
+  scopeType: null,
+  status: null,
+  memo: null,
 })
 
-const { queryParams, form, rules } = toRefs(data)
+// 表单校验规则
+const rules = ref({
+  name: [{ required: true, message: "赛事名称不能为空", trigger: "blur" }],
+  category: [{ required: true, message: "赛事类别不能为空", trigger: "change" }],
+  organizations: [{ required: true, message: "盖章单位不能为空", trigger: "blur" }],
+  level: [{ required: true, message: "赛事级别不能为空", trigger: "change" }],
+})
 
-// 处理文件上传/变更，生成文件列表（新增页面）
-function handleFileChange(fileUrls) {
-  if (!fileUrls || fileUrls.length === 0) {
+// ========== 文件上传核心方法 ==========
+// 监听附件路径变化，同步文件列表（若依标准）
+function handleFileUrlChange() {
+  if (!form.value.attachmentUrls) {
     fileList.value = []
-    previewUrl.value = ''
-    currentPreviewId.value = null
+    form.value.competitionApplyAttachmentList = []
     return
   }
-
-  // 解析上传的文件地址，生成文件列表
-  const urls = fileUrls.split(',').filter(Boolean)
-  fileList.value = urls.map((url, index) => {
-    const fileName = url.split('/').pop() || `文件${index + 1}`
-    return {
-      name: fileName,
-      url: `${import.meta.env.VITE_APP_BASE_API}${url.startsWith('/') ? url : `/${url}`}`
-    }
-  })
-
-  // 默认预览第一个文件
-  if (fileList.value.length > 0) {
-    handlePreviewFile(fileList.value[0])
-  }
+  // 解析路径为文件列表
+  const urls = form.value.attachmentUrls.split(',').filter(url => url)
+  // 更新显示列表
+  fileList.value = urls.map(url => ({
+    name: url.split('/').pop(),
+    path: url,
+    url: `${import.meta.env.VITE_APP_BASE_API}${url.startsWith('/') ? url : `/${url}`}`
+  }))
+  // 更新提交列表
+  form.value.competitionApplyAttachmentList = urls.map(url => ({
+    id: null,
+    competitionApplyId: form.value.id,
+    path: url,
+    documentName: url.split('/').pop(),
+    attachmentType: 1,
+    delFlag: '0'
+  }))
+  console.log("文件列表同步完成：", form.value.competitionApplyAttachmentList)
 }
 
-// 新标签页预览（备用方案）
+// 删除文件（联动若依upload-file组件）
+function handleDeleteFile(file, index) {
+  proxy.$modal.confirm('确认删除该附件吗？删除后不可恢复！').then(() => {
+    // 从attachmentUrls移除路径（核心：联动组件）
+    const urls = form.value.attachmentUrls.split(',').filter(url => url !== file.path)
+    form.value.attachmentUrls = urls.join(',')
+    // 自动同步列表
+    handleFileUrlChange()
+    proxy.$modal.msgSuccess("附件删除成功")
+  })
+}
+
+// 文件预览
 function openNewTabPreview(url) {
   window.open(url, '_blank')
 }
 
-// 预览文件（兼容PDF.js和新标签页）
-async function handlePreviewFile(file) {
-  currentPreviewId.value = file.id || file.name
-  const baseApi = import.meta.env.VITE_APP_BASE_API || '';
-  const finalBaseApi = baseApi.endsWith('/') ? baseApi.slice(0, -1) : baseApi;
+function handlePreviewFile(file) {
   let url = '';
-
   if (file.path) {
-    url = `${finalBaseApi}${file.path}`;
+    url = `${import.meta.env.VITE_APP_BASE_API}${file.path.startsWith('/') ? file.path : `/${file.path}`}`;
   } else if (file.url) {
     url = file.url;
   }
 
   if (url) {
-    previewUrl.value = url;
-    // 如果PDF.js加载成功，使用canvas渲染
-    if (pdfjsLib && pdfContainer.value) {
-      try {
-        // 清空容器
-        pdfContainer.value.innerHTML = '';
-        // 加载PDF
-        const pdf = await pdfjsLib.getDocument(url).promise;
-        const page = await pdf.getPage(1);
-        const viewport = page.getViewport({ scale: 1.2 });
-
-        // 创建canvas
-        const canvas = document.createElement('canvas');
-        const context = canvas.getContext('2d');
-        canvas.height = viewport.height;
-        canvas.width = viewport.width;
-        // 适配容器宽度
-        canvas.style.maxWidth = '100%';
-        canvas.style.height = 'auto';
-        pdfContainer.value.appendChild(canvas);
-
-        // 渲染PDF
-        await page.render({ canvasContext: context, viewport }).promise;
-      } catch (error) {
-        console.error('PDF预览失败：', error);
-        proxy.$modal.msgInfo("PDF内置预览失败，将自动在新标签页打开");
-        openNewTabPreview(url);
-      }
-    } else {
-      // PDF.js加载失败，直接新标签页打开
-      openNewTabPreview(url);
-    }
+    openNewTabPreview(url);
+    proxy.$modal.msgSuccess("正在新标签页打开文件预览...");
+  } else {
+    proxy.$modal.msgError("文件地址无效，无法预览");
   }
 }
 
+// ========== 核心修复：重置/新增/修改逻辑 ==========
 /** 查询列表 */
 function getList() {
   loading.value = true
@@ -377,27 +363,29 @@ function getList() {
 /** 取消弹窗 */
 function cancel() {
   open.value = false
-  previewUrl.value = ''
   fileList.value = []
-  currentPreviewId.value = null
   reset()
 }
 
-/** 重置表单 */
+/** 重置表单（核心修复：先resetForm，再强制清空ID） */
 function reset() {
+  // 第一步：调用若依resetForm清空表单
+  proxy.resetForm("competitionapplyRef")
+  // 第二步：强制重置所有字段，确保ID为null
   form.value = {
     id: null,
-    applicantUserId: userStore.id,      // 自动填充当前用户ID
-    applicantDepId: userStore.deptId || '', // 自动填充当前部门ID
+    applicantUserId: userStore.id,
+    applicantDepId: userStore.deptId || '',
     name: null,
     category: null,
     organizations: null,
     level: null,
-    scopeType: "0",                     // 默认：全校
-    status: "0",                        // 默认：待审
+    scopeType: "0",
+    status: "0",
     tags: [],
     memo: null,
-    attachmentUrls: "",                 // 附件地址（逗号分隔）
+    attachmentUrls: "",
+    competitionApplyAttachmentList: [],
     auditBy: null,
     auditTime: null,
     auditRemark: null,
@@ -409,10 +397,7 @@ function reset() {
     remark: null,
     delFlag: null
   }
-  previewUrl.value = ''
   fileList.value = []
-  currentPreviewId.value = null
-  proxy.resetForm("competitionapplyRef")
 }
 
 /** 搜索操作 */
@@ -434,17 +419,19 @@ function handleSelectionChange(selection) {
   multiple.value = !selection.length
 }
 
-/** 新增操作 */
+/** 新增操作（核心修复：强制清空ID） */
 function handleAdd() {
-  reset()
-  fileList.value = []
-  currentPreviewId.value = null
-  previewUrl.value = ''
+  reset() // 先重置表单
   open.value = true
   title.value = "添加赛事申请"
+  // 额外保险：强制清空ID
+  form.value.id = null
+  form.value.attachmentUrls = ""
+  fileList.value = []
+  console.log("新增表单初始化完成，ID：", form.value.id) // 控制台验证ID是否为null
 }
 
-/** 修改操作 */
+/** 修改操作（修复：同步旧文件到attachmentUrls） */
 function handleUpdate(row) {
   reset()
   const _id = row.id || ids.value
@@ -452,44 +439,45 @@ function handleUpdate(row) {
     form.value = response.data
     form.value.tags = form.value.tags ? form.value.tags.split(",") : []
 
-    // 加载子表文件列表
+    // 核心：同步旧文件到attachmentUrls（若依upload-file需要）
     if (response.data.competitionApplyAttachmentList && response.data.competitionApplyAttachmentList.length > 0) {
-      fileList.value = response.data.competitionApplyAttachmentList
-      // 默认预览第一个文件
-      handlePreviewFile(fileList.value[0])
-    } else {
-      fileList.value = []
-      currentPreviewId.value = null
-      previewUrl.value = ''
+      const urls = response.data.competitionApplyAttachmentList.map(f => f.path)
+      form.value.attachmentUrls = urls.join(',')
+      handleFileUrlChange() // 触发列表同步
     }
 
     open.value = true
     title.value = "修改赛事申请"
+    console.log("修改表单初始化完成，ID：", form.value.id) // 控制台验证ID是否存在
   })
 }
 
-/** 提交表单 */
+/** 提交表单（核心修复：严格区分新增/修改） */
 function submitForm() {
   proxy.$refs["competitionapplyRef"].validate(valid => {
     if (valid) {
-      // 核心修复：先判断tags是否为数组，再处理
+      // 强制同步文件列表
+      handleFileUrlChange()
+      // 处理tags数组转字符串
       form.value.tags = Array.isArray(form.value.tags) ? form.value.tags.join(",") : "";
-      // 构造提交数据（直接传纯 JSON）
+      // 构造提交数据
       const submitData = { ...form.value }
 
-      if (form.value.id) {
-        // 更新逻辑不变
+      console.log("提交数据ID：", submitData.id) // 控制台验证提交的ID
+
+      if (submitData.id) {
+        // 更新逻辑
         updateCompetitionapply(submitData).then(() => {
           proxy.$modal.msgSuccess("修改成功")
           open.value = false
           getList()
         })
       } else {
-        // 新增：直接调用旧的 addCompetitionapply（纯 JSON）
+        // 新增逻辑
         addCompetitionapply(submitData).then(res => {
           if (res && res.code === 200) {
             proxy.$modal.msgSuccess("新增成功");
-            open.value = false;
+            open.value = false
             getList();
           } else {
             proxy.$modal.msgError(res?.msg || "新增失败");
@@ -508,7 +496,7 @@ function submitForm() {
 /** 删除操作 */
 function handleDelete(row) {
   const _ids = row.id || ids.value
-  proxy.$modal.confirm('是否确认删除赛事申请编号为"' + _ids + '"的数据项？').then(() => {
+  proxy.$modal.confirm('是否确认删除该赛事申请？删除后相关附件也将一并删除！').then(() => {
     delCompetitionapply(_ids).then(() => {
       getList()
       proxy.$modal.msgSuccess("删除成功")
@@ -516,7 +504,7 @@ function handleDelete(row) {
   })
 }
 
-/** 导出操作（使用RuoYi封装的download方法） */
+/** 导出操作 */
 function handleExport() {
   download('competition-apply/competitionapply/export', queryParams.value, `competitionapply_${new Date().getTime()}.xlsx`)
 }
@@ -526,28 +514,55 @@ getList()
 </script>
 
 <style scoped>
-/* 预览区域样式优化 */
+/* 基础样式优化 */
 .upload-area {
   margin-top: 20px;
   margin-bottom: 20px;
 }
 
-/* 文件列表样式 */
+/* 文件列表容器样式优化 */
+.file-list-container {
+  margin-bottom: 20px;
+  border: 1px solid #e5e7eb;
+  border-radius: 8px;
+  overflow: hidden;
+  background-color: #f9fafb;
+}
+
+.file-list-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 12px 16px;
+  background-color: #f3f4f6;
+  border-bottom: 1px solid #e5e7eb;
+}
+
+.file-list-title {
+  font-weight: 600;
+  color: #1f2937;
+  font-size: 14px;
+}
+
+.file-tip-text {
+  font-size: 12px;
+  color: #6b7280;
+}
+
+/* 文件列表样式优化 */
 .file-list {
   max-height: 200px;
   overflow-y: auto;
-  border: 1px solid #e6e6e6;
-  border-radius: 4px;
-  margin-bottom: 16px;
+  padding: 8px 0;
 }
 
 .file-item {
   display: flex;
   align-items: center;
-  padding: 8px 12px;
+  padding: 10px 16px;
   cursor: pointer;
-  border-bottom: 1px solid #f0f0f0;
-  transition: background-color 0.2s;
+  transition: all 0.2s ease;
+  border-bottom: 1px solid #f3f4f6;
 }
 
 .file-item:last-child {
@@ -555,12 +570,13 @@ getList()
 }
 
 .file-item:hover {
-  background-color: #f5f7fa;
+  background-color: #eff6ff;
 }
 
-.file-item.active {
-  background-color: #ecf5ff;
-  color: #409eff;
+.file-icon {
+  margin-right: 10px;
+  color: #4f46e5;
+  font-size: 16px;
 }
 
 .file-name {
@@ -568,48 +584,69 @@ getList()
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
+  font-size: 14px;
+  color: #1f2937;
 }
 
-.preview-icon {
+.delete-icon {
   margin-left: 8px;
   font-size: 16px;
+  cursor: pointer;
+  transition: color 0.2s;
 }
 
-/* 预览区域样式 */
-.preview-area {
-  border: 1px solid #e6e6e6;
-  border-radius: 4px;
-  overflow: hidden;
-  min-height: 500px;
+.delete-icon:hover {
+  color: #dc2626;
 }
 
-.pdf-container {
-  width: 100%;
-  height: 480px;
-  overflow: auto;
-  display: flex;
-  justify-content: center;
-  align-items: flex-start;
-  padding: 10px;
-}
-
-.preview-backup {
-  text-align: center;
-  padding: 8px 0;
-  border-top: 1px solid #e6e6e6;
-}
-
+/* 无文件提示样式 */
 .no-file-tips {
-  height: 200px;
+  height: 120px;
   display: flex;
   align-items: center;
   justify-content: center;
-  border: 1px dashed #e6e6e6;
-  border-radius: 4px;
-  margin-bottom: 16px;
+  border: 1px dashed #d1d5db;
+  border-radius: 8px;
+  margin-bottom: 20px;
+  background-color: #f9fafb;
 }
 
-/* 对话框内边距优化 */
+/* 预览提示区域样式 */
+.preview-tips-area {
+  width: 100%;
+}
+
+.preview-card {
+  border: none;
+  box-shadow: 0 1px 3px 0 rgba(0, 0, 0, 0.1);
+}
+
+.preview-content {
+  text-align: center;
+  padding: 20px 0;
+}
+
+.preview-content h3 {
+  margin: 16px 0 8px 0;
+  color: #1f2937;
+  font-size: 16px;
+  font-weight: 600;
+}
+
+.preview-content p {
+  color: #6b7280;
+  font-size: 14px;
+  line-height: 1.5;
+  margin: 4px 0;
+}
+
+.tips-detail {
+  font-size: 12px !important;
+  color: #9ca3af !important;
+  margin-top: 8px !important;
+}
+
+/* 对话框样式优化 */
 :deep(.el-dialog__body) {
   padding: 20px;
   max-height: 80vh;
@@ -620,9 +657,12 @@ getList()
   height: 100%;
 }
 
-/* 调整分割线样式 */
 :deep(.el-divider__text) {
   font-size: 14px;
   font-weight: 500;
+}
+
+:deep(.el-card) {
+  border-radius: 8px;
 }
 </style>

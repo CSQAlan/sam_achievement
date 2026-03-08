@@ -7,7 +7,6 @@
     <!-- 主表结果映射（完全匹配 CompetitionApply 实体类） -->
     <resultMap type="CompetitionApply" id="CompetitionApplyResult">
         <result property="id"           column="id"                />
-        <!--        <result property="applyNo"      column="apply_no"          />-->
         <result property="applicantUserId" column="applicant_user_id" />
         <result property="applicantDepId"  column="applicant_dep_id"  />
         <result property="name"         column="name"              />
@@ -28,8 +27,6 @@
         <result property="updateTime"   column="update_time"       />
         <result property="remark"       column="remark"            />
         <result property="delFlag"      column="del_flag"          />
-        <!--        <result property="attachmentUrls" column="attachment_urls"  />-->
-        <!-- 新增映射 -->
         <result property="userName"     column="user_name"         />
         <result property="deptName"     column="dept_name"         />
     </resultMap>
@@ -78,26 +75,20 @@
         a.update_time,
         a.remark,
         a.del_flag,
-        u.user_name as user_name,   <!-- 用户名 -->
-        d.dept_name as dept_name    <!-- 学院名 -->
+        u.user_name as user_name,
+        d.dept_name as dept_name
         from sam_competition_apply a
         left join sys_user u on a.applicant_user_id = u.user_id
         left join sys_dept d on a.applicant_dep_id = d.dept_id
     </sql>
 
-
     <!-- 主表列表查询 -->
     <select id="selectCompetitionApplyList" parameterType="CompetitionApply" resultMap="CompetitionApplyResult">
         <include refid="selectCompetitionApplyVo"/>
         <where>
-            <!--            <if test="applyNo != null  and applyNo != ''"> and apply_no = #{applyNo}</if>-->
-<!--            <if test="applicantUserId != null "> and applicant_user_id = #{applicantUserId}</if>-->
-<!--            <if test="applicantDepId != null "> and applicant_dep_id = #{applicantDepId}</if>-->
-            <!-- 新：按用户名模糊查询（复用已关联的u表） -->
             <if test="applicantUserId != null and applicantUserId != ''">
                 AND u.user_name LIKE CONCAT('%', #{applicantUserId}, '%')
             </if>
-            <!-- 新：按学院名模糊查询（复用已关联的d表） -->
             <if test="applicantDepId != null and applicantDepId != ''">
                 AND d.dept_name LIKE CONCAT('%', #{applicantDepId}, '%')
             </if>
@@ -111,24 +102,23 @@
     </select>
 
     <!-- 主表单条查询（关联子表） -->
-    <!-- 主表单条查询（关联子表） -->
     <select id="selectCompetitionApplyById" parameterType="Long" resultMap="CompetitionApplyCompetitionApplyAttachmentResult">
         <include refid="selectCompetitionApplyVo"/>
         where a.id = #{id}
     </select>
 
-    <!-- 子表列表查询（关联主表ID） -->
+    <!-- 子表列表查询（关联主表ID）- 修复参数名 + 新增del_flag过滤 -->
     <select id="selectCompetitionApplyAttachmentList" resultMap="CompetitionApplyAttachmentResult">
         select id, competition_apply_id, uuid, path, document_name, attachment_type, create_by, create_time, update_by, update_time, del_flag
         from sam_competition_apply_attachment
-        where competition_apply_id = #{competition_apply_id}
+        where competition_apply_id = #{id}
+        and del_flag = '0'
     </select>
 
     <!-- 主表插入（匹配实体类字段） -->
     <insert id="insertCompetitionApply" parameterType="CompetitionApply" useGeneratedKeys="true" keyProperty="id">
         insert into sam_competition_apply
         <trim prefix="(" suffix=")" suffixOverrides=",">
-            <!--            <if test="applyNo != null and applyNo != ''">apply_no,</if>-->
             <if test="applicantUserId != null">applicant_user_id,</if>
             <if test="applicantDepId != null">applicant_dep_id,</if>
             <if test="name != null and name != ''">name,</if>
@@ -149,10 +139,8 @@
             <if test="updateTime != null">update_time,</if>
             <if test="remark != null">remark,</if>
             <if test="delFlag != null">del_flag,</if>
-            <!--            <if test="attachmentUrls != null">attachment_urls,</if>-->
         </trim>
         <trim prefix="values (" suffix=")" suffixOverrides=",">
-            <!--            <if test="applyNo != null and applyNo != ''">#{applyNo},</if>-->
             <if test="applicantUserId != null">#{applicantUserId},</if>
             <if test="applicantDepId != null">#{applicantDepId},</if>
             <if test="name != null and name != ''">#{name},</if>
@@ -173,15 +161,13 @@
             <if test="updateTime != null">#{updateTime},</if>
             <if test="remark != null">#{remark},</if>
             <if test="delFlag != null">#{delFlag},</if>
-            <!--            <if test="attachmentUrls != null">#{attachmentUrls},</if>-->
         </trim>
     </insert>
 
-    <!-- 主表更新 -->
+    <!-- 主表更新（修复：去掉a.status的表别名a.） -->
     <update id="updateCompetitionApply" parameterType="CompetitionApply">
         update sam_competition_apply
         <trim prefix="SET" suffixOverrides=",">
-            <!--            <if test="applyNo != null and applyNo != ''">apply_no = #{applyNo},</if>-->
             <if test="applicantUserId != null">applicant_user_id = #{applicantUserId},</if>
             <if test="applicantDepId != null">applicant_dep_id = #{applicantDepId},</if>
             <if test="name != null and name != ''">name = #{name},</if>
@@ -189,7 +175,7 @@
             <if test="organizations != null and organizations != ''">organizations = #{organizations},</if>
             <if test="level != null and level != ''">level = #{level},</if>
             <if test="scopeType != null and scopeType != ''">scope_type = #{scopeType},</if>
-            <if test="status != null and status != ''">a.status = #{status},</if>
+            <if test="status != null and status != ''">status = #{status},</if>
             <if test="tags != null">tags = #{tags},</if>
             <if test="memo != null">memo = #{memo},</if>
             <if test="auditBy != null">audit_by = #{auditBy},</if>
@@ -202,7 +188,6 @@
             <if test="updateTime != null">update_time = #{updateTime},</if>
             <if test="remark != null">remark = #{remark},</if>
             <if test="delFlag != null">del_flag = #{delFlag},</if>
-            <!--            <if test="attachmentUrls != null">attachment_urls = #{attachmentUrls},</if>-->
         </trim>
         where id = #{id}
     </update>
@@ -228,9 +213,9 @@
         </foreach>
     </delete>
 
-    <!-- 子表单条删除（关联主表ID） -->
+    <!-- 子表单条删除（关联主表ID）（修复：参数从competitionApplyId改为id） -->
     <delete id="deleteCompetitionApplyAttachmentByApplyId" parameterType="Long">
-        delete from sam_competition_apply_attachment where competition_apply_id = #{competitionApplyId}
+        delete from sam_competition_apply_attachment where competition_apply_id = #{id}
     </delete>
 
     <!-- 子表单条插入（匹配实体类字段） -->
@@ -264,17 +249,34 @@
         </trim>
     </insert>
 
-    <!-- 移除了无用的 batchCompetitionApplyAttachment 批量插入（实体类无对应字段） -->
+    <!-- 新增：补全缺失的批量插入附件SQL节点（核心修复）- 添加自增ID配置 -->
+    <insert id="batchCompetitionApplyAttachment" parameterType="java.util.List" useGeneratedKeys="true" keyProperty="id">
+        insert into sam_competition_apply_attachment
+        (competition_apply_id, uuid, path, document_name, attachment_type, create_by, create_time, update_by, update_time, del_flag)
+        values
+        <foreach collection="list" item="item" separator=",">
+            (
+            #{item.competitionApplyId},
+            #{item.uuid},
+            #{item.path},
+            #{item.documentName},
+            #{item.attachmentType},
+            #{item.createBy},
+            #{item.createTime},
+            #{item.updateBy},
+            #{item.updateTime},
+            #{item.delFlag}
+            )
+        </foreach>
+    </insert>
 
-    <!-- ====================== 新增：附件预览相关查询 ====================== -->
-    <!-- 根据附件ID查询单个附件 -->
+    <!-- 附件预览相关查询 -->
     <select id="selectCompetitionApplyAttachmentById" parameterType="Long" resultMap="CompetitionApplyAttachmentResult">
         select id, competition_apply_id, uuid, path, document_name, attachment_type, create_by, create_time, update_by, update_time, del_flag
         from sam_competition_apply_attachment
         where id = #{attachmentId}
     </select>
 
-    <!-- 根据赛事申请ID查询附件列表 -->
     <select id="selectCompetitionApplyAttachmentListByApplyId" parameterType="Long" resultMap="CompetitionApplyAttachmentResult">
         select id, competition_apply_id, uuid, path, document_name, attachment_type, create_by, create_time, update_by, update_time, del_flag
         from sam_competition_apply_attachment
