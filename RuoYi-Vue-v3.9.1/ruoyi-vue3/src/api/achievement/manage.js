@@ -9,7 +9,7 @@ export function listManage(query) {
   })
 }
 
-// 查询成果录入详细
+// 查询成果录入详情
 export function getManage(achievementId) {
   return request({
     url: '/achievement/manage/' + achievementId,
@@ -42,7 +42,8 @@ export function delManage(achievementId) {
     method: 'delete'
   })
 }
-// 查询我参与的列表
+
+// 查询我参与的成果
 export function listParticipatedAchievement(query) {
   return request({
     url: '/achievement/manage/list-participated',
@@ -51,10 +52,19 @@ export function listParticipatedAchievement(query) {
   })
 }
 
-// 查询我指导的列表
+// 查询我指导的成果
 export function listGuidedAchievement(query) {
   return request({
     url: '/achievement/manage/list-guided',
+    method: 'get',
+    params: query
+  })
+}
+
+// 查询我负责的成果（第一指导老师）
+export function listResponsibleAchievement(query) {
+  return request({
+    url: '/achievement/manage/list-responsible',
     method: 'get',
     params: query
   })

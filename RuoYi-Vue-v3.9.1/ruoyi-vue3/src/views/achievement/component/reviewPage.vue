@@ -156,8 +156,12 @@ const pageIdsRef = ref([]);
 const historyRef = ref([]);
 const cursorRef = ref(-1);
 
-const historyKey = computed(() => `review_history_${userStore.id || "anon"}`);
-const cursorKey = computed(() => `review_history_cursor_${userStore.id || "anon"}`);
+const historyScope = computed(() => {
+  const scopedPageKey = pageKey.value || String(route.query.fromPath || route.path || "default");
+  return `${source.value || "unknown"}_${scopedPageKey}`;
+});
+const historyKey = computed(() => `review_history_${userStore.id || "anon"}_${historyScope.value}`);
+const cursorKey = computed(() => `review_history_cursor_${userStore.id || "anon"}_${historyScope.value}`);
 
 function readJson(key, fallback) {
   try {
@@ -179,10 +183,10 @@ function writeJson(key, value) {
 
 function parsePageIds(value) {
   if (!value) return [];
-  return String(value)
+  return Array.from(new Set(String(value)
       .split(",")
       .map((v) => Number(v))
-      .filter((v) => !Number.isNaN(v))
+      .filter((v) => !Number.isNaN(v))))
       .sort((a, b) => a - b);
 }
 
@@ -217,7 +221,8 @@ function persistPageIds() {
 }
 
 function loadHistory() {
-  historyRef.value = readJson(historyKey.value, []);
+  const loaded = readJson(historyKey.value, []);
+  historyRef.value = Array.isArray(loaded) ? loaded : [];
   const rawCursor = sessionStorage.getItem(cursorKey.value);
   const parsed = Number(rawCursor);
   cursorRef.value = Number.isFinite(parsed) ? parsed : -1;
@@ -265,8 +270,7 @@ function syncHistoryOnEnter() {
     mode: mode.value,
     path: route.path,
     time: Date.now(),
-    pageKey: pageKey.value,
-    pageIds: route.query.pageIds || pageIdsRef.value.join(",")
+    pageKey: pageKey.value
   };
 
   const last = historyRef.value[historyRef.value.length - 1];
@@ -280,6 +284,7 @@ function syncHistoryOnEnter() {
 
 function handlePrev() {
   loadHistory();
+  loadPageIds();
   if (cursorRef.value <= 0 || historyRef.value.length === 0) {
     proxy.$modal?.msgWarning?.("当前页面没有上一个审核记录");
     return;
@@ -294,17 +299,18 @@ function handlePrev() {
   saveHistory();
   const query = {
     id: target.id,
-    source: target.source,
+    source: target.source || source.value,
     mode: target.mode || "view",
     nav: "history",
     hIndex: newCursor
   };
-  if (target.pageKey) query.pageKey = target.pageKey;
-  if (target.pageIds) query.pageIds = target.pageIds;
+  if (target.pageKey || pageKey.value) query.pageKey = target.pageKey || pageKey.value;
+  if (pageIdsRef.value.length > 0) query.pageIds = pageIdsRef.value.join(",");
   router.push({ path: target.path || route.path, query });
 }
 
 function handleNext() {
+  loadPageIds();
   const currentId = Number(route.query.id);
   const ids = pageIdsRef.value || [];
   if (Number.isNaN(currentId) || ids.length === 0) {
@@ -700,7 +706,7 @@ onActivated(() => {
 });
 
 watch(
-    () => [route.query.id, route.query.source],
+    () => [route.query.id, route.query.source, route.query.pageKey],
     () => {
       loadCurrent();
     }

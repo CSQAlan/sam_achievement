@@ -326,6 +326,7 @@ const props = defineProps({
   pageMode: { type: Boolean, default: false },
   reviewRoute: { type: String, default: '' },
   reviewSource: { type: String, default: '' },
+  reviewPerm: { type: Array, default: null },
   showAdd: { type: Boolean, default: true },
   showEdit: { type: Boolean, default: true },
   showDelete: { type: Boolean, default: true },
@@ -358,7 +359,10 @@ const permAdd = computed(() => [`${permissionPrefix.value}:add`]);
 const permEdit = computed(() => [`${permissionPrefix.value}:edit`]);
 const permRemove = computed(() => [`${permissionPrefix.value}:remove`]);
 const permExport = computed(() => [`${permissionPrefix.value}:export`]);
-const permReview = computed(() => [`${permissionPrefix.value}:review`]);
+const permReview = computed(() => {
+  if (Array.isArray(props.reviewPerm) && props.reviewPerm.length > 0) return props.reviewPerm;
+  return [`${permissionPrefix.value}:query`];
+});
 const canBatchReview = computed(() => !!reviewSource.value);
 const isUnreviewedPage = computed(() => {
   return reviewSource.value === 'college_level_unreviewed' || reviewSource.value === 'school_level_unreviewed';
@@ -480,11 +484,12 @@ function getList() {
   listFn.value(queryParams).then(response => {
     const rows = (response.rows || []).map((row) => normalizeRowStatus(row));
     let filtered = filterRowsBySource(rows);
-    if (queryParams.reviewStatus !== null && queryParams.reviewStatus !== '' && queryParams.reviewStatus !== undefined) {
+    const hasClientStatusFilter = queryParams.reviewStatus !== null && queryParams.reviewStatus !== '' && queryParams.reviewStatus !== undefined;
+    if (hasClientStatusFilter) {
       filtered = filtered.filter((row) => String(row.reviewStatus) === String(queryParams.reviewStatus));
     }
     listData.value = filtered;
-    total.value = filtered.length;
+    total.value = hasClientStatusFilter ? filtered.length : (Number.isFinite(Number(response.total)) ? Number(response.total) : filtered.length);
     loading.value = false;
   }).catch(() => {
     loading.value = false;
@@ -614,16 +619,6 @@ function handleBatchReviewStatus() {
     proxy.$modal?.msgWarning?.('审核状态无效');
     return;
   }
-
-  // 获取选中的记录，检查是否需要设置校级审核为待审核
-  const rowsToUpdate = listData.value.filter(row => ids.value.includes(row.achievementId));
-
-  rowsToUpdate.forEach(row => {
-    // 如果院级审核通过，自动设置校级审核为待审核
-    if (row.reviewStatus === '2' && canPushSchoolPending) {
-      row.schooiReviewResult = '2';  // 设置校级审核为待审核
-    }
-  });
 
   // 执行批量更新
   proxy.$modal
