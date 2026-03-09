@@ -1,22 +1,20 @@
-<template>
+﻿<template>
   <div class="app-container">
-    <AchievementManageIndex 
-      :audit-dict="college_audit_status"
-      :audit-dict-school="school_audit_status"
+    <AchievementManageIndex
+      :list-fn="listParticipatedAchievement"
+      :get-fn="getManage"
       :show-add="false"
       :show-edit="false"
       :show-delete="false"
+      :show-export="false"
+      permission-prefix="achievement:manage"
     />
   </div>
 </template>
 
-<script setup name="ManageIndex">
-import { ref } from 'vue';
+<script setup name="ManageParticipated">
 import AchievementManageIndex from '../component/index.vue';
-import { useDict } from '@/utils/dict';
-
-const { college_audit_status, school_audit_status } = useDict('college_audit_status', 'school_audit_status');
-
+import { listParticipatedAchievement, getManage } from '@/api/achievement/manage';
 </script>
 
 <style scoped lang="scss">

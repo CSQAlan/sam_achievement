@@ -11,7 +11,7 @@
         <el-input v-model="form.email" maxlength="50" />
       </el-form-item>
       <!-- 学生特有信息 -->
-      <template v-if="isStudent">
+      <template v-if="isStudent">1
         <el-form-item label="学号">
           <el-input v-model="form.userName" disabled />
         </el-form-item>

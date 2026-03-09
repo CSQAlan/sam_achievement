@@ -64,14 +64,68 @@ import userAvatar from "./userAvatar"
 import userInfo from "./userInfo"
 import { getUserProfile } from "@/api/system/user"
 import { ElMessageBox } from 'element-plus'
+import { ElMessage } from 'element-plus'
+import useUserStore from "@/store/modules/user"
 
 
 const route = useRoute()
+const router = useRouter()
+const userStore = useUserStore()
 const selectedTab = ref("userinfo")
 const state = reactive({
   user: {},
   roleGroup: {},
   postGroup: {}
+})
+const roleKeys = computed(() =>
+    (userStore.roles || []).map(role => String(role).replace(/^ROLE_/, "").toLowerCase())
+)
+const isStudent = computed(() => roleKeys.value.includes("student"))
+const isTeacher = computed(() => roleKeys.value.includes("teacher"))
+const isAdminPost = computed(() => String(state.postGroup || "").includes("管理员"))
+const quickEntries = computed(() => {
+  const entries = [
+    {
+      key: "participated",
+      label: "我参与的成果",
+      path: "/achievement/manage/participated",
+      keywords: ["participated"]
+    }
+  ]
+  if (isAdminPost.value || isTeacher.value)
+  {
+    entries.push({
+      key: "guided",
+      label: "我指导的成果",
+      path: "/achievement/manage/guided",
+      keywords: ["guided"]
+    })
+  }
+  if (isAdminPost.value || isStudent.value)
+  {
+    entries.push({
+      key: "responsible",
+      label: "我负责的成果",
+      path: "/achievement/manage/responsible",
+      keywords: ["responsible"]
+    })
+  }
+  if (isAdminPost.value)
+  {
+    entries.push({
+      key: "collegeReview",
+      label: "院级审核",
+      path: "/achievement/college_level_unreviewed",
+      keywords: ["college_level_unreviewed"]
+    })
+    entries.push({
+      key: "schoolReview",
+      label: "校级审核",
+      path: "/achievement/school_level_unreviewed",
+      keywords: ["school_level_unreviewed"]
+    })
+  }
+  return entries
 })
 
 function getUser() {
@@ -80,9 +134,10 @@ function getUser() {
     state.roleGroup = response.roleGroup
     state.postGroup = response.postGroup
 
-    // 检查是否是首次访问，如果是则显示提醒弹框
-    const isFirstVisit = localStorage.getItem(`isFirstVisit_${state.user.userId}`) !== 'false'
-    if (isFirstVisit) {
+    // 以后端字段为准，避免 localStorage 与账号状态不一致
+    const profileInitialized = Number(state.user.profileInitialized || 0) === 1
+    const reminderSeen = sessionStorage.getItem(`profileReminderSeen_${state.user.userId}`) === "1"
+    if (!profileInitialized && !reminderSeen) {
       showFirstVisitReminder()
     }
   })
@@ -113,8 +168,26 @@ function showFirstVisitReminder() {
         showClose: false
       }
   ).then(() => {
-    // 标记为已访问
-    localStorage.setItem(`isFirstVisit_${state.user.userId}`, 'false')
+    sessionStorage.setItem(`profileReminderSeen_${state.user.userId}`, "1")
+  })
+}
+
+function resolveRoutePath(entry) {
+  const routes = router.getRoutes()
+  const found = routes.find(route => {
+    const routePath = String(route.path || "").toLowerCase()
+    const routeName = String(route.name || "").toLowerCase()
+    return (entry.keywords || []).some(keyword =>
+        routePath.includes(keyword) || routeName.includes(keyword)
+    )
+  })
+  return found?.path || entry.path
+}
+
+function goQuick(entry) {
+  const path = resolveRoutePath(entry)
+  router.push(path).catch(() => {
+    ElMessage.warning("当前页面路由未配置，请联系管理员补充菜单")
   })
 }
 
@@ -160,6 +233,18 @@ onMounted(() => {
   border-radius: 6px;
   font-weight: 500;
   padding: 10px 24px;
+}
+
+.quick-access {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px;
+}
+
+.quick-tag {
+  cursor: pointer;
+  font-size: 14px;
+  padding: 8px 12px;
 }
 </style>
 
