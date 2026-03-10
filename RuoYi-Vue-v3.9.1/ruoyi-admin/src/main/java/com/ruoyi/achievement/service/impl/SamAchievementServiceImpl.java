@@ -86,6 +86,16 @@ public class SamAchievementServiceImpl implements ISamAchievementService
         return samAchievementMapper.selectSamAchievementListByTeacherId(samAchievement);
     }
 
+    @Override
+    public List<SamAchievement> selectSamAchievementListByUserId(SamAchievement samAchievement)
+    {
+        // 验证用户ID
+        if (samAchievement.getParams() == null || StringUtils.isEmpty((String) samAchievement.getParams().get("userId"))) {
+            throw new ServiceException("用户ID不能为空");
+        }
+        return samAchievementMapper.selectSamAchievementListByUserId(samAchievement);
+    }
+
     /**
      * 新增成果录入
      * 
@@ -341,6 +351,7 @@ public class SamAchievementServiceImpl implements ISamAchievementService
 
                 // 3. 补全基础字段
                 participant.setCreateBy(samAchievement.getCreateBy());
+                participant.setUpdateBy(samAchievement.getCreateBy());
                 participant.setCreateTime(DateUtils.getNowDate());
                 participant.setUpdateTime(DateUtils.getNowDate());
                 participant.setDelFlag(0L);
@@ -378,7 +389,10 @@ public class SamAchievementServiceImpl implements ISamAchievementService
                 advisor.setAchievementId(achievementId);
                 advisor.setAdvisorId(null);
                 advisor.setCreateBy(samAchievement.getCreateBy());
+                advisor.setUpdateBy(samAchievement.getCreateBy());
                 advisor.setCreateTime(DateUtils.getNowDate());
+                advisor.setUpdateTime(DateUtils.getNowDate());
+                advisor.setDelFlag(0L);
 
                 // 核心兼容：如果前端传的是 teacherId 而非 teacherNo，进行补位
                 if (StringUtils.isEmpty(advisor.getTeacherNo()) && StringUtils.isNotEmpty(advisor.getTeacherId())) {
