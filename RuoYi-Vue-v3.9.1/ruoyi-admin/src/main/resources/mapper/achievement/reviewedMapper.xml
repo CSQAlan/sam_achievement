@@ -136,7 +136,7 @@ PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
                     <when test="reviewStage == 'school'">
                         <choose>
                             <when test="reviewStatus == 'unreviewed'"> and a.review_result = 2 and a.schooi_review_result = 2</when>
-                            <when test="reviewStatus == 'reviewed'"> and a.review_result = 2 and a.schooi_review_result in (0, 1)</when>
+                            <when test="reviewStatus == 'reviewed'"> and a.schooi_review_result in (0, 1)</when>
                         </choose>
                     </when>
                 </choose>
@@ -263,20 +263,24 @@ PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
             <if test="itemIndex != null">item_index = #{itemIndex},</if>
             <if test="qualityIndex != null">quality_index = #{qualityIndex},</if>
             <if test="submittedAt != null">submitted_at = #{submittedAt},</if>
-            <if test="reviewedAt != null">reviewed_at = #{reviewedAt},</if>
-            <if test="schoolReviewedAt != null">school_reviewed_at = #{schoolReviewedAt},</if>
+            <if test="reviewResult != null and reviewResult == 0">reviewed_at = null,</if>
+            <if test="(reviewResult == null or reviewResult != 0) and reviewedAt != null">reviewed_at = #{reviewedAt},</if>
+            <if test="(reviewResult == null or (reviewResult != 0 and reviewResult != 1)) and schoolReviewedAt != null">school_reviewed_at = #{schoolReviewedAt},</if>
             <if test="reviewResult != null">review_result = #{reviewResult},</if>
-            <if test="reviewResult != null and reviewResult == 1">
-                schooi_review_result = null,
-                school_reviewed_at = null,
-                school_review_reason = null,
-                school_audit_by = null,
+            <if test="reviewResult != null and (reviewResult == 0 or reviewResult == 1)">
+                schooi_review_result = 0,
+                school_reviewed_at = now(),
+                school_review_reason = '因院级状态变更自动驳回',
+                school_audit_by = 'system',
             </if>
-            <if test="schooiReviewResult != null">schooi_review_result = #{schooiReviewResult},</if>
-            <if test="reviewReason != null">review_reason = #{reviewReason},</if>
-            <if test="schoolReviewReason != null">school_review_reason = #{schoolReviewReason},</if>
-            <if test="auditBy != null">audit_by = #{auditBy},</if>
-            <if test="schoolAuditBy != null">school_audit_by = #{schoolAuditBy},</if>
+            <if test="(reviewResult == null or (reviewResult != 0 and reviewResult != 1)) and schooiReviewResult != null">schooi_review_result = #{schooiReviewResult},</if>
+            <if test="reviewResult != null and reviewResult != 1">review_reason = null,</if>
+            <if test="(reviewResult == null or reviewResult == 1) and reviewReason != null">review_reason = #{reviewReason},</if>
+            <if test="(reviewResult == null or (reviewResult != 0 and reviewResult != 1)) and schooiReviewResult != null and schooiReviewResult == 1">school_review_reason = null,</if>
+            <if test="(reviewResult == null or (reviewResult != 0 and reviewResult != 1)) and schoolReviewReason != null">school_review_reason = #{schoolReviewReason},</if>
+            <if test="reviewResult != null and reviewResult == 0">audit_by = null,</if>
+            <if test="(reviewResult == null or reviewResult != 0) and auditBy != null">audit_by = #{auditBy},</if>
+            <if test="(reviewResult == null or (reviewResult != 0 and reviewResult != 1)) and schoolAuditBy != null">school_audit_by = #{schoolAuditBy},</if>
             <if test="createBy != null">create_by = #{createBy},</if>
             <if test="updateBy != null">update_by = #{updateBy},</if>
             <if test="createTime != null">create_time = #{createTime},</if>
@@ -292,31 +296,31 @@ PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
         set review_result = #{reviewStatus},
             reviewed_at = case
                 when #{reviewStatus} = 0 then null
-                else reviewed_at
+                else now()
             end,
             review_reason = case
-                when #{reviewStatus} = 0 then null
-                else review_reason
+                when #{reviewStatus} = 1 then #{rejectReason}
+                else null
             end,
             audit_by = case
                 when #{reviewStatus} = 0 then null
-                else audit_by
+                else #{auditBy}
             end,
             schooi_review_result = case
-                when #{reviewStatus} in (0, 1) then null
+                when #{reviewStatus} in (0, 1) then 0
                 when #{reviewStatus} = 2 and schooi_review_result is null then 2
                 else schooi_review_result
             end,
             school_reviewed_at = case
-                when #{reviewStatus} in (0, 1) then null
+                when #{reviewStatus} in (0, 1) then now()
                 else school_reviewed_at
             end,
             school_review_reason = case
-                when #{reviewStatus} in (0, 1) then null
+                when #{reviewStatus} in (0, 1) then '因院级状态变更自动驳回'
                 else school_review_reason
             end,
             school_audit_by = case
-                when #{reviewStatus} in (0, 1) then null
+                when #{reviewStatus} in (0, 1) then 'system'
                 else school_audit_by
             end,
             update_time = now()
@@ -331,15 +335,15 @@ PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
         set schooi_review_result = #{reviewStatus},
             school_reviewed_at = case
                 when #{reviewStatus} = 2 then null
-                else school_reviewed_at
+                else now()
             end,
             school_review_reason = case
-                when #{reviewStatus} = 2 then null
-                else school_review_reason
+                when #{reviewStatus} = 0 then #{rejectReason}
+                else null
             end,
             school_audit_by = case
                 when #{reviewStatus} = 2 then null
-                else school_audit_by
+                else #{auditBy}
             end,
             update_time = now()
         where achievement_id in

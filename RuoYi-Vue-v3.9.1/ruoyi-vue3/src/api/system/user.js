@@ -1,7 +1,7 @@
-import request from '@/utils/request'
+﻿import request from '@/utils/request'
 import { parseStrEmpty } from "@/utils/ruoyi";
 
-// 查询用户列表
+// 鏌ヨ鐢ㄦ埛鍒楄〃
 export function listUser(query) {
   return request({
     url: '/system/user/list',
@@ -10,7 +10,7 @@ export function listUser(query) {
   })
 }
 
-// 查询用户详细
+// 鏌ヨ鐢ㄦ埛璇︾粏
 export function getUser(userId) {
   return request({
     url: '/system/user/' + parseStrEmpty(userId),
@@ -18,7 +18,7 @@ export function getUser(userId) {
   })
 }
 
-// 新增用户
+// 鏂板鐢ㄦ埛
 export function addUser(data) {
   return request({
     url: '/system/user',
@@ -27,7 +27,7 @@ export function addUser(data) {
   })
 }
 
-// 修改用户
+// 淇敼鐢ㄦ埛
 export function updateUser(data) {
   return request({
     url: '/system/user',
@@ -36,7 +36,7 @@ export function updateUser(data) {
   })
 }
 
-// 删除用户
+// 鍒犻櫎鐢ㄦ埛
 export function delUser(userId) {
   return request({
     url: '/system/user/' + userId,
@@ -44,7 +44,7 @@ export function delUser(userId) {
   })
 }
 
-// 用户密码重置
+// 鐢ㄦ埛瀵嗙爜閲嶇疆
 export function resetUserPwd(userId, password) {
   const data = {
     userId,
@@ -57,7 +57,7 @@ export function resetUserPwd(userId, password) {
   })
 }
 
-// 用户状态修改
+// 鐢ㄦ埛鐘舵€佷慨鏀?
 export function changeUserStatus(userId, status) {
   const data = {
     userId,
@@ -70,7 +70,7 @@ export function changeUserStatus(userId, status) {
   })
 }
 
-// 查询用户个人信息
+// 鏌ヨ鐢ㄦ埛涓汉淇℃伅
 export function getUserProfile() {
   return request({
     url: '/system/user/profile',
@@ -78,7 +78,7 @@ export function getUserProfile() {
   })
 }
 
-// 修改用户个人信息
+// 淇敼鐢ㄦ埛涓汉淇℃伅
 export function updateUserProfile(data) {
   return request({
     url: '/system/user/profile',
@@ -87,7 +87,15 @@ export function updateUserProfile(data) {
   })
 }
 
-// 用户密码重置
+// 查询个人中心部门树
+export function getProfileDeptTree() {
+  return request({
+    url: '/system/user/profile/deptTree',
+    method: 'get'
+  })
+}
+
+// 鐢ㄦ埛瀵嗙爜閲嶇疆
 export function updateUserPwd(oldPassword, newPassword) {
   const data = {
     oldPassword,
@@ -100,7 +108,7 @@ export function updateUserPwd(oldPassword, newPassword) {
   })
 }
 
-// 用户头像上传
+// 鐢ㄦ埛澶村儚涓婁紶
 export function uploadAvatar(data) {
   return request({
     url: '/system/user/profile/avatar',
@@ -110,7 +118,7 @@ export function uploadAvatar(data) {
   })
 }
 
-// 查询授权角色
+// 鏌ヨ鎺堟潈瑙掕壊
 export function getAuthRole(userId) {
   return request({
     url: '/system/user/authRole/' + userId,
@@ -118,7 +126,7 @@ export function getAuthRole(userId) {
   })
 }
 
-// 保存授权角色
+// 淇濆瓨鎺堟潈瑙掕壊
 export function updateAuthRole(data) {
   return request({
     url: '/system/user/authRole',
@@ -127,14 +135,14 @@ export function updateAuthRole(data) {
   })
 }
 
-// 查询部门下拉树结构
+// 鏌ヨ閮ㄩ棬涓嬫媺鏍戠粨鏋?
 export function deptTreeSelect() {
   return request({
     url: '/system/user/deptTree',
     method: 'get'
   })
 }
-// 导入学生数据
+// 瀵煎叆瀛︾敓鏁版嵁
 export function importStudentData(data) {
     return request({
         url: '/achievement/student/importStudentData',
@@ -144,7 +152,7 @@ export function importStudentData(data) {
     })
 }
 
-// 导入教师数据
+// 瀵煎叆鏁欏笀鏁版嵁
 export function importTeacherData(data) {
     return request({
         url: '/achievement/teacher/importTeacherData',
@@ -153,3 +161,4 @@ export function importTeacherData(data) {
         headers: { 'Content-Type': 'multipart/form-data' }
     })
 }
+

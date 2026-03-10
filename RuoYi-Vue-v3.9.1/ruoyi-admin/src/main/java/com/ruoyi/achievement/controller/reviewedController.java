@@ -32,6 +32,7 @@ public class reviewedController extends BaseController
     {
         private String[] achievementIds;
         private Long reviewStatus;
+        private String rejectReason;
 
         public String[] getAchievementIds()
         {
@@ -52,6 +53,16 @@ public class reviewedController extends BaseController
         {
             this.reviewStatus = reviewStatus;
         }
+
+        public String getRejectReason()
+        {
+            return rejectReason;
+        }
+
+        public void setRejectReason(String rejectReason)
+        {
+            this.rejectReason = rejectReason;
+        }
     }
 
     private void applyFilter(reviewed reviewed, String stage, String status)
@@ -66,7 +77,7 @@ public class reviewedController extends BaseController
         {
             return error("请求参数不能为空");
         }
-        return toAjax(reviewedService.batchUpdateReviewStatus(request.getAchievementIds(), stage, request.getReviewStatus()));
+        return toAjax(reviewedService.batchUpdateReviewStatus(request.getAchievementIds(), stage, request.getReviewStatus(), request.getRejectReason()));
     }
 
     @PreAuthorize("@ss.hasPermi('achievement:college_level_unreviewed:list')")

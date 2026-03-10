@@ -37,6 +37,8 @@ public class reviewedServiceImpl implements IreviewedService
     private static final Long SCHOOL_REJECT = 0L;
     private static final Long SCHOOL_PASS = 1L;
     private static final Long SCHOOL_PENDING = 2L;
+    private static final String AUTO_SCHOOL_REJECT_REASON = "因院级状态变更自动驳回";
+    private static final String AUTO_SCHOOL_REJECT_AUDITOR = "system";
 
 
     /**
@@ -149,11 +151,11 @@ public class reviewedServiceImpl implements IreviewedService
      */
     @Transactional
     @Override
-    public int batchUpdateReviewStatus(String[] achievementIds, String stage, Long reviewStatus)
+    public int batchUpdateReviewStatus(String[] achievementIds, String stage, Long reviewStatus, String rejectReason)
     {
         if (achievementIds == null || achievementIds.length == 0)
         {
-            throw new ServiceException("请选择需要批量审核的成果");
+            throw new ServiceException("璇烽€夋嫨闇€瑕佹壒閲忓鏍哥殑鎴愭灉");
         }
 
         String normalizedStage = resolveStage(stage);
@@ -167,7 +169,18 @@ public class reviewedServiceImpl implements IreviewedService
             throw new ServiceException("审核状态不能为空");
         }
 
-        // 处理院级审核
+        String normalizedRejectReason = StringUtils.hasText(rejectReason) ? rejectReason.trim() : null;
+        String operator = null;
+        try
+        {
+            operator = SecurityUtils.getUsername();
+        }
+        catch (Exception e)
+        {
+            operator = null;
+        }
+
+        // 澶勭悊闄㈢骇瀹℃牳
         if (STAGE_COLLEGE.equals(normalizedStage))
         {
             if (!Objects.equals(reviewStatus, COLLEGE_PENDING)
@@ -177,11 +190,16 @@ public class reviewedServiceImpl implements IreviewedService
                 throw new ServiceException("院级审核状态无效");
             }
 
-            // 批量更新院级审核状态
-            return reviewedMapper.batchUpdateCollegeReviewStatus(achievementIds, reviewStatus);
+            if (Objects.equals(reviewStatus, COLLEGE_REJECT) && !StringUtils.hasText(normalizedRejectReason))
+            {
+                throw new ServiceException("请输入院级驳回原因");
+            }
+
+            // 鎵归噺鏇存柊闄㈢骇瀹℃牳鐘舵€?
+            return reviewedMapper.batchUpdateCollegeReviewStatus(achievementIds, reviewStatus, normalizedRejectReason, operator);
         }
 
-        // 处理校级审核
+        // 澶勭悊鏍＄骇瀹℃牳
         if (STAGE_SCHOOL.equals(normalizedStage))
         {
             if (!Objects.equals(reviewStatus, SCHOOL_PENDING)
@@ -191,8 +209,13 @@ public class reviewedServiceImpl implements IreviewedService
                 throw new ServiceException("校级审核状态无效");
             }
 
-            // 批量更新校级审核状态
-            return reviewedMapper.batchUpdateSchoolReviewStatus(achievementIds, reviewStatus);
+            if (Objects.equals(reviewStatus, SCHOOL_REJECT) && !StringUtils.hasText(normalizedRejectReason))
+            {
+                throw new ServiceException("请输入校级驳回原因");
+            }
+
+            // 鎵归噺鏇存柊鏍＄骇瀹℃牳鐘舵€?
+            return reviewedMapper.batchUpdateSchoolReviewStatus(achievementIds, reviewStatus, normalizedRejectReason, operator);
         }
 
         throw new ServiceException("审核归属无效");
@@ -442,12 +465,6 @@ public class reviewedServiceImpl implements IreviewedService
         }
         if (stageCollege)
         {
-            if (requestedSchool != null
-                    && !Objects.equals(requestedSchool, SCHOOL_PENDING)
-                    && !Objects.equals(requestedSchool, existingSchool))
-            {
-                incoming.setSchooiReviewResult(existingSchool);
-            }
             if (incoming.getSchoolReviewReason() != null
                     && !Objects.equals(incoming.getSchoolReviewReason(), existing.getSchoolReviewReason()))
             {
@@ -471,7 +488,7 @@ public class reviewedServiceImpl implements IreviewedService
         boolean allowCollegeReAudit = stageCollege
                 && isCollegeReviewedValue(existingCollege)
                 && requestedCollege != null
-                && isCollegeReviewedValue(requestedCollege);
+                && (Objects.equals(requestedCollege, COLLEGE_PENDING) || isCollegeReviewedValue(requestedCollege));
         boolean allowSchoolReAudit = stageSchool
                 && isSchoolReviewedValue(existingSchool)
                 && requestedSchool != null
@@ -491,25 +508,15 @@ public class reviewedServiceImpl implements IreviewedService
 
         if (stageCollege)
         {
-            if (requestedCollege != null
-                    && Objects.equals(requestedCollege, COLLEGE_PENDING)
-                    && !Objects.equals(existingCollege, COLLEGE_PENDING)
-                    && !allowCollegeReAudit)
-            {
-                incoming.setReviewResult(existingCollegeRaw);
-                requestedCollege = incoming.getReviewResult();
-                collegeChanged = false;
-            }
-
             if (collegeChanged)
             {
                 if (!Objects.equals(existingCollege, COLLEGE_PENDING) && !allowCollegeReAudit)
                 {
                     throw new ServiceException("College review status cannot be changed after reviewed.");
                 }
-                if (!isCollegeReviewedValue(requestedCollege))
+                if (!Objects.equals(requestedCollege, COLLEGE_PENDING) && !isCollegeReviewedValue(requestedCollege))
                 {
-                    throw new ServiceException("College review can only change to pass or reject.");
+                    throw new ServiceException("College review can only change to pending, pass or reject.");
                 }
                 if (Objects.equals(requestedCollege, COLLEGE_REJECT))
                 {
@@ -530,23 +537,44 @@ public class reviewedServiceImpl implements IreviewedService
 
             if (schoolChanged)
             {
-                if (!Objects.equals(requestedSchool, SCHOOL_PENDING))
-                {
-                    throw new ServiceException("School review status can only be set to pending by college review.");
-                }
                 Long effectiveCollege = collegeChanged ? requestedCollege : existingCollege;
-                if (!Objects.equals(effectiveCollege, COLLEGE_PASS))
+                if (Objects.equals(effectiveCollege, COLLEGE_PASS))
                 {
-                    throw new ServiceException("School review can only start after college pass.");
+                    if (!Objects.equals(requestedSchool, SCHOOL_PENDING)
+                            && !Objects.equals(requestedSchool, existingSchool))
+                    {
+                        throw new ServiceException("School review status can only be kept or set to pending by college review.");
+                    }
                 }
-                if (existingSchool != null && !Objects.equals(existingSchool, SCHOOL_PENDING))
+                else
                 {
-                    throw new ServiceException("School review status cannot be changed after reviewed.");
+                    if (!Objects.equals(requestedSchool, SCHOOL_REJECT))
+                    {
+                        throw new ServiceException("School review will be auto rejected when college is pending or rejected.");
+                    }
                 }
             }
             else if (!StringUtils.hasText(incoming.getSchoolReviewReason()))
             {
                 incoming.setSchoolReviewReason(existing.getSchoolReviewReason());
+            }
+
+            if (requestedCollege != null)
+            {
+                if (Objects.equals(requestedCollege, COLLEGE_PASS))
+                {
+                    if (requestedSchool == null && (existingSchool == null || Objects.equals(existingSchool, SCHOOL_PENDING)))
+                    {
+                        incoming.setSchooiReviewResult(SCHOOL_PENDING);
+                    }
+                }
+                else if (Objects.equals(requestedCollege, COLLEGE_PENDING) || Objects.equals(requestedCollege, COLLEGE_REJECT))
+                {
+                    incoming.setSchooiReviewResult(SCHOOL_REJECT);
+                    incoming.setSchoolReviewReason(AUTO_SCHOOL_REJECT_REASON);
+                    incoming.setSchoolAuditBy(AUTO_SCHOOL_REJECT_AUDITOR);
+                    incoming.setSchoolReviewedAt(DateUtils.getNowDate());
+                }
             }
             return;
         }

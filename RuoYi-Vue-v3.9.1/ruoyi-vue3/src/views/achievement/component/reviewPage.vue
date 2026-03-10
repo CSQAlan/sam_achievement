@@ -22,6 +22,7 @@
         <div class="audit-toolbar">
           <div class="audit-toolbar-main">
             <div class="nav-toolbar">
+
               <el-button class="nav-btn back-btn" plain @click="handleBack">返回列表</el-button>
               <el-button class="nav-btn prev-btn" plain @click="handlePrev">上一个</el-button>
               <el-button class="nav-btn next-btn" plain @click="handleNext">下一个</el-button>
@@ -84,6 +85,8 @@ const { proxy } = getCurrentInstance();
 const route = useRoute();
 const router = useRouter();
 const userStore = useUserStore();
+const AUTO_SCHOOL_REJECT_REASON = "因院级状态变更自动驳回";
+const LEGACY_AUTO_SCHOOL_REJECT_REASON = "院级状态变更，校级自动驳回";
 
 const dlgRef = ref(null);
 const formKey = ref(0);
@@ -126,8 +129,12 @@ const currentAuditDict = computed(() => {
 const nextStatusOptions = computed(() => {
   const options = currentAuditDict.value || [];
 
-  if (source.value === "college_level_unreviewed" || source.value === "college_level_reviewed") {
+  if (source.value === "college_level_unreviewed") {
     return options.filter((d) => ["1", "2"].includes(String(d.value)));
+  }
+
+  if (source.value === "college_level_reviewed") {
+    return options.filter((d) => ["0", "1", "2"].includes(String(d.value)));
   }
 
   if (source.value === "school_level_unreviewed" || source.value === "school_level_reviewed") {
@@ -147,6 +154,7 @@ function normalizeLooseText(value) {
   if (!text) return "";
   const lower = text.toLowerCase();
   if (lower === "null" || lower === "undefined") return "";
+  if (text === LEGACY_AUTO_SCHOOL_REJECT_REASON) return AUTO_SCHOOL_REJECT_REASON;
   return text;
 }
 
@@ -386,7 +394,7 @@ function syncAuditFromForm() {
 
   if (isCollegeSource.value) {
     const status = form.reviewResult ?? form.review_result;
-    if (status === 1 || status === "1" || status === 2 || status === "2") {
+    if (status === 0 || status === "0" || status === 1 || status === "1" || status === 2 || status === "2") {
       selectedAuditStatus.value = String(status);
     } else {
       setDefaultSelected();
@@ -406,7 +414,7 @@ function syncAuditFromForm() {
     }
 
     if (String(selectedAuditStatus.value) === "0") {
-      rejectReason.value = form.schoolReviewReason || "";
+      rejectReason.value = normalizeLooseText(form.schoolReviewReason || form.school_review_reason);
     } else {
       rejectReason.value = "";
     }
@@ -477,9 +485,11 @@ function jumpToNextAfterAudit(currentId) {
 
 /**
  * ✅ 手动流转归档推送（前端负责）：
- * 1) 院级未审核(college_level_unreviewed)
- *    - updateCollege_level_unreviewed：auditStatus 0 -> 1/2
- *    - 若通过(2)：updateSchool_level_unreviewed：推送到校级未审核（auditStatus=2 待校级审核）
+ * 1) 院级审核
+ *    - 院级未审核：0 -> 1/2
+ *    - 院级已审核：支持重置为 0/1/2
+ *    - 若院级改为 0/1：校级状态自动驳回(0)
+ *    - 若院级通过(2)且校级尚未真实审核：推送到校级未审核（auditStatus=2 待校级审核）
  *
  * 2) 校级未审核(school_level_unreviewed)
  *    - updateSchool_level_unreviewed：auditStatus 2 -> 0/1

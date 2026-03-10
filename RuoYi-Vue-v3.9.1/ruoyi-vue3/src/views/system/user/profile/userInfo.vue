@@ -11,7 +11,7 @@
         <el-input v-model="form.email" maxlength="50" />
       </el-form-item>
       <!-- 学生特有信息 -->
-      <template v-if="isStudent">1
+      <template v-if="isStudent">
         <el-form-item label="学号">
           <el-input v-model="form.userName" disabled />
         </el-form-item>
@@ -23,19 +23,19 @@
           >
             <el-option
                 v-for="school in schools"
-                :key="school.dictValue"
-                :label="school.dictLabel"
-                :value="school.dictLabel"
+                :key="school.id"
+                :label="school.label"
+                :value="school.value"
             />
           </el-select>
         </el-form-item>
         <el-form-item label="院系" prop="department">
-          <el-select v-model="form.department" placeholder="请选择系别">
+          <el-select v-model="form.department" placeholder="请选择系别" :disabled="!form.school">
             <el-option
                 v-for="department in departments"
-                :key="department.dictValue"
-                :label="department.dictLabel"
-                :value="department.dictLabel"
+                :key="department.id"
+                :label="department.label"
+                :value="department.value"
             />
           </el-select>
         </el-form-item>
@@ -63,19 +63,19 @@
           >
             <el-option
                 v-for="school in schools"
-                :key="school.dictValue"
-                :label="school.dictLabel"
-                :value="school.dictLabel"
+                :key="school.id"
+                :label="school.label"
+                :value="school.value"
             />
           </el-select>
         </el-form-item>
         <el-form-item label="院系" prop="department">
-          <el-select v-model="form.department" placeholder="请选择系别">
+          <el-select v-model="form.department" placeholder="请选择系别" :disabled="!form.school">
             <el-option
                 v-for="department in departments"
-                :key="department.dictValue"
-                :label="department.dictLabel"
-                :value="department.dictLabel"
+                :key="department.id"
+                :label="department.label"
+                :value="department.value"
             />
           </el-select>
         </el-form-item>
@@ -138,10 +138,9 @@
 </template>
 
 <script setup>
-import { updateUserProfile } from "@/api/system/user";
+import { getProfileDeptTree, getUserProfile, updateUserProfile } from "@/api/system/user";
 import {
   ref,
-  reactive,
   onMounted,
   onBeforeUnmount,
   computed,
@@ -152,13 +151,11 @@ import {
   unbindWechat,
   generateWechatQRCode,
 } from "@/api/common/wechat";
-import { getUserProfile } from "@/api/system/user";
 import { getStudentInfoByNo, updateStudentInfo } from "@/api/student/info";
 import {
   getTeacherInfoByNo,
   updateTeacherInfo,
 } from "@/api/sam/sam_achievement";
-import { getDicts } from "@/api/system/dict/data";
 import { useRouter, useRoute } from "vue-router";
 import useUserStore from "@/store/modules/user";
 import { ElMessage, ElMessageBox } from "element-plus";
@@ -180,7 +177,6 @@ const uuid = ref("");
 const checkBindTimer = ref(null);
 const schools = ref([]);
 const departments = ref([]);
-const allDepartments = ref([]);
 
 // 计算属性：判断是否为学生或教师
 const isStudent = computed(() => {
@@ -251,7 +247,7 @@ const fetchUserDetailInfo = () => {
               ...response.data,
             };
           }
-          handleSchoolChange(form.value.school);
+          normalizeDeptSelection();
         })
         .catch((err) => {
           console.log("获取学生详细信息失败:", err);
@@ -267,7 +263,7 @@ const fetchUserDetailInfo = () => {
               ...response.data,
             };
           }
-          handleSchoolChange(form.value.school);
+          normalizeDeptSelection();
         })
         .catch((err) => {
           console.log("获取教师详细信息失败:", err);
@@ -371,8 +367,9 @@ const handleDialogClose = () => {
 };
 
 onMounted(() => {
-  initWechatStatus();
-  getDictionaryData();
+  loadDeptTree().finally(() => {
+    initWechatStatus();
+  });
 });
 
 onBeforeUnmount(() => {
@@ -381,43 +378,120 @@ onBeforeUnmount(() => {
   }
 });
 
-function getDictionaryData() {
-  // 获取学院数据
-  getDicts("sys_school").then((response) => {
-    schools.value = response.data;
-  });
+function buildSchoolOptions(nodes = []) {
+  const schoolOptions = [];
 
-  // 获取所有系别数据
-  getDicts("sys_department").then((response) => {
-    allDepartments.value = response.data;
-  });
+  const visit = (treeNodes) => {
+    treeNodes.forEach((node) => {
+      if (node.disabled) {
+        return;
+      }
+
+      const children = Array.isArray(node.children)
+          ? node.children.filter((child) => !child.disabled)
+          : [];
+
+      if (!children.length) {
+        return;
+      }
+
+      const hasNestedChildren = children.some(
+          (child) => Array.isArray(child.children) && child.children.some((grandChild) => !grandChild.disabled)
+      );
+
+      if (hasNestedChildren) {
+        visit(children);
+        return;
+      }
+
+      schoolOptions.push({
+        id: node.id,
+        value: String(node.id),
+        label: node.label,
+        departments: children.map((child) => ({
+          id: child.id,
+          value: String(child.id),
+          label: child.label,
+        })),
+      });
+    });
+  };
+
+  visit(nodes);
+  return schoolOptions;
+}
+
+function loadDeptTree() {
+  return getProfileDeptTree()
+      .then((response) => {
+        schools.value = buildSchoolOptions(response.data || []);
+        normalizeDeptSelection();
+      })
+      .catch((err) => {
+        console.error("获取部门树失败:", err);
+        schools.value = [];
+        departments.value = [];
+        proxy.$modal.msgError("获取部门树失败，请联系管理员");
+      });
+}
+
+function findSchoolOption(value) {
+  if (value === null || value === undefined || value === "") {
+    return null;
+  }
+
+  const normalizedValue = String(value);
+  return schools.value.find(
+      (school) => school.value === normalizedValue || school.label === normalizedValue
+  ) || null;
+}
+
+function findDepartmentOption(schoolOption, value) {
+  if (!schoolOption || value === null || value === undefined || value === "") {
+    return null;
+  }
+
+  const normalizedValue = String(value);
+  return (schoolOption.departments || []).find(
+      (department) => department.value === normalizedValue || department.label === normalizedValue
+  ) || null;
+}
+
+function normalizeDeptSelection() {
+  const schoolOption = findSchoolOption(form.value.school);
+  if (!schoolOption) {
+    departments.value = [];
+    if (form.value.school) {
+      form.value.school = "";
+    }
+    if (form.value.department) {
+      form.value.department = "";
+    }
+    return;
+  }
+
+  form.value.school = schoolOption.value;
+  departments.value = schoolOption.departments || [];
+
+  const departmentOption = findDepartmentOption(schoolOption, form.value.department);
+  form.value.department = departmentOption ? departmentOption.value : "";
 }
 
 // 处理学院选择变化
-function handleSchoolChange(selectedSchoolLabel) {
-  // 根据选中的学院标签找到对应的学院对象
-  const selectedSchool = schools.value.find(
-      (school) => school.dictLabel === selectedSchoolLabel
-  );
+function handleSchoolChange(selectedSchoolValue) {
+  const selectedSchool = findSchoolOption(selectedSchoolValue);
 
   if (selectedSchool) {
-    // 根据学院的 dictValue 在系别备注中筛选出对应的系别
-    departments.value = allDepartments.value.filter((dept) => {
-      // 假设系别的 remark 字段存储了所属学院的 dictValue
-      return dept.remark === selectedSchool.dictValue;
-    });
-  } else {
-    departments.value = [];
-  }
-
-  if (selectedSchool) {
-    departments.value = allDepartments.value.filter(
-        (dept) => dept.remark === selectedSchool.dictValue
+    departments.value = selectedSchool.departments || [];
+    const matchedDepartment = departments.value.some(
+        (department) => department.value === String(form.value.department)
     );
-    // 不清空，保留已有选择
+    if (!matchedDepartment) {
+      form.value.department = "";
+    }
   } else {
     departments.value = [];
-    form.value.department = ""; // 只有匹配不到才清空
+    form.value.department = "";
   }
 }
 
