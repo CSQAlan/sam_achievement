@@ -194,6 +194,16 @@
               v-hasPermi="permEdit"
           >批量审核</el-button>
         </el-col>
+        <el-col v-if="showBatchRejectReason" :span="6">
+          <el-input
+              v-model="batchRejectReason"
+              type="textarea"
+              :rows="1"
+              maxlength="200"
+              show-word-limit
+              :placeholder="batchRejectReasonPlaceholder"
+          />
+        </el-col>
       </el-row>
 
       <!-- 数据表格 -->
@@ -405,12 +415,17 @@ const multiple = ref(true);
 const ids = ref([]);
 const tableRef = ref(null);
 const batchReviewStatus = ref(null);
+const batchRejectReason = ref('');
 const achievementFormRef = ref(null);
 const achievementDialogRef = ref(null);
 const pageModeActive = ref(false);
 const pageModeKey = ref(0);
 const formReadOnly = ref(false);
 const formShowSubmit = ref(true);
+const isCollegeBatchReject = computed(() => reviewSource.value.startsWith('college') && String(batchReviewStatus.value) === '1');
+const isSchoolBatchReject = computed(() => reviewSource.value.startsWith('school') && String(batchReviewStatus.value) === '0');
+const showBatchRejectReason = computed(() => isCollegeBatchReject.value || isSchoolBatchReject.value);
+const batchRejectReasonPlaceholder = computed(() => isCollegeBatchReject.value ? '请输入院级批量驳回原因' : '请输入校级批量驳回原因');
 
 function hashString(input) {
   let hash = 0;
@@ -530,7 +545,7 @@ function filterRowsBySource(rows) {
     return rows.filter(r => String(r.reviewResult) === '2' && String(r.schooiReviewResult) === '2');
   }
   if (source === 'school_level_reviewed') {
-    return rows.filter(r => String(r.reviewResult) === '2' && (String(r.schooiReviewResult) === '0' || String(r.schooiReviewResult) === '1'));
+    return rows.filter(r => String(r.schooiReviewResult) === '0' || String(r.schooiReviewResult) === '1');
   }
   return rows;
 }
@@ -619,21 +634,34 @@ function handleBatchReviewStatus() {
     proxy.$modal?.msgWarning?.('审核状态无效');
     return;
   }
+  if (showBatchRejectReason.value && !batchRejectReason.value.trim()) {
+    proxy.$modal?.msgWarning?.(isCollegeBatchReject.value ? '请输入院级批量驳回原因' : '请输入校级批量驳回原因');
+    return;
+  }
 
   // 执行批量更新
   proxy.$modal
       .confirm(`确认将选中的 ${ids.value.length} 条数据批量改为当前状态吗？`)
       .then(() => batchUpdateReviewStatus(reviewSource.value, {
         achievementIds: ids.value,
-        reviewStatus
+        reviewStatus,
+        rejectReason: showBatchRejectReason.value ? batchRejectReason.value.trim() : ''
       }))
       .then(() => {
         proxy.$modal?.msgSuccess?.('批量审核成功');
+        batchReviewStatus.value = null;
+        batchRejectReason.value = '';
         clearSelectionState();
         getList();
       })
       .catch(() => {});
 }
+
+watch(showBatchRejectReason, (visible) => {
+  if (!visible) {
+    batchRejectReason.value = '';
+  }
+});
 
 function handleReview(row) {
   const id = row?.achievementId;

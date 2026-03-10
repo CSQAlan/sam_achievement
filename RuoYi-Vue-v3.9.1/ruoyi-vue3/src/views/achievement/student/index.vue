@@ -3,58 +3,58 @@
     <el-form :model="queryParams" ref="queryRef" :inline="true" v-show="showSearch" label-width="68px">
       <el-form-item label="学生姓名" prop="name">
         <el-input
-          v-model="queryParams.name"
-          placeholder="请输入学生姓名"
-          clearable
-          @keyup.enter="handleQuery"
+            v-model="queryParams.name"
+            placeholder="请输入学生姓名"
+            clearable
+            @keyup.enter="handleQuery"
         />
       </el-form-item>
       <el-form-item label="学号" prop="no">
         <el-input
-          v-model="queryParams.no"
-          placeholder="请输入学号"
-          clearable
-          @keyup.enter="handleQuery"
+            v-model="queryParams.no"
+            placeholder="请输入学号"
+            clearable
+            @keyup.enter="handleQuery"
         />
       </el-form-item>
       <el-form-item label="学院" prop="school">
         <el-input
-          v-model="queryParams.school"
-          placeholder="请输入学院"
-          clearable
-          @keyup.enter="handleQuery"
+            v-model="queryParams.school"
+            placeholder="请输入学院"
+            clearable
+            @keyup.enter="handleQuery"
         />
       </el-form-item>
       <el-form-item label="院系" prop="department">
         <el-input
-          v-model="queryParams.department"
-          placeholder="请输入院系"
-          clearable
-          @keyup.enter="handleQuery"
+            v-model="queryParams.department"
+            placeholder="请输入院系"
+            clearable
+            @keyup.enter="handleQuery"
         />
       </el-form-item>
       <el-form-item label="专业" prop="major">
         <el-input
-          v-model="queryParams.major"
-          placeholder="请输入专业"
-          clearable
-          @keyup.enter="handleQuery"
+            v-model="queryParams.major"
+            placeholder="请输入专业"
+            clearable
+            @keyup.enter="handleQuery"
         />
       </el-form-item>
       <el-form-item label="班级" prop="className">
         <el-input
-          v-model="queryParams.className"
-          placeholder="请输入班级"
-          clearable
-          @keyup.enter="handleQuery"
+            v-model="queryParams.className"
+            placeholder="请输入班级"
+            clearable
+            @keyup.enter="handleQuery"
         />
       </el-form-item>
       <el-form-item label="年级" prop="classYear">
         <el-input
-          v-model="queryParams.classYear"
-          placeholder="请输入年级"
-          clearable
-          @keyup.enter="handleQuery"
+            v-model="queryParams.classYear"
+            placeholder="请输入年级"
+            clearable
+            @keyup.enter="handleQuery"
         />
       </el-form-item>
       <el-form-item>
@@ -66,40 +66,40 @@
     <el-row :gutter="10" class="mb8">
       <el-col :span="1.5">
         <el-button
-          type="primary"
-          plain
-          icon="Plus"
-          @click="handleAdd"
-          v-hasPermi="['student:student:add']"
+            type="primary"
+            plain
+            icon="Plus"
+            @click="handleAdd"
+            v-hasPermi="['student:student:add']"
         >新增</el-button>
       </el-col>
       <el-col :span="1.5">
         <el-button
-          type="success"
-          plain
-          icon="Edit"
-          :disabled="single"
-          @click="handleUpdate"
-          v-hasPermi="['student:student:edit']"
+            type="success"
+            plain
+            icon="Edit"
+            :disabled="single"
+            @click="handleUpdate"
+            v-hasPermi="['student:student:edit']"
         >修改</el-button>
       </el-col>
       <el-col :span="1.5">
         <el-button
-          type="danger"
-          plain
-          icon="Delete"
-          :disabled="multiple"
-          @click="handleDelete"
-          v-hasPermi="['student:student:remove']"
+            type="danger"
+            plain
+            icon="Delete"
+            :disabled="multiple"
+            @click="handleDelete"
+            v-hasPermi="['student:student:remove']"
         >删除</el-button>
       </el-col>
       <el-col :span="1.5">
         <el-button
-          type="warning"
-          plain
-          icon="Download"
-          @click="handleExport"
-          v-hasPermi="['student:student:export']"
+            type="warning"
+            plain
+            icon="Download"
+            @click="handleExport"
+            v-hasPermi="['student:student:export']"
         >导出</el-button>
       </el-col>
       <right-toolbar v-model:showSearch="showSearch" @queryTable="getList"></right-toolbar>
@@ -122,13 +122,13 @@
         </template>
       </el-table-column>
     </el-table>
-    
+
     <pagination
-      v-show="total>0"
-      :total="total"
-      v-model:page="queryParams.pageNum"
-      v-model:limit="queryParams.pageSize"
-      @pagination="getList"
+        v-show="total>0"
+        :total="total"
+        v-model:page="queryParams.pageNum"
+        v-model:limit="queryParams.pageSize"
+        @pagination="getList"
     />
 
     <!-- 添加或修改学生档案对话框 -->

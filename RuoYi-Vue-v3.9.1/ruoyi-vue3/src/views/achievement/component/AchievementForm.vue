@@ -36,7 +36,10 @@
                   </el-row>
                   <el-row>
                     <el-col :span="12">
-                      <el-form-item label="类别" prop="category">
+                      <el-form-item label="类别"
+
+
+                                    prop="category">
                         <el-select v-model="form.category" placeholder="请选择类别" filterable>
                           <el-option v-for="dict in achievement_category" :key="dict.value" :label="dict.label" :value="dict.value" />
                         </el-select>

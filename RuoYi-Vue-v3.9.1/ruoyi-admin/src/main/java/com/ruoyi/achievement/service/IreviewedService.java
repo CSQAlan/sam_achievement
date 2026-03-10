@@ -67,5 +67,5 @@ public interface IreviewedService
      * @param reviewStatus 目标状态值
      * @return 结果
      */
-    public int batchUpdateReviewStatus(String[] achievementIds, String stage, Long reviewStatus);
+    public int batchUpdateReviewStatus(String[] achievementIds, String stage, Long reviewStatus, String rejectReason);
 }

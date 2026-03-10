@@ -95,7 +95,7 @@ public interface reviewedMapper
      * @param reviewStatus 状态值
      * @return 结果
      */
-    public int batchUpdateCollegeReviewStatus(@Param("achievementIds") String[] achievementIds, @Param("reviewStatus") Long reviewStatus);
+    public int batchUpdateCollegeReviewStatus(@Param("achievementIds") String[] achievementIds, @Param("reviewStatus") Long reviewStatus, @Param("rejectReason") String rejectReason, @Param("auditBy") String auditBy);
 
     /**
      * 批量更新校级审核状态
@@ -104,5 +104,5 @@ public interface reviewedMapper
      * @param reviewStatus 状态值
      * @return 结果
      */
-    public int batchUpdateSchoolReviewStatus(@Param("achievementIds") String[] achievementIds, @Param("reviewStatus") Long reviewStatus);
+    public int batchUpdateSchoolReviewStatus(@Param("achievementIds") String[] achievementIds, @Param("reviewStatus") Long reviewStatus, @Param("rejectReason") String rejectReason, @Param("auditBy") String auditBy);
 }
