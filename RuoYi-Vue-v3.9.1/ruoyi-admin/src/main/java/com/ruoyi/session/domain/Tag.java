@@ -7,7 +7,7 @@ import com.ruoyi.common.core.domain.BaseEntity;
 
 /**
  * 标签对象 tag
- * 
+ *
  * @author ruoyi
  * @date 2026-02-01
  */
@@ -33,34 +33,34 @@ public class Tag extends BaseEntity
     /** 删除标记（0=存在，2=删除） */
     private String delFlag;
 
-    public void setId(Long id) 
+    public void setId(Long id)
     {
         this.id = id;
     }
 
-    public Long getId() 
+    public Long getId()
     {
         return id;
     }
-    public void setCompetitionSessionId(Long competitionSessionId) 
+    public void setCompetitionSessionId(Long competitionSessionId)
     {
         this.competitionSessionId = competitionSessionId;
     }
 
-    public Long getCompetitionSessionId() 
+    public Long getCompetitionSessionId()
     {
         return competitionSessionId;
     }
-    public void setTagName(String tagName) 
+    public void setTagName(String tagName)
     {
         this.tagName = tagName;
     }
 
-    public String getTagName() 
+    public String getTagName()
     {
         return tagName;
     }
-//    public void setDepId(Long depId)
+    //    public void setDepId(Long depId)
 //    {
 //        this.depId = depId;
 //    }
@@ -69,12 +69,12 @@ public class Tag extends BaseEntity
 //    {
 //        return depId;
 //    }
-    public void setDelFlag(String delFlag) 
+    public void setDelFlag(String delFlag)
     {
         this.delFlag = delFlag;
     }
 
-    public String getDelFlag() 
+    public String getDelFlag()
     {
         return delFlag;
     }
@@ -82,16 +82,16 @@ public class Tag extends BaseEntity
     @Override
     public String toString() {
         return new ToStringBuilder(this,ToStringStyle.MULTI_LINE_STYLE)
-            .append("id", getId())
-            .append("competitionSessionId", getCompetitionSessionId())
-            .append("tagName", getTagName())
+                .append("id", getId())
+                .append("competitionSessionId", getCompetitionSessionId())
+                .append("tagName", getTagName())
 //            .append("depId", getDepId())
-            .append("createBy", getCreateBy())
-            .append("createTime", getCreateTime())
-            .append("updateBy", getUpdateBy())
-            .append("updateTime", getUpdateTime())
-            .append("remark", getRemark())
-            .append("delFlag", getDelFlag())
-            .toString();
+                .append("createBy", getCreateBy())
+                .append("createTime", getCreateTime())
+                .append("updateBy", getUpdateBy())
+                .append("updateTime", getUpdateTime())
+                .append("remark", getRemark())
+                .append("delFlag", getDelFlag())
+                .toString();
     }
 }
