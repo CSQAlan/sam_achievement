@@ -9,7 +9,7 @@
         <result property="id"           column="session_id"    />
         <result property="competitionId" column="competition_id" />
         <!-- 映射赛事名称（从competition表关联查询） -->
-<!--        <result property="competitionName" column="competition_name" javaType="java.lang.String" jdbcType="VARCHAR"/>-->
+        <!--        <result property="competitionName" column="competition_name" javaType="java.lang.String" jdbcType="VARCHAR"/>-->
         <result property="session"      column="session"       />
         <result property="category"     column="category"      />
         <result property="organizations" column="organizations" />

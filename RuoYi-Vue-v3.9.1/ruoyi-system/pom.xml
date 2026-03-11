@@ -23,6 +23,18 @@
             <artifactId>ruoyi-common</artifactId>
         </dependency>
 
+        <!-- iText PDF -->
+        <dependency>
+            <groupId>com.itextpdf</groupId>
+            <artifactId>itextpdf</artifactId>
+        </dependency>
+
+        <!-- iText 中文字体支持 -->
+        <dependency>
+            <groupId>com.itextpdf</groupId>
+            <artifactId>itext-asian</artifactId>
+        </dependency>
+
     </dependencies>
 
 </project>

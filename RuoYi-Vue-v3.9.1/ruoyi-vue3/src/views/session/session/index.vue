@@ -68,7 +68,7 @@
       <el-table-column type="selection" width="55" align="center" />
       <el-table-column label="赛事名称" align="center" prop="competitionName">
         <template #default="scope">
-          {{ scope.row.competitionName || CompetitionName(scope.row.competitionId) || scope.row.competitionId }}
+          {{ scope.row.competitionName || getCompetitionName(scope.row.competitionId) || scope.row.competitionId }}
         </template>
       </el-table-column>
       <el-table-column label="届次" align="center" prop="session" />
