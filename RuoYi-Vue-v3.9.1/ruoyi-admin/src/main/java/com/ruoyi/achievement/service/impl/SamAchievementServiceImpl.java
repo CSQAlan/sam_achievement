@@ -4,7 +4,9 @@ import java.util.Calendar;
 import java.util.List;
 import java.util.ArrayList;
 import java.util.Map;
+import java.util.Objects;
 import com.ruoyi.common.utils.DateUtils;
+import com.ruoyi.common.utils.SecurityUtils;
 import com.ruoyi.common.utils.StringUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
@@ -136,11 +138,22 @@ public class SamAchievementServiceImpl implements ISamAchievementService
     @Override
     public int updateSamAchievement(SamAchievement samAchievement)
     {
+        SamAchievement existing = samAchievementMapper.selectSamAchievementByAchievementId(samAchievement.getAchievementId());
+        if (existing == null)
+        {
+            throw new ServiceException("成果不存在");
+        }
         // 1. 验证成果录入主表信息
         validateSamAchievement(samAchievement);
 
         // 2. 验证PDF文件上传
         validatePDFAttachments(samAchievement);
+
+        if (SecurityUtils.hasRole("student"))
+        {
+            validateStudentUpdatePermission(existing);
+            resetReviewStateForStudentUpdate(samAchievement);
+        }
 
         samAchievement.setUpdateTime(DateUtils.getNowDate());
 
@@ -157,6 +170,59 @@ public class SamAchievementServiceImpl implements ISamAchievementService
         processAttachments(samAchievement);
 
         return samAchievementMapper.updateSamAchievement(samAchievement);
+    }
+
+    private void validateStudentUpdatePermission(SamAchievement existing)
+    {
+        String studentNo = SecurityUtils.getUsername();
+        if (StringUtils.isEmpty(studentNo))
+        {
+            throw new ServiceException("当前学生账号无效");
+        }
+        if (!isResponsibleStudent(existing, studentNo))
+        {
+            throw new ServiceException("仅成果负责人可修改该成果");
+        }
+
+        boolean collegeRejected = Objects.equals(existing.getReviewResult(), 1L);
+        boolean schoolRejected = Objects.equals(existing.getSchooiReviewResult(), 0L);
+        if (!collegeRejected && !schoolRejected)
+        {
+            throw new ServiceException("仅院级或校级驳回后的成果允许学生修改");
+        }
+    }
+
+    private boolean isResponsibleStudent(SamAchievement existing, String studentNo)
+    {
+        List<SamAchievementParticipant> participants = existing.getSamAchievementParticipantList();
+        if (participants == null || participants.isEmpty())
+        {
+            return false;
+        }
+
+        for (SamAchievementParticipant participant : participants)
+        {
+            String currentStudentNo = StringUtils.isNotEmpty(participant.getStudentNo()) ? participant.getStudentNo() : participant.getStudentId();
+            boolean isCurrentStudent = StringUtils.isNotEmpty(currentStudentNo) && studentNo.equals(currentStudentNo);
+            boolean isManager = "1".equals(String.valueOf(participant.getManager())) || Objects.equals(participant.getOrderNo(), 1L);
+            if (isCurrentStudent && isManager)
+            {
+                return true;
+            }
+        }
+        return false;
+    }
+
+    private void resetReviewStateForStudentUpdate(SamAchievement samAchievement)
+    {
+        samAchievement.setReviewResult(0L);
+        samAchievement.setReviewedAt(null);
+        samAchievement.setReviewReason(null);
+        samAchievement.setAuditBy(null);
+        samAchievement.setSchooiReviewResult(null);
+        samAchievement.setSchoolReviewedAt(null);
+        samAchievement.setSchoolReviewReason(null);
+        samAchievement.setSchoolAuditBy(null);
     }
 
     /**
@@ -487,3 +553,5 @@ public class SamAchievementServiceImpl implements ISamAchievementService
         return samAchievementMapper.deleteSamAchievementByAchievementId(achievementId);
     }
 }
+
+

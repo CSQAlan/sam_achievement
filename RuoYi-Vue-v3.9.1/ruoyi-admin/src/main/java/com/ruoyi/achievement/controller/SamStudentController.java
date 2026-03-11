@@ -15,11 +15,16 @@ import org.springframework.web.bind.annotation.RestController;
 import com.ruoyi.common.annotation.Log;
 import com.ruoyi.common.core.controller.BaseController;
 import com.ruoyi.common.core.domain.AjaxResult;
+import com.ruoyi.common.core.domain.model.LoginUser;
 import com.ruoyi.common.enums.BusinessType;
+import com.ruoyi.common.utils.SecurityUtils;
+import com.ruoyi.common.utils.StringUtils;
 import com.ruoyi.achievement.domain.SamStudent;
 import com.ruoyi.achievement.service.ISamStudentService;
 import com.ruoyi.common.utils.poi.ExcelUtil;
 import com.ruoyi.common.core.page.TableDataInfo;
+import com.ruoyi.framework.web.service.TokenService;
+import com.ruoyi.web.service.ProfileCompletionService;
 
 /**
  * 学生档案Controller
@@ -33,6 +38,12 @@ public class SamStudentController extends BaseController
 {
     @Autowired
     private ISamStudentService samStudentService;
+
+    @Autowired
+    private ProfileCompletionService profileCompletionService;
+
+    @Autowired
+    private TokenService tokenService;
 
     /**
      * 查询学生档案列表
@@ -88,7 +99,17 @@ public class SamStudentController extends BaseController
     @PutMapping
     public AjaxResult edit(@RequestBody SamStudent samStudent)
     {
-        return toAjax(samStudentService.updateSamStudent(samStudent));
+        int rows = samStudentService.updateSamStudent(samStudent);
+        if (rows > 0 && StringUtils.isNotBlank(samStudent.getNo()))
+        {
+            LoginUser loginUser = SecurityUtils.getLoginUser();
+            if (loginUser != null && StringUtils.equals(loginUser.getUsername(), samStudent.getNo()))
+            {
+                profileCompletionService.refreshProfileCompletion(loginUser);
+                tokenService.setLoginUser(loginUser);
+            }
+        }
+        return toAjax(rows);
     }
 
     /**
