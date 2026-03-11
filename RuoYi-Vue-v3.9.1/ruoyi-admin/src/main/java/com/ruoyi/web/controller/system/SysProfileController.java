@@ -27,9 +27,10 @@ import com.ruoyi.common.utils.file.MimeTypeUtils;
 import com.ruoyi.framework.web.service.TokenService;
 import com.ruoyi.system.service.ISysDeptService;
 import com.ruoyi.system.service.ISysUserService;
+import com.ruoyi.web.service.ProfileCompletionService;
 
 /**
- * 个人信息 业务处理
+ * 个人信息业务处理
  *
  * @author ruoyi
  */
@@ -46,6 +47,9 @@ public class SysProfileController extends BaseController
     @Autowired
     private ISysDeptService deptService;
 
+    @Autowired
+    private ProfileCompletionService profileCompletionService;
+
     /**
      * 个人信息
      */
@@ -53,6 +57,7 @@ public class SysProfileController extends BaseController
     public AjaxResult profile()
     {
         LoginUser loginUser = getLoginUser();
+        profileCompletionService.refreshProfileCompletion(loginUser);
         SysUser user = loginUser.getUser();
         AjaxResult ajax = AjaxResult.success(user);
         ajax.put("roleGroup", userService.selectUserRoleGroup(loginUser.getUsername()));
@@ -77,10 +82,6 @@ public class SysProfileController extends BaseController
     public AjaxResult updateProfile(@RequestBody SysUser user)
     {
         LoginUser loginUser = getLoginUser();
-        if(user.getProfileInitialized()==0){
-            user.setProfileInitialized(1);
-            System.out.println("初始化成功");
-        }
         SysUser currentUser = loginUser.getUser();
         currentUser.setNickName(user.getNickName());
         currentUser.setWxNickName(user.getWxNickName());
@@ -88,7 +89,6 @@ public class SysProfileController extends BaseController
         currentUser.setEmail(user.getEmail());
         currentUser.setPhonenumber(user.getPhonenumber());
         currentUser.setSex(user.getSex());
-        currentUser.setProfileInitialized(user.getProfileInitialized());
         if (StringUtils.isNotEmpty(user.getPhonenumber()) && !userService.checkPhoneUnique(currentUser))
         {
             return error("修改用户'" + loginUser.getUsername() + "'失败，手机号码已存在");
@@ -99,7 +99,7 @@ public class SysProfileController extends BaseController
         }
         if (userService.updateUserProfile(currentUser) > 0)
         {
-            // 更新缓存用户信息
+            profileCompletionService.refreshProfileCompletion(loginUser);
             tokenService.setLoginUser(loginUser);
             return success();
         }
@@ -129,7 +129,6 @@ public class SysProfileController extends BaseController
         newPassword = SecurityUtils.encryptPassword(newPassword);
         if (userService.resetUserPwd(userId, newPassword) > 0)
         {
-            // 更新缓存用户密码&密码最后更新时间
             loginUser.getUser().setPwdUpdateDate(DateUtils.getNowDate());
             loginUser.getUser().setPassword(newPassword);
             tokenService.setLoginUser(loginUser);
@@ -158,7 +157,6 @@ public class SysProfileController extends BaseController
                 }
                 AjaxResult ajax = AjaxResult.success();
                 ajax.put("imgUrl", avatar);
-                // 更新缓存用户头像
                 loginUser.getUser().setAvatar(avatar);
                 tokenService.setLoginUser(loginUser);
                 return ajax;

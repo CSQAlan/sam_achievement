@@ -1,6 +1,7 @@
 package com.ruoyi.achievement.mapper;
 
 import java.util.List;
+import org.apache.ibatis.annotations.Mapper;
 import com.ruoyi.achievement.domain.SamTeacher;
 
 /**
@@ -9,6 +10,7 @@ import com.ruoyi.achievement.domain.SamTeacher;
  * @author 王璨
  * @date 2026-02-03
  */
+@Mapper
 public interface SamTeacherMapper 
 {
     /**

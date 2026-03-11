@@ -51,8 +51,7 @@
                           v-model="form.sessionId" 
                           placeholder="请选择赛事" 
                           filterable 
-                          clearable 
-                          style="width: 100%"
+                          clearable
                           :disabled="readOnly || !form.competitionId"
                         >
                           <el-option v-for="item in sessionOptions" :key="item.id" :label="item.session" :value="item.id" />

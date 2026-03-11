@@ -30,7 +30,7 @@
           </el-select>
         </el-form-item>
         <el-form-item label="院系" prop="department">
-          <el-select v-model="form.department" placeholder="请选择系别" :disabled="!form.school">
+          <el-select v-model="form.department" placeholder="请选择系别" :disabled="!form.school" @change="handleDepartmentChange">
             <el-option
                 v-for="department in departments"
                 :key="department.id"
@@ -40,8 +40,16 @@
           </el-select>
         </el-form-item>
         <el-form-item label="专业" prop="major">
-          <el-input v-model="form.major" />
+          <el-select v-model="form.major" placeholder="请选择专业" :disabled="!form.department">
+            <el-option
+                v-for="majorOption in majors"
+                :key="majorOption.id"
+                :label="majorOption.label"
+                :value="majorOption.value"
+            />
+          </el-select>
         </el-form-item>
+
         <el-form-item label="入学年份" prop="classYear">
           <el-input v-model="form.classYear" />
         </el-form-item>
@@ -177,6 +185,7 @@ const uuid = ref("");
 const checkBindTimer = ref(null);
 const schools = ref([]);
 const departments = ref([]);
+const majors = ref([]);
 
 // 计算属性：判断是否为学生或教师
 const isStudent = computed(() => {
@@ -191,6 +200,10 @@ const isTeacher = computed(() => {
       form.value.roles &&
       form.value.roles.some((role) => role.roleKey === "teacher")
   );
+});
+
+const isProfileIncomplete = computed(() => {
+  return Number(form.value.profileInitialized || props.user?.profileInitialized || userStore.profileInitialized || 0) !== 1;
 });
 
 const rules = ref({
@@ -213,7 +226,7 @@ const rules = ref({
   ],
   school: [{ required: true, message: "请选择学院", trigger: "change" }],
   department: [{ required: true, message: "请选择系别", trigger: "change" }],
-  major: [{ required: true, message: "专业不能为空", trigger: "blur" }],
+  major: [{ required: true, message: "专业不能为空", trigger: "change" }],
   classYear: [{ required: true, message: "年级不能为空", trigger: "blur" }],
   className: [{ required: true, message: "班级不能为空", trigger: "blur" }],
 });
@@ -381,25 +394,38 @@ onBeforeUnmount(() => {
 function buildSchoolOptions(nodes = []) {
   const schoolOptions = [];
 
+  const getEnabledChildren = (node) => {
+    return Array.isArray(node.children)
+        ? node.children.filter((child) => !child.disabled)
+        : [];
+  };
+
+  const getNodeHeight = (node) => {
+    const children = getEnabledChildren(node);
+    if (!children.length) {
+      return 0;
+    }
+    return 1 + Math.max(...children.map((child) => getNodeHeight(child)));
+  };
+
   const visit = (treeNodes) => {
     treeNodes.forEach((node) => {
       if (node.disabled) {
         return;
       }
 
-      const children = Array.isArray(node.children)
-          ? node.children.filter((child) => !child.disabled)
-          : [];
+      const children = getEnabledChildren(node);
 
       if (!children.length) {
         return;
       }
 
-      const hasNestedChildren = children.some(
-          (child) => Array.isArray(child.children) && child.children.some((grandChild) => !grandChild.disabled)
-      );
+      if (getNodeHeight(node) > 2) {
+        visit(children);
+        return;
+      }
 
-      if (hasNestedChildren) {
+      if (getNodeHeight(node) !== 2) {
         visit(children);
         return;
       }
@@ -408,11 +434,20 @@ function buildSchoolOptions(nodes = []) {
         id: node.id,
         value: String(node.id),
         label: node.label,
-        departments: children.map((child) => ({
-          id: child.id,
-          value: String(child.id),
-          label: child.label,
-        })),
+        departments: children
+            .filter((child) => getNodeHeight(child) === 1)
+            .map((child) => ({
+              id: child.id,
+              value: String(child.id),
+              label: child.label,
+              majors: getEnabledChildren(child)
+                  .filter((major) => getNodeHeight(major) === 0)
+                  .map((major) => ({
+                    id: major.id,
+                    value: String(major.id),
+                    label: major.label,
+                  })),
+            })),
       });
     });
   };
@@ -431,6 +466,7 @@ function loadDeptTree() {
         console.error("获取部门树失败:", err);
         schools.value = [];
         departments.value = [];
+        majors.value = [];
         proxy.$modal.msgError("获取部门树失败，请联系管理员");
       });
 }
@@ -457,15 +493,30 @@ function findDepartmentOption(schoolOption, value) {
   ) || null;
 }
 
+function findMajorOption(departmentOption, value) {
+  if (!departmentOption || value === null || value === undefined || value === "") {
+    return null;
+  }
+
+  const normalizedValue = String(value);
+  return (departmentOption.majors || []).find(
+      (major) => major.value === normalizedValue || major.label === normalizedValue
+  ) || null;
+}
+
 function normalizeDeptSelection() {
   const schoolOption = findSchoolOption(form.value.school);
   if (!schoolOption) {
     departments.value = [];
+    majors.value = [];
     if (form.value.school) {
       form.value.school = "";
     }
     if (form.value.department) {
       form.value.department = "";
+    }
+    if (form.value.major) {
+      form.value.major = "";
     }
     return;
   }
@@ -475,6 +526,10 @@ function normalizeDeptSelection() {
 
   const departmentOption = findDepartmentOption(schoolOption, form.value.department);
   form.value.department = departmentOption ? departmentOption.value : "";
+  majors.value = departmentOption ? (departmentOption.majors || []) : [];
+
+  const majorOption = findMajorOption(departmentOption, form.value.major);
+  form.value.major = majorOption ? majorOption.value : "";
 }
 
 // 处理学院选择变化
@@ -483,21 +538,97 @@ function handleSchoolChange(selectedSchoolValue) {
 
   if (selectedSchool) {
     departments.value = selectedSchool.departments || [];
-    const matchedDepartment = departments.value.some(
-        (department) => department.value === String(form.value.department)
-    );
+    const matchedDepartment = findDepartmentOption(selectedSchool, form.value.department);
     if (!matchedDepartment) {
       form.value.department = "";
+      majors.value = [];
+      form.value.major = "";
+    } else {
+      form.value.department = matchedDepartment.value;
+      majors.value = matchedDepartment.majors || [];
+      const matchedMajor = findMajorOption(matchedDepartment, form.value.major);
+      form.value.major = matchedMajor ? matchedMajor.value : "";
     }
   } else {
     departments.value = [];
+    majors.value = [];
     form.value.department = "";
+    form.value.major = "";
   }
+}
+
+function handleDepartmentChange(selectedDepartmentValue) {
+  const selectedSchool = findSchoolOption(form.value.school);
+  const selectedDepartment = findDepartmentOption(selectedSchool, selectedDepartmentValue);
+
+  if (selectedDepartment) {
+    majors.value = selectedDepartment.majors || [];
+    const matchedMajor = findMajorOption(selectedDepartment, form.value.major);
+    form.value.major = matchedMajor ? matchedMajor.value : "";
+  } else {
+    majors.value = [];
+    form.value.major = "";
+  }
+}
+
+function resolveSelectedDeptLabels() {
+  const schoolOption = findSchoolOption(form.value.school);
+  const departmentOption = findDepartmentOption(schoolOption, form.value.department);
+  const majorOption = findMajorOption(departmentOption, form.value.major);
+
+  return {
+    school: schoolOption ? schoolOption.label : form.value.school,
+    department: departmentOption ? departmentOption.label : form.value.department,
+    major: majorOption ? majorOption.label : form.value.major,
+  };
+}
+
+function syncLocalProfile(partial = {}) {
+  if (props.user) {
+    Object.assign(props.user, partial);
+  }
+  form.value = {
+    ...form.value,
+    ...partial,
+  };
+  if (Object.prototype.hasOwnProperty.call(partial, "profileInitialized")) {
+    userStore.profileInitialized = Number(partial.profileInitialized || 0);
+  }
+}
+
+async function refreshProfileCompletionState() {
+  const response = await getUserProfile();
+  if (response.code === 200 && response.data) {
+    syncLocalProfile({
+      nickName: response.data.nickName,
+      phonenumber: response.data.phonenumber,
+      email: response.data.email,
+      sex: response.data.sex,
+      profileInitialized: Number(response.data.profileInitialized || 0),
+    });
+    return Number(response.data.profileInitialized || 0) === 1;
+  }
+  return Number(userStore.profileInitialized || 0) === 1;
+}
+
+function redirectAfterProfileCompleted() {
+  const redirectTarget = route.query.redirect;
+  const resolved = redirectTarget
+      ? router.resolve(redirectTarget)
+      : null;
+  // 清除地址栏中的 redirect，避免刷新后仍然携带旧跳转
+  router.replace({ path: route.path, query: {} }).finally(() => {
+    if (resolved && resolved.matched.length) {
+      router.replace(redirectTarget);
+    } else {
+      router.replace("/"); // 或 router.back()
+    }
+  });
 }
 
 /** 提交按钮 */
 function submit() {
-  proxy.$refs.userRef.validate((valid) => {
+  proxy.$refs.userRef.validate(async (valid) => {
     if (valid) {
       // 分离用户基本信息和学生/教师信息
       const userData = {
@@ -505,108 +636,113 @@ function submit() {
         phonenumber: form.value.phonenumber,
         email: form.value.email,
         sex: form.value.sex,
-        profileInitialized: 1, // 标记为已初始化
       };
 
-      // 更新用户基本信息
-      updateUserProfile(userData)
-          .then((response) => {
-            if (response.code === 200) {
-              props.user.phonenumber = form.value.phonenumber;
-              props.user.email = form.value.email;
+      try {
+        const response = await updateUserProfile(userData);
+        if (response.code !== 200) {
+          proxy.$modal.msgError(response.msg || "修改失败");
+          return;
+        }
 
-              const extraTasks = [];
+        syncLocalProfile({
+          nickName: form.value.nickName,
+          phonenumber: form.value.phonenumber,
+          email: form.value.email,
+          sex: form.value.sex,
+        });
 
-              // 如果是学生，更新学生信息
-              if (isStudent.value) {
-                const studentData = {
-                  no: form.value.no,
-                  school: form.value.school,
-                  department: form.value.department,
-                  major: form.value.major,
-                  classYear: form.value.classYear,
-                  className: form.value.className,
-                  name: form.value.name,
-                };
-                console.log("传递的学生数据:", studentData); // 添加调试日志
-                extraTasks.push(
-                    updateStudentInfo(studentData)
-                        .then((studentResponse) => {
-                          if (studentResponse.code === 200) {
-                            proxy.$modal.msgSuccess("学生信息保存成功");
-                            console.log("学生信息更新成功");
-                          } else {
-                            proxy.$modal.msgError("学生信息保存失败");
-                          }
-                        })
-                        .catch((err) => {
-                          console.error("更新学生信息失败:", err);
-                          proxy.$modal.msgError("学生信息更新失败");
-                        })
-                );
-              }
+        const extraTasks = [];
+        const selectedDeptLabels = resolveSelectedDeptLabels();
 
-              // 如果是教师，更新教师信息（假设有相应API）
-              // 这里需要根据实际API调整
-              if (isTeacher.value) {
-                const teacherData = {
-                  // 教师字段
-                  no: form.value.no,
-                  school: form.value.school,
-                  department: form.value.department,
-                };
-                extraTasks.push(
-                    updateTeacherInfo(teacherData)
-                        .then((teacherResponse) => {
-                          if (teacherResponse.code === 200) {
-                            proxy.$modal.msgSuccess("教师信息保存成功");
-                            console.log("教师信息更新成功");
-                          } else {
-                            proxy.$modal.msgError("教师信息保存失败");
-                          }
-                        })
-                        .catch((err) => {
-                          console.error("更新教师信息失败:", err);
-                          proxy.$modal.msgError("教师信息保存失败");
-                        })
-                );
-              }
+        // 如果是学生，更新学生信息
+        if (isStudent.value) {
+          const studentData = {
+            no: form.value.no,
+            school: selectedDeptLabels.school,
+            department: selectedDeptLabels.department,
+            major: selectedDeptLabels.major,
+            classYear: form.value.classYear,
+            className: form.value.className,
+            name: form.value.name,
+          };
+          console.log("传递的学生数据:", studentData); // 添加调试日志
+          extraTasks.push(
+              updateStudentInfo(studentData)
+                  .then((studentResponse) => {
+                    if (studentResponse.code === 200) {
+                      proxy.$modal.msgSuccess("学生信息保存成功");
+                      console.log("学生信息更新成功");
+                      return true;
+                    }
+                    proxy.$modal.msgError("学生信息保存失败");
+                    return false;
+                  })
+                  .catch((err) => {
+                    console.error("更新学生信息失败:", err);
+                    proxy.$modal.msgError("学生信息更新失败");
+                    return false;
+                  })
+          );
+        }
 
-              const finalize = () => {
-                userStore.profileInitialized = 1;
-                const redirectTarget = route.query.redirect;
-                const resolved = redirectTarget
-                    ? router.resolve(redirectTarget)
-                    : null;
-                // 清除地址栏中的 redirect，避免刷新后仍然携带旧跳转
-                router.replace({ path: route.path, query: {} }).finally(() => {
-                  if (resolved && resolved.matched.length) {
-                    router.replace(redirectTarget);
-                  } else {
-                    router.replace("/"); // 或 router.back()
-                  }
-                });
-              };
+        // 如果是教师，更新教师信息（假设有相应API）
+        // 这里需要根据实际API调整
+        if (isTeacher.value) {
+          const teacherData = {
+            // 教师字段
+            no: form.value.no,
+            school: selectedDeptLabels.school,
+            department: selectedDeptLabels.department,
+          };
+          extraTasks.push(
+              updateTeacherInfo(teacherData)
+                  .then((teacherResponse) => {
+                    if (teacherResponse.code === 200) {
+                      proxy.$modal.msgSuccess("教师信息保存成功");
+                      console.log("教师信息更新成功");
+                      return true;
+                    }
+                    proxy.$modal.msgError("教师信息保存失败");
+                    return false;
+                  })
+                  .catch((err) => {
+                    console.error("更新教师信息失败:", err);
+                    proxy.$modal.msgError("教师信息保存失败");
+                    return false;
+                  })
+          );
+        }
 
-              if (extraTasks.length > 0) {
-                Promise.allSettled(extraTasks).finally(finalize);
-              } else {
-                finalize();
-              }
-            } else {
-              proxy.$modal.msgError(response.msg || "修改失败");
-            }
-          })
-          .catch((err) => {
-            console.error("更新用户信息失败:", err);
-            proxy.$modal.msgError("修改失败");
-          });
+        const extraTaskResults = extraTasks.length > 0
+            ? await Promise.all(extraTasks)
+            : [];
+        const profileCompleted = await refreshProfileCompletionState();
+
+        if (profileCompleted) {
+          redirectAfterProfileCompleted();
+          return;
+        }
+
+        if (extraTaskResults.some((result) => result === false)) {
+          proxy.$modal.msgWarning("信息已部分保存，请继续完善个人中心资料后再离开当前页面");
+        } else {
+          proxy.$modal.msgWarning("信息已保存，但个人中心仍未完善，请继续补全后再使用其他功能");
+        }
+      } catch (err) {
+        console.error("更新用户信息失败:", err);
+        proxy.$modal.msgError("修改失败");
+      }
     }
   });
 }
 
 /** 关闭按钮 */
 function close() {
+  if (isProfileIncomplete.value) {
+    proxy.$modal.msgWarning("请先完善个人中心信息后再离开当前页面");
+    return;
+  }
   proxy.$tab.closePage();
 }
 </script>

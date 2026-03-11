@@ -143,7 +143,7 @@
               type="success"
               plain
               icon="Edit"
-              :disabled="single"
+              :disabled="single || !canEditSelected"
               @click="handleUpdate"
               v-hasPermi="permEdit"
           >审核</el-button>
@@ -319,6 +319,7 @@
 import { ref, reactive, computed, getCurrentInstance, nextTick, watch, onActivated } from 'vue';
 import { useRoute, useRouter } from 'vue-router';
 import { useDict } from '@/utils/dict';
+import useUserStore from '@/store/modules/user';
 import AchievementForm from '../component/AchievementForm.vue';
 import { listManage, getManage, addManage, updateManage, delManage } from '@/api/achievement/manage';
 import { batchUpdateReviewStatus } from '@/api/achievement/review_batch';
@@ -346,6 +347,7 @@ const props = defineProps({
 const { proxy } = getCurrentInstance();
 const route = useRoute();
 const router = useRouter();
+const userStore = useUserStore();
 
 const listFn = computed(() => props.listFn || listManage);
 const getFn = computed(() => props.getFn || getManage);
@@ -413,6 +415,7 @@ const total = ref(0);
 const single = ref(true);
 const multiple = ref(true);
 const ids = ref([]);
+const selectedRows = ref([]);
 const tableRef = ref(null);
 const batchReviewStatus = ref(null);
 const batchRejectReason = ref('');
@@ -422,6 +425,8 @@ const pageModeActive = ref(false);
 const pageModeKey = ref(0);
 const formReadOnly = ref(false);
 const formShowSubmit = ref(true);
+const isStudentUser = computed(() => (userStore.roles || []).map(role => String(role).replace(/^ROLE_/, '').toLowerCase()).includes('student'));
+const canEditSelected = computed(() => selectedRows.value.length === 1 && checkEditable(selectedRows.value[0]));
 const isCollegeBatchReject = computed(() => reviewSource.value.startsWith('college') && String(batchReviewStatus.value) === '1');
 const isSchoolBatchReject = computed(() => reviewSource.value.startsWith('school') && String(batchReviewStatus.value) === '0');
 const showBatchRejectReason = computed(() => isCollegeBatchReject.value || isSchoolBatchReject.value);
@@ -565,12 +570,14 @@ const resetQuery = () => {
 };
 
 function handleSelectionChange(selection) {
+  selectedRows.value = selection;
   ids.value = selection.map(i => i.achievementId);
   single.value = selection.length !== 1;
   multiple.value = !selection.length;
 }
 
 function clearSelectionState() {
+  selectedRows.value = [];
   ids.value = [];
   single.value = true;
   multiple.value = true;
@@ -583,6 +590,10 @@ function handleAdd() {
 
 function handleUpdate() {
   const _achievementId = ids.value[0];
+  if (!canEditSelected.value) {
+    proxy.$modal?.msgWarning?.('当前成果仅在驳回后允许修改');
+    return;
+  }
   if (_achievementId) openDialog(_achievementId, { readOnly: false });
 }
 
@@ -760,6 +771,9 @@ function checkEditable(row) {
   // 获取状态值
   const collegeStatus = String(row.reviewResult);
   const schoolStatus = String(row.schooiReviewResult);
+  if (isStudentUser.value) {
+    return collegeStatus === '1' || schoolStatus === '0';
+  }
   if (schoolStatus === '0') {
     return true;
   }

@@ -2,6 +2,7 @@ package com.ruoyi.achievement.mapper;
 
 import java.util.List;
 import java.util.Map;
+import org.apache.ibatis.annotations.Mapper;
 import com.ruoyi.achievement.domain.SamAchievement;
 import com.ruoyi.achievement.domain.SamAchievementParticipant;
 import com.ruoyi.achievement.domain.SamAchievementAdvisor;
@@ -12,6 +13,7 @@ import com.ruoyi.achievement.domain.SamAchievementAdvisor;
  * @author 王璨
  * @date 2026-02-03
  */
+@Mapper
 public interface SamAchievementMapper 
 {
     /**
