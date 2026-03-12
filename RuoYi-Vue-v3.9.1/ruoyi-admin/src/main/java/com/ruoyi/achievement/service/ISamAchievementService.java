@@ -19,6 +19,8 @@ public interface ISamAchievementService
      */
     public SamAchievement selectSamAchievementByAchievementId(String achievementId);
 
+    public SamAchievement selectSamAchievementForSelf(String achievementId, String selfEditScene);
+
     /**
      * 查询成果录入列表
      * 
@@ -31,6 +33,11 @@ public interface ISamAchievementService
      * 查询我参与的成果列表（学生端-非负责人）
      */
     public List<SamAchievement> selectSamAchievementListByStudentId(SamAchievement samAchievement);
+    /**
+     * 查询我负责的成果列表（学生负责人）
+     */
+    public List<SamAchievement> selectSamAchievementListByResponsibleStudentId(SamAchievement samAchievement);
+
 
     /**
      * 查询我指导的成果列表（教师端）

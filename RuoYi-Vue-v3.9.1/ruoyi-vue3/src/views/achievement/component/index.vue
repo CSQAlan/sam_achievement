@@ -139,13 +139,12 @@
         </el-col>
         <el-col :span="1.5">
           <el-button
-              v-if="showEdit"
+              v-if="showEdit && canUseEditAction"
               type="success"
               plain
               icon="Edit"
               :disabled="single || !canEditSelected"
               @click="handleUpdate"
-              v-hasPermi="permEdit"
           >审核</el-button>
         </el-col>
         <el-col :span="1.5">
@@ -252,15 +251,14 @@
         </el-table-column>
         <el-table-column label="操作" align="center" class-name="small-padding fixed-width">
           <template #default="scope">
-            <el-button link type="primary" icon="View" @click="handleReview(scope.row)" v-hasPermi="permReview">详情</el-button>
+            <el-button v-if="canUseReviewAction" link type="primary" icon="View" @click="handleReview(scope.row)">详情</el-button>
 
             <el-button
-                v-if="showEdit"
+                v-if="showEdit && canUseEditAction"
                 link
                 type="primary"
                 icon="Edit"
                 @click="handleRowUpdate(scope.row)"
-                v-hasPermi="permEdit"
                 :disabled="!checkEditable(scope.row)"
             >审核</el-button>
 
@@ -322,6 +320,7 @@ import { ref, reactive, computed, getCurrentInstance, nextTick, watch, onActivat
 import { useRoute, useRouter } from 'vue-router';
 import { useDict } from '@/utils/dict';
 import useUserStore from '@/store/modules/user';
+import auth from '@/plugins/auth';
 import AchievementForm from '../component/AchievementForm.vue';
 import { listManage, getManage, addManage, updateManage, delManage } from '@/api/achievement/manage';
 import { batchUpdateReviewStatus } from '@/api/achievement/review_batch';
@@ -378,6 +377,9 @@ const permReview = computed(() => {
   if (Array.isArray(props.reviewPerm) && props.reviewPerm.length > 0) return props.reviewPerm;
   return [`${permissionPrefix.value}:query`];
 });
+const isSelfEditPage = computed(() => props.selfEditScene === 'responsible' || props.selfEditScene === 'guided');
+const canUseEditAction = computed(() => isSelfEditPage.value || auth.hasPermiOr(permEdit.value));
+const canUseReviewAction = computed(() => isSelfEditPage.value || auth.hasPermiOr(permReview.value));
 const canBatchReview = computed(() => !!reviewSource.value);
 const isUnreviewedPage = computed(() => {
   return reviewSource.value === 'college_level_unreviewed' || reviewSource.value === 'school_level_unreviewed';
@@ -594,7 +596,7 @@ function handleAdd() {
 function handleUpdate() {
   const _achievementId = ids.value[0];
   if (!canEditSelected.value) {
-    proxy.$modal?.msgWarning?.('当前成果仅在驳回后允许修改');
+    proxy.$modal?.msgWarning?.('当前成果仅在待审核或驳回时允许本人修改');
     return;
   }
   if (_achievementId) openDialog(_achievementId, { readOnly: false });
@@ -772,8 +774,19 @@ function checkEditable(row) {
   // 防空判断
   if (!row) return false;
   // 获取状态值
-  const collegeStatus = String(row.reviewResult);
-  const schoolStatus = String(row.schooiReviewResult);
+  const collegeStatus = row.reviewResult == null ? '0' : String(row.reviewResult);
+  const schoolStatus = row.schooiReviewResult == null ? '' : String(row.schooiReviewResult);
+
+  // 学生“我负责的成果” / 教师“我指导的成果”
+  if (props.selfEditScene === 'responsible' || props.selfEditScene === 'guided') {
+    if (collegeStatus === '0' || collegeStatus === '1') {
+      return true;
+    }
+    if (collegeStatus === '2' && (schoolStatus === '' || schoolStatus === '2' || schoolStatus === '0')) {
+      return true;
+    }
+    return false;
+  }
   if (isStudentUser.value) {
     return collegeStatus === '1' || schoolStatus === '0';
   }
