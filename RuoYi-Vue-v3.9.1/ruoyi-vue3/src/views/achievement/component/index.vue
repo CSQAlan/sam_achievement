@@ -297,6 +297,7 @@
         :page-mode="pageModeActive"
         :read-only="formReadOnly"
         :show-submit="formShowSubmit"
+        :self-edit-scene="props.selfEditScene"
         cancel-text="返回"
         @ok="handleFormOk"
         @cancel="handleFormCancel"
@@ -308,6 +309,7 @@
         :update-fn="updateFn"
         :read-only="formReadOnly"
         :show-submit="formShowSubmit"
+        :self-edit-scene="props.selfEditScene"
         cancel-text="返回"
         @ok="handleFormOk"
         @cancel="handleFormCancel"
@@ -341,7 +343,8 @@ const props = defineProps({
   showAdd: { type: Boolean, default: true },
   showEdit: { type: Boolean, default: true },
   showDelete: { type: Boolean, default: true },
-  showExport: { type: Boolean, default: true }
+  showExport: { type: Boolean, default: true },
+  selfEditScene: { type: String, default: '' }
 });
 
 const { proxy } = getCurrentInstance();

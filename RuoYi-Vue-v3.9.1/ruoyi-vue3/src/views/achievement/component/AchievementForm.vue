@@ -625,6 +625,7 @@ const props = defineProps({
   titleEdit: { type: String, default: "修改成果" },
   submitText: { type: String, default: "" },
   cancelText: { type: String, default: "取 消" },
+  selfEditScene: { type: String, default: '' },
   userRole: { type: String, default: "student" },
 });
 
@@ -1304,6 +1305,8 @@ function submitForm() {
       const apiFn = isEdit ? props.updateFn : props.addFn;
       
       if (apiFn) {
+        form.value.params = { ...(form.value.params || {}), selfEditScene:
+              props.selfEditScene || '' }
         apiFn(form.value).then(response => {
           proxy.$modal.msgSuccess(isEdit ? "修改成功" : "新增成功");
           updateSnapshot(); 

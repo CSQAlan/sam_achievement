@@ -4,7 +4,7 @@
       :list-fn="listGuidedAchievement"
       :get-fn="getManage"
       :show-add="false"
-      :show-edit="false"
+      :show-edit="true"
       :show-delete="false"
       :show-export="false"
       permission-prefix="achievement:manage"
