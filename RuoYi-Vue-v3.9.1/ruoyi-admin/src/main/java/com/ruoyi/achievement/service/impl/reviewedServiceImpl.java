@@ -57,7 +57,7 @@ public class reviewedServiceImpl implements IreviewedService
      * 查询成果审核列表
      *
      * @param reviewed 成果审核
-     * @return 成果审核
+     * @return 成果审核列表
      */
     @Override
     public List<reviewed> selectreviewedList(reviewed reviewed)
@@ -103,12 +103,12 @@ public class reviewedServiceImpl implements IreviewedService
     {
         if (reviewed.getAchievementId() == null)
         {
-            throw new ServiceException("????ID?????");
+            throw new ServiceException("成果ID不能为空");
         }
         reviewed existing = reviewedMapper.selectreviewedByAchievementId(reviewed.getAchievementId());
         if (existing == null)
         {
-            throw new ServiceException("??????????");
+            throw new ServiceException("未找到对应的成果审核信息");
         }
         applyDefaultYear(reviewed);
         validateReviewFlow(existing, reviewed);
@@ -155,7 +155,7 @@ public class reviewedServiceImpl implements IreviewedService
     {
         if (achievementIds == null || achievementIds.length == 0)
         {
-            throw new ServiceException("璇烽€夋嫨闇€瑕佹壒閲忓鏍哥殑鎴愭灉");
+            throw new ServiceException("请选择需要批量审核的成果");
         }
 
         String normalizedStage = resolveStage(stage);
@@ -180,7 +180,7 @@ public class reviewedServiceImpl implements IreviewedService
             operator = null;
         }
 
-        // 澶勭悊闄㈢骇瀹℃牳
+        // 处理院级审核
         if (STAGE_COLLEGE.equals(normalizedStage))
         {
             if (!Objects.equals(reviewStatus, COLLEGE_PENDING)
@@ -195,11 +195,11 @@ public class reviewedServiceImpl implements IreviewedService
                 throw new ServiceException("请输入院级驳回原因");
             }
 
-            // 鎵归噺鏇存柊闄㈢骇瀹℃牳鐘舵€?
+            // 批量更新院级审核状态
             return reviewedMapper.batchUpdateCollegeReviewStatus(achievementIds, reviewStatus, normalizedRejectReason, operator);
         }
 
-        // 澶勭悊鏍＄骇瀹℃牳
+        // 处理校级审核
         if (STAGE_SCHOOL.equals(normalizedStage))
         {
             if (!Objects.equals(reviewStatus, SCHOOL_PENDING)
@@ -214,7 +214,7 @@ public class reviewedServiceImpl implements IreviewedService
                 throw new ServiceException("请输入校级驳回原因");
             }
 
-            // 鎵归噺鏇存柊鏍＄骇瀹℃牳鐘舵€?
+            // 批量更新校级审核状态
             return reviewedMapper.batchUpdateSchoolReviewStatus(achievementIds, reviewStatus, normalizedRejectReason, operator);
         }
 
@@ -321,11 +321,11 @@ public class reviewedServiceImpl implements IreviewedService
             }
             if (!Objects.equals(incoming.getReviewResult(), COLLEGE_PENDING))
             {
-                throw new ServiceException("College unreviewed must be pending.");
+                throw new ServiceException("院级未审核状态必须为待审核。");
             }
             if (incoming.getSchooiReviewResult() != null)
             {
-                throw new ServiceException("School review status must be empty for new achievements.");
+                throw new ServiceException("新成果的校级审核状态必须为空。");
             }
             incoming.setReviewReason(null);
             incoming.setSchoolReviewReason(null);
@@ -337,17 +337,17 @@ public class reviewedServiceImpl implements IreviewedService
             Long reviewResult = incoming.getReviewResult();
             if (!isCollegeReviewedValue(reviewResult))
             {
-                throw new ServiceException("College reviewed must be pass or reject.");
+                throw new ServiceException("院级已审核状态必须为通过或驳回。");
             }
             if (Objects.equals(reviewResult, COLLEGE_REJECT))
             {
                 if (!StringUtils.hasText(incoming.getReviewReason()))
                 {
-                    throw new ServiceException("College rejection reason is required.");
+                    throw new ServiceException("院级驳回必须提供原因。");
                 }
                 if (incoming.getSchooiReviewResult() != null)
                 {
-                    throw new ServiceException("School review status cannot be set when college is rejected.");
+                    throw new ServiceException("院级驳回时校级审核状态不能设置。");
                 }
             }
             else
@@ -356,7 +356,7 @@ public class reviewedServiceImpl implements IreviewedService
                 Long schoolResult = incoming.getSchooiReviewResult();
                 if (schoolResult != null && !Objects.equals(schoolResult, SCHOOL_PENDING))
                 {
-                    throw new ServiceException("School review status can only be pending after college pass.");
+                    throw new ServiceException("院级通过后，校级审核状态只能为待审核。");
                 }
             }
             incoming.setSchoolReviewReason(null);
@@ -371,12 +371,12 @@ public class reviewedServiceImpl implements IreviewedService
             }
             if (!Objects.equals(incoming.getSchooiReviewResult(), SCHOOL_PENDING))
             {
-                throw new ServiceException("School unreviewed must be pending.");
+                throw new ServiceException("校级未审核状态必须为待审核。");
             }
             Long college = incoming.getReviewResult();
             if (college != null && !Objects.equals(college, COLLEGE_PENDING))
             {
-                throw new ServiceException("School unreviewed cannot change college review status.");
+                throw new ServiceException("校级未审核不能修改院级审核状态。");
             }
             incoming.setReviewReason(null);
             incoming.setSchoolReviewReason(null);
@@ -387,18 +387,18 @@ public class reviewedServiceImpl implements IreviewedService
         {
             if (!Objects.equals(incoming.getReviewResult(), COLLEGE_PASS))
             {
-                throw new ServiceException("School reviewed requires college pass.");
+                throw new ServiceException("校级审核前必须院级通过。");
             }
             Long schoolResult = incoming.getSchooiReviewResult();
             if (!isSchoolReviewedValue(schoolResult))
             {
-                throw new ServiceException("School reviewed must be pass or reject.");
+                throw new ServiceException("校级已审核状态必须为通过或驳回。");
             }
             if (Objects.equals(schoolResult, SCHOOL_REJECT))
             {
                 if (!StringUtils.hasText(incoming.getSchoolReviewReason()))
                 {
-                    throw new ServiceException("School rejection reason is required.");
+                    throw new ServiceException("校级驳回必须提供原因。");
                 }
             }
             else
@@ -409,7 +409,7 @@ public class reviewedServiceImpl implements IreviewedService
             return;
         }
 
-        throw new ServiceException("Invalid review stage or status.");
+        throw new ServiceException("无效的审核阶段或状态。");
     }
 
     private String resolveStage(String stage)
@@ -442,29 +442,39 @@ public class reviewedServiceImpl implements IreviewedService
 
     private void validateReviewFlow(reviewed existing, reviewed incoming)
     {
+        // 解析当前操作的审核阶段
         String stage = resolveStage(incoming.getReviewStage());
         boolean stageCollege = STAGE_COLLEGE.equals(stage);
         boolean stageSchool = STAGE_SCHOOL.equals(stage);
+
+        // 获取现有院级和校级审核状态
         Long existingCollegeRaw = existing.getReviewResult();
         Long existingCollege = existingCollegeRaw == null ? COLLEGE_PENDING : existingCollegeRaw;
         Long existingSchool = normalizeExistingSchoolStatus(existing);
 
+        // 获取请求更新的院级和校级状态
         Long requestedCollege = incoming.getReviewResult();
         Long requestedSchool = incoming.getSchooiReviewResult();
 
+        // 如果当前操作为校级审核阶段
         if (stageSchool)
         {
+            // 不允许修改院级状态
             if (requestedCollege != null && !Objects.equals(requestedCollege, existingCollegeRaw))
             {
                 incoming.setReviewResult(existingCollegeRaw);
             }
+            // 不允许修改院级驳回原因
             if (incoming.getReviewReason() != null && !Objects.equals(incoming.getReviewReason(), existing.getReviewReason()))
             {
                 incoming.setReviewReason(existing.getReviewReason());
             }
         }
+
+        // 如果当前操作为院级审核阶段
         if (stageCollege)
         {
+            // 不允许修改校级驳回原因
             if (incoming.getSchoolReviewReason() != null
                     && !Objects.equals(incoming.getSchoolReviewReason(), existing.getSchoolReviewReason()))
             {
@@ -472,10 +482,11 @@ public class reviewedServiceImpl implements IreviewedService
             }
         }
 
+        // 更新请求状态变量
         requestedCollege = incoming.getReviewResult();
         requestedSchool = incoming.getSchooiReviewResult();
 
-        // College pass must flow into school pending when school has not been reviewed yet.
+        // 当院级通过且校级尚未审核时，将校级状态设为待审核
         if (stageCollege
                 && Objects.equals(requestedCollege, COLLEGE_PASS)
                 && requestedSchool == null
@@ -485,15 +496,19 @@ public class reviewedServiceImpl implements IreviewedService
             requestedSchool = incoming.getSchooiReviewResult();
         }
 
+        // 判断是否允许院级复审
         boolean allowCollegeReAudit = stageCollege
                 && isCollegeReviewedValue(existingCollege)
                 && requestedCollege != null
                 && (Objects.equals(requestedCollege, COLLEGE_PENDING) || isCollegeReviewedValue(requestedCollege));
+
+        // 判断是否允许校级复审
         boolean allowSchoolReAudit = stageSchool
                 && isSchoolReviewedValue(existingSchool)
                 && requestedSchool != null
                 && isSchoolReviewedValue(requestedSchool);
 
+        // 校级操作不能将院级状态改为待审核
         if (!stageCollege
                 && requestedCollege != null
                 && Objects.equals(requestedCollege, COLLEGE_PENDING)
@@ -506,23 +521,25 @@ public class reviewedServiceImpl implements IreviewedService
         boolean collegeChanged = requestedCollege != null && !Objects.equals(requestedCollege, existingCollege);
         boolean schoolChanged = requestedSchool != null && !Objects.equals(requestedSchool, existingSchool);
 
+        // 院级操作逻辑
         if (stageCollege)
         {
+            // 院级状态有变化
             if (collegeChanged)
             {
                 if (!Objects.equals(existingCollege, COLLEGE_PENDING) && !allowCollegeReAudit)
                 {
-                    throw new ServiceException("College review status cannot be changed after reviewed.");
+                    throw new ServiceException("院级审核状态在已审核后不可更改。");
                 }
                 if (!Objects.equals(requestedCollege, COLLEGE_PENDING) && !isCollegeReviewedValue(requestedCollege))
                 {
-                    throw new ServiceException("College review can only change to pending, pass or reject.");
+                    throw new ServiceException("院级审核只能修改为待审核、通过或驳回。");
                 }
                 if (Objects.equals(requestedCollege, COLLEGE_REJECT))
                 {
                     if (!StringUtils.hasText(incoming.getReviewReason()))
                     {
-                        throw new ServiceException("College rejection reason is required.");
+                        throw new ServiceException("院级驳回必须提供原因。");
                     }
                 }
                 else
@@ -535,6 +552,7 @@ public class reviewedServiceImpl implements IreviewedService
                 incoming.setReviewReason(existing.getReviewReason());
             }
 
+            // 校级状态变化处理
             if (schoolChanged)
             {
                 Long effectiveCollege = collegeChanged ? requestedCollege : existingCollege;
@@ -543,14 +561,14 @@ public class reviewedServiceImpl implements IreviewedService
                     if (!Objects.equals(requestedSchool, SCHOOL_PENDING)
                             && !Objects.equals(requestedSchool, existingSchool))
                     {
-                        throw new ServiceException("School review status can only be kept or set to pending by college review.");
+                        throw new ServiceException("院级通过后，校级审核状态只能保持或设置为待审核。");
                     }
                 }
                 else
                 {
                     if (!Objects.equals(requestedSchool, SCHOOL_REJECT))
                     {
-                        throw new ServiceException("School review will be auto rejected when college is pending or rejected.");
+                        throw new ServiceException("院级待审核或驳回时，校级审核自动驳回。");
                     }
                 }
             }
@@ -559,6 +577,7 @@ public class reviewedServiceImpl implements IreviewedService
                 incoming.setSchoolReviewReason(existing.getSchoolReviewReason());
             }
 
+            // 根据院级状态自动更新校级
             if (requestedCollege != null)
             {
                 if (Objects.equals(requestedCollege, COLLEGE_PASS))
@@ -579,6 +598,7 @@ public class reviewedServiceImpl implements IreviewedService
             return;
         }
 
+        // 校级操作逻辑
         if (stageSchool)
         {
             if (schoolChanged)
@@ -587,24 +607,24 @@ public class reviewedServiceImpl implements IreviewedService
                 {
                     if (!Objects.equals(requestedSchool, SCHOOL_PENDING))
                     {
-                        throw new ServiceException("School review must start from pending.");
+                        throw new ServiceException("校级审核必须从待审核开始。");
                     }
                 }
                 else if (Objects.equals(existingSchool, SCHOOL_PENDING))
                 {
                     if (!isSchoolReviewedValue(requestedSchool))
                     {
-                        throw new ServiceException("School review can only change to pass or reject.");
+                        throw new ServiceException("校级审核只能修改为通过或驳回。");
                     }
                     if (!Objects.equals(existingCollege, COLLEGE_PASS))
                     {
-                        throw new ServiceException("School review requires college pass.");
+                        throw new ServiceException("校级审核要求院级已通过。");
                     }
                     if (Objects.equals(requestedSchool, SCHOOL_REJECT))
                     {
                         if (!StringUtils.hasText(incoming.getSchoolReviewReason()))
                         {
-                            throw new ServiceException("School rejection reason is required.");
+                            throw new ServiceException("校级驳回必须提供原因。");
                         }
                     }
                     else
@@ -616,21 +636,21 @@ public class reviewedServiceImpl implements IreviewedService
                 {
                     if (!allowSchoolReAudit)
                     {
-                        throw new ServiceException("School review status cannot be changed after reviewed.");
+                        throw new ServiceException("校级审核状态在已审核后不可更改。");
                     }
                     if (!isSchoolReviewedValue(requestedSchool))
                     {
-                        throw new ServiceException("School review can only change to pass or reject.");
+                        throw new ServiceException("校级审核只能修改为通过或驳回。");
                     }
                     if (!Objects.equals(existingCollege, COLLEGE_PASS))
                     {
-                        throw new ServiceException("School review requires college pass.");
+                        throw new ServiceException("校级审核要求院级已通过。");
                     }
                     if (Objects.equals(requestedSchool, SCHOOL_REJECT))
                     {
                         if (!StringUtils.hasText(incoming.getSchoolReviewReason()))
                         {
-                            throw new ServiceException("School rejection reason is required.");
+                            throw new ServiceException("校级驳回必须提供原因。");
                         }
                     }
                     else
@@ -653,7 +673,7 @@ public class reviewedServiceImpl implements IreviewedService
 
         if (collegeChanged || schoolChanged)
         {
-            throw new ServiceException("Invalid review stage for status update.");
+            throw new ServiceException("无效的审核阶段更新。");
         }
         if (!StringUtils.hasText(incoming.getReviewReason()))
         {
@@ -680,7 +700,7 @@ public class reviewedServiceImpl implements IreviewedService
         Long raw = existing.getSchooiReviewResult();
         if (isSchoolReviewedValue(raw) && !hasSchoolReviewTrace(existing))
         {
-            // Compatible with legacy data where status was initialized as 0/1 but never actually reviewed.
+            // 兼容旧数据，状态初始化为0/1但未实际审核
             return SCHOOL_PENDING;
         }
         return raw;
