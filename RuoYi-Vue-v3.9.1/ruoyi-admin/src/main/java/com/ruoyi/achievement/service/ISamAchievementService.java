@@ -73,4 +73,12 @@ public interface ISamAchievementService
      * @return 结果
      */
     public int deleteSamAchievementByAchievementId(String achievementId);
+
+    /**
+     * 校验证书编号是否唯一
+     *
+     * @param samAchievement 成果信息
+     * @return 结果
+     */
+    public boolean checkCertificateNoUnique(SamAchievement samAchievement);
 }

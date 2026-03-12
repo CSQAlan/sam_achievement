@@ -41,7 +41,7 @@ public class SamAchievementController extends BaseController
     /**
      * 查询成果录入列表（我负责的成果）
      */
-    @PreAuthorize("@ss.hasPermi('achievement:manage:list')")
+    @PreAuthorize("@ss.hasAnyPermi('achievement:manage:list,achievement:manage:participated:list,achievement:manage:guided:list')")
     @GetMapping("/list")
     public TableDataInfo list(SamAchievement samAchievement)
     {
@@ -71,7 +71,7 @@ public class SamAchievementController extends BaseController
     /**
      * 导出成果录入列表
      */
-    @PreAuthorize("@ss.hasPermi('achievement:manage:export')")
+    @PreAuthorize("@ss.hasAnyPermi('achievement:manage:export,achievement:manage:participated:export,achievement:manage:guided:export')")
     @Log(title = "成果录入", businessType = BusinessType.EXPORT)
     @PostMapping("/export")
     public void export(HttpServletResponse response, SamAchievement samAchievement)
@@ -97,7 +97,7 @@ public class SamAchievementController extends BaseController
     /**
      * 获取成果录入详细信息
      */
-    @PreAuthorize("@ss.hasPermi('achievement:manage:query')")
+    @PreAuthorize("@ss.hasAnyPermi('achievement:manage:query,achievement:manage:participated:query,achievement:manage:guided:query')")
     @GetMapping(value = "/{achievementId}")
     public AjaxResult getInfo(@PathVariable("achievementId") String achievementId)
     {
@@ -107,7 +107,7 @@ public class SamAchievementController extends BaseController
     /**
      * 新增成果录入
      */
-    @PreAuthorize("@ss.hasPermi('achievement:manage:add')")
+    @PreAuthorize("@ss.hasAnyPermi('achievement:manage:add,achievement:manage:guided:add')")
     @Log(title = "成果录入", businessType = BusinessType.INSERT)
     @PostMapping
     public AjaxResult add(@RequestBody SamAchievement samAchievement)
@@ -118,7 +118,7 @@ public class SamAchievementController extends BaseController
     /**
      * 修改成果录入
      */
-    @PreAuthorize("@ss.hasPermi('achievement:manage:edit')")
+    @PreAuthorize("@ss.hasAnyPermi('achievement:manage:edit,achievement:manage:guided:edit')")
     @Log(title = "成果录入", businessType = BusinessType.UPDATE)
     @PutMapping
     public AjaxResult edit(@RequestBody SamAchievement samAchievement)
@@ -129,7 +129,7 @@ public class SamAchievementController extends BaseController
     /**
      * 删除成果录入
      */
-    @PreAuthorize("@ss.hasPermi('achievement:manage:remove')")
+    @PreAuthorize("@ss.hasAnyPermi('achievement:manage:remove,achievement:manage:guided:remove')")
     @Log(title = "成果录入", businessType = BusinessType.DELETE)
 	@DeleteMapping("/{achievementIds}")
     public AjaxResult remove(@PathVariable String[] achievementIds)
@@ -138,9 +138,18 @@ public class SamAchievementController extends BaseController
     }
 
     /**
+     * 校验证书编号是否唯一
+     */
+    @GetMapping("/checkCertificateNoUnique")
+    public AjaxResult checkCertificateNoUnique(SamAchievement samAchievement)
+    {
+        return success(samAchievementService.checkCertificateNoUnique(samAchievement));
+    }
+
+    /**
      * 查询我参与的成果列表
      */
-    @PreAuthorize("@ss.hasAnyRoles('student,teacher,admin')")
+    @PreAuthorize("@ss.hasPermi('achievement:manage:participated:list')")
     @GetMapping("/list-participated")
     public TableDataInfo listParticipated(SamAchievement samAchievement)
     {
@@ -163,7 +172,7 @@ public class SamAchievementController extends BaseController
     /**
      * 查询我指导的成果列表（教师端-第一指导老师）
      */
-    @PreAuthorize("@ss.hasAnyRoles('teacher,admin')")
+    @PreAuthorize("@ss.hasPermi('achievement:manage:guided:list')")
     @GetMapping("/list-guided")
     public TableDataInfo listGuided(SamAchievement samAchievement)
     {

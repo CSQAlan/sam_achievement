@@ -78,6 +78,14 @@ public interface SamAchievementMapper
     public int deleteSamAchievementByAchievementIds(String[] achievementIds);
 
     /**
+     * 校验证书编号是否唯一
+     *
+     * @param certificateNo 证书编号
+     * @return 结果
+     */
+    public SamAchievement checkCertificateNoUnique(String certificateNo);
+
+    /**
      * 批量删除参赛选手
      */
     public int deleteSamAchievementParticipantByParticipantIds(String[] achievementIds);
