@@ -19,6 +19,7 @@ import com.ruoyi.achievement.service.ISamAchievementService;
 import com.ruoyi.achievement.service.ISamStudentService;
 import com.ruoyi.achievement.service.ISamTeacherService;
 import com.ruoyi.achievement.mapper.FileUuidMapper;
+import com.ruoyi.common.constant.UserConstants;
 import com.ruoyi.common.exception.ServiceException;
 
 /**
@@ -259,6 +260,11 @@ public class SamAchievementServiceImpl implements ISamAchievementService
             throw new ServiceException("证书编号不能为空");
         }
 
+        // 校验证书编号唯一性
+        if (!checkCertificateNoUnique(samAchievement)) {
+            throw new ServiceException("证书编号'" + samAchievement.getCertificateNo() + "'已存在");
+        }
+
         // 验证参赛选手列表
         List<SamAchievementParticipant> participants = samAchievement.getSamAchievementParticipantList();
         if (participants == null || participants.isEmpty()) {
@@ -286,6 +292,22 @@ public class SamAchievementServiceImpl implements ISamAchievementService
                 throw new ServiceException("报销金额必须大于0");
             }
         }
+    }
+
+    /**
+     * 校验证书编号是否唯一
+     *
+     * @param samAchievement 成果信息
+     * @return 结果
+     */
+    @Override
+    public boolean checkCertificateNoUnique(SamAchievement samAchievement) {
+        String achievementId = StringUtils.isEmpty(samAchievement.getAchievementId()) ? "-1" : samAchievement.getAchievementId();
+        SamAchievement info = samAchievementMapper.checkCertificateNoUnique(samAchievement.getCertificateNo());
+        if (StringUtils.isNotNull(info) && !info.getAchievementId().equals(achievementId)) {
+            return UserConstants.NOT_UNIQUE;
+        }
+        return UserConstants.UNIQUE;
     }
 
     /**

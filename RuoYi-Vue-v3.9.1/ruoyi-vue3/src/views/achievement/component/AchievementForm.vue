@@ -675,6 +675,33 @@ const data = reactive({
 });
 const { form, formSnapshot, rules } = toRefs(data);
 
+const validateCertificateNo = (rule, value, callback) => {
+  if (!value) {
+    callback();
+  } else {
+    const params = {
+      certificateNo: value,
+      achievementId: form.value.achievementId
+    };
+    request({
+      url: '/achievement/manage/checkCertificateNoUnique',
+      method: 'get',
+      params: params
+    }).then(response => {
+      if (response.data === false) {
+        callback(new Error("证书编号已存在"));
+      } else {
+        callback();
+      }
+    });
+  }
+};
+
+rules.value.certificateNo = [
+  { required: true, message: "证书编号不能为空", trigger: "blur" },
+  { validator: validateCertificateNo, trigger: "blur" }
+];
+
 // =========================================================
 // 草稿功能逻辑
 // =========================================================

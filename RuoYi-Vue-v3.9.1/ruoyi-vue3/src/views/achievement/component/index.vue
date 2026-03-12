@@ -278,7 +278,7 @@
         </el-table-column>
         <el-table-column label="操作" align="center" class-name="small-padding fixed-width">
           <template #default="scope">
-            <el-button link type="primary" icon="View" @click="handleReview(scope.row)" v-hasPermi="permReview">详情</el-button>
+            <el-button link type="primary" icon="View" @click="handleReview(scope.row)" v-hasPermi="[...permReview, ...permQuery]">详情</el-button>
 
             <el-button
                 v-if="showEdit"
@@ -398,6 +398,7 @@ const permAdd = computed(() => [`${permissionPrefix.value}:add`]);
 const permEdit = computed(() => [`${permissionPrefix.value}:edit`]);
 const permRemove = computed(() => [`${permissionPrefix.value}:remove`]);
 const permExport = computed(() => [`${permissionPrefix.value}:export`]);
+const permQuery = computed(() => [`${permissionPrefix.value}:query`]);
 const permReview = computed(() => [`${permissionPrefix.value}:review`]);
 const canBatchReview = computed(() => !!reviewSource.value);
 
