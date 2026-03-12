@@ -148,6 +148,13 @@ const selectedAuditStatus = ref("");
 const rejectReason = ref("");
 const auditInitialized = ref(false);
 
+function isStatusSelectable(status) {
+  if (status === null || status === undefined || status === "") {
+    return false;
+  }
+  return (nextStatusOptions.value || []).some((opt) => String(opt.value) === String(status));
+}
+
 function normalizeLooseText(value) {
   if (value === null || value === undefined) return "";
   const text = String(value).trim();
@@ -394,7 +401,7 @@ function syncAuditFromForm() {
 
   if (isCollegeSource.value) {
     const status = form.reviewResult ?? form.review_result;
-    if (status === 0 || status === "0" || status === 1 || status === "1" || status === 2 || status === "2") {
+    if (isStatusSelectable(status)) {
       selectedAuditStatus.value = String(status);
     } else {
       setDefaultSelected();
@@ -407,7 +414,7 @@ function syncAuditFromForm() {
     }
   } else if (isSchoolSource.value) {
     const status = form.schooiReviewResult ?? form.schooi_review_result ?? form.schoolReviewResult ?? form.school_review_result;
-    if (status === 0 || status === "0" || status === 1 || status === "1") {
+    if (isStatusSelectable(status)) {
       selectedAuditStatus.value = String(status);
     } else {
       setDefaultSelected();
