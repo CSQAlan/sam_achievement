@@ -38,6 +38,11 @@ public interface SamAchievementMapper
     public List<SamAchievement> selectSamAchievementListByStudentId(SamAchievement samAchievement);
 
     /**
+     * 查询我负责的成果列表（学生负责人）
+     */
+    public List<SamAchievement> selectSamAchievementListByResponsibleStudentId(SamAchievement samAchievement);
+
+    /**
      * 查询我指导的成果列表（教师端）
      */
     public List<SamAchievement> selectSamAchievementListByTeacherId(SamAchievement samAchievement);

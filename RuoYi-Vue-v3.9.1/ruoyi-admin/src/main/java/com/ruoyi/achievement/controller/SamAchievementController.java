@@ -15,6 +15,7 @@ import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 import com.ruoyi.common.annotation.Log;
 import com.ruoyi.common.core.controller.BaseController;
@@ -66,10 +67,16 @@ public class SamAchievementController extends BaseController
     /**
      * 获取成果录入详细信息
      */
-    @PreAuthorize("@ss.hasPermi('achievement:manage:query')")
+    @PreAuthorize("@ss.hasPermi('achievement:manage:query') or @ss.hasRole('student') or @ss.hasRole('teacher')")
     @GetMapping(value = "/{achievementId}")
-    public AjaxResult getInfo(@PathVariable("achievementId") String achievementId)
+    public AjaxResult getInfo(@PathVariable("achievementId") String achievementId,
+                              @RequestParam(value = "selfEditScene", required = false) String selfEditScene)
     {
+        if (!SecurityUtils.hasPermi("achievement:manage:query"))
+        {
+            requireSelfAccessRole();
+            return success(samAchievementService.selectSamAchievementForSelf(achievementId, selfEditScene));
+        }
         return success(samAchievementService.selectSamAchievementByAchievementId(achievementId));
     }
 
@@ -87,17 +94,38 @@ public class SamAchievementController extends BaseController
     /**
      * 修改成果录入
      */
-    @PreAuthorize("@ss.hasPermi('achievement:manage:edit')")
+    @PreAuthorize("@ss.hasPermi('achievement:manage:edit') or @ss.hasRole('student') or @ss.hasRole('teacher')")
     @Log(title = "成果录入", businessType = BusinessType.UPDATE)
     @PutMapping
     public AjaxResult edit(@RequestBody SamAchievement samAchievement)
     {
+        if (!SecurityUtils.hasPermi("achievement:manage:edit"))
+        {
+            requireSelfAccessRole();
+            String selfEditScene = null;
+            if (samAchievement.getParams() != null && samAchievement.getParams().get("selfEditScene") != null)
+            {
+                selfEditScene = String.valueOf(samAchievement.getParams().get("selfEditScene")).trim().toLowerCase();
+            }
+            if (!"responsible".equals(selfEditScene) && !"guided".equals(selfEditScene))
+            {
+                throw new com.ruoyi.common.exception.ServiceException("Self edit scene is required");
+            }
+        }
         return toAjax(samAchievementService.updateSamAchievement(samAchievement));
     }
 
     /**
      * 删除成果录入
      */
+    private void requireSelfAccessRole()
+    {
+        if (!SecurityUtils.hasRole("student") && !SecurityUtils.hasRole("teacher"))
+        {
+            throw new com.ruoyi.common.exception.ServiceException("No permission to access this achievement");
+        }
+    }
+
     @PreAuthorize("@ss.hasPermi('achievement:manage:remove')")
     @Log(title = "成果录入", businessType = BusinessType.DELETE)
 	@DeleteMapping("/{achievementIds}")
@@ -126,6 +154,26 @@ public class SamAchievementController extends BaseController
 
         // 调用你在 Service 层新增的方法 (需同步在 Service/ServiceImpl 中添加)
         List<SamAchievement> list = samAchievementService.selectSamAchievementListByStudentId(samAchievement);
+        return getDataTable(list);
+    }
+    /**
+     * 查询我负责的成果列表（学生负责人）
+     */
+    @PreAuthorize("@ss.hasRole('student')")
+    @GetMapping("/list-responsible")
+    public TableDataInfo listResponsible(SamAchievement samAchievement)
+    {
+        startPage();
+        String studentId = SecurityUtils.getUsername();
+        if (StringUtils.isEmpty(studentId)) {
+            throw new com.ruoyi.common.exception.ServiceException("当前用户学号不能为空");
+        }
+        if (samAchievement.getParams() == null) {
+            samAchievement.setParams(new HashMap<>());
+        }
+        samAchievement.getParams().put("studentId", studentId);
+
+        List<SamAchievement> list = samAchievementService.selectSamAchievementListByResponsibleStudentId(samAchievement);
         return getDataTable(list);
     }
 

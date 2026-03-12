@@ -1,6 +1,5 @@
 import request from '@/utils/request'
 
-// 查询成果录入列表
 export function listManage(query) {
   return request({
     url: '/achievement/manage/list',
@@ -9,15 +8,14 @@ export function listManage(query) {
   })
 }
 
-// 查询成果录入详情
-export function getManage(achievementId) {
+export function getManage(achievementId, params = {}) {
   return request({
     url: '/achievement/manage/' + achievementId,
-    method: 'get'
+    method: 'get',
+    params: params
   })
 }
 
-// 新增成果录入
 export function addManage(data) {
   return request({
     url: '/achievement/manage',
@@ -26,7 +24,6 @@ export function addManage(data) {
   })
 }
 
-// 修改成果录入
 export function updateManage(data) {
   return request({
     url: '/achievement/manage',
@@ -35,7 +32,6 @@ export function updateManage(data) {
   })
 }
 
-// 删除成果录入
 export function delManage(achievementId) {
   return request({
     url: '/achievement/manage/' + achievementId,
@@ -43,7 +39,6 @@ export function delManage(achievementId) {
   })
 }
 
-// 查询我参与的成果
 export function listParticipatedAchievement(query) {
   return request({
     url: '/achievement/manage/list-participated',
@@ -52,7 +47,6 @@ export function listParticipatedAchievement(query) {
   })
 }
 
-// 查询我指导的成果
 export function listGuidedAchievement(query) {
   return request({
     url: '/achievement/manage/list-guided',
@@ -61,7 +55,6 @@ export function listGuidedAchievement(query) {
   })
 }
 
-// 查询我负责的成果（第一指导老师）
 export function listResponsibleAchievement(query) {
   return request({
     url: '/achievement/manage/list-responsible',

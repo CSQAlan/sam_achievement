@@ -56,6 +56,25 @@ public class SamAchievementServiceImpl implements ISamAchievementService
         return samAchievementMapper.selectSamAchievementByAchievementId(achievementId);
     }
 
+    @Override
+    public SamAchievement selectSamAchievementForSelf(String achievementId, String selfEditScene)
+    {
+        SamAchievement existing = samAchievementMapper.selectSamAchievementByAchievementId(achievementId);
+        if (existing == null)
+        {
+            throw new ServiceException("Achievement not found");
+        }
+
+        String normalizedScene = normalizeSelfEditScene(selfEditScene);
+        if (!isSelfEditScene(normalizedScene))
+        {
+            throw new ServiceException("Invalid self edit scene");
+        }
+
+        validateSelfUpdatePermission(existing, normalizedScene);
+        return existing;
+    }
+
     /**
      * 查询成果录入列表
      * 
@@ -86,6 +105,14 @@ public class SamAchievementServiceImpl implements ISamAchievementService
             throw new ServiceException("教师ID不能为空");
         }
         return samAchievementMapper.selectSamAchievementListByTeacherId(samAchievement);
+    }
+    @Override
+    public List<SamAchievement> selectSamAchievementListByResponsibleStudentId(SamAchievement samAchievement)
+    {
+        if (samAchievement.getParams() == null || StringUtils.isEmpty((String) samAchievement.getParams().get("studentId"))) {
+            throw new ServiceException("学生ID不能为空");
+        }
+        return samAchievementMapper.selectSamAchievementListByResponsibleStudentId(samAchievement);
     }
 
     /**
@@ -149,10 +176,13 @@ public class SamAchievementServiceImpl implements ISamAchievementService
         // 2. 验证PDF文件上传
         validatePDFAttachments(samAchievement);
 
-        if (SecurityUtils.hasRole("student"))
+        String selfEditScene = resolveSelfEditScene(samAchievement);
+
+        if (isSelfEditScene(selfEditScene))
         {
-            validateStudentUpdatePermission(existing);
-            resetReviewStateForStudentUpdate(samAchievement);
+            validateSelfUpdatePermission(existing, selfEditScene);
+            validateSelfUpdateStatus(existing);
+            resetReviewStateForSelfUpdate(samAchievement);
         }
 
         samAchievement.setUpdateTime(DateUtils.getNowDate());
@@ -172,23 +202,73 @@ public class SamAchievementServiceImpl implements ISamAchievementService
         return samAchievementMapper.updateSamAchievement(samAchievement);
     }
 
-    private void validateStudentUpdatePermission(SamAchievement existing)
+    private String resolveSelfEditScene(SamAchievement samAchievement)
     {
-        String studentNo = SecurityUtils.getUsername();
-        if (StringUtils.isEmpty(studentNo))
-        {
-            throw new ServiceException("当前学生账号无效");
+        if (samAchievement.getParams() == null) {
+            return null;
         }
-        if (!isResponsibleStudent(existing, studentNo))
+        Object value = samAchievement.getParams().get("selfEditScene");
+        return normalizeSelfEditScene(value == null ? null : String.valueOf(value));
+    }
+
+    private String normalizeSelfEditScene(String scene)
+    {
+        if (scene == null) {
+            return null;
+        }
+        String normalized = scene.trim().toLowerCase();
+        return StringUtils.isEmpty(normalized) ? null : normalized;
+    }
+
+    private boolean isSelfEditScene(String scene)
+    {
+        return "responsible".equals(scene) || "guided".equals(scene);
+    }
+
+    private void validateSelfUpdatePermission(SamAchievement existing, String selfEditScene)
+    {
+        String loginName = SecurityUtils.getUsername();
+        if (StringUtils.isEmpty(loginName))
         {
-            throw new ServiceException("仅成果负责人可修改该成果");
+            throw new ServiceException("当前登录账号无效");
         }
 
-        boolean collegeRejected = Objects.equals(existing.getReviewResult(), 1L);
-        boolean schoolRejected = Objects.equals(existing.getSchooiReviewResult(), 0L);
-        if (!collegeRejected && !schoolRejected)
+        if ("responsible".equals(selfEditScene))
         {
-            throw new ServiceException("仅院级或校级驳回后的成果允许学生修改");
+            if (!isResponsibleStudent(existing, loginName))
+            {
+                throw new ServiceException("只有成果负责人才能修改自己的成果");
+            }
+            return;
+        }
+
+        if ("guided".equals(selfEditScene))
+        {
+            if (!isGuidingTeacher(existing, loginName))
+            {
+                throw new ServiceException("只有指导教师才能修改自己指导的成果");
+            }
+            return;
+        }
+
+        throw new ServiceException("不支持的自助修改场景");
+    }
+
+    private void validateSelfUpdateStatus(SamAchievement existing)
+    {
+        Long college = existing.getReviewResult() == null ? 0L : existing.getReviewResult();
+        Long school = existing.getSchooiReviewResult();
+
+        boolean canEditCollegePending = Objects.equals(college, 0L);
+        boolean canEditCollegeRejected = Objects.equals(college, 1L);
+        boolean canEditSchoolPending = Objects.equals(college, 2L)
+                && (school == null || Objects.equals(school, 2L));
+        boolean canEditSchoolRejected = Objects.equals(college, 2L)
+                && Objects.equals(school, 0L);
+
+        if (!(canEditCollegePending || canEditCollegeRejected || canEditSchoolPending || canEditSchoolRejected))
+        {
+            throw new ServiceException("只有待院级审核、院级驳回、待校级审核、校级驳回的成果允许本人修改");
         }
     }
 
@@ -202,9 +282,13 @@ public class SamAchievementServiceImpl implements ISamAchievementService
 
         for (SamAchievementParticipant participant : participants)
         {
-            String currentStudentNo = StringUtils.isNotEmpty(participant.getStudentNo()) ? participant.getStudentNo() : participant.getStudentId();
-            boolean isCurrentStudent = StringUtils.isNotEmpty(currentStudentNo) && studentNo.equals(currentStudentNo);
-            boolean isManager = "1".equals(String.valueOf(participant.getManager())) || Objects.equals(participant.getOrderNo(), 1L);
+            String currentStudentNo = StringUtils.isNotEmpty(participant.getStudentNo())
+                    ? participant.getStudentNo()
+                    : participant.getStudentId();
+            boolean isCurrentStudent = StringUtils.isNotEmpty(currentStudentNo)
+                    && studentNo.equals(currentStudentNo);
+            boolean isManager = "1".equals(String.valueOf(participant.getManager()))
+                    || Objects.equals(participant.getOrderNo(), 1L);
             if (isCurrentStudent && isManager)
             {
                 return true;
@@ -213,16 +297,51 @@ public class SamAchievementServiceImpl implements ISamAchievementService
         return false;
     }
 
-    private void resetReviewStateForStudentUpdate(SamAchievement samAchievement)
+    private boolean isGuidingTeacher(SamAchievement existing, String teacherNo)
+    {
+        List<SamAchievementAdvisor> advisors = existing.getSamAchievementAdvisorList();
+        if (advisors == null || advisors.isEmpty())
+        {
+            return false;
+        }
+
+        for (SamAchievementAdvisor advisor : advisors)
+        {
+            String currentTeacherNo = StringUtils.isNotEmpty(advisor.getTeacherNo())
+                    ? advisor.getTeacherNo()
+                    : advisor.getTeacherId();
+            if (StringUtils.isNotEmpty(currentTeacherNo) && teacherNo.equals(currentTeacherNo))
+            {
+                return true;
+            }
+        }
+        return false;
+    }
+
+    private void resetReviewStateForSelfUpdate(SamAchievement samAchievement)
     {
         samAchievement.setReviewResult(0L);
         samAchievement.setReviewedAt(null);
         samAchievement.setReviewReason(null);
         samAchievement.setAuditBy(null);
+
         samAchievement.setSchooiReviewResult(null);
         samAchievement.setSchoolReviewedAt(null);
         samAchievement.setSchoolReviewReason(null);
         samAchievement.setSchoolAuditBy(null);
+    }
+
+    private void preserveReviewState(SamAchievement existing, SamAchievement samAchievement)
+    {
+        samAchievement.setReviewResult(existing.getReviewResult());
+        samAchievement.setReviewedAt(existing.getReviewedAt());
+        samAchievement.setReviewReason(existing.getReviewReason());
+        samAchievement.setAuditBy(existing.getAuditBy());
+
+        samAchievement.setSchooiReviewResult(existing.getSchooiReviewResult());
+        samAchievement.setSchoolReviewedAt(existing.getSchoolReviewedAt());
+        samAchievement.setSchoolReviewReason(existing.getSchoolReviewReason());
+        samAchievement.setSchoolAuditBy(existing.getSchoolAuditBy());
     }
 
     /**
