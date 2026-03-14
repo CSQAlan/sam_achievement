@@ -3,6 +3,7 @@ package com.ruoyi.competitionapply.mapper;
 import java.util.List;
 import com.ruoyi.competitionapply.domain.CompetitionApply;
 import com.ruoyi.competitionapply.domain.CompetitionApplyAttachment;
+import org.apache.ibatis.annotations.Mapper;
 
 /**
  * 赛事申请Mapper接口
@@ -10,6 +11,7 @@ import com.ruoyi.competitionapply.domain.CompetitionApplyAttachment;
  * @author ruoyi
  * @date 2026-02-01
  */
+@Mapper
 public interface CompetitionApplyMapper
 {
     /**
