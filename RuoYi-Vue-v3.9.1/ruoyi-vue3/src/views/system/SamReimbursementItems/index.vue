@@ -9,19 +9,18 @@
             @keyup.enter="handleQuery"
         />
       </el-form-item>
-      <el-form-item label="报销时间" prop="reimbursementTime">
-        <el-date-picker
-            v-model="reimbursementTimeRange"
-            type="daterange"
-            range-separator="-"
-            start-placeholder="开始日期"
-            end-placeholder="结束日期"
-            value-format="yyyy-MM-dd"
-            clearable
-            @change="handleReimbursementTimeChange">
-        </el-date-picker>
-      </el-form-item>
-      <el-form-item label="归属学院" prop="ownerDepId">
+      <!-- Element UI 日期选择器 -->
+<el-form-item label="报销时间" prop="reimbursementTime">
+  <el-date-picker
+    v-model="queryParams.reimbursementTime"  
+    type="date"
+    placeholder="选择日期"
+    format="yyyy-MM-dd"
+    value-format="yyyy-MM-dd"  
+    :clearable="false">
+  </el-date-picker>
+</el-form-item>
+      <el-form-item label="归属学院" prop="ownerDepId" style="width: 570px;" >
         <treeselect
             v-model="queryParams.ownerDepId"
             :options="deptOptions"
@@ -112,7 +111,11 @@
         </template>
       </el-table-column>
       <el-table-column label="报销项目数量" align="center" prop="amount" />
-      <el-table-column label="归属学院" align="center" prop="ownerDepId" />
+      <el-table-column label="归属学院" align="center" prop="ownerDepId">
+        <template #default="scope">
+          <span>{{ getDeptName(scope.row.ownerDepId) }}</span>
+        </template>
+        </el-table-column>
       <el-table-column label="状态" align="center" prop="status">
         <template #default="scope">
           <dict-tag :options="reimbursementStatusOptions" :value="scope.row.status"/>
@@ -121,6 +124,14 @@
       <el-table-column label="备注" align="center" prop="remark" :show-overflow-tooltip="true" />
       <el-table-column label="操作" align="center" class-name="small-padding fixed-width" width="200">
         <template #default="scope">
+          <!-- 新增的关联成果按钮 -->
+          <el-button
+             size="mini"
+             type="primary"
+             :icon="Document"
+             @click="viewAchievements(scope.row)"
+             v-hasPermi="['system:SamReimbursementItems:view']"
+          >关联成果</el-button>
           <el-button
               size="mini"
               type="text"
@@ -142,6 +153,7 @@
               @click="handleExportPdf(scope.row)"
               v-hasPermi="['system:SamReimbursementItems:export']"
           >导出PDF</el-button>
+
         </template>
       </el-table-column>
     </el-table>
@@ -161,13 +173,15 @@
           <el-input v-model="form.name" placeholder="请输入报销项目名称" />
         </el-form-item>
         <el-form-item label="报销时间" prop="reimbursementTime">
-          <el-date-picker clearable
-                          v-model="form.reimbursementTime"
-                          type="date"
-                          value-format="yyyy-MM-dd"
-                          placeholder="请选择报销时间">
-          </el-date-picker>
-        </el-form-item>
+  <el-date-picker
+    v-model="form.reimbursementTime"
+    type="date"
+    placeholder="请选择报销时间"
+    format="yyyy-MM-dd"
+    value-format="yyyy-MM-dd"
+    :clearable="false">
+  </el-date-picker>
+</el-form-item>
         <el-form-item label="总金额" prop="totalFee">
           <el-input-number v-model="form.totalFee" :precision="2" :min="0" :max="9999999" placeholder="请输入总金额"  />
         </el-form-item>
@@ -211,6 +225,7 @@
 
 <script setup>
 import { ref, reactive, onMounted } from 'vue'
+import { useRouter } from 'vue-router'
 import { ElMessage, ElMessageBox } from 'element-plus'
 import { Search, Refresh, Plus, Edit, Delete, Download, Document } from '@element-plus/icons-vue'
 import {
@@ -225,6 +240,8 @@ import "vue3-treeselect/dist/vue3-treeselect.css"
 import { listDept } from "@/api/system/dept"
 import useUserStore from '@/store/modules/user'
 
+
+
 // 定义响应式数据
 const loading = ref(false)
 const ids = ref([])
@@ -235,12 +252,27 @@ const total = ref(0)
 const SamReimbursementItemsList = ref([])
 const title = ref('')
 const open = ref(false)
+const router = useRouter()  // 需要创建实例
 
 // 字典选项
 const reimbursementStatusOptions = ref([])
 
 // 日期范围处理
 const reimbursementTimeRange = ref([])
+
+// 查看关联成果
+const viewAchievements = (row) => {
+ 
+
+  // 使用完整的路径跳转
+  router.push({
+    path: '/reimbursement/achievement',
+    query: { 
+      reimbursementId: row.id,
+      reimbursementName: row.name 
+    }
+  })
+}
 
 // 查询参数
 const queryParams = reactive({
@@ -315,20 +347,44 @@ const getList = async () => {
 const getDeptTree = async () => {
   try {
     const response = await listDept()
-    deptOptions.value = handleTree(response.data, "deptId")
+    console.log('部门树原始数据:', response)
+    
+    // 处理可能的数据结构
+    let deptData = []
+    if (response.data) {
+      deptData = response.data
+    } else if (response.rows) {
+      deptData = response.rows
+    } else if (Array.isArray(response)) {
+      deptData = response
+    }
+    
+    console.log('处理前的部门数据:', deptData)
+    
+    // ✅ 关键修复：使用 handleTree 处理数据
+    deptOptions.value = handleTree(deptData, "deptId")
+    console.log('处理后的deptOptions:', deptOptions.value)
+    
   } catch (error) {
     console.error('获取部门树失败:', error)
+    ElMessage.error('获取部门列表失败')
+    deptOptions.value = []
   }
 }
 
 /** 转换部门数据结构 */
 const normalizer = (node) => {
+  console.log('normalizer处理节点:', node)
+  
+  // 如果节点没有children或children为空，删除children属性
   if (node.children && !node.children.length) {
     delete node.children
   }
+  
+  // 返回treeselect需要的格式
   return {
-    id: node.deptId,
-    label: node.deptName,
+    id: node.deptId || node.id,
+    label: node.deptName || node.label || '未知',
     children: node.children
   }
 }
@@ -337,6 +393,39 @@ const normalizer = (node) => {
 const formatMoney = (money) => {
   if (money == null) return '¥0.00'
   return '¥' + parseFloat(money).toFixed(2).replace(/\d{1,3}(?=(\d{3})+(\.\d*)?$)/g, '$&,')
+}
+
+/** 根据部门ID获取部门名称 */
+const getDeptName = (deptId) => {
+  console.log('正在查找部门ID:', deptId);
+  console.log('当前deptOptions:', deptOptions.value);
+  
+  if (!deptId || !deptOptions.value) {
+    console.log('deptOptions为空或deptId为空');
+    return deptId;
+  }
+  
+  console.log('deptOptions长度:', deptOptions.value.length);
+  
+  // 递归查找部门名称
+  const findDeptName = (nodes, id) => {
+    for (const node of nodes) {
+      console.log('检查节点:', node);
+      if (node.id === id) {
+        console.log('找到匹配:', node.label);
+        return node.label;
+      }
+      if (node.children && node.children.length > 0) {
+        const found = findDeptName(node.children, id);
+        if (found) return found;
+      }
+    }
+    return null;
+  }
+  
+  const deptName = findDeptName(deptOptions.value, deptId);
+  console.log('最终结果:', deptName || deptId);
+  return deptName || deptId;
 }
 
 /** 处理报销时间范围变化 */
@@ -387,7 +476,8 @@ const handleQuery = () => {
 
 /** 重置按钮操作 */
 const resetQuery = () => {
-  reimbursementTimeRange.value = []
+  // reimbursementTimeRange.value = []  // 注释掉这行，或者删除
+  queryParams.reimbursementTime = null  // 添加这行
   queryParams.beginReimbursementTime = null
   queryParams.endReimbursementTime = null
 
@@ -431,6 +521,32 @@ const submitForm = async () => {
 
   try {
     await formRef.value.validate()
+    
+    // 添加日期格式验证和处理
+    if (form.reimbursementTime) {
+      // 确保日期格式为 yyyy-MM-dd
+      if (typeof form.reimbursementTime === 'string') {
+        // 检查是否是 yyyy-03-Mo 这种格式
+        if (/[A-Za-z]/.test(form.reimbursementTime)) {
+          // 如果是特殊格式，转换为有效日期
+          const match = form.reimbursementTime.match(/(\d{4})-(\d{2})-/);
+          if (match) {
+            const year = match[1];
+            const month = match[2];
+            // 默认为当月第一天
+            form.reimbursementTime = `${year}-${month}-01`;
+          } else {
+            // 如果解析失败，使用当前日期
+            const today = new Date();
+            const year = today.getFullYear();
+            const month = String(today.getMonth() + 1).padStart(2, '0');
+            const day = String(today.getDate()).padStart(2, '0');
+            form.reimbursementTime = `${year}-${month}-${day}`;
+          }
+        }
+      }
+    }
+    
     if (form.id) {
       await updateSamReimbursementItems(form)
       ElMessage.success("修改成功")
@@ -531,10 +647,9 @@ const getDictData = async () => {
     console.error('获取字典失败:', error)
     // 临时默认数据
     reimbursementStatusOptions.value = [
-      { value: '0', label: '草稿' },
-      { value: '1', label: '待审核' },
-      { value: '2', label: '已通过' },
-      { value: '3', label: '已拒绝' }
+      { value: '0', label: '已报销' },
+      { value: '1', label: '未报销' }
+     
     ]
   }
 }
@@ -546,10 +661,19 @@ onMounted(() => {
   getDictData()
 })
 
-// 注意：handleTree 函数需要从 '@utils/ruoyi' 导入
-// 如果不存在，需要添加或实现
+/** 处理树形结构数据 */
 const handleTree = (data, id) => {
-  // 简单的树形数据处理
-  return data || []
+  if (!data) return []
+  
+  // 将数据转换为 treeselect 需要的格式
+  const convertToTreeSelect = (nodes) => {
+    return nodes.map(node => ({
+      id: node.deptId,      // 使用 deptId 作为 id
+      label: node.deptName,  // 使用 deptName 作为 label
+      children: node.children ? convertToTreeSelect(node.children) : undefined
+    }))
+  }
+  
+  return convertToTreeSelect(data)
 }
 </script>

@@ -2,8 +2,10 @@ package com.ruoyi.system.domain;
 
 import org.apache.commons.lang3.builder.ToStringBuilder;
 import org.apache.commons.lang3.builder.ToStringStyle;
+
 import com.ruoyi.common.annotation.Excel;
 import com.ruoyi.common.core.domain.BaseEntity;
+
 
 /**
  * 报销比例对象 sam_reimbursement_ratio
@@ -22,9 +24,9 @@ public class SamReimbursementRatio extends BaseEntity
     @Excel(name = "获奖等级", readConverterExp = "一=等奖、二等奖、三等奖")
     private String grade;
 
-    /** 类别（政府类、学会类） */
-    @Excel(name = "类别", readConverterExp = "政=府类、学会类")
-    private String category;
+    /** 报销类别（存储字典值：0=学会类、1=政府类） */
+    @Excel(dictType = "achievement_category") // 对应SQL里的dict_type
+    private String category; // 或private Integer category;（如果存数字）
 
     /** 报销百分比 */
     @Excel(name = "报销百分比")
