@@ -1,0 +1,234 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper
+        PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.ruoyi.competition.mapper.CompetitionMapper">
+
+    <!-- 映射赛事主表原始字段 + 新增deptNames映射（仅新增这一行） -->
+    <resultMap type="Competition" id="CompetitionResult">
+        <result property="id"         column="id"          />
+        <result property="name"       column="name"        />
+        <result property="category"   column="category"    /> <!-- 主表原始值 -->
+        <result property="organizations" column="organizations"/>
+        <result property="level"      column="level"       /> <!-- 主表原始值 -->
+        <result property="tags"       column="tags"        /> <!-- 主表原始值 -->
+        <result property="scopeType"  column="scope_type"  />
+        <result property="status"     column="status"      />
+        <result property="memo"       column="memo"        />
+        <result property="createBy"   column="create_by"   />
+        <result property="createTime" column="create_time" />
+        <result property="updateBy"   column="update_by"   />
+        <result property="updateTime" column="update_time" />
+        <result property="delFlag"    column="del_flag"    />
+        <!-- 新增：映射学院名称字段 -->
+        <result property="deptNames"  column="deptNames"   />
+    </resultMap>
+
+    <resultMap id="CompetitionCompetitionDeptRelResult" type="Competition" extends="CompetitionResult">
+        <collection property="competitionDeptRelList" ofType="CompetitionDeptRel" column="id" select="selectCompetitionDeptRelList" />
+    </resultMap>
+
+    <resultMap type="CompetitionDeptRel" id="CompetitionDeptRelResult">
+        <result property="id"         column="id"          />
+        <result property="sessionId"  column="session_id"  />
+        <result property="deptId"     column="dept_id"     />
+        <result property="sort"       column="sort"        />
+        <result property="createBy"   column="create_by"   />
+        <result property="createTime" column="create_time" />
+        <result property="updateBy"   column="update_by"   />
+        <result property="updateTime" column="update_time" />
+        <result property="remark"     column="remark"      />
+        <result property="delFlag"    column="del_flag"    />
+    </resultMap>
+
+    <!-- 仅新增学院关联和名称拼接，原有主表查询逻辑完全保留 -->
+    <sql id="selectCompetitionVo">
+        select
+        c.id,
+        c.name,
+        c.category,
+        c.organizations,
+        c.level,
+        c.tags,
+        c.scope_type,
+        c.status,
+        c.memo,
+        c.create_by,
+        c.create_time,
+        c.update_by,
+        c.update_time,
+        c.del_flag,
+        -- 新增：拼接所属学院名称（中文顿号分隔，去重）
+        (SELECT GROUP_CONCAT(DISTINCT d.dept_name SEPARATOR '、')
+        FROM sam_competition_dept_rel rel
+        LEFT JOIN sys_dept d ON rel.dept_id = d.dept_id
+        WHERE rel.session_id = c.id) AS deptNames
+        from sam_competition c
+    </sql>
+
+    <!-- 核心：多选精确匹配主表字段（不多不少）→ 完全保留你原始逻辑，一行未改 -->
+    <select id="selectCompetitionList" parameterType="Competition" resultMap="CompetitionResult">
+        <include refid="selectCompetitionVo"/>
+        <trim prefix="WHERE" prefixOverrides="AND |OR ">
+            AND c.del_flag = '0'
+            <if test="name != null  and name != ''"> and c.name like concat('%', #{name}, '%')</if>
+            <if test="organizations != null  and organizations != ''"> and c.organizations like concat('%', #{organizations}, '%')</if>
+            <if test="scopeType != null  and scopeType != ''"> and c.scope_type = #{scopeType}</if>
+            <if test="status != null  and status != ''"> and c.status = #{status}</if>
+
+            <!-- 赛事类别：精确匹配选中的多个值（字段值 = 选中值拼接） -->
+            <!-- 赛事类别：先把数据库字段按升序重排，再和选中值拼接后的字符串比较 -->
+            <if test="categoryList != null and categoryList.size() > 0">
+                AND (
+                SELECT GROUP_CONCAT(cat ORDER BY cat SEPARATOR ',')
+                FROM (
+                SELECT SUBSTRING_INDEX(SUBSTRING_INDEX(c.category, ',', n), ',', -1) AS cat
+                FROM (SELECT 1 n UNION ALL SELECT 2 UNION ALL SELECT 3 UNION ALL SELECT 4) numbers
+                WHERE n &lt;=  LENGTH(c.category) - LENGTH(REPLACE(c.category, ',', '')) + 1
+                ) AS split_category
+                ) = (
+                SELECT GROUP_CONCAT(cat ORDER BY cat SEPARATOR ',')
+                FROM (
+                <foreach collection="categoryList" item="cat" separator=" UNION ALL ">
+                    SELECT #{cat} AS cat
+                </foreach>
+                ) AS temp
+                )
+            </if>
+
+            <!-- 赛事级别同理 -->
+            <if test="levelList != null and levelList.size() > 0">
+                AND (
+                SELECT GROUP_CONCAT(lev ORDER BY lev SEPARATOR ',')
+                FROM (
+                SELECT SUBSTRING_INDEX(SUBSTRING_INDEX(c.level, ',', n), ',', -1) AS lev
+                FROM (SELECT 1 n UNION ALL SELECT 2 UNION ALL SELECT 3 UNION ALL SELECT 4) numbers
+                WHERE n &lt;=  LENGTH(c.level) - LENGTH(REPLACE(c.level, ',', '')) + 1
+                ) AS split_level
+                ) = (
+                SELECT GROUP_CONCAT(lev ORDER BY lev SEPARATOR ',')
+                FROM (
+                <foreach collection="levelList" item="lev" separator=" UNION ALL ">
+                    SELECT #{lev} AS lev
+                </foreach>
+                ) AS temp
+                )
+            </if>
+
+            <!-- 赛事标签同理 -->
+            <if test="tagsList != null and tagsList.size() > 0">
+                AND (
+                SELECT GROUP_CONCAT(tag ORDER BY tag SEPARATOR ',')
+                FROM (
+                SELECT SUBSTRING_INDEX(SUBSTRING_INDEX(c.tags, ',', n), ',', -1) AS tag
+                FROM (SELECT 1 n UNION ALL SELECT 2 UNION ALL SELECT 3 UNION ALL SELECT 4) numbers
+                WHERE n &lt;=  LENGTH(c.tags) - LENGTH(REPLACE(c.tags, ',', '')) + 1
+                ) AS split_tags
+                ) = (
+                SELECT GROUP_CONCAT(tag ORDER BY tag SEPARATOR ',')
+                FROM (
+                <foreach collection="tagsList" item="tag" separator=" UNION ALL ">
+                    SELECT #{tag} AS tag
+                </foreach>
+                ) AS temp
+                )
+            </if>
+        </trim>
+    </select>
+
+    <!-- 以下部分完全保留你原始代码，无任何修改 -->
+    <select id="selectCompetitionById" parameterType="Long" resultMap="CompetitionCompetitionDeptRelResult">
+        select id, name, category, organizations,level, tags, scope_type, status, memo, create_by, create_time, update_by, update_time, del_flag
+        from sam_competition
+        where id = #{id}
+    </select>
+
+    <select id="selectCompetitionDeptRelList" resultMap="CompetitionDeptRelResult">
+        select id, session_id, dept_id, sort, create_by, create_time, update_by, update_time, remark, del_flag
+        from sam_competition_dept_rel
+        where session_id = #{session_id}
+    </select>
+
+    <insert id="insertCompetition" parameterType="Competition" useGeneratedKeys="true" keyProperty="id">
+        insert into sam_competition
+        <trim prefix="(" suffix=")" suffixOverrides=",">
+            <if test="name != null and name != ''">name,</if>
+            <if test="category != null and category != ''">category,</if>
+            <if test="organizations != null and organizations != ''">organizations,</if>
+            <if test="level != null">level,</if>
+            <if test="tags != null">tags,</if>
+            <if test="scopeType != null">scope_type,</if>
+            <if test="status != null">status,</if>
+            <if test="memo != null">memo,</if>
+            <if test="createBy != null">create_by,</if>
+            <if test="createTime != null">create_time,</if>
+            <if test="updateBy != null">update_by,</if>
+            <if test="updateTime != null">update_time,</if>
+            <if test="delFlag != null">del_flag,</if>
+        </trim>
+        <trim prefix="values (" suffix=")" suffixOverrides=",">
+            <if test="name != null and name != ''">#{name},</if>
+            <if test="category != null and category != ''">#{category},</if>
+            <if test="organizations != null and organizations != ''">#{organizations},</if>
+            <if test="level != null">#{level},</if>
+            <if test="tags != null">#{tags},</if>
+            <if test="scopeType != null">#{scopeType},</if>
+            <if test="status != null">#{status},</if>
+            <if test="memo != null">#{memo},</if>
+            <if test="createBy != null">#{createBy},</if>
+            <if test="createTime != null">#{createTime},</if>
+            <if test="updateBy != null">#{updateBy},</if>
+            <if test="updateTime != null">#{updateTime},</if>
+            <if test="delFlag != null">#{delFlag},</if>
+        </trim>
+    </insert>
+
+    <update id="updateCompetition" parameterType="Competition">
+        update sam_competition
+        <trim prefix="SET" suffixOverrides=",">
+            <if test="name != null and name != ''">name = #{name},</if>
+            <if test="category != null and category != ''">category = #{category},</if>
+            <if test="organizations != null and organizations != ''">organizations = #{organizations},</if>
+            <if test="level != null">level = #{level},</if>
+            <if test="tags != null">tags = #{tags},</if>
+            <if test="scopeType != null">scope_type = #{scopeType},</if>
+            <if test="status != null">status = #{status},</if>
+            <if test="memo != null">memo = #{memo},</if>
+            <if test="createBy != null">create_by = #{createBy},</if>
+            <if test="createTime != null">create_time = #{createTime},</if>
+            <if test="updateBy != null">update_by = #{updateBy},</if>
+            <if test="updateTime != null">update_time = #{updateTime},</if>
+            <if test="delFlag != null">del_flag = #{delFlag},</if>
+        </trim>
+        where id = #{id}
+    </update>
+
+    <delete id="deleteCompetitionById" parameterType="Long">
+        delete from sam_competition where id = #{id}
+    </delete>
+
+    <delete id="deleteCompetitionByIds" parameterType="String">
+        delete from sam_competition where id in
+        <foreach item="id" collection="array" open="(" separator="," close=")">
+            #{id}
+        </foreach>
+    </delete>
+
+    <delete id="deleteCompetitionDeptRelBySessionIds" parameterType="String">
+        delete from sam_competition_dept_rel where session_id in
+        <foreach item="sessionId" collection="array" open="(" separator="," close=")">
+            #{sessionId}
+        </foreach>
+    </delete>
+
+    <delete id="deleteCompetitionDeptRelBySessionId" parameterType="Long">
+        delete from sam_competition_dept_rel where session_id = #{sessionId}
+    </delete>
+
+    <insert id="batchCompetitionDeptRel">
+        insert into sam_competition_dept_rel( id, session_id, dept_id, sort, create_by, create_time, update_by, update_time, remark, del_flag) values
+        <foreach item="item" index="index" collection="list" separator=",">
+            ( #{item.id}, #{item.sessionId}, #{item.deptId}, #{item.sort}, #{item.createBy}, #{item.createTime}, #{item.updateBy}, #{item.updateTime}, #{item.remark}, #{item.delFlag})
+        </foreach>
+    </insert>
+</mapper>
