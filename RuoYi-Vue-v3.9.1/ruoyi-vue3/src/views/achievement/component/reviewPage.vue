@@ -262,8 +262,8 @@ async function submitAudit() {
     }
 
     // ===== 校级审核 =====
-    if (source.value === "school_level_unreviewed" || source.value === "school_level_reviewed") {
-      // 1) 更新校级审核状态（2 -> 0/1）
+    if (source.value === "school_level_unreviewed") {
+      // 1) 更新校级未审核状态（2 -> 0/1）
       await updateSchool_level_unreviewed({
         ...baseForm,
         achievementId: id,
@@ -275,6 +275,27 @@ async function submitAudit() {
 
       proxy.$modal?.msgSuccess?.("校级审核成功");
       handleBack();
+      return;
+    }
+
+    if (source.value === "school_level_reviewed") {
+      // 2) 重新审核已审核记录
+      await updateSchool_level_reviewed({
+        ...baseForm,
+        achievementId: id,
+        schooiReviewResult: next,
+        schoolReviewReason: schoolAuditReason,
+        schoolReviewedAt: now,
+        schoolAuditBy: auditUser
+      });
+
+      if (source.value.endsWith("unreviewed")) {
+        pageIdsRef.value = pageIdsRef.value.filter((pid) => String(pid) !== String(id));
+        persistPageIds();
+      }
+
+      proxy.$modal?.msgSuccess?.("校级审核成功");
+      jumpToNextAfterAudit(id);
       return;
     }
 
