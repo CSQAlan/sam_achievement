@@ -1,0 +1,119 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper
+PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+"http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.ruoyi.reimbursement.mapper.SamReimbursementAchievementViewMapper">
+
+    <resultMap type="SamReimbursementAchievementView" id="SamReimbursementAchievementViewResult">
+        <result property="id" column="id"/>
+        <result property="reimbursementId" column="reimbursement_id"/>
+        <result property="reimbursementName" column="reimbursement_name"/>
+        <result property="reimbursementTime" column="reimbursement_time"/>
+        <result property="totalFee" column="total_fee"/>
+        <result property="paidFee" column="paid_fee"/>
+        <result property="reimbursementStatus" column="reimbursement_status"/>
+        <result property="achievementId" column="achievement_id"/>
+        <result property="achievementName" column="achievement_name"/>
+        <result property="teamName" column="team_name"/>
+        <result property="level" column="level"/>
+        <result property="grade" column="grade"/>
+        <result property="certificateNo" column="certificate_no"/>
+        <result property="fee" column="fee"/>
+        <result property="reimbursementFee" column="reimbursement_fee"/>
+        <result property="awardTime" column="award_time"/>
+        <result property="reviewResult" column="review_result"/>
+        <!-- 如果不需要schoolReviewResult，可以删除这一行 -->
+        <!-- <result property="schoolReviewResult" column="school_review_result"/> -->
+    </resultMap>
+
+    <!-- 查询所有 -->
+    <select id="selectSamReimbursementAchievementViewList" 
+            parameterType="SamReimbursementAchievementView" 
+            resultMap="SamReimbursementAchievementViewResult">
+        select 
+            ri.id as reimbursement_id,
+            ri.name as reimbursement_name,
+            ri.reimbursement_time,
+            ri.total_fee,
+            ri.paid_fee,
+            ri.status as reimbursement_status,
+            sa.achievement_id,
+            sa.name as achievement_name,
+            sa.team_name,
+            sa.level,
+            sa.grade,
+            sa.certificate_no,
+            sa.fee,
+            sa.reimbursement_fee,
+            sa.award_time,
+            sa.review_result
+            <!-- 如果不需要school_review_result，就不查这个字段 -->
+            <!-- , sa.school_review_result as school_review_result -->
+        from sam_reimbursement_items ri
+        inner join sam_achievement sa on ri.id = sa.reimbursement_item_id
+        <where>
+            ri.del_flag = '0' 
+            and sa.del_flag = 0
+            <if test="reimbursementId != null">
+                and ri.id = #{reimbursementId}
+            </if>
+            <if test="reimbursementName != null and reimbursementName != ''">
+                and ri.name like concat('%', #{reimbursementName}, '%')
+            </if>
+            <if test="reimbursementStatus != null and reimbursementStatus != ''">
+                and ri.status = #{reimbursementStatus}
+            </if>
+            <if test="achievementName != null and achievementName != ''">
+                and sa.name like concat('%', #{achievementName}, '%')
+            </if>
+            <if test="teamName != null and teamName != ''">
+                and sa.team_name like concat('%', #{teamName}, '%')
+            </if>
+            <if test="level != null and level != ''">
+                and sa.level = #{level}
+            </if>
+            <if test="grade != null">
+                and sa.grade = #{grade}
+            </if>
+            <if test="reviewResult != null">
+                and sa.review_result = #{reviewResult}
+            </if>
+            <!-- 删除这个条件，因为前端没有传schoolReviewResult -->
+            <!-- <if test="schoolReviewResult != null">
+                and sa.school_review_result = #{schoolReviewResult}
+            </if> -->
+            <if test="awardTime != null and awardTime != ''">
+                and sa.award_time = #{awardTime}
+            </if>
+        </where>
+        order by ri.id desc, sa.award_time desc
+    </select>
+    
+    <!-- 根据ID查询详情 -->
+    <select id="selectSamReimbursementAchievementViewById" 
+            parameterType="Long" 
+            resultMap="SamReimbursementAchievementViewResult">
+        select 
+            ri.id as reimbursement_id,
+            ri.name as reimbursement_name,
+            ri.reimbursement_time,
+            ri.total_fee,
+            ri.paid_fee,
+            ri.status as reimbursement_status,
+            sa.achievement_id,
+            sa.name as achievement_name,
+            sa.team_name,
+            sa.level,
+            sa.grade,
+            sa.certificate_no,
+            sa.fee,
+            sa.reimbursement_fee,
+            sa.award_time,
+            sa.review_result
+            <!-- , sa.school_review_result as school_review_result -->
+        from sam_reimbursement_items ri
+        inner join sam_achievement sa on ri.id = sa.reimbursement_item_id
+        where sa.achievement_id = #{achievementId}
+    </select>
+
+</mapper>

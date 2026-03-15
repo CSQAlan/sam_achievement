@@ -110,7 +110,11 @@
           <span>{{ scope.row.ratio }}%</span>
         </template>
       </el-table-column>
-      <el-table-column label="归属学院" align="center" prop="ownerDepId" />
+      <el-table-column label="归属学院" align="center" prop="ownerDepId">
+        <template #default="scope">
+          <span>{{ getDeptName(scope.row.ownerDepId) }}</span>
+        </template>
+      </el-table-column>
       <el-table-column label="状态" align="center" prop="status">
         <template #default="scope">
           <dict-tag :options="ratioStatusOptions" :value="scope.row.status"/>
@@ -218,6 +222,8 @@ import {
 import Treeselect from "vue3-treeselect"
 import "vue3-treeselect/dist/vue3-treeselect.css"
 import { listDept } from "@/api/system/dept"
+import { useDict } from '@/utils/dict'  // 根据实际路径调整
+import { getDicts } from "@/api/system/dict/data"
 
 // 定义响应式数据
 const loading = ref(false)
@@ -293,23 +299,26 @@ const getList = async () => {
 const getDeptTree = async () => {
   try {
     const response = await listDept()
+    console.log('原始部门数据:', response.data)
+    
+    // 直接格式化
     deptOptions.value = handleTree(response.data, "deptId")
+    console.log('最终deptOptions:', deptOptions.value)
+    
   } catch (error) {
     console.error('获取部门树失败:', error)
   }
 }
 
-/** 转换部门数据结构 */
+/** 转换部门数据结构 - 用于 treeselect */
 const normalizer = (node) => {
-  if (node.children && !node.children.length) {
-    delete node.children
-  }
   return {
-    id: node.deptId,
-    label: node.deptName,
+    id: node.id,
+    label: node.label,
     children: node.children
   }
 }
+
 
 // 取消按钮
 const cancel = () => {
@@ -428,36 +437,93 @@ const handleExport = () => {
   }
 }
 
+/** 处理树形结构数据 - 专门为 treeselect 格式化 */
+const handleTree = (data, id) => {
+  if (!data || !Array.isArray(data)) return []
+  
+  // treeselect 需要的格式：{ id, label, children }
+  const formatTreeData = (nodes) => {
+    return nodes.map(node => {
+      // 基础节点
+      const treeNode = {
+        id: node.deptId,
+        label: node.deptName,
+      }
+      
+      // 如果有子节点，递归处理
+      if (node.children && Array.isArray(node.children) && node.children.length > 0) {
+        treeNode.children = formatTreeData(node.children)
+      }
+      
+      return treeNode
+    })
+  }
+  
+  return formatTreeData(data)
+}
+
+/** 根据部门ID获取部门名称 */
+const getDeptName = (deptId) => {
+  if (!deptId || !deptOptions.value) return deptId
+  
+  // 递归查找部门名称
+  const findDeptName = (nodes, id) => {
+    for (const node of nodes) {
+      // 注意：这里的 node.id 是经过 handleTree 转换后的 id（即 deptId）
+      if (Number(node.id) === Number(id)) {
+        return node.label
+      }
+      if (node.children && node.children.length > 0) {
+        const found = findDeptName(node.children, id)
+        if (found) return found
+      }
+    }
+    return null
+  }
+  
+  const deptName = findDeptName(deptOptions.value, deptId)
+  return deptName || deptId
+}
+
 // 获取字典数据
 const getDictData = async () => {
+  console.log('开始获取字典数据...')
+  
   try {
-    // 这里需要根据实际项目中的字典获取方法调整
-    // 如果项目中有 useDict 方法，可以使用
-    const awardGrade = await useDict('award_grade')
-    awardGradeOptions.value = awardGrade.data || []
-
-    const reimbursementCategory = await useDict('reimbursement_category')
-    reimbursementCategoryOptions.value = reimbursementCategory.data || []
-
-    const ratioStatus = await useDict('ratio_status')
-    ratioStatusOptions.value = ratioStatus.data || []
-  } catch (error) {
-    console.error('获取字典失败:', error)
-    // 临时默认数据
+    // 先使用默认数据测试
+    console.log('使用默认字典数据')
     awardGradeOptions.value = [
       { value: '1', label: '一等奖' },
       { value: '2', label: '二等奖' },
       { value: '3', label: '三等奖' }
     ]
     reimbursementCategoryOptions.value = [
-      { value: '1', label: '会议' },
-      { value: '2', label: '交通' },
-      { value: '3', label: '住宿' }
+      { value: '1', label: '政府类' },
+      { value: '2', label: '学会类' },
     ]
     ratioStatusOptions.value = [
-      { value: '0', label: '禁用' },
-      { value: '1', label: '启用' }
+      { value: '0', label: '正常' },
+      { value: '1', label: '停用' }
     ]
+    
+    console.log('字典数据已设置:', {
+      grade: awardGradeOptions.value,
+      category: reimbursementCategoryOptions.value,
+      status: ratioStatusOptions.value
+    })
+    
+    // 尝试API调用，但不要影响显示
+    try {
+      console.log('尝试调用字典API...')
+      const { getDicts } = await import("@/api/system/dict/data")
+      const res = await getDicts('award_grade')
+      console.log('API返回数据:', res)
+    } catch (apiError) {
+      console.log('API调用失败，使用默认数据:', apiError)
+    }
+    
+  } catch (error) {
+    console.error('getDictData 出错:', error)
   }
 }
 
@@ -468,10 +534,5 @@ onMounted(() => {
   getDictData()
 })
 
-// 注意：handleTree 函数需要从 '@/utils/ruoyi' 导入
-// 如果不存在，需要添加或实现
-const handleTree = (data, id) => {
-  // 简单的树形数据处理
-  return data || []
-}
+
 </script>

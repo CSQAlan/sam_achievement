@@ -683,6 +683,30 @@ CREATE TABLE `sam_reimbursement_items`  (
   INDEX `idx_reimbursement_time`(`reimbursement_time`) USING BTREE
 ) ENGINE = InnoDB CHARACTER SET = utf8mb4 COLLATE = utf8mb4_0900_ai_ci COMMENT = '报销项目表' ROW_FORMAT = Dynamic;
 
+-- 创建用于代码生成的视图表
+DROP TABLE IF EXISTS `sam_reimbursement_achievement_view`;
+CREATE TABLE `reimbursement_achievement_view` (
+                                                  `id` bigint NOT NULL AUTO_INCREMENT COMMENT '主键ID',
+                                                  `reimbursement_id` bigint NOT NULL COMMENT '报销项目ID',
+                                                  `reimbursement_name` varchar(100) CHARACTER SET utf8mb4 COLLATE utf8mb4_general_ci NOT NULL COMMENT '报销项目名称',
+                                                  `reimbursement_time` date DEFAULT NULL COMMENT '报销时间',
+                                                  `total_fee` decimal(10,2) DEFAULT NULL COMMENT '总金额',
+                                                  `paid_fee` decimal(10,2) DEFAULT NULL COMMENT '已发放金额',
+                                                  `reimbursement_status` char(1) DEFAULT NULL COMMENT '项目状态',
+                                                  `achievement_id` int UNSIGNED NOT NULL COMMENT '成果ID',
+                                                  `achievement_name` varchar(255) CHARACTER SET utf8mb4 COLLATE utf8mb4_general_ci DEFAULT NULL COMMENT '成果名称',
+                                                  `team_name` varchar(255) DEFAULT NULL COMMENT '团队名称',
+                                                  `level` varchar(50) DEFAULT NULL COMMENT '级别',
+                                                  `grade` int DEFAULT NULL COMMENT '获奖等级',
+                                                  `certificate_no` varchar(100) DEFAULT NULL COMMENT '证书编号',
+                                                  `fee` decimal(10,2) DEFAULT NULL COMMENT '报名费',
+                                                  `reimbursement_fee` decimal(10,2) DEFAULT NULL COMMENT '报销金额',
+                                                  `award_time` date DEFAULT NULL COMMENT '获奖时间',
+                                                  `review_result` tinyint DEFAULT NULL COMMENT '审核结果',
+                                                  PRIMARY KEY (`id`) USING BTREE
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci COMMENT='报销项目关联成果视图表';
+
+
 -- ----------------------------
 -- Records of sam_reimbursement_items
 -- ----------------------------
