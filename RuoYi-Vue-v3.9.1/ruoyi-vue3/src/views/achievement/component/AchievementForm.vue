@@ -1239,36 +1239,53 @@ function open(id) {
         isFixed: true // 标记为固定
       });
     } else if (props.sourceMode === 'responsible') {
-      // 学生端：我负责的成果，默认填入当前学生为第一负责人
-      samAchievementParticipantList.value.push({
-        studentId: userStore.name,
-        studentName: userStore.nickName,
-        orderNo: 1,
-        manager: 1,
-        isFixed: true // 标记为固定
-      });
-    } else {
-        // 其他情况（如参与的成果）进行普通预填
-        const roles = userStore.roles || [];
-        const isTeacher = roles.includes('teacher');
-        const isStudent = roles.includes('student');
+      const roles = userStore.roles || [];
+      const isTeacher = roles.includes('teacher');
+      const isStudent = roles.includes('student');
 
-        if (isTeacher && roles.length === 1) {
-            samAchievementAdvisorList.value.push({
-                teacherId: userStore.name,
-                teacherName: userStore.nickName,
-                orderNo: 1
-            });
-        } else if (isStudent && roles.length === 1) {
-            samAchievementParticipantList.value.push({
-                studentId: userStore.name,
-                studentName: userStore.nickName,
-                orderNo: 1,
-                manager: 1
-            });
-        }
+      if (isTeacher && !isStudent) {
+        // 教师在“我负责的成果”中，应把自己设为第一指导老师
+        samAchievementAdvisorList.value.push({
+          teacherId: userStore.name,
+          teacherName: userStore.nickName,
+          orderNo: 1,
+          isFixed: true
+        });
+      } else {
+        // 学生端：我负责的成果，默认填入当前学生为第一负责人
+        samAchievementParticipantList.value.push({
+          studentId: userStore.name,
+          studentName: userStore.nickName,
+          orderNo: 1,
+          manager: 1,
+          isFixed: true // 标记为固定
+        });
+      }
+    } else {
+      // 其他情况（如参与的成果）进行普通预填
+      const roles = userStore.roles || [];
+      const isTeacher = roles.includes('teacher');
+      const isStudent = roles.includes('student');
+
+      if (isTeacher && roles.length === 1) {
+        samAchievementAdvisorList.value.push({
+          teacherId: userStore.name,
+          teacherName: userStore.nickName,
+          orderNo: 1
+        });
+      } else if (isStudent && roles.length === 1) {
+        samAchievementParticipantList.value.push({
+          studentId: userStore.name,
+          studentName: userStore.nickName,
+          orderNo: 1,
+          manager: 1
+        });
+      }
     }
-    
+
+    reIndexList(samAchievementParticipantList.value);
+    reIndexList(samAchievementAdvisorList.value);
+
     updateSnapshot();
     // 新增模式下检查草稿
     checkDraft();
@@ -1468,7 +1485,8 @@ function submitForm() {
       
       form.value.samAchievementAdvisorList = samAchievementAdvisorList.value.map(a => ({
         ...a,
-        teacherNo: a.teacherId 
+        teacherNo: a.teacherId,
+        manager: a.manager // 确保 manager 字段也传给后端
       }));
 
       const isEdit = form.value.achievementId != null;
@@ -1553,6 +1571,7 @@ function getDeptTree() {
 function reIndexList(list) {
   list.forEach((item, index) => {
     item.orderNo = index + 1;
+    // 无论是选手还是导师，排在第一位的都自动设为 manager
     item.manager = (index === 0) ? 1 : 0;
   });
 }
