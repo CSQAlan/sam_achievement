@@ -1,7 +1,6 @@
 <template>
   <div class="achievement-manage-root">
     <div v-show="!pageModeActive" class="app-container">
-      <!-- 搜索表单 -->
       <el-form :model="queryParams" ref="queryRef" :inline="true" v-show="showSearch" label-width="68px">
         <el-form-item label="成果ID" prop="achievementId">
           <el-input
@@ -125,7 +124,6 @@
         </el-form-item>
       </el-form>
 
-      <!-- 操作按钮 -->
       <el-row :gutter="10" class="mb8">
         <el-col :span="1.5">
           <el-button
@@ -196,7 +194,6 @@
         </el-col>
       </el-row>
 
-      <!-- 数据表格 -->
       <el-table ref="tableRef" v-loading="loading" :data="listData" @selection-change="handleSelectionChange">
         <el-table-column type="selection" width="55" align="center" />
         <el-table-column label="成果ID" align="center" prop="achievementId" />
@@ -233,38 +230,28 @@
         <el-table-column label="审核状态" align="center" prop="reviewStatus">
           <template #default="scope">
             <div style="display: flex; align-items: center; justify-content: center;">
-              <!-- 如果是管理端（非审核模式），展示合并后的状态流程 -->
               <template v-if="!reviewSource">
-                <!-- 1. 院级审核中/未审核 -->
                 <el-tag v-if="scope.row.reviewResult === null || scope.row.reviewResult === undefined || String(scope.row.reviewResult) === '0'" type="primary">待审核</el-tag>
-                <!-- 2. 院级驳回 -->
                 <el-tag v-else-if="String(scope.row.reviewResult) === '1'" type="danger">院级驳回</el-tag>
-                <!-- 3. 院级通过 -> 开始看校级状态 -->
                 <template v-else-if="String(scope.row.reviewResult) === '2'">
-                  <!-- 3.1 校级待审核 -->
                   <el-tag v-if="scope.row.schooiReviewResult === null || scope.row.schooiReviewResult === undefined || String(scope.row.schooiReviewResult) === '2'" type="warning">待校级审核</el-tag>
-                  <!-- 3.2 校级驳回 -->
                   <el-tag v-else-if="String(scope.row.schooiReviewResult) === '0'" type="danger">校级驳回</el-tag>
-                  <!-- 3.3 校级通过 -->
                   <el-tag v-else-if="String(scope.row.schooiReviewResult) === '1'" type="success">校级审核通过</el-tag>
                 </template>
               </template>
-              <!-- 如果是审核端，维持原有逻辑 -->
               <dict-tag v-else :options="auditStatus" :value="scope.row.reviewStatus" />
 
-              <!-- 院级驳回原因 -->
               <el-tooltip
-                v-if="String(scope.row.reviewResult) === '1' && scope.row.reviewReason"
-                :content="'院级驳回原因：' + scope.row.reviewReason"
-                placement="top"
+                  v-if="String(scope.row.reviewResult) === '1' && scope.row.reviewReason"
+                  :content="'院级驳回原因：' + scope.row.reviewReason"
+                  placement="top"
               >
                 <el-icon style="margin-left: 5px; color: #F56C6C; cursor: pointer;"><Warning /></el-icon>
               </el-tooltip>
-              <!-- 校级驳回原因 -->
               <el-tooltip
-                v-if="String(scope.row.schooiReviewResult) === '0' && scope.row.schoolReviewReason"
-                :content="'校级驳回原因：' + scope.row.schoolReviewReason"
-                placement="top"
+                  v-if="String(scope.row.schooiReviewResult) === '0' && scope.row.schoolReviewReason"
+                  :content="'校级驳回原因：' + scope.row.schoolReviewReason"
+                  placement="top"
               >
                 <el-icon style="margin-left: 5px; color: #F56C6C; cursor: pointer;"><Warning /></el-icon>
               </el-tooltip>
@@ -351,6 +338,8 @@ import { Warning } from '@element-plus/icons-vue';
 import AchievementForm from '../component/AchievementForm.vue';
 import { listManage, getManage, addManage, updateManage, delManage } from '@/api/achievement/manage';
 import { batchUpdateReviewStatus } from '@/api/achievement/review_batch';
+// 引入用户状态管理
+import useUserStore from '@/store/modules/user';
 
 const props = defineProps({
   listFn: { type: Function, default: null },
@@ -375,6 +364,8 @@ const props = defineProps({
 const { proxy } = getCurrentInstance();
 const route = useRoute();
 const router = useRouter();
+// 实例化用户状态
+const userStore = useUserStore();
 
 const listFn = computed(() => props.listFn || listManage);
 const getFn = computed(() => props.getFn || getManage);
@@ -497,7 +488,20 @@ function normalizeReviewStatusBySource() {
 function getList() {
   normalizeReviewStatusBySource();
   loading.value = true;
-  listFn.value(queryParams).then(response => {
+
+  // 组装最终查询参数，避免污染原本的 queryParams
+  const finalParams = { ...queryParams };
+
+  // 根据不同的 sourceMode 动态传入不同维度的指导老师参数
+  if (props.sourceMode === 'guided') {
+    // 【我指导的】：仅筛选该老师是 第一指导老师（通常对应 orderNo = 1）的成果
+    finalParams.firstInstructorId = userStore.name;
+  } else if (props.sourceMode === 'participated') {
+    // 【我参与的】：筛选该老师参与的 所有 成果
+    finalParams.anyInstructorId = userStore.name;
+  }
+
+  listFn.value(finalParams).then(response => {
     const rows = (response.rows || []).map((row) => normalizeRowStatus(row));
     let filtered = filterRowsBySource(rows);
     if (queryParams.reviewStatus !== null && queryParams.reviewStatus !== '' && queryParams.reviewStatus !== undefined) {
@@ -533,15 +537,15 @@ function normalizeRowStatus(row) {
   // 3. 提取参赛选手和指导老师名称用于显示
   if (row.samAchievementParticipantList && Array.isArray(row.samAchievementParticipantList)) {
     row.contestant = row.samAchievementParticipantList
-      .sort((a, b) => (a.orderNo || 0) - (b.orderNo || 0))
-      .map(p => p.studentName)
-      .join(', ');
+        .sort((a, b) => (a.orderNo || 0) - (b.orderNo || 0))
+        .map(p => p.studentName)
+        .join(', ');
   }
   if (row.samAchievementAdvisorList && Array.isArray(row.samAchievementAdvisorList)) {
     row.instructor = row.samAchievementAdvisorList
-      .sort((a, b) => (a.orderNo || 0) - (b.orderNo || 0))
-      .map(a => a.teacherName)
-      .join(', ');
+        .sort((a, b) => (a.orderNo || 0) - (b.orderNo || 0))
+        .map(a => a.teacherName)
+        .join(', ');
   }
 
   return row;
@@ -605,11 +609,9 @@ function handleRowUpdate(row) {
   const _achievementId = row?.achievementId;
   if (!_achievementId) return;
 
-  // 【核心修改】：如果是审核模式，可能需要跳转去审核修改（保留同学逻辑）
   if (reviewSource.value) {
     openReviewPage(_achievementId, 'edit');
   } else {
-    // 否则是普通用户，直接打开本地弹窗进行编辑
     openDialog(_achievementId, { readOnly: false });
   }
 }
@@ -649,17 +651,14 @@ function handleBatchReviewStatus() {
     return;
   }
 
-  // 获取选中的记录，检查是否需要设置校级审核为待审核
   const rowsToUpdate = listData.value.filter(row => ids.value.includes(row.achievementId));
 
   rowsToUpdate.forEach(row => {
-    // 如果院级审核通过，自动设置校级审核为待审核
     if (row.reviewStatus === '2' && canPushSchoolPending) {
-      row.schooiReviewResult = '2';  // 设置校级审核为待审核
+      row.schooiReviewResult = '2';
     }
   });
 
-  // 执行批量更新
   proxy.$modal
       .confirm(`确认将选中的 ${ids.value.length} 条数据批量改为当前状态吗？`)
       .then(() => batchUpdateReviewStatus(reviewSource.value, {
@@ -761,14 +760,9 @@ function handleFormCancel() {
   pageModeActive.value = false;
 }
 
-/**
- * 核心逻辑：检查是否可以修改
- */
 function checkEditable(row) {
   if (reviewSource.value) return true;
-  // 防空判断
   if (!row) return false;
-  // 获取状态值
   const collegeStatus = String(row.reviewResult);
   const schoolStatus = String(row.schooiReviewResult);
   if (schoolStatus === '0') {

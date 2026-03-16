@@ -46,24 +46,28 @@ public class SamAchievementController extends BaseController
     public TableDataInfo list(SamAchievement samAchievement)
     {
         startPage();
-        // 逻辑：如果是学生（包括学生管理员），只看自己负责（manager=1）的成果
         if (SecurityUtils.hasRole("student")) {
             String studentId = SecurityUtils.getUsername();
             if (samAchievement.getParams() == null) {
                 samAchievement.setParams(new HashMap<>());
             }
             samAchievement.getParams().put("studentId", studentId);
-            samAchievement.getParams().put("manager", "1"); // 负责人
+            samAchievement.getParams().put("manager", "1");
             List<SamAchievement> list = samAchievementService.selectSamAchievementListByStudentId(samAchievement);
             return getDataTable(list);
         }
-        
-        // 逻辑：如果是纯老师角色（没有学生角色），他在“我负责的成果”里什么都看不见
+
         if (SecurityUtils.hasRole("teacher")) {
-            return getDataTable(new java.util.ArrayList<>());
+            String teacherId = SecurityUtils.getUsername();
+            if (samAchievement.getParams() == null) {
+                samAchievement.setParams(new HashMap<>());
+            }
+            samAchievement.getParams().put("teacherId", teacherId);
+            samAchievement.getParams().put("isFirst", 1);
+            List<SamAchievement> list = samAchievementService.selectSamAchievementListByTeacherId(samAchievement);
+            return getDataTable(list);
         }
-        
-        // 其他（如超级管理员）默认看到全部
+
         List<SamAchievement> list = samAchievementService.selectSamAchievementList(samAchievement);
         return getDataTable(list);
     }
@@ -86,7 +90,13 @@ public class SamAchievementController extends BaseController
             samAchievement.getParams().put("manager", "1");
             list = samAchievementService.selectSamAchievementListByStudentId(samAchievement);
         } else if (SecurityUtils.hasRole("teacher")) {
-            list = new java.util.ArrayList<>();
+            String teacherId = SecurityUtils.getUsername();
+            if (samAchievement.getParams() == null) {
+                samAchievement.setParams(new HashMap<>());
+            }
+            samAchievement.getParams().put("teacherId", teacherId);
+            samAchievement.getParams().put("isFirst", 1);
+            list = samAchievementService.selectSamAchievementListByTeacherId(samAchievement);
         } else {
             list = samAchievementService.selectSamAchievementList(samAchievement);
         }
@@ -170,7 +180,7 @@ public class SamAchievementController extends BaseController
     }
 
     /**
-     * 查询我指导的成果列表（教师端-第一指导老师）
+     * 查询我指导的成果列表（教师端-包含在指导老师列表的所有成果）
      */
     @PreAuthorize("@ss.hasPermi('achievement:manage:guided:list')")
     @GetMapping("/list-guided")
@@ -179,14 +189,14 @@ public class SamAchievementController extends BaseController
         // 获取当前用户工号
         String username = SecurityUtils.getUsername();
         
-        // 核心逻辑：如果是老师或者管理员，查询本用户作为第一指导老师的成果
+        // 核心逻辑：如果是老师或者管理员，查询本用户参与指导的所有成果
         if (SecurityUtils.hasRole("teacher") || SecurityUtils.isAdmin(SecurityUtils.getUserId())) {
             startPage();
             if (samAchievement.getParams() == null) {
                 samAchievement.setParams(new HashMap<>());
             }
             samAchievement.getParams().put("teacherId", username);
-            samAchievement.getParams().put("isFirst", 1); // 必须是第一指导老师
+            // 不再限制必须是第一指导老师
 
             List<SamAchievement> list = samAchievementService.selectSamAchievementListByTeacherId(samAchievement);
             return getDataTable(list);
