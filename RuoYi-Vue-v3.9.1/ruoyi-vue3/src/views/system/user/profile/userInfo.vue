@@ -146,7 +146,13 @@
 </template>
 
 <script setup>
-import { getProfileDeptTree, getUserProfile, updateUserProfile } from "@/api/system/user";
+import {
+  getProfileDeptTree,
+  getUserProfile,
+  saveFullUserProfile,
+  getCurrentStudentProfileDetail,
+  getCurrentTeacherProfileDetail,
+} from "@/api/system/user";
 import {
   ref,
   onMounted,
@@ -159,11 +165,6 @@ import {
   unbindWechat,
   generateWechatQRCode,
 } from "@/api/common/wechat";
-import { getStudentInfoByNo, updateStudentInfo } from "@/api/student/info";
-import {
-  getTeacherInfoByNo,
-  updateTeacherInfo,
-} from "@/api/sam/sam_achievement";
 import { useRouter, useRoute } from "vue-router";
 import useUserStore from "@/store/modules/user";
 import { ElMessage, ElMessageBox } from "element-plus";
@@ -186,6 +187,20 @@ const checkBindTimer = ref(null);
 const schools = ref([]);
 const departments = ref([]);
 const majors = ref([]);
+const detailHintState = ref({
+  studentMissing: false,
+  studentLoadFailed: false,
+  teacherMissing: false,
+  teacherLoadFailed: false,
+});
+
+function showDetailHintOnce(key, message) {
+  if (detailHintState.value[key]) {
+    return;
+  }
+  detailHintState.value[key] = true;
+  proxy.$modal.msgWarning(message);
+}
 
 // 计算属性：判断是否为学生或教师
 const isStudent = computed(() => {
@@ -250,38 +265,48 @@ const fetchWechatStatus = () => {
 // 获取用户详细信息
 const fetchUserDetailInfo = () => {
   if (isStudent.value && form.value.userName) {
-    // 调用学生信息查询接口
-    getStudentInfoByNo(form.value.userName)
+    getCurrentStudentProfileDetail()
         .then((response) => {
           if (response.code === 200 && response.data) {
-            // 合并学生详细信息到表单
             form.value = {
               ...form.value,
               ...response.data,
             };
+          } else {
+            showDetailHintOnce("studentMissing", "未查询到学生档案，请完善后保存，系统会自动补建。");
           }
           normalizeDeptSelection();
         })
         .catch((err) => {
           console.log("获取学生详细信息失败:", err);
+          showDetailHintOnce("studentLoadFailed", "学生档案加载失败，可继续完善后保存。");
+          normalizeDeptSelection();
         });
-  } else if (isTeacher.value && form.value.userName) {
-    // 调用教师信息查询接口
-    getTeacherInfoByNo(form.value.userName)
+    return;
+  }
+
+  if (isTeacher.value && form.value.userName) {
+    getCurrentTeacherProfileDetail()
         .then((response) => {
           if (response.code === 200 && response.data) {
-            // 合并教师详细信息到表单
             form.value = {
               ...form.value,
               ...response.data,
             };
+          } else {
+            showDetailHintOnce("teacherMissing", "未查询到教师档案，请完善后保存，系统会自动补建。");
           }
           normalizeDeptSelection();
         })
         .catch((err) => {
           console.log("获取教师详细信息失败:", err);
+          showDetailHintOnce("teacherLoadFailed", "教师档案加载失败，可继续完善后保存。");
+          normalizeDeptSelection();
         });
+    return;
   }
+
+  normalizeDeptSelection();
 };
 
 // 显示微信绑定弹窗
@@ -630,7 +655,6 @@ function redirectAfterProfileCompleted() {
 function submit() {
   proxy.$refs.userRef.validate(async (valid) => {
     if (valid) {
-      // 分离用户基本信息和学生/教师信息
       const userData = {
         nickName: form.value.nickName,
         phonenumber: form.value.phonenumber,
@@ -639,7 +663,26 @@ function submit() {
       };
 
       try {
-        const response = await updateUserProfile(userData);
+        const selectedDeptLabels = resolveSelectedDeptLabels();
+        const payload = {
+          ...userData,
+        };
+
+        if (isStudent.value) {
+          payload.school = selectedDeptLabels.school;
+          payload.department = selectedDeptLabels.department;
+          payload.major = selectedDeptLabels.major;
+          payload.classYear = form.value.classYear;
+          payload.className = form.value.className;
+          payload.name = form.value.name || form.value.nickName || userStore.nickName;
+        }
+
+        if (isTeacher.value) {
+          payload.school = selectedDeptLabels.school;
+          payload.department = selectedDeptLabels.department;
+        }
+
+        const response = await saveFullUserProfile(payload);
         if (response.code !== 200) {
           proxy.$modal.msgError(response.msg || "修改失败");
           return;
@@ -651,84 +694,15 @@ function submit() {
           email: form.value.email,
           sex: form.value.sex,
         });
-
-        const extraTasks = [];
-        const selectedDeptLabels = resolveSelectedDeptLabels();
-
-        // 如果是学生，更新学生信息
-        if (isStudent.value) {
-          const studentData = {
-            no: form.value.no,
-            school: selectedDeptLabels.school,
-            department: selectedDeptLabels.department,
-            major: selectedDeptLabels.major,
-            classYear: form.value.classYear,
-            className: form.value.className,
-            name: form.value.name,
-          };
-          console.log("传递的学生数据:", studentData); // 添加调试日志
-          extraTasks.push(
-              updateStudentInfo(studentData)
-                  .then((studentResponse) => {
-                    if (studentResponse.code === 200) {
-                      proxy.$modal.msgSuccess("学生信息保存成功");
-                      console.log("学生信息更新成功");
-                      return true;
-                    }
-                    proxy.$modal.msgError("学生信息保存失败");
-                    return false;
-                  })
-                  .catch((err) => {
-                    console.error("更新学生信息失败:", err);
-                    proxy.$modal.msgError("学生信息更新失败");
-                    return false;
-                  })
-          );
-        }
-
-        // 如果是教师，更新教师信息（假设有相应API）
-        // 这里需要根据实际API调整
-        if (isTeacher.value) {
-          const teacherData = {
-            // 教师字段
-            no: form.value.no,
-            school: selectedDeptLabels.school,
-            department: selectedDeptLabels.department,
-          };
-          extraTasks.push(
-              updateTeacherInfo(teacherData)
-                  .then((teacherResponse) => {
-                    if (teacherResponse.code === 200) {
-                      proxy.$modal.msgSuccess("教师信息保存成功");
-                      console.log("教师信息更新成功");
-                      return true;
-                    }
-                    proxy.$modal.msgError("教师信息保存失败");
-                    return false;
-                  })
-                  .catch((err) => {
-                    console.error("更新教师信息失败:", err);
-                    proxy.$modal.msgError("教师信息保存失败");
-                    return false;
-                  })
-          );
-        }
-
-        const extraTaskResults = extraTasks.length > 0
-            ? await Promise.all(extraTasks)
-            : [];
         const profileCompleted = await refreshProfileCompletionState();
 
         if (profileCompleted) {
+          proxy.$modal.msgSuccess("个人中心信息保存成功");
           redirectAfterProfileCompleted();
           return;
         }
 
-        if (extraTaskResults.some((result) => result === false)) {
-          proxy.$modal.msgWarning("信息已部分保存，请继续完善个人中心资料后再离开当前页面");
-        } else {
-          proxy.$modal.msgWarning("信息已保存，但个人中心仍未完善，请继续补全后再使用其他功能");
-        }
+        proxy.$modal.msgWarning("信息已保存，但个人中心仍未完善，请继续补全后再使用其他功能");
       } catch (err) {
         console.error("更新用户信息失败:", err);
         proxy.$modal.msgError("修改失败");

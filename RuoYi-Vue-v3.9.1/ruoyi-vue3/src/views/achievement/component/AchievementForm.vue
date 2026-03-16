@@ -537,11 +537,11 @@
             style="width: 100%" 
           />
         </el-form-item>
-        <el-form-item label="班级" prop="class_name">
-          <el-input v-model="participantForm.class_name" placeholder="请输入班级" />
+        <el-form-item label="班级" prop="className">
+          <el-input v-model="participantForm.className" placeholder="请输入班级" />
         </el-form-item>
-        <el-form-item label="年级" prop="class_year">
-          <el-input v-model="participantForm.class_year" placeholder="请输入年级 (例如: 2022)" />
+        <el-form-item label="年级" prop="classYear">
+          <el-input v-model="participantForm.classYear" placeholder="请输入年级 (例如: 2022)" />
         </el-form-item>
       </template>
     </el-form>
@@ -746,7 +746,7 @@ function handleAdvisorSchoolChange() {
 
 const addParticipantVisible = ref(false);
 const isParticipantNew = ref(false);
-const participantForm = ref({ studentId: '', studentName: '', school: '', department: '', major: '', class_name: '', class_year: '' });
+const participantForm = ref({ studentId: '', studentName: '', school: '', department: '', major: '', className: '', classYear: '' });
 const addParticipantRules = {
   studentId: [{ required: true, message: "学号不能为空", trigger: "blur" }],
   studentName: [{ required: true, message: "姓名不能为空", trigger: "blur" }],
@@ -754,7 +754,7 @@ const addParticipantRules = {
 };
 
 function openAddParticipantDialog() {
-  participantForm.value = { studentId: '', studentName: '', school: '', department: '', major: '', class_name: '', class_year: '' };
+  participantForm.value = { studentId: '', studentName: '', school: '', department: '', major: '', className: '', classYear: '' };
   isParticipantNew.value = false;
   addParticipantVisible.value = true;
 }
@@ -795,11 +795,13 @@ function submitAddParticipant() {
           school: participantForm.value.school,
           department: participantForm.value.department,
           major: participantForm.value.major,
-          class_name: participantForm.value.class_name,
-          class_year: participantForm.value.class_year
+          className: participantForm.value.className,
+          classYear: participantForm.value.classYear
         }).then(() => {
           proxy.$modal.msgSuccess("学生信息录入基础库成功");
           pushToList();
+        }).catch((error) => {
+          proxy.$modal.msgError(error?.message || "学生信息保存失败");
         });
       } else {
         pushToList();
@@ -860,6 +862,8 @@ function submitAddAdvisor() {
         }).then(() => {
           proxy.$modal.msgSuccess("教师信息录入基础库成功");
           pushToList();
+        }).catch((error) => {
+          proxy.$modal.msgError(error?.message || "教师信息保存失败");
         });
       } else {
         pushToList();
@@ -1116,7 +1120,6 @@ function open(id) {
   initSortable();
 }
 function getForm() { return form.value; }
-defineExpose({ open, getForm, activeAttachmentTab });
 
 onMounted(() => {
   if (isPageMode.value) {
@@ -1270,16 +1273,23 @@ function validatePDFUpload() {
 }
 
 function submitForm() {
-  if (props.readOnly) return;
+  if (props.readOnly) return Promise.resolve(false);
   const activeRef = isPageMode.value ? outcomeRefPage.value : outcomeRefDialog.value;
-  
-  activeRef.validate(valid => {
-    if (valid) {
-      if (!validatePDFUpload()) return;
+
+  return new Promise((resolve, reject) => {
+    activeRef.validate(valid => {
+      if (!valid) {
+        resolve(false);
+        return;
+      }
+      if (!validatePDFUpload()) {
+        resolve(false);
+        return;
+      }
 
       let attachments = [];
-      const pushFile = (type, path) => { 
-        if (path) { attachments.push({ type: type, fileUuid: path, fileType: 1 }); } 
+      const pushFile = (type, path) => {
+        if (path) { attachments.push({ type: type, fileUuid: path, fileType: 1 }); }
       };
       pushFile(1, form.value.fileAward);
       pushFile(2, form.value.fileNotice);
@@ -1289,36 +1299,48 @@ function submitForm() {
       pushFile(6, form.value.fileReceiptCode);
 
       form.value.samAchievementAttachmentList = attachments;
-      
+
       form.value.samAchievementParticipantList = samAchievementParticipantList.value.map(p => ({
         ...p,
-        studentNo: p.studentId, 
-        manager: String(p.manager) 
+        studentNo: p.studentId,
+        manager: String(p.manager)
       }));
-      
+
       form.value.samAchievementAdvisorList = samAchievementAdvisorList.value.map(a => ({
         ...a,
-        teacherNo: a.teacherId 
+        teacherNo: a.teacherId
       }));
 
       const isEdit = form.value.achievementId != null;
       const apiFn = isEdit ? props.updateFn : props.addFn;
-      
-      if (apiFn) {
-        form.value.params = { ...(form.value.params || {}), selfEditScene:
-              props.selfEditScene || '' }
-        apiFn(form.value).then(response => {
-          proxy.$modal.msgSuccess(isEdit ? "修改成功" : "新增成功");
-          updateSnapshot(); 
-          if (!isPageMode.value) visible.value = false;
-          emit('ok');
-        });
-      } else {
-        proxy.$modal.msgError("未配置保存接口");
+
+      if (!apiFn) {
+        const error = new Error("未配置保存接口");
+        proxy.$modal.msgError(error.message);
+        reject(error);
+        return;
       }
-    }
+
+      form.value.params = {
+        ...(form.value.params || {}),
+        selfEditScene: props.selfEditScene || ''
+      };
+
+      apiFn(form.value).then(response => {
+        proxy.$modal.msgSuccess(isEdit ? "修改成功" : "新增成功");
+        updateSnapshot();
+        if (!isPageMode.value) visible.value = false;
+        emit('ok');
+        resolve(response);
+      }).catch(error => {
+        proxy.$modal.msgError(error?.response?.data?.msg || error?.message || (isEdit ? "修改失败" : "新增失败"));
+        reject(error);
+      });
+    });
   });
 }
+
+defineExpose({ open, getForm, submitForm, activeAttachmentTab });
 
 function handleBeforeClose(done) {
   if (isModified.value) {

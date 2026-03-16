@@ -13,7 +13,7 @@
         titleAdd="成果审核"
         titleEdit="成果审核"
         @cancel="handleBack"
-        @ok="handleBack"
+        @ok="handleFormSaved"
     />
 
     <!-- ✅ 固定底部审核工具条：不随页面滚动消失 -->
@@ -58,9 +58,14 @@
             </div>
           </div>
 
-          <el-button class="submit-btn" type="primary" :disabled="!selectedAuditStatus" @click="submitAudit">
+          <div class="toolbar-actions">
+            <el-button class="save-btn" :loading="saveFormLoading" @click="saveFormChanges">
+              保存修改
+            </el-button>
+            <el-button class="submit-btn" type="primary" :disabled="!selectedAuditStatus" @click="submitAudit">
             提交审核
-          </el-button>
+            </el-button>
+          </div>
         </div>
       </div>
     </div>
@@ -80,6 +85,7 @@ import { getCollege_level_unreviewed, addCollege_level_unreviewed, updateCollege
 import { getCollege_level_reviewed, addCollege_level_reviewed, updateCollege_level_reviewed } from "@/api/achievement/college_level_reviewed";
 import { getSchool_level_unreviewed, addSchool_level_unreviewed, updateSchool_level_unreviewed } from "@/api/achievement/school_level_unreviewed";
 import { getSchool_level_reviewed, addSchool_level_reviewed, updateSchool_level_reviewed } from "@/api/achievement/school_level_reviewed";
+import { submitReview as submitReviewAction } from "@/api/achievement/review_batch";
 
 const { proxy } = getCurrentInstance();
 const route = useRoute();
@@ -106,10 +112,13 @@ const apiMap = {
 
 // ✅ 来源（由列表页点击审阅传 query.source）
 const source = computed(() => String(route.query.source || "college_level_unreviewed").toLowerCase());
-const mode = computed(() => String(route.query.mode || "review").toLowerCase());
+const mode = computed(() => {
+  const normalized = String(route.query.mode || "edit").toLowerCase();
+  return normalized === "review" ? "edit" : normalized;
+});
 const isEdit = computed(() => mode.value === "edit");
 const isView = computed(() => mode.value === "view");
-const showAuditToolbar = computed(() => true);
+const showAuditToolbar = computed(() => isEdit.value);
 const currentApi = computed(() => apiMap[source.value] || apiMap.college_level_unreviewed);
 
 const backRouteMap = {
@@ -147,6 +156,7 @@ const nextStatusOptions = computed(() => {
 const selectedAuditStatus = ref("");
 const rejectReason = ref("");
 const auditInitialized = ref(false);
+const saveFormLoading = ref(false);
 
 function isStatusSelectable(status) {
   if (status === null || status === undefined || status === "") {
@@ -469,6 +479,33 @@ function handleBack() {
   router.back();
 }
 
+function handleFormSaved() {
+  // 审核页面的“保存修改”只保存表单内容，不自动返回列表
+}
+
+async function saveFormChanges() {
+  if (!isEdit.value || isView.value) {
+    proxy.$modal?.msgWarning?.("当前页面为查看模式，不能保存修改");
+    return;
+  }
+  if (!dlgRef.value?.submitForm) {
+    proxy.$modal?.msgError?.("当前表单不支持保存");
+    return;
+  }
+  if (saveFormLoading.value) {
+    return;
+  }
+
+  saveFormLoading.value = true;
+  try {
+    await dlgRef.value.submitForm();
+  } catch (e) {
+    // 具体错误提示由表单内部统一处理
+  } finally {
+    saveFormLoading.value = false;
+  }
+}
+
 function jumpToNextAfterAudit(currentId) {
   loadPageIds();
   const ids = pageIdsRef.value || [];
@@ -490,21 +527,13 @@ function jumpToNextAfterAudit(currentId) {
   router.push({ path: route.path, query });
 }
 
-/**
- * ✅ 手动流转归档推送（前端负责）：
- * 1) 院级审核
- *    - 院级未审核：0 -> 1/2
- *    - 院级已审核：支持重置为 0/1/2
- *    - 若院级改为 0/1：校级状态自动驳回(0)
- *    - 若院级通过(2)且校级尚未真实审核：推送到校级未审核（auditStatus=2 待校级审核）
- *
- * 2) 校级未审核(school_level_unreviewed)
- *    - updateSchool_level_unreviewed：auditStatus 2 -> 0/1
- *
- * ✅ 关键修复：
- * - 归档到校级已审核时必须写 schoolAuditTime（你的 mapper 有 school_audit_time is not null 的过滤）
- */
+
 async function submitAudit() {
+  if (!isEdit.value || isView.value) {
+    proxy.$modal?.msgWarning?.("当前页面为查看模式，不能提交审核");
+    return;
+  }
+
   const baseForm = dlgRef.value?.getForm?.();
   const id = baseForm?.achievementId ?? route.query.id;
 
@@ -525,174 +554,42 @@ async function submitAudit() {
     return;
   }
 
-  // ✅ 尽可能拿到当前登录用户（按你项目实际字段可能不同）
-  const auditUser =
-      proxy?.$store?.state?.user?.userName ||
-      proxy?.$store?.state?.user?.nickName ||
-      proxy?.$store?.state?.user?.name ||
-      "";
-
-  const now = new Date();
-  const collegeAuditReason = isCollegeReject.value ? rejectReason.value.trim() : "";
-  const schoolAuditReason = isSchoolReject.value ? rejectReason.value.trim() : "";
-  const currentSchoolStatusRaw =
-      baseForm?.schooiReviewResult ?? baseForm?.schooi_review_result;
-  const currentSchoolStatus =
-      currentSchoolStatusRaw === null || currentSchoolStatusRaw === undefined
-          ? ""
-          : String(currentSchoolStatusRaw).trim();
-  const schoolAuditByRaw =
-      baseForm?.schoolAuditBy ?? baseForm?.school_audit_by;
-  const schoolReviewReasonRaw =
-      baseForm?.schoolReviewReason ?? baseForm?.school_review_reason;
-  const schoolAuditBy = normalizeLooseText(schoolAuditByRaw);
-  const schoolReviewReason = normalizeLooseText(schoolReviewReasonRaw);
-  const hasSchoolReviewTrace = !!schoolAuditBy || !!schoolReviewReason;
-  const schoolStatusLooksReviewed = currentSchoolStatus === "0" || currentSchoolStatus === "1";
-  const canPushSchoolPending =
-      currentSchoolStatus === "" ||
-      currentSchoolStatus === "2" ||
-      (schoolStatusLooksReviewed && !hasSchoolReviewTrace);
+  const rejectReasonText = showRejectReason.value ? rejectReason.value.trim() : "";
 
   try {
-    // ===== 院级审核 =====
-    if (source.value === "college_level_unreviewed") {
-      const payload = {
-        ...baseForm,
-        achievementId: id,
-        reviewResult: next,
-        reviewReason: collegeAuditReason,
-        reviewedAt: now,
-        auditBy: auditUser
-      };
-      // Reject must not carry stale school status from form cache.
-      delete payload.schooiReviewResult;
-      delete payload.schooi_review_result;
-      if (next === "2" && canPushSchoolPending) payload.schooiReviewResult = "2";
-
-      // 1) 更新院级未审核状态（0 -> 1/2）
-      await updateCollege_level_unreviewed(payload);
-
-      // 2) 院级通过(2) -> 同表设置校级待审核状态（schooiReviewResult=2）
-
-      if (source.value.endsWith("unreviewed")) {
-        pageIdsRef.value = pageIdsRef.value.filter((pid) => String(pid) !== String(id));
-        persistPageIds();
-      }
-
-      proxy.$modal?.msgSuccess?.("院级审核成功");
-
-      // 在审核完成后，弹出确认是否跳转到下一个成果的弹窗
-      // 提交审核后弹出确认是否跳转到下一个成果的弹窗
-      proxy.$modal
-          .confirm(`审核成功，是否跳转到下一个成果？`)
-          .then(() => {
-            // 用户点击“是”按钮后跳转到下一个成果
-            jumpToNextAfterAudit(id);
-          })
-          .catch(() => {
-            // 用户点击“否”按钮后留在当前页面
-            proxy.$modal?.msgSuccess?.("已提交审核，留在当前页面");
-          });
+    const supportedSources = [
+      "college_level_unreviewed",
+      "college_level_reviewed",
+      "school_level_unreviewed",
+      "school_level_reviewed"
+    ];
+    if (!supportedSources.includes(source.value)) {
+      proxy.$modal?.msgError?.("当前来源(source)不支持审核（请从审核列表进入）");
       return;
     }
 
-    // 重新审核已经审核的院级记录
-    if (source.value === "college_level_reviewed") {
-      const payload = {
-        ...baseForm,
-        achievementId: id,
-        reviewResult: next,
-        reviewReason: collegeAuditReason,
-        reviewedAt: now,
-        auditBy: auditUser
-      };
-      delete payload.schooiReviewResult;
-      delete payload.schooi_review_result;
-      if (next === "2" && canPushSchoolPending) payload.schooiReviewResult = "2";
+    await submitReviewAction({
+      source: source.value,
+      achievementId: String(id),
+      reviewStatus: Number(next),
+      rejectReason: rejectReasonText
+    });
 
-      await updateCollege_level_reviewed(payload);
-
-      // 提交审核后弹出确认是否跳转到下一个成果的弹窗
-      proxy.$modal
-          .confirm(`审核成功，是否跳转到下一个成果？`)
-          .then(() => {
-            // 用户点击“是”按钮后跳转到下一个成果
-            jumpToNextAfterAudit(id);
-          })
-          .catch(() => {
-            // 用户点击“否”按钮后留在当前页面
-            proxy.$modal?.msgSuccess?.("已提交审核，留在当前页面");
-          });
-      return;
+    if (source.value.endsWith("unreviewed")) {
+      pageIdsRef.value = pageIdsRef.value.filter((pid) => String(pid) !== String(id));
+      persistPageIds();
     }
 
-    // ===== 校级审核 =====
-    if (source.value === "school_level_unreviewed") {
-      // 1) 更新校级未审核状态（2 -> 0/1）
-      await updateSchool_level_unreviewed({
-        ...baseForm,
-        achievementId: id,
-        schooiReviewResult: next,
-        schoolReviewReason: schoolAuditReason,
-        schoolReviewedAt: now,
-        schoolAuditBy: auditUser
-      });
+    proxy.$modal?.msgSuccess?.(isCollegeSource.value ? "院级审核成功" : "校级审核成功");
 
-      if (source.value.endsWith("unreviewed")) {
-        pageIdsRef.value = pageIdsRef.value.filter((pid) => String(pid) !== String(id));
-        persistPageIds();
-      }
-
-      proxy.$modal?.msgSuccess?.("校级审核成功");
-
-      // 提交审核后弹出确认是否跳转到下一个成果的弹窗
-      proxy.$modal
-          .confirm(`审核成功，是否跳转到下一个成果？`)
-          .then(() => {
-            // 用户点击“是”按钮后跳转到下一个成果
-            jumpToNextAfterAudit(id);
-          })
-          .catch(() => {
-            // 用户点击“否”按钮后留在当前页面
-            proxy.$modal?.msgSuccess?.("已提交审核，留在当前页面");
-          });
-      return;
-    }
-
-    if (source.value === "school_level_reviewed") {
-      // 2) 重新审核已审核记录
-      await updateSchool_level_reviewed({
-        ...baseForm,
-        achievementId: id,
-        schooiReviewResult: next,
-        schoolReviewReason: schoolAuditReason,
-        schoolReviewedAt: now,
-        schoolAuditBy: auditUser
-      });
-
-      if (source.value.endsWith("unreviewed")) {
-        pageIdsRef.value = pageIdsRef.value.filter((pid) => String(pid) !== String(id));
-        persistPageIds();
-      }
-
-      proxy.$modal?.msgSuccess?.("校级审核成功");
-
-      // 提交审核后弹出确认是否跳转到下一个成果的弹窗
-      proxy.$modal
-          .confirm(`审核成功，是否跳转到下一个成果？`)
-          .then(() => {
-            // 用户点击“是”按钮后跳转到下一个成果
-            jumpToNextAfterAudit(id);
-          })
-          .catch(() => {
-            // 用户点击“否”按钮后留在当前页面
-            proxy.$modal?.msgSuccess?.("已提交审核，留在当前页面");
-          });
-      return;
-    }
-
-    proxy.$modal?.msgError?.("当前来源(source)不支持审核（请从未审核列表进入）");
+    proxy.$modal
+        .confirm(`审核成功，是否跳转到下一个成果？`)
+        .then(() => {
+          jumpToNextAfterAudit(id);
+        })
+        .catch(() => {
+          proxy.$modal?.msgSuccess?.("已提交审核，留在当前页面");
+        });
   } catch (e) {
     const errMsg =
         e?.response?.data?.msg ||
@@ -758,7 +655,7 @@ watch(
   pointer-events: auto;
   background: rgba(255, 255, 255, 0.96);
   border: 1px solid var(--el-border-color-light);
-  border-radius: 12px;
+  border-radius: 10px;
   backdrop-filter: blur(8px);
   box-shadow: 0 10px 30px rgba(15, 23, 42, 0.12);
 }
@@ -770,7 +667,6 @@ watch(
   flex-wrap: wrap;
   padding: 8px 2px;
   border: 0;
-  border-radius: 0;
   background: transparent;
 }
 .audit-toolbar-main {
@@ -788,7 +684,6 @@ watch(
 }
 .nav-btn {
   min-width: 82px;
-  border-radius: 999px;
 }
 .back-btn {
   --el-button-text-color: #6b4d12;
@@ -838,7 +733,15 @@ watch(
 }
 .submit-btn {
   min-width: 108px;
-  border-radius: 999px;
+}
+.toolbar-actions {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.save-btn {
+  min-width: 108px;
 }
 
 .prev-btn {
@@ -874,7 +777,6 @@ watch(
 }
 
 .audit-status-select :deep(.el-select__wrapper) {
-  border-radius: 10px;
   box-shadow: 0 0 0 1px #d8e5ff inset;
 }
 
@@ -883,7 +785,6 @@ watch(
 }
 
 .audit-reason :deep(.el-textarea__inner) {
-  border-radius: 10px;
   border-color: #d6e4ff;
 }
 
@@ -904,9 +805,7 @@ watch(
     bottom: 8px;
     width: calc(100vw - 12px);
   }
-  .review-fixed-inner {
-    border-radius: 10px;
-  }
+
   .audit-toolbar-main {
     width: 100%;
   }
@@ -933,12 +832,19 @@ watch(
   .submit-btn {
     width: 100%;
   }
+  .toolbar-actions {
+    width: 100%;
+    flex-direction: column;
+  }
+  .save-btn {
+    width: 100%;
+  }
 }
 .header {
   display: flex;
   justify-content: flex-start;
   align-items: center;
-  margin-bottom: 20px; /* 增加一些间距使其更明显 */
+  margin-bottom: 20px;
 }
 
 .success-id {

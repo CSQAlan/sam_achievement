@@ -87,6 +87,31 @@ export function updateUserProfile(data) {
   })
 }
 
+// 保存个人中心完整资料（基础信息 + 角色档案）
+export function saveFullUserProfile(data) {
+  return request({
+    url: '/system/user/profile/saveAll',
+    method: 'put',
+    data: data
+  })
+}
+
+// 查询当前登录人的学生档案
+export function getCurrentStudentProfileDetail() {
+  return request({
+    url: '/system/user/profile/studentDetail',
+    method: 'get'
+  })
+}
+
+// 查询当前登录人的教师档案
+export function getCurrentTeacherProfileDetail() {
+  return request({
+    url: '/system/user/profile/teacherDetail',
+    method: 'get'
+  })
+}
+
 // 查询个人中心部门树
 export function getProfileDeptTree() {
   return request({

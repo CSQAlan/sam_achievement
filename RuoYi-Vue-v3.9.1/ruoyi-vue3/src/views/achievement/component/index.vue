@@ -2,127 +2,166 @@
   <div class="achievement-manage-root">
     <div v-show="!pageModeActive" class="app-container">
       <!-- 搜索表单 -->
-      <el-form :model="queryParams" ref="queryRef" :inline="true" v-show="showSearch" label-width="68px">
-        <el-form-item label="成果ID" prop="achievementId">
-          <el-input
-              v-model="queryParams.achievementId"
-              placeholder="请输入成果ID"
-              clearable
-              @keyup.enter="handleQuery"
-          />
-        </el-form-item>
-        <el-form-item label="比赛" prop="track">
-          <el-input
-              v-model="queryParams.track"
-              placeholder="请输入比赛"
-              clearable
-              @keyup.enter="handleQuery"
-          />
-        </el-form-item>
-        <el-form-item label="届次" prop="sessionId">
-          <el-input
-              v-model="queryParams.sessionId"
-              placeholder="请输入届次"
-              clearable
-              @keyup.enter="handleQuery"
-          />
-        </el-form-item>
-        <el-form-item label="参赛选手" prop="contestant">
-          <el-input
-              v-model="queryParams.contestant"
-              placeholder="请输入参赛选手"
-              clearable
-              @keyup.enter="handleQuery"
-          />
-        </el-form-item>
-        <el-form-item label="指导老师" prop="instructor">
-          <el-input
-              v-model="queryParams.instructor"
-              placeholder="请输入指导老师"
-              clearable
-              @keyup.enter="handleQuery"
-          />
-        </el-form-item>
-        <el-form-item label="类别" prop="category">
-          <el-select v-model="queryParams.category" placeholder="请选择类别" clearable>
-            <el-option
-                v-for="dict in achievement_category"
-                :key="dict.value"
-                :label="dict.label"
-                :value="dict.value"
-            />
-          </el-select>
-        </el-form-item>
-        <el-form-item label="作品名称" prop="name">
-          <el-input
-              v-model="queryParams.name"
-              placeholder="请输入作品名称"
-              clearable
-              @keyup.enter="handleQuery"
-          />
-        </el-form-item>
-        <el-form-item label="级别" prop="level">
-          <el-select v-model="queryParams.level" placeholder="请选择级别" clearable>
-            <el-option
-                v-for="dict in award_level_type"
-                :key="dict.value"
-                :label="dict.label"
-                :value="dict.value"
-            />
-          </el-select>
-        </el-form-item>
-        <el-form-item label="获奖等级" prop="grade">
-          <el-select v-model="queryParams.grade" placeholder="请选择获奖等级" clearable>
-            <el-option
-                v-for="dict in award_rank"
-                :key="dict.value"
-                :label="dict.label"
-                :value="dict.value"
-            />
-          </el-select>
-        </el-form-item>
-        <el-form-item label="证书编号" prop="certificateNo">
-          <el-input
-              v-model="queryParams.certificateNo"
-              placeholder="请输入证书编号"
-              clearable
-              @keyup.enter="handleQuery"
-          />
-        </el-form-item>
-        <el-form-item label="组别" prop="groupId">
-          <el-select v-model="queryParams.groupId" placeholder="请选择组别" clearable>
-            <el-option
-                v-for="dict in group_type"
-                :key="dict.value"
-                :label="dict.label"
-                :value="dict.value"
-            />
-          </el-select>
-        </el-form-item>
-        <el-form-item label="获奖时间" prop="awardTime">
-          <el-date-picker
-              v-model="queryParams.awardTimeStart"
-              type="daterange"
-              value-format="YYYY-MM-DD"
-              range-separator="至"
-              start-placeholder="开始时间"
-              end-placeholder="结束时间"
-          />
-        </el-form-item>
-        <el-form-item label="审核状态" prop="reviewStatus" v-if="showReviewStatusFilter">
-          <el-select v-model="queryParams.reviewStatus" placeholder="请选择审核状态" clearable>
-            <el-option
-                v-for="dict in auditStatusFilterOptions"
-                :key="dict.value"
-                :label="dict.label"
-                :value="dict.value"
-            />
-          </el-select>
-        </el-form-item>
-        <el-form-item>
-          <el-button type="primary" icon="Search" @click="handleQuery">搜索</el-button>
-          <el-button icon="Refresh" @click="resetQuery">重置</el-button>
-        </el-form-item>
+      <el-form :model="queryParams" ref="queryRef" v-show="showSearch" label-width="68px" class="achievement-search-form">
+        <el-row :gutter="10" class="search-row search-row-primary">
+
+          <el-col :span="4">
+            <el-form-item label="比赛" prop="track" class="search-item" label-width="40px">
+              <el-input
+                  v-model="queryParams.track"
+                  placeholder="请输入比赛"
+                  clearable
+                  @keyup.enter="handleQuery"
+              />
+            </el-form-item>
+          </el-col>
+          <el-col :span="4">
+            <el-form-item label="届次" prop="sessionId" class="search-item" label-width="40px">
+              <el-input
+                  v-model="queryParams.sessionId"
+                  placeholder="请输入届次"
+                  clearable
+                  @keyup.enter="handleQuery"
+              />
+            </el-form-item>
+          </el-col>
+          <el-col :span="4">
+            <el-form-item label="成果编号" prop="achievementId" class="search-item">
+              <el-input
+                  v-model="queryParams.achievementId"
+                  placeholder="请输入成果编号"
+                  clearable
+                  @keyup.enter="handleQuery"
+              />
+            </el-form-item>
+          </el-col>
+          <el-col :span="4">
+            <el-form-item class="search-item search-action-item">
+              <div class="search-action-row">
+                <el-button type="primary" icon="Search" @click="handleQuery">搜索</el-button>
+                <el-button icon="Refresh" @click="resetQuery">重置</el-button>
+                <el-button link type="primary" @click="toggleAdvancedSearch">
+                  {{ advancedSearchExpanded ? '收起筛选' : '展开筛选' }}
+                </el-button>
+              </div>
+            </el-form-item>
+          </el-col>
+        </el-row>
+
+        <el-row v-show="advancedSearchExpanded" :gutter="16" class="search-row search-row-advanced">
+          <el-col :span="4">
+            <el-form-item label="类别" prop="category" class="search-item">
+              <el-select v-model="queryParams.category" placeholder="请选择类别" clearable>
+                <el-option
+                    v-for="dict in achievement_category"
+                    :key="dict.value"
+                    :label="dict.label"
+                    :value="dict.value"
+                />
+              </el-select>
+            </el-form-item>
+          </el-col>
+          <el-col :span="4">
+            <el-form-item label="参赛选手" prop="contestant" class="search-item">
+              <el-input
+                  v-model="queryParams.contestant"
+                  placeholder="请输入参赛选手"
+                  clearable
+                  @keyup.enter="handleQuery"
+              />
+            </el-form-item>
+          </el-col>
+          <el-col :span="4">
+            <el-form-item label="指导老师" prop="instructor" class="search-item">
+              <el-input
+                  v-model="queryParams.instructor"
+                  placeholder="请输入指导老师"
+                  clearable
+                  @keyup.enter="handleQuery"
+              />
+            </el-form-item>
+          </el-col>
+          <el-col :span="4">
+            <el-form-item label="作品名称" prop="name" class="search-item">
+              <el-input
+                  v-model="queryParams.name"
+                  placeholder="请输入作品名称"
+                  clearable
+                  @keyup.enter="handleQuery"
+              />
+            </el-form-item>
+          </el-col>
+          <el-col :span="4">
+            <el-form-item label="级别" prop="level" class="search-item">
+              <el-select v-model="queryParams.level" placeholder="请选择级别" clearable>
+                <el-option
+                    v-for="dict in award_level_type"
+                    :key="dict.value"
+                    :label="dict.label"
+                    :value="dict.value"
+                />
+              </el-select>
+            </el-form-item>
+          </el-col>
+          <el-col :span="4">
+            <el-form-item label="获奖等级" prop="grade" class="search-item">
+              <el-select v-model="queryParams.grade" placeholder="请选择获奖等级" clearable>
+                <el-option
+                    v-for="dict in award_rank"
+                    :key="dict.value"
+                    :label="dict.label"
+                    :value="dict.value"
+                />
+              </el-select>
+            </el-form-item>
+          </el-col>
+          <el-col :span="4">
+            <el-form-item label="证书编号" prop="certificateNo" class="search-item">
+              <el-input
+                  v-model="queryParams.certificateNo"
+                  placeholder="请输入证书编号"
+                  clearable
+                  @keyup.enter="handleQuery"
+              />
+            </el-form-item>
+          </el-col>
+          <el-col :span="4">
+            <el-form-item label="组别" prop="groupId" class="search-item">
+              <el-select v-model="queryParams.groupId" placeholder="请选择组别" clearable>
+                <el-option
+                    v-for="dict in group_type"
+                    :key="dict.value"
+                    :label="dict.label"
+                    :value="dict.value"
+                />
+              </el-select>
+            </el-form-item>
+          </el-col>
+          <el-col :span="4">
+            <el-form-item label="获奖时间" prop="awardTime" class="search-item">
+              <el-date-picker
+                  v-model="queryParams.awardTimeStart"
+                  type="daterange"
+                  value-format="YYYY-MM-DD"
+                  range-separator="至"
+                  start-placeholder="开始时间"
+                  end-placeholder="结束时间"
+              />
+            </el-form-item>
+          </el-col>
+          <el-col :span="4" v-if="showReviewStatusFilter">
+            <el-form-item label="审核状态" prop="reviewStatus" class="search-item">
+              <el-select v-model="queryParams.reviewStatus" placeholder="请选择审核状态" clearable>
+                <el-option
+                    v-for="dict in auditStatusFilterOptions"
+                    :key="dict.value"
+                    :label="dict.label"
+                    :value="dict.value"
+                />
+              </el-select>
+            </el-form-item>
+          </el-col>
+        </el-row>
       </el-form>
 
       <!-- 操作按钮 -->
@@ -428,6 +467,7 @@ const achievementFormRef = ref(null);
 const achievementDialogRef = ref(null);
 const pageModeActive = ref(false);
 const pageModeKey = ref(0);
+const advancedSearchExpanded = ref(false);
 const formReadOnly = ref(false);
 const formShowSubmit = ref(true);
 const isStudentUser = computed(() => (userStore.roles || []).map(role => String(role).replace(/^ROLE_/, '').toLowerCase()).includes('student'));
@@ -475,8 +515,15 @@ const auditStatusFilterOptions = computed(() => {
   return options;
 });
 const auditStatusBatchOptions = computed(() => {
-  if (reviewSource.value.startsWith('college')) return college_audit_status.value || [];
-  if (reviewSource.value.startsWith('school')) return school_audit_status.value || [];
+  if (reviewSource.value === 'college_level_unreviewed') {
+    return (college_audit_status.value || []).filter((d) => ['1', '2'].includes(String(d.value)));
+  }
+  if (reviewSource.value === 'college_level_reviewed') {
+    return college_audit_status.value || [];
+  }
+  if (reviewSource.value === 'school_level_unreviewed' || reviewSource.value === 'school_level_reviewed') {
+    return (school_audit_status.value || []).filter((d) => ['0', '1'].includes(String(d.value)));
+  }
   return auditStatus.value || [];
 });
 
@@ -573,6 +620,10 @@ const resetQuery = () => {
   queryParams.pageSize = 10;
   getList();
 };
+
+function toggleAdvancedSearch() {
+  advancedSearchExpanded.value = !advancedSearchExpanded.value;
+}
 
 function handleSelectionChange(selection) {
   selectedRows.value = selection;
@@ -807,4 +858,36 @@ export default {
   name: 'AchievementManageIndex'
 }
 </script>
+
+<style scoped>
+.achievement-search-form {
+  margin-bottom: 18px;
+}
+
+.search-row + .search-row {
+  margin-top: 2px;
+}
+
+.search-item {
+  margin-bottom: 16px;
+}
+
+.search-action-item :deep(.el-form-item__content) {
+  justify-content: flex-start;
+}
+
+.search-action-row {
+  min-height: 32px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+.search-item :deep(.el-input),
+.search-item :deep(.el-select),
+.search-item :deep(.el-date-editor) {
+  width: 100%;
+}
+</style>
 

@@ -88,7 +88,17 @@ public class SamStudentController extends BaseController
     @PostMapping
     public AjaxResult add(@RequestBody SamStudent samStudent)
     {
-        return toAjax(samStudentService.insertSamStudent(samStudent));
+        int rows = samStudentService.insertSamStudent(samStudent);
+        if (rows > 0 && StringUtils.isNotBlank(samStudent.getNo()))
+        {
+            LoginUser loginUser = SecurityUtils.getLoginUser();
+            if (loginUser != null && StringUtils.equals(loginUser.getUsername(), samStudent.getNo()))
+            {
+                profileCompletionService.refreshProfileCompletion(loginUser);
+                tokenService.setLoginUser(loginUser);
+            }
+        }
+        return toAjax(rows);
     }
 
     /**

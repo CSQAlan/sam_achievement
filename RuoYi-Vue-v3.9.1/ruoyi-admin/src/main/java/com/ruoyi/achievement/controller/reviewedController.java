@@ -3,6 +3,7 @@ package com.ruoyi.achievement.controller;
 import java.util.List;
 import javax.servlet.http.HttpServletResponse;
 import org.springframework.security.access.prepost.PreAuthorize;
+import org.springframework.security.access.AccessDeniedException;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PostMapping;
@@ -16,6 +17,9 @@ import com.ruoyi.common.annotation.Log;
 import com.ruoyi.common.core.controller.BaseController;
 import com.ruoyi.common.core.domain.AjaxResult;
 import com.ruoyi.common.enums.BusinessType;
+import com.ruoyi.common.exception.ServiceException;
+import com.ruoyi.common.utils.SecurityUtils;
+import com.ruoyi.common.utils.StringUtils;
 import com.ruoyi.achievement.domain.reviewed;
 import com.ruoyi.achievement.service.IreviewedService;
 import com.ruoyi.common.utils.poi.ExcelUtil;
@@ -30,9 +34,20 @@ public class reviewedController extends BaseController
 
     public static class BatchReviewStatusRequest
     {
+        private String source;
         private String[] achievementIds;
         private Long reviewStatus;
         private String rejectReason;
+
+        public String getSource()
+        {
+            return source;
+        }
+
+        public void setSource(String source)
+        {
+            this.source = source;
+        }
 
         public String[] getAchievementIds()
         {
@@ -65,19 +80,140 @@ public class reviewedController extends BaseController
         }
     }
 
+    public static class ReviewSubmitRequest
+    {
+        private String source;
+        private String achievementId;
+        private Long reviewStatus;
+        private String rejectReason;
+
+        public String getSource()
+        {
+            return source;
+        }
+
+        public void setSource(String source)
+        {
+            this.source = source;
+        }
+
+        public String getAchievementId()
+        {
+            return achievementId;
+        }
+
+        public void setAchievementId(String achievementId)
+        {
+            this.achievementId = achievementId;
+        }
+
+        public Long getReviewStatus()
+        {
+            return reviewStatus;
+        }
+
+        public void setReviewStatus(Long reviewStatus)
+        {
+            this.reviewStatus = reviewStatus;
+        }
+
+        public String getRejectReason()
+        {
+            return rejectReason;
+        }
+
+        public void setRejectReason(String rejectReason)
+        {
+            this.rejectReason = rejectReason;
+        }
+    }
+
     private void applyFilter(reviewed reviewed, String stage, String status)
     {
         reviewed.setReviewStage(stage);
         reviewed.setReviewStatus(status);
     }
 
-    private AjaxResult batchUpdateStatus(String stage, BatchReviewStatusRequest request)
+    private AjaxResult batchUpdateStatus(String source, BatchReviewStatusRequest request)
     {
         if (request == null)
         {
             return error("请求参数不能为空");
         }
-        return toAjax(reviewedService.batchUpdateReviewStatus(request.getAchievementIds(), stage, request.getReviewStatus(), request.getRejectReason()));
+        return toAjax(reviewedService.batchSubmitReview(source, request.getAchievementIds(), request.getReviewStatus(), request.getRejectReason()));
+    }
+
+    private void checkReviewEditPermission(String source)
+    {
+        String permission = resolveReviewEditPermission(source);
+        if (StringUtils.isEmpty(permission))
+        {
+            throw new ServiceException("审核来源无效");
+        }
+        if (!SecurityUtils.hasPermi(permission))
+        {
+            throw new AccessDeniedException("没有访问该审核页面的权限");
+        }
+    }
+
+    private String resolveReviewEditPermission(String source)
+    {
+        String normalizedSource = StringUtils.hasText(source) ? source.trim().toLowerCase() : "";
+        switch (normalizedSource)
+        {
+            case "college_level_unreviewed":
+                return "achievement:college_level_unreviewed:edit";
+            case "college_level_reviewed":
+                return "achievement:college_level_reviewed:edit";
+            case "school_level_unreviewed":
+                return "achievement:school_level_unreviewed:edit";
+            case "school_level_reviewed":
+                return "achievement:school_level_reviewed:edit";
+            default:
+                return "";
+        }
+    }
+
+    @PreAuthorize(
+            "@ss.hasPermi('achievement:college_level_unreviewed:edit')"
+                    + " or @ss.hasPermi('achievement:college_level_reviewed:edit')"
+                    + " or @ss.hasPermi('achievement:school_level_unreviewed:edit')"
+                    + " or @ss.hasPermi('achievement:school_level_reviewed:edit')")
+    @Log(title = "Achievement Review Submit", businessType = BusinessType.UPDATE)
+    @PutMapping("/review/submit")
+    public AjaxResult submitReview(@RequestBody ReviewSubmitRequest request)
+    {
+        if (request == null)
+        {
+            return error("请求参数不能为空");
+        }
+        checkReviewEditPermission(request.getSource());
+        return success(reviewedService.submitReview(
+                request.getSource(),
+                request.getAchievementId(),
+                request.getReviewStatus(),
+                request.getRejectReason()));
+    }
+
+    @PreAuthorize(
+            "@ss.hasPermi('achievement:college_level_unreviewed:edit')"
+                    + " or @ss.hasPermi('achievement:college_level_reviewed:edit')"
+                    + " or @ss.hasPermi('achievement:school_level_unreviewed:edit')"
+                    + " or @ss.hasPermi('achievement:school_level_reviewed:edit')")
+    @Log(title = "Achievement Review Batch Submit", businessType = BusinessType.UPDATE)
+    @PutMapping("/review/batchSubmit")
+    public AjaxResult batchSubmitReview(@RequestBody BatchReviewStatusRequest request)
+    {
+        if (request == null)
+        {
+            return error("请求参数不能为空");
+        }
+        checkReviewEditPermission(request.getSource());
+        return toAjax(reviewedService.batchSubmitReview(
+                request.getSource(),
+                request.getAchievementIds(),
+                request.getReviewStatus(),
+                request.getRejectReason()));
     }
 
     @PreAuthorize("@ss.hasPermi('achievement:college_level_unreviewed:list')")
@@ -131,7 +267,7 @@ public class reviewedController extends BaseController
     @PutMapping("/college_level_unreviewed/batchReviewStatus")
     public AjaxResult batchCollegeUnreviewedStatus(@RequestBody BatchReviewStatusRequest request)
     {
-        return batchUpdateStatus("college", request);
+        return batchUpdateStatus("college_level_unreviewed", request);
     }
 
     @PreAuthorize("@ss.hasPermi('achievement:college_level_unreviewed:remove')")
@@ -193,7 +329,7 @@ public class reviewedController extends BaseController
     @PutMapping("/college_level_reviewed/batchReviewStatus")
     public AjaxResult batchCollegeReviewedStatus(@RequestBody BatchReviewStatusRequest request)
     {
-        return batchUpdateStatus("college", request);
+        return batchUpdateStatus("college_level_reviewed", request);
     }
 
     @PreAuthorize("@ss.hasPermi('achievement:college_level_reviewed:remove')")
@@ -255,7 +391,7 @@ public class reviewedController extends BaseController
     @PutMapping("/school_level_unreviewed/batchReviewStatus")
     public AjaxResult batchSchoolUnreviewedStatus(@RequestBody BatchReviewStatusRequest request)
     {
-        return batchUpdateStatus("school", request);
+        return batchUpdateStatus("school_level_unreviewed", request);
     }
 
     @PreAuthorize("@ss.hasPermi('achievement:school_level_unreviewed:remove')")
@@ -317,7 +453,7 @@ public class reviewedController extends BaseController
     @PutMapping("/school_level_reviewed/batchReviewStatus")
     public AjaxResult batchSchoolReviewedStatus(@RequestBody BatchReviewStatusRequest request)
     {
-        return batchUpdateStatus("school", request);
+        return batchUpdateStatus("school_level_reviewed", request);
     }
 
     @PreAuthorize("@ss.hasPermi('achievement:school_level_reviewed:remove')")
