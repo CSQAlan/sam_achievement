@@ -6,6 +6,7 @@ import org.springframework.stereotype.Service;
 import com.ruoyi.achievement.mapper.SamStudentMapper;
 import com.ruoyi.achievement.domain.SamStudent;
 import com.ruoyi.achievement.service.ISamStudentService;
+import com.ruoyi.common.utils.StringUtils;
 
 /**
  * 学生档案Service业务层处理
@@ -64,6 +65,20 @@ public class SamStudentServiceImpl implements ISamStudentService
     @Override
     public int updateSamStudent(SamStudent samStudent)
     {
+        if (samStudent.getStudentId() == null && StringUtils.isNotBlank(samStudent.getNo()))
+        {
+            SamStudent query = new SamStudent();
+            query.setNo(samStudent.getNo());
+            List<SamStudent> exists = samStudentMapper.selectSamStudentList(query);
+            if (exists != null && !exists.isEmpty())
+            {
+                samStudent.setStudentId(exists.get(0).getStudentId());
+            }
+            else
+            {
+                return samStudentMapper.insertSamStudent(samStudent);
+            }
+        }
         return samStudentMapper.updateSamStudent(samStudent);
     }
 

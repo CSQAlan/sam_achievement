@@ -37,6 +37,10 @@ public class reviewedServiceImpl implements IreviewedService
     private static final Long SCHOOL_REJECT = 0L;
     private static final Long SCHOOL_PASS = 1L;
     private static final Long SCHOOL_PENDING = 2L;
+    private static final String SOURCE_COLLEGE_UNREVIEWED = "college_level_unreviewed";
+    private static final String SOURCE_COLLEGE_REVIEWED = "college_level_reviewed";
+    private static final String SOURCE_SCHOOL_UNREVIEWED = "school_level_unreviewed";
+    private static final String SOURCE_SCHOOL_REVIEWED = "school_level_reviewed";
     private static final String AUTO_SCHOOL_REJECT_REASON = "因院级状态变更自动驳回";
     private static final String AUTO_SCHOOL_REJECT_AUDITOR = "system";
 
@@ -113,8 +117,11 @@ public class reviewedServiceImpl implements IreviewedService
         applyDefaultYear(reviewed);
         validateReviewFlow(existing, reviewed);
         reviewed.setUpdateTime(DateUtils.getNowDate());
-        reviewedMapper.deleteSamAchievementParticipantByParticipantId(reviewed.getAchievementId());
-        insertSamAchievementParticipant(reviewed);
+        if (reviewed.getSamAchievementParticipantList() != null)
+        {
+            reviewedMapper.deleteSamAchievementParticipantByParticipantId(reviewed.getAchievementId());
+            insertSamAchievementParticipant(reviewed);
+        }
         return reviewedMapper.updatereviewed(reviewed);
     }
 
@@ -147,78 +154,252 @@ public class reviewedServiceImpl implements IreviewedService
     }
 
     /**
-     * 批量更新审核状态
+     * 提交单条审核，最终流转规则以后端为准。
      */
     @Transactional
     @Override
-    public int batchUpdateReviewStatus(String[] achievementIds, String stage, Long reviewStatus, String rejectReason)
+    public reviewed submitReview(String source, String achievementId, Long reviewStatus, String rejectReason)
+    {
+        return submitReviewInternal(source, achievementId, reviewStatus, rejectReason);
+    }
+
+    /**
+     * 批量提交审核，复用与单条审核完全一致的规则。
+     */
+    @Transactional
+    @Override
+    public int batchSubmitReview(String source, String[] achievementIds, Long reviewStatus, String rejectReason)
     {
         if (achievementIds == null || achievementIds.length == 0)
         {
             throw new ServiceException("请选择需要批量审核的成果");
         }
 
-        String normalizedStage = resolveStage(stage);
-        if (normalizedStage == null)
+        LinkedHashSet<String> uniqueIds = new LinkedHashSet<String>();
+        for (String achievementId : achievementIds)
         {
-            throw new ServiceException("审核归属无效");
+            if (StringUtils.hasText(achievementId))
+            {
+                uniqueIds.add(achievementId.trim());
+            }
         }
 
+        if (uniqueIds.isEmpty())
+        {
+            throw new ServiceException("请选择需要批量审核的成果");
+        }
+
+        int successCount = 0;
+        for (String achievementId : uniqueIds)
+        {
+            submitReviewInternal(source, achievementId, reviewStatus, rejectReason);
+            successCount++;
+        }
+        return successCount;
+    }
+
+    private reviewed submitReviewInternal(String source, String achievementId, Long reviewStatus, String rejectReason)
+    {
+        ReviewSourceContext context = resolveSourceContext(source);
+        if (!StringUtils.hasText(achievementId))
+        {
+            throw new ServiceException("成果ID不能为空");
+        }
         if (reviewStatus == null)
         {
             throw new ServiceException("审核状态不能为空");
         }
 
+        String normalizedAchievementId = achievementId.trim();
         String normalizedRejectReason = StringUtils.hasText(rejectReason) ? rejectReason.trim() : null;
-        String operator = null;
-        try
+        validateTargetStatus(context, reviewStatus, normalizedRejectReason);
+
+        reviewed existing = reviewedMapper.selectreviewedByAchievementId(normalizedAchievementId);
+        if (existing == null)
         {
-            operator = SecurityUtils.getUsername();
-        }
-        catch (Exception e)
-        {
-            operator = null;
+            throw new ServiceException("未找到对应的成果审核信息");
         }
 
-        // 处理院级审核
-        if (STAGE_COLLEGE.equals(normalizedStage))
+        validateSourceEntryState(context, existing);
+
+        reviewed update = buildReviewUpdate(context, normalizedAchievementId, reviewStatus, normalizedRejectReason);
+        updatereviewed(update);
+        return reviewedMapper.selectreviewedByAchievementId(normalizedAchievementId);
+    }
+
+    private void validateTargetStatus(ReviewSourceContext context, Long reviewStatus, String rejectReason)
+    {
+        if (SOURCE_COLLEGE_UNREVIEWED.equals(context.getSource()))
+        {
+            if (!Objects.equals(reviewStatus, COLLEGE_REJECT) && !Objects.equals(reviewStatus, COLLEGE_PASS))
+            {
+                throw new ServiceException("院级未审核页面仅允许提交通过或驳回");
+            }
+            if (Objects.equals(reviewStatus, COLLEGE_REJECT) && !StringUtils.hasText(rejectReason))
+            {
+                throw new ServiceException("请输入院级驳回原因");
+            }
+            return;
+        }
+
+        if (SOURCE_COLLEGE_REVIEWED.equals(context.getSource()))
         {
             if (!Objects.equals(reviewStatus, COLLEGE_PENDING)
                     && !Objects.equals(reviewStatus, COLLEGE_REJECT)
                     && !Objects.equals(reviewStatus, COLLEGE_PASS))
             {
-                throw new ServiceException("院级审核状态无效");
+                throw new ServiceException("院级已审核页面仅允许提交待审核、通过或驳回");
             }
-
-            if (Objects.equals(reviewStatus, COLLEGE_REJECT) && !StringUtils.hasText(normalizedRejectReason))
+            if (Objects.equals(reviewStatus, COLLEGE_REJECT) && !StringUtils.hasText(rejectReason))
             {
                 throw new ServiceException("请输入院级驳回原因");
             }
-
-            // 批量更新院级审核状态
-            return reviewedMapper.batchUpdateCollegeReviewStatus(achievementIds, reviewStatus, normalizedRejectReason, operator);
+            return;
         }
 
-        // 处理校级审核
-        if (STAGE_SCHOOL.equals(normalizedStage))
+        if (!Objects.equals(reviewStatus, SCHOOL_REJECT) && !Objects.equals(reviewStatus, SCHOOL_PASS))
         {
-            if (!Objects.equals(reviewStatus, SCHOOL_PENDING)
-                    && !Objects.equals(reviewStatus, SCHOOL_REJECT)
-                    && !Objects.equals(reviewStatus, SCHOOL_PASS))
-            {
-                throw new ServiceException("校级审核状态无效");
-            }
+            throw new ServiceException("校级审核页面仅允许提交通过或驳回");
+        }
+        if (Objects.equals(reviewStatus, SCHOOL_REJECT) && !StringUtils.hasText(rejectReason))
+        {
+            throw new ServiceException("请输入校级驳回原因");
+        }
+    }
 
-            if (Objects.equals(reviewStatus, SCHOOL_REJECT) && !StringUtils.hasText(normalizedRejectReason))
-            {
-                throw new ServiceException("请输入校级驳回原因");
-            }
+    private void validateSourceEntryState(ReviewSourceContext context, reviewed existing)
+    {
+        Long currentCollege = existing.getReviewResult() == null ? COLLEGE_PENDING : existing.getReviewResult();
+        Long currentSchool = normalizeExistingSchoolStatus(existing);
 
-            // 批量更新校级审核状态
-            return reviewedMapper.batchUpdateSchoolReviewStatus(achievementIds, reviewStatus, normalizedRejectReason, operator);
+        if (SOURCE_COLLEGE_UNREVIEWED.equals(context.getSource()))
+        {
+            if (!Objects.equals(currentCollege, COLLEGE_PENDING))
+            {
+                throw new ServiceException("该成果当前不在院级未审核列表，不能按院级未审核流程提交");
+            }
+            return;
         }
 
-        throw new ServiceException("审核归属无效");
+        if (SOURCE_COLLEGE_REVIEWED.equals(context.getSource()))
+        {
+            if (!isCollegeReviewedValue(currentCollege))
+            {
+                throw new ServiceException("该成果当前不在院级已审核列表，不能按院级已审核流程提交");
+            }
+            return;
+        }
+
+        if (!Objects.equals(currentCollege, COLLEGE_PASS))
+        {
+            throw new ServiceException("校级审核前必须院级通过");
+        }
+
+        if (SOURCE_SCHOOL_UNREVIEWED.equals(context.getSource()))
+        {
+            if (!Objects.equals(currentSchool, SCHOOL_PENDING))
+            {
+                throw new ServiceException("该成果当前不在校级未审核列表，不能按校级未审核流程提交");
+            }
+            return;
+        }
+
+        if (!isSchoolReviewedValue(currentSchool))
+        {
+            throw new ServiceException("该成果当前不在校级已审核列表，不能按校级已审核流程提交");
+        }
+    }
+
+    private reviewed buildReviewUpdate(ReviewSourceContext context, String achievementId, Long reviewStatus, String rejectReason)
+    {
+        String operator = resolveOperatorName();
+        reviewed update = new reviewed();
+        update.setAchievementId(achievementId);
+        update.setReviewStage(context.getStage());
+        update.setReviewStatus(context.getStatus());
+        update.setUpdateBy(operator);
+
+        if (STAGE_COLLEGE.equals(context.getStage()))
+        {
+            update.setReviewResult(reviewStatus);
+            update.setReviewReason(Objects.equals(reviewStatus, COLLEGE_REJECT) ? rejectReason : null);
+            if (!Objects.equals(reviewStatus, COLLEGE_PENDING))
+            {
+                update.setReviewedAt(DateUtils.getNowDate());
+                update.setAuditBy(operator);
+            }
+            return update;
+        }
+
+        update.setSchooiReviewResult(reviewStatus);
+        update.setSchoolReviewReason(Objects.equals(reviewStatus, SCHOOL_REJECT) ? rejectReason : null);
+        update.setSchoolReviewedAt(DateUtils.getNowDate());
+        update.setSchoolAuditBy(operator);
+        return update;
+    }
+
+    private ReviewSourceContext resolveSourceContext(String source)
+    {
+        String normalizedSource = StringUtils.hasText(source) ? source.trim().toLowerCase() : "";
+        if (SOURCE_COLLEGE_UNREVIEWED.equals(normalizedSource))
+        {
+            return new ReviewSourceContext(normalizedSource, STAGE_COLLEGE, STATUS_UNREVIEWED);
+        }
+        if (SOURCE_COLLEGE_REVIEWED.equals(normalizedSource))
+        {
+            return new ReviewSourceContext(normalizedSource, STAGE_COLLEGE, STATUS_REVIEWED);
+        }
+        if (SOURCE_SCHOOL_UNREVIEWED.equals(normalizedSource))
+        {
+            return new ReviewSourceContext(normalizedSource, STAGE_SCHOOL, STATUS_UNREVIEWED);
+        }
+        if (SOURCE_SCHOOL_REVIEWED.equals(normalizedSource))
+        {
+            return new ReviewSourceContext(normalizedSource, STAGE_SCHOOL, STATUS_REVIEWED);
+        }
+        throw new ServiceException("审核来源无效");
+    }
+
+    private String resolveOperatorName()
+    {
+        try
+        {
+            String username = SecurityUtils.getUsername();
+            return StringUtils.hasText(username) ? username : AUTO_SCHOOL_REJECT_AUDITOR;
+        }
+        catch (Exception e)
+        {
+            return AUTO_SCHOOL_REJECT_AUDITOR;
+        }
+    }
+
+    private static class ReviewSourceContext
+    {
+        private final String source;
+        private final String stage;
+        private final String status;
+
+        ReviewSourceContext(String source, String stage, String status)
+        {
+            this.source = source;
+            this.stage = stage;
+            this.status = status;
+        }
+
+        public String getSource()
+        {
+            return source;
+        }
+
+        public String getStage()
+        {
+            return stage;
+        }
+
+        public String getStatus()
+        {
+            return status;
+        }
     }
 
     /**
