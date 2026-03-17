@@ -1,13 +1,14 @@
 <template>
   <div class="app-container">
     <AchievementManageIndex 
+      source-mode="responsible"
       :audit-dict="college_audit_status"
       :audit-dict-school="school_audit_status"
     />
   </div>
 </template>
 
-<script setup name="ManageIndex">
+<script setup name="ResponsibleAchievement">
 import { ref } from 'vue';
 import AchievementManageIndex from '../component/index.vue';
 import { useDict } from '@/utils/dict';

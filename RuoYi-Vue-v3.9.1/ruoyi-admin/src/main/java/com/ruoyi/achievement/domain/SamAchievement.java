@@ -20,7 +20,7 @@ public class SamAchievement extends BaseEntity
     private static final long serialVersionUID = 1L;
 
     /** 成果ID */
-    @Excel(name = "成果ID")
+    @Excel(name = "成果ID",sort = '2',dictType = "sam_achievement")
     private String achievementId;
 
     /** 届次  */
@@ -34,7 +34,7 @@ public class SamAchievement extends BaseEntity
     private String competitionName;
 
     /** 类别 */
-    @Excel(name = "类别")
+    @Excel(name = "类别", dictType = "achievement_category")
     private String category;
 
     /** 作品名称 */
@@ -46,11 +46,11 @@ public class SamAchievement extends BaseEntity
     private String teamName;
 
     /** 获奖级别 */
-    @Excel(name = "获奖级别")
+    @Excel(name = "获奖级别", dictType = "award_level_type")
     private String level;
 
     /** 获奖等级 */
-    @Excel(name = "获奖等级")
+    @Excel(name = "获奖等级", dictType = "award_rank")
     private Long grade;
 
     /** 赛道 */
@@ -62,7 +62,7 @@ public class SamAchievement extends BaseEntity
     private String certificateNo;
 
     /** 组别 */
-    @Excel(name = "组别")
+    @Excel(name = "组别", dictType = "group_type")
     private Long groupId;
 
     /** 获奖时间 */

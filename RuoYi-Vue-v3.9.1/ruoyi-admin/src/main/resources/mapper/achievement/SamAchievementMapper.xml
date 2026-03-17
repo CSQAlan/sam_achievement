@@ -130,7 +130,7 @@
                  left join sam_competition c on s.competition_id = c.id
     </sql>
 
-    <select id="selectSamAchievementList" parameterType="SamAchievement" resultMap="SamAchievementResult">
+    <select id="selectSamAchievementList" parameterType="SamAchievement" resultMap="SamAchievementSamAchievementParticipantResult">
         <include refid="selectSamAchievementVo"/>
         <where>
             <if test="achievementId != null  and achievementId != ''"> and a.achievement_id = #{achievementId}</if>
@@ -147,33 +147,36 @@
         </where>
     </select>
 
-    <select id="selectSamAchievementListByStudentId" parameterType="SamAchievement" resultMap="SamAchievementResult">
+    <select id="selectSamAchievementListByStudentId" parameterType="SamAchievement" resultMap="SamAchievementSamAchievementParticipantResult">
         <include refid="selectSamAchievementVo"/>
         inner join sam_achievement_participant p on a.achievement_id = p.achievement_id
         <where>
             and p.student_id = #{params.studentId}
+            <if test="params.manager != null and params.manager != ''"> and p.manager = #{params.manager}</if>
             <if test="name != null  and name != ''"> and a.name like concat('%', #{name}, '%')</if>
             <if test="reviewResult != null  and reviewResult != ''"> and a.review_result = #{reviewResult}</if>
         </where>
     </select>
 
-    <select id="selectSamAchievementListByTeacherId" parameterType="SamAchievement" resultMap="SamAchievementResult">
+    <select id="selectSamAchievementListByTeacherId" parameterType="SamAchievement" resultMap="SamAchievementSamAchievementParticipantResult">
         <include refid="selectSamAchievementVo"/>
         inner join sam_achievement_advisor ad on a.achievement_id = ad.achievement_id
         <where>
             and ad.teacher_id = #{params.teacherId}
-            and (ad.manager = 1 or ad.manager = '1' or ad.order_no = 1)
+            <if test="params.isFirst != null and params.isFirst == 1"> and ad.order_no = 1</if>
             <if test="name != null  and name != ''"> and a.name like concat('%', #{name}, '%')</if>
             <if test="reviewResult != null  and reviewResult != ''"> and a.review_result = #{reviewResult}</if>
         </where>
     </select>
 
-    <select id="selectSamAchievementListByResponsibleStudentId" parameterType="SamAchievement" resultMap="SamAchievementResult">
+    <select id="selectSamAchievementListByUserId" parameterType="SamAchievement" resultMap="SamAchievementSamAchievementParticipantResult">
         <include refid="selectSamAchievementVo"/>
-        inner join sam_achievement_participant p on a.achievement_id = p.achievement_id
         <where>
-            and p.student_id = #{params.studentId}
-            and (p.manager = 1 or p.manager = '1' or p.order_no = 1)
+            (
+                exists (select 1 from sam_achievement_participant p where p.achievement_id = a.achievement_id and p.student_id = #{params.userId})
+                or
+                exists (select 1 from sam_achievement_advisor ad where ad.achievement_id = a.achievement_id and ad.teacher_id = #{params.userId})
+            )
             <if test="name != null  and name != ''"> and a.name like concat('%', #{name}, '%')</if>
             <if test="reviewResult != null  and reviewResult != ''"> and a.review_result = #{reviewResult}</if>
         </where>
@@ -202,6 +205,11 @@
         select attachment_id, achievement_id, file_uuid as fileUuid, type, file_type as fileType
         from sam_achievement_attachment
         where achievement_id = #{achievement_id}
+    </select>
+
+    <select id="checkCertificateNoUnique" parameterType="String" resultMap="SamAchievementResult">
+        <include refid="selectSamAchievementVo"/>
+        where a.certificate_no = #{certificateNo} limit 1
     </select>
 
     <insert id="insertSamAchievement" parameterType="SamAchievement" useGeneratedKeys="true" keyProperty="achievementId">

@@ -48,7 +48,7 @@ public class SamTeacherController extends BaseController
     /**
      * 查询教师档案列表
      */
-    @PreAuthorize("@ss.hasPermi('achievement:teacher:list')")
+    @PreAuthorize("@ss.hasAnyPermi('achievement:teacher:list,achievement:manage:list,achievement:manage:participated:list,achievement:manage:guided:list')")
     @GetMapping("/list")
     public TableDataInfo list(SamTeacher samTeacher)
     {
@@ -73,7 +73,7 @@ public class SamTeacherController extends BaseController
     /**
      * 获取教师档案详细信息
      */
-    @PreAuthorize("@ss.hasPermi('achievement:teacher:query')")
+    @PreAuthorize("@ss.hasAnyPermi('achievement:teacher:query,achievement:manage:list,achievement:manage:participated:list,achievement:manage:guided:list')")
     @GetMapping(value = "/{id}")
     public AjaxResult getInfo(@PathVariable("id") Long id)
     {
@@ -83,7 +83,7 @@ public class SamTeacherController extends BaseController
     /**
      * 新增教师档案
      */
-    @PreAuthorize("@ss.hasPermi('achievement:teacher:add')")
+    @PreAuthorize("@ss.hasAnyPermi('achievement:teacher:add,achievement:manage:list,achievement:manage:participated:list,achievement:manage:guided:list')")
     @Log(title = "教师档案", businessType = BusinessType.INSERT)
     @PostMapping
     public AjaxResult add(@RequestBody SamTeacher samTeacher)

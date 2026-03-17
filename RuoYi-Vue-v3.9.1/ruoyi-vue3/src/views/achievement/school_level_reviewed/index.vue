@@ -7,7 +7,7 @@
       :update-fn="updateSchool_level_reviewed"
       :del-fn="delSchool_level_reviewed"
       :export-url="'achievement/school_level_reviewed/export'"
-      :audit-dict="School_audit_status"
+      :audit-dict="school_audit_status"
       permission-prefix="achievement:school_level_reviewed"
       review-source="school_level_reviewed"
     />
@@ -26,7 +26,7 @@ import {
   updateSchool_level_reviewed,
   delSchool_level_reviewed
 } from '@/api/achievement/school_level_reviewed';
-const { School_audit_status } = useDict('School_audit_status');
+const { school_audit_status } = useDict('school_audit_status');
 
 const route = useRoute();
 const router = useRouter();
