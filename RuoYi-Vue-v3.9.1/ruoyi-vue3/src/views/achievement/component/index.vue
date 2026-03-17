@@ -5,7 +5,7 @@
       <el-form :model="queryParams" ref="queryRef" v-show="showSearch" label-width="68px" class="achievement-search-form">
         <el-row :gutter="10" class="search-row search-row-primary">
 
-          <el-col :span="4">
+          <el-col :span="5">
             <el-form-item label="比赛" prop="track" class="search-item" label-width="40px">
               <el-input
                   v-model="queryParams.track"
@@ -15,7 +15,7 @@
               />
             </el-form-item>
           </el-col>
-          <el-col :span="4">
+          <el-col :span="5">
             <el-form-item label="届次" prop="sessionId" class="search-item" label-width="40px">
               <el-input
                   v-model="queryParams.sessionId"
@@ -25,7 +25,7 @@
               />
             </el-form-item>
           </el-col>
-          <el-col :span="4">
+          <el-col :span="5">
             <el-form-item label="成果编号" prop="achievementId" class="search-item">
               <el-input
                   v-model="queryParams.achievementId"
@@ -35,7 +35,7 @@
               />
             </el-form-item>
           </el-col>
-          <el-col :span="4">
+          <el-col :span="9" class="search-action-col">
             <el-form-item class="search-item search-action-item">
               <div class="search-action-row">
                 <el-button type="primary" icon="Search" @click="handleQuery">搜索</el-button>
@@ -164,7 +164,6 @@
         </el-row>
       </el-form>
 
-      <!-- 操作按钮 -->
       <el-row :gutter="10" class="mb8">
         <el-col :span="1.5">
           <el-button
@@ -244,7 +243,6 @@
         </el-col>
       </el-row>
 
-      <!-- 数据表格 -->
       <el-table ref="tableRef" v-loading="loading" :data="listData" @selection-change="handleSelectionChange">
         <el-table-column type="selection" width="55" align="center" />
         <el-table-column label="成果ID" align="center" prop="achievementId" />
@@ -280,7 +278,33 @@
         </el-table-column>
         <el-table-column label="审核状态" align="center" prop="reviewStatus">
           <template #default="scope">
-            <dict-tag :options="auditStatus" :value="scope.row.reviewStatus" />
+            <div style="display: flex; align-items: center; justify-content: center;">
+              <template v-if="!reviewSource">
+                <el-tag v-if="scope.row.reviewResult === null || scope.row.reviewResult === undefined || String(scope.row.reviewResult) === '0'" type="primary">待审核</el-tag>
+                <el-tag v-else-if="String(scope.row.reviewResult) === '1'" type="danger">院级驳回</el-tag>
+                <template v-else-if="String(scope.row.reviewResult) === '2'">
+                  <el-tag v-if="scope.row.schooiReviewResult === null || scope.row.schooiReviewResult === undefined || String(scope.row.schooiReviewResult) === '2'" type="warning">待校级审核</el-tag>
+                  <el-tag v-else-if="String(scope.row.schooiReviewResult) === '0'" type="danger">校级驳回</el-tag>
+                  <el-tag v-else-if="String(scope.row.schooiReviewResult) === '1'" type="success">校级审核通过</el-tag>
+                </template>
+              </template>
+              <dict-tag v-else :options="auditStatus" :value="scope.row.reviewStatus" />
+
+              <el-tooltip
+                  v-if="String(scope.row.reviewResult) === '1' && scope.row.reviewReason"
+                  :content="'院级驳回原因：' + scope.row.reviewReason"
+                  placement="top"
+              >
+                <el-icon style="margin-left: 5px; color: #F56C6C; cursor: pointer;"><Warning /></el-icon>
+              </el-tooltip>
+              <el-tooltip
+                  v-if="String(scope.row.schooiReviewResult) === '0' && scope.row.schoolReviewReason"
+                  :content="'校级驳回原因：' + scope.row.schoolReviewReason"
+                  placement="top"
+              >
+                <el-icon style="margin-left: 5px; color: #F56C6C; cursor: pointer;"><Warning /></el-icon>
+              </el-tooltip>
+            </div>
           </template>
         </el-table-column>
         <el-table-column label="获奖时间" align="center" prop="awardTime" width="180">
@@ -290,7 +314,7 @@
         </el-table-column>
         <el-table-column label="操作" align="center" class-name="small-padding fixed-width">
           <template #default="scope">
-            <el-button v-if="canUseReviewAction" link type="primary" icon="View" @click="handleReview(scope.row)">详情</el-button>
+            <el-button link type="primary" icon="View" @click="handleReview(scope.row)" v-hasPermi="[...permReview, ...permQuery]">详情</el-button>
 
             <el-button
                 v-if="showEdit && canUseEditAction"
@@ -298,6 +322,7 @@
                 type="primary"
                 icon="Edit"
                 @click="handleRowUpdate(scope.row)"
+                v-hasPermi="permEdit"
                 :disabled="!checkEditable(scope.row)"
             >审核</el-button>
 
@@ -334,7 +359,7 @@
         :page-mode="pageModeActive"
         :read-only="formReadOnly"
         :show-submit="formShowSubmit"
-        :self-edit-scene="props.selfEditScene"
+        :source-mode="sourceMode"
         cancel-text="返回"
         @ok="handleFormOk"
         @cancel="handleFormCancel"
@@ -346,7 +371,7 @@
         :update-fn="updateFn"
         :read-only="formReadOnly"
         :show-submit="formShowSubmit"
-        :self-edit-scene="props.selfEditScene"
+        :source-mode="sourceMode"
         cancel-text="返回"
         @ok="handleFormOk"
         @cancel="handleFormCancel"
@@ -360,6 +385,7 @@ import { useRoute, useRouter } from 'vue-router';
 import { useDict } from '@/utils/dict';
 import useUserStore from '@/store/modules/user';
 import auth from '@/plugins/auth';
+import { Warning } from '@element-plus/icons-vue';
 import AchievementForm from '../component/AchievementForm.vue';
 import { listManage, getManage, addManage, updateManage, delManage } from '@/api/achievement/manage';
 import { batchUpdateReviewStatus } from '@/api/achievement/review_batch';
@@ -382,7 +408,7 @@ const props = defineProps({
   showEdit: { type: Boolean, default: true },
   showDelete: { type: Boolean, default: true },
   showExport: { type: Boolean, default: true },
-  selfEditScene: { type: String, default: '' }
+  sourceMode: { type: String, default: '' }
 });
 
 const { proxy } = getCurrentInstance();
@@ -412,13 +438,9 @@ const permAdd = computed(() => [`${permissionPrefix.value}:add`]);
 const permEdit = computed(() => [`${permissionPrefix.value}:edit`]);
 const permRemove = computed(() => [`${permissionPrefix.value}:remove`]);
 const permExport = computed(() => [`${permissionPrefix.value}:export`]);
-const permReview = computed(() => {
-  if (Array.isArray(props.reviewPerm) && props.reviewPerm.length > 0) return props.reviewPerm;
-  return [`${permissionPrefix.value}:query`];
-});
-const isSelfEditPage = computed(() => props.selfEditScene === 'responsible' || props.selfEditScene === 'guided');
-const canUseEditAction = computed(() => isSelfEditPage.value || auth.hasPermiOr(permEdit.value));
-const canUseReviewAction = computed(() => isSelfEditPage.value || auth.hasPermiOr(permReview.value));
+const permQuery = computed(() => [`${permissionPrefix.value}:query`]);
+const permReview = computed(() => [`${permissionPrefix.value}:review`]);
+const canUseEditAction = computed(() => props.showEdit);
 const canBatchReview = computed(() => !!reviewSource.value);
 const isUnreviewedPage = computed(() => {
   return reviewSource.value === 'college_level_unreviewed' || reviewSource.value === 'school_level_unreviewed';
@@ -553,7 +575,20 @@ function normalizeReviewStatusBySource() {
 function getList() {
   normalizeReviewStatusBySource();
   loading.value = true;
-  listFn.value(queryParams).then(response => {
+
+  // 组装最终查询参数，避免污染原本的 queryParams
+  const finalParams = { ...queryParams };
+
+  // 根据不同的 sourceMode 动态传入不同维度的指导老师参数
+  if (props.sourceMode === 'guided') {
+    // 【我指导的】：仅筛选该老师是 第一指导老师（通常对应 orderNo = 1）的成果
+    finalParams.firstInstructorId = userStore.name;
+  } else if (props.sourceMode === 'participated') {
+    // 【我参与的】：筛选该老师参与的 所有 成果
+    finalParams.anyInstructorId = userStore.name;
+  }
+
+  listFn.value(finalParams).then(response => {
     const rows = (response.rows || []).map((row) => normalizeRowStatus(row));
     let filtered = filterRowsBySource(rows);
     const hasClientStatusFilter = queryParams.reviewStatus !== null && queryParams.reviewStatus !== '' && queryParams.reviewStatus !== undefined;
@@ -585,6 +620,20 @@ function normalizeRowStatus(row) {
     row.reviewStatus = schoolResult ?? 2;
   } else {
     row.reviewStatus = reviewResult;
+  }
+
+  // 3. 提取参赛选手和指导老师名称用于显示
+  if (row.samAchievementParticipantList && Array.isArray(row.samAchievementParticipantList)) {
+    row.contestant = row.samAchievementParticipantList
+        .sort((a, b) => (a.orderNo || 0) - (b.orderNo || 0))
+        .map(p => p.studentName)
+        .join(', ');
+  }
+  if (row.samAchievementAdvisorList && Array.isArray(row.samAchievementAdvisorList)) {
+    row.instructor = row.samAchievementAdvisorList
+        .sort((a, b) => (a.orderNo || 0) - (b.orderNo || 0))
+        .map(a => a.teacherName)
+        .join(', ');
   }
 
   return row;
@@ -650,7 +699,12 @@ function handleUpdate() {
     proxy.$modal?.msgWarning?.('当前成果仅在待审核或驳回时允许本人修改');
     return;
   }
-  if (_achievementId) openDialog(_achievementId, { readOnly: false });
+  if (!_achievementId) return;
+  if (reviewSource.value) {
+    openReviewPage(_achievementId, 'edit');
+    return;
+  }
+  openDialog(_achievementId, { readOnly: false });
 }
 
 /** 行内审核按钮操作 */
@@ -658,11 +712,9 @@ function handleRowUpdate(row) {
   const _achievementId = row?.achievementId;
   if (!_achievementId) return;
 
-  // 【核心审核】：如果是审核模式，可能需要跳转去审核修改（保留同学逻辑）
   if (reviewSource.value) {
     openReviewPage(_achievementId, 'edit');
   } else {
-    // 否则是普通用户，直接打开本地弹窗进行编辑
     openDialog(_achievementId, { readOnly: false });
   }
 }
@@ -817,30 +869,11 @@ function handleFormCancel() {
   pageModeActive.value = false;
 }
 
-/**
- * 核心逻辑：检查是否可以修改
- */
 function checkEditable(row) {
   if (reviewSource.value) return true;
-  // 防空判断
   if (!row) return false;
-  // 获取状态值
-  const collegeStatus = row.reviewResult == null ? '0' : String(row.reviewResult);
-  const schoolStatus = row.schooiReviewResult == null ? '' : String(row.schooiReviewResult);
-
-  // 学生“我负责的成果” / 教师“我指导的成果”
-  if (props.selfEditScene === 'responsible' || props.selfEditScene === 'guided') {
-    if (collegeStatus === '0' || collegeStatus === '1') {
-      return true;
-    }
-    if (collegeStatus === '2' && (schoolStatus === '' || schoolStatus === '2' || schoolStatus === '0')) {
-      return true;
-    }
-    return false;
-  }
-  if (isStudentUser.value) {
-    return collegeStatus === '1' || schoolStatus === '0';
-  }
+  const collegeStatus = String(row.reviewResult);
+  const schoolStatus = String(row.schooiReviewResult);
   if (schoolStatus === '0') {
     return true;
   }
@@ -876,12 +909,17 @@ export default {
   justify-content: flex-start;
 }
 
+.search-action-col {
+  display: flex;
+}
+
 .search-action-row {
   min-height: 32px;
   display: flex;
   align-items: center;
   gap: 8px;
-  flex-wrap: wrap;
+  flex-wrap: nowrap;
+  white-space: nowrap;
 }
 
 .search-item :deep(.el-input),

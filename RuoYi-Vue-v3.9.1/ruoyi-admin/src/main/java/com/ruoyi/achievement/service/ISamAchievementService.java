@@ -45,6 +45,11 @@ public interface ISamAchievementService
     public List<SamAchievement> selectSamAchievementListByTeacherId(SamAchievement samAchievement);
 
     /**
+     * 根据用户ID查询其作为学生或教师参与的所有成果列表
+     */
+    public List<SamAchievement> selectSamAchievementListByUserId(SamAchievement samAchievement);
+
+    /**
      * 新增成果录入
      * 
      * @param samAchievement 成果录入
@@ -75,4 +80,12 @@ public interface ISamAchievementService
      * @return 结果
      */
     public int deleteSamAchievementByAchievementId(String achievementId);
+
+    /**
+     * 校验证书编号是否唯一
+     *
+     * @param samAchievement 成果信息
+     * @return 结果
+     */
+    public boolean checkCertificateNoUnique(SamAchievement samAchievement);
 }

@@ -21,6 +21,7 @@ import com.ruoyi.achievement.service.ISamAchievementService;
 import com.ruoyi.achievement.service.ISamStudentService;
 import com.ruoyi.achievement.service.ISamTeacherService;
 import com.ruoyi.achievement.mapper.FileUuidMapper;
+import com.ruoyi.common.constant.UserConstants;
 import com.ruoyi.common.exception.ServiceException;
 
 /**
@@ -113,6 +114,16 @@ public class SamAchievementServiceImpl implements ISamAchievementService
             throw new ServiceException("学生ID不能为空");
         }
         return samAchievementMapper.selectSamAchievementListByResponsibleStudentId(samAchievement);
+    }
+
+    @Override
+    public List<SamAchievement> selectSamAchievementListByUserId(SamAchievement samAchievement)
+    {
+        // 验证用户ID
+        if (samAchievement.getParams() == null || StringUtils.isEmpty((String) samAchievement.getParams().get("userId"))) {
+            throw new ServiceException("用户ID不能为空");
+        }
+        return samAchievementMapper.selectSamAchievementListByUserId(samAchievement);
     }
 
     /**
@@ -434,6 +445,11 @@ public class SamAchievementServiceImpl implements ISamAchievementService
             throw new ServiceException("证书编号不能为空");
         }
 
+        // 校验证书编号唯一性
+        if (!checkCertificateNoUnique(samAchievement)) {
+            throw new ServiceException("证书编号'" + samAchievement.getCertificateNo() + "'已存在");
+        }
+
         // 验证参赛选手列表
         List<SamAchievementParticipant> participants = samAchievement.getSamAchievementParticipantList();
         if (participants == null || participants.isEmpty()) {
@@ -461,6 +477,22 @@ public class SamAchievementServiceImpl implements ISamAchievementService
                 throw new ServiceException("报销金额必须大于0");
             }
         }
+    }
+
+    /**
+     * 校验证书编号是否唯一
+     *
+     * @param samAchievement 成果信息
+     * @return 结果
+     */
+    @Override
+    public boolean checkCertificateNoUnique(SamAchievement samAchievement) {
+        String achievementId = StringUtils.isEmpty(samAchievement.getAchievementId()) ? "-1" : samAchievement.getAchievementId();
+        SamAchievement info = samAchievementMapper.checkCertificateNoUnique(samAchievement.getCertificateNo());
+        if (StringUtils.isNotNull(info) && !info.getAchievementId().equals(achievementId)) {
+            return UserConstants.NOT_UNIQUE;
+        }
+        return UserConstants.UNIQUE;
     }
 
     /**
@@ -526,6 +558,7 @@ public class SamAchievementServiceImpl implements ISamAchievementService
 
                 // 3. 补全基础字段
                 participant.setCreateBy(samAchievement.getCreateBy());
+                participant.setUpdateBy(samAchievement.getCreateBy());
                 participant.setCreateTime(DateUtils.getNowDate());
                 participant.setUpdateTime(DateUtils.getNowDate());
                 participant.setDelFlag(0L);
@@ -563,7 +596,10 @@ public class SamAchievementServiceImpl implements ISamAchievementService
                 advisor.setAchievementId(achievementId);
                 advisor.setAdvisorId(null);
                 advisor.setCreateBy(samAchievement.getCreateBy());
+                advisor.setUpdateBy(samAchievement.getCreateBy());
                 advisor.setCreateTime(DateUtils.getNowDate());
+                advisor.setUpdateTime(DateUtils.getNowDate());
+                advisor.setDelFlag(0L);
 
                 // 核心兼容：如果前端传的是 teacherId 而非 teacherNo，进行补位
                 if (StringUtils.isEmpty(advisor.getTeacherNo()) && StringUtils.isNotEmpty(advisor.getTeacherId())) {

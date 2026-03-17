@@ -7,7 +7,7 @@
       :update-fn="updateSchool_level_unreviewed"
       :del-fn="delSchool_level_unreviewed"
       :export-url="'achievement/school_level_unreviewed/export'"
-      :audit-dict="School_audit_status"
+      :audit-dict="school_audit_status"
       permission-prefix="achievement:school_level_unreviewed"
       review-source="school_level_unreviewed"
     />
@@ -26,7 +26,7 @@ import {
   updateSchool_level_unreviewed,
   delSchool_level_unreviewed
 } from '@/api/achievement/school_level_unreviewed';
-const { School_audit_status } = useDict('School_audit_status');
+const { school_audit_status } = useDict('school_audit_status');
 
 const route = useRoute();
 const flowValue = ref(route.name || 'SchoolLevelUnreviewed');

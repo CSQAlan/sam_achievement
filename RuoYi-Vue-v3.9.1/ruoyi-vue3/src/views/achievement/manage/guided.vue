@@ -1,23 +1,22 @@
 <template>
   <div class="app-container">
-    <AchievementManageIndex
+    <AchievementManageIndex 
+      source-mode="guided"
       :list-fn="listGuidedAchievement"
-      :get-fn="getGuidedManage"
-      :show-add="false"
-      :show-edit="true"
-      :show-delete="false"
-      :show-export="false"
-      permission-prefix="achievement:manage"
-      self-edit-scene="guided"
+      :audit-dict="college_audit_status"
+      :audit-dict-school="school_audit_status"
     />
   </div>
 </template>
 
-<script setup name="ManageGuided">
-import AchievementManageIndex from '../component/index.vue'
-import { getManage, listGuidedAchievement } from '@/api/achievement/manage'
+<script setup name="GuidedAchievement">
+import { ref } from 'vue';
+import AchievementManageIndex from '../component/index.vue';
+import { useDict } from '@/utils/dict';
+import { listGuidedAchievement } from '@/api/achievement/manage';
 
-const getGuidedManage = (achievementId) => getManage(achievementId, { selfEditScene: 'guided' })
+const { college_audit_status, school_audit_status } = useDict('college_audit_status', 'school_audit_status');
+
 </script>
 
 <style scoped lang="scss">
