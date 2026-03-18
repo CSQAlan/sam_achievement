@@ -488,39 +488,16 @@
       
       <template v-if="isParticipantNew">
         <el-alert title="未匹配到该学号，请完善下方信息完成录入" type="warning" show-icon :closable="false" style="margin-bottom: 15px;" />
-        <el-form-item label="学院" prop="school">
-          <el-tree-select 
-            v-model="participantForm.school" 
-            :data="deptOptions" 
-            :props="{ value: 'deptId', label: 'deptName', children: 'children' }" 
-            value-key="deptId" 
-            placeholder="请选择学院" 
-            check-strictly 
-            style="width: 100%" 
-            @change="handleParticipantSchoolChange"
-          />
-        </el-form-item>
-        <el-form-item label="院系" prop="department">
-          <el-tree-select 
-            v-model="participantForm.department" 
-            :data="participantDepartmentOptions" 
-            :props="{ value: 'deptId', label: 'deptName', children: 'children' }" 
-            value-key="deptId" 
-            placeholder="请先选择学院，再选择院系" 
-            check-strictly 
-            style="width: 100%" 
-            @change="handleParticipantDeptChange"
-          />
-        </el-form-item>
-        <el-form-item label="专业" prop="major">
-          <el-tree-select 
-            v-model="participantForm.major" 
-            :data="participantMajorOptions" 
-            :props="{ value: 'deptId', label: 'deptName', children: 'children' }" 
-            value-key="deptId" 
-            placeholder="请先选择院系，再选择专业" 
-            check-strictly 
-            style="width: 100%" 
+        <el-form-item label="所属机构" prop="school">
+          <el-cascader
+            v-model="participantDeptCascaderValue"
+            :options="deptOptions"
+            :props="{ value: 'deptId', label: 'deptName', children: 'children' }"
+            placeholder="请选择学院/院系/专业"
+            clearable
+            filterable
+            style="width: 100%"
+            @change="handleParticipantCascaderChange"
           />
         </el-form-item>
         <el-form-item label="班级" prop="class_name">
@@ -558,27 +535,16 @@
       
       <template v-if="isAdvisorNew">
         <el-alert title="未匹配到该工号，请完善下方信息完成录入" type="warning" show-icon :closable="false" style="margin-bottom: 15px;" />
-        <el-form-item label="学院" prop="school">
-          <el-tree-select 
-            v-model="advisorForm.school" 
-            :data="deptOptions" 
-            :props="{ value: 'deptId', label: 'deptName', children: 'children' }" 
-            value-key="deptId" 
-            placeholder="请选择学院" 
-            check-strictly 
-            style="width: 100%" 
-            @change="handleAdvisorSchoolChange"
-          />
-        </el-form-item>
-        <el-form-item label="院系" prop="department">
-          <el-tree-select 
-            v-model="advisorForm.department" 
-            :data="advisorDepartmentOptions" 
-            :props="{ value: 'deptId', label: 'deptName', children: 'children' }" 
-            value-key="deptId" 
-            placeholder="请先选择学院，再选择院系" 
-            check-strictly 
-            style="width: 100%" 
+        <el-form-item label="所属机构" prop="school">
+          <el-cascader
+            v-model="advisorDeptCascaderValue"
+            :options="deptOptions"
+            :props="{ value: 'deptId', label: 'deptName', children: 'children' }"
+            placeholder="请选择学院/院系"
+            clearable
+            filterable
+            style="width: 100%"
+            @change="handleAdvisorCascaderChange"
           />
         </el-form-item>
       </template>
@@ -669,6 +635,31 @@ const participantSearchKeyword = ref("");
 const teacherSelectVisible = ref(false);
 const teacherOptions = ref([]);
 const advisorSearchKeyword = ref("");
+
+const participantDeptCascaderValue = ref([]);
+const advisorDeptCascaderValue = ref([]);
+
+function handleParticipantCascaderChange(value) {
+  if (value && value.length > 0) {
+    participantForm.value.school = value[0] || '';
+    participantForm.value.department = value[1] || '';
+    participantForm.value.major = value[2] || '';
+  } else {
+    participantForm.value.school = '';
+    participantForm.value.department = '';
+    participantForm.value.major = '';
+  }
+}
+
+function handleAdvisorCascaderChange(value) {
+  if (value && value.length > 0) {
+    advisorForm.value.school = value[0] || '';
+    advisorForm.value.department = value[1] || '';
+  } else {
+    advisorForm.value.school = '';
+    advisorForm.value.department = '';
+  }
+}
 
 const data = reactive({
   form: { competitionId: null },
@@ -871,6 +862,7 @@ const addParticipantRules = {
 
 function openAddParticipantDialog() {
   participantForm.value = { studentId: '', studentName: '', school: '', department: '', major: '', class_name: '', class_year: '' };
+  participantDeptCascaderValue.value = [];
   participantSearchKeyword.value = "";
   isParticipantNew.value = false;
   addParticipantVisible.value = true;
@@ -1684,15 +1676,17 @@ function getDeptTree() {
 function reIndexList(list, type) {
   list.forEach((item, index) => {
     item.orderNo = index + 1;
-    // 无论是选手还是导师，排在第一位的都自动设为 manager
     item.manager = (index === 0) ? 1 : 0;
   });
 
-  // 自动绑定第一学生负责人的学院
+  // 自动绑定逻辑
   if (type === 'participant' && list.length > 0) {
     const first = list[0];
     if (first.school) {
       form.value.ownerDepId = Number(first.school);
+    } else if (userStore.deptId) {
+      // 兜底：如果第一负责人没学院信息，取当前登录人的部门
+      form.value.ownerDepId = userStore.deptId;
     }
   }
 }

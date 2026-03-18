@@ -120,9 +120,30 @@ public class SamAchievementServiceImpl implements ISamAchievementService
             samAchievement.setYear((long) cal.get(Calendar.YEAR));
         }
 
+        // 4. 设置所属学院 (选取参赛选手第一个负责人的所属学院)
+        if (samAchievement.getSamAchievementParticipantList() != null) {
+            for (SamAchievementParticipant participant : samAchievement.getSamAchievementParticipantList()) {
+                if ("1".equals(participant.getManager())) {
+                    // 如果前端传了学院信息，直接使用
+                    if (StringUtils.isNotEmpty(participant.getSchool())) {
+                        samAchievement.setOwnerDepId(participant.getSchool());
+                    } else if (StringUtils.isNotEmpty(participant.getStudentId())) {
+                        // 如果前端没传，根据学号查档案
+                        SamStudent query = new SamStudent();
+                        query.setNo(participant.getStudentId());
+                        List<SamStudent> students = samStudentService.selectSamStudentList(query);
+                        if (students != null && !students.isEmpty() && StringUtils.isNotEmpty(students.get(0).getSchool())) {
+                            samAchievement.setOwnerDepId(students.get(0).getSchool());
+                        }
+                    }
+                    break;
+                }
+            }
+        }
+
         samAchievement.setCreateTime(DateUtils.getNowDate());
 
-        // 4. 插入主表
+        // 5. 插入主表
         int rows = samAchievementMapper.insertSamAchievement(samAchievement);
 
         // 5. 处理参赛选手 (包含自动补录学生档案)
