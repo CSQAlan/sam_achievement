@@ -60,6 +60,7 @@
         <result property="studentName"    column="student_name"    />
         <result property="orderNo"    column="order_no"    />
         <result property="manager"    column="manager"    />
+        <result property="school"    column="school"    />
         <result property="createBy"    column="create_by"    />
         <result property="updateBy"    column="update_by"    />
         <result property="createTime"    column="create_time"    />
@@ -188,7 +189,7 @@
     </select>
 
     <select id="selectSamAchievementParticipantList" resultMap="SamAchievementParticipantResult">
-        select p.participant_id, p.achievement_id, p.student_id, s.name as student_name, p.order_no, p.manager, p.create_by, p.update_by, p.create_time, p.update_time, p.del_flag, p.remark
+        select p.participant_id, p.achievement_id, p.student_id, s.name as student_name, s.school, p.order_no, p.manager, p.create_by, p.update_by, p.create_time, p.update_time, p.del_flag, p.remark
         from sam_achievement_participant p
                  left join sam_student s on p.student_id = s.no
         where p.achievement_id = #{achievement_id}
@@ -207,9 +208,9 @@
         where achievement_id = #{achievement_id}
     </select>
 
-    <select id="checkCertificateNoUnique" parameterType="String" resultMap="SamAchievementResult">
+    <select id="checkCertificateNoUnique" resultMap="SamAchievementResult">
         <include refid="selectSamAchievementVo"/>
-        where a.certificate_no = #{certificateNo} limit 1
+        where a.certificate_no = #{certificateNo} and s.competition_id = #{competitionId} limit 1
     </select>
 
     <insert id="insertSamAchievement" parameterType="SamAchievement" useGeneratedKeys="true" keyProperty="achievementId">

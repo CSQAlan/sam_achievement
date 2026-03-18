@@ -42,6 +42,9 @@ public class SamAchievementParticipant extends BaseEntity
     @Excel(name = "是否负责人")
     private String manager;
 
+    /** 学院 */
+    private String school;
+
     /** 删除标志 */
     private Long delFlag;
 
@@ -108,6 +111,17 @@ public class SamAchievementParticipant extends BaseEntity
     {
         return manager;
     }
+
+    public void setSchool(String school) 
+    {
+        this.school = school;
+    }
+
+    public String getSchool() 
+    {
+        return school;
+    }
+
     public void setDelFlag(Long delFlag) 
     {
         this.delFlag = delFlag;
@@ -128,6 +142,7 @@ public class SamAchievementParticipant extends BaseEntity
             .append("studentName", getStudentName())
             .append("orderNo", getOrderNo())
             .append("manager", getManager())
+            .append("school", getSchool())
             .append("createBy", getCreateBy())
             .append("updateBy", getUpdateBy())
             .append("createTime", getCreateTime())

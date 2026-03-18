@@ -62,12 +62,7 @@
                     </el-col>
                   </el-row>
                   <el-row>
-                    <el-col :span="12">
-                      <el-form-item label="所属学院" prop="ownerDepId">
-                        <el-tree-select v-model="form.ownerDepId" :data="deptOptions" :props="{ value: 'deptId', label: 'deptName', children: 'children' }" value-key="deptId" placeholder="请选择所属学院" check-strictly />
-                      </el-form-item>
-                    </el-col>
-                    <el-col :span="12">
+                    <el-col :span="24">
                       <el-form-item label="作品名称" prop="name">
                         <el-input v-model="form.name" placeholder="请输入作品名称(选填)" />
                       </el-form-item>
@@ -286,12 +281,7 @@
                 </el-col>
               </el-row>
               <el-row>
-                <el-col :span="12">
-                  <el-form-item label="所属学院" prop="ownerDepId">
-                    <el-tree-select v-model="form.ownerDepId" :data="deptOptions" :props="{ value: 'deptId', label: 'deptName', children: 'children' }" value-key="deptId" placeholder="请选择所属学院" check-strictly />
-                  </el-form-item>
-                </el-col>
-                <el-col :span="12">
+                <el-col :span="24">
                   <el-form-item label="作品名称" prop="name">
                     <el-input v-model="form.name" placeholder="请输入作品名称(选填)" />
                   </el-form-item>
@@ -663,7 +653,6 @@ const data = reactive({
     competitionId: [{ required: true, message: "比赛不能为空", trigger: "change" }],
     category: [{ required: true, message: "类别不能为空", trigger: "change" }],
     sessionId: [{ required: true, message: "届次不能为空", trigger: "change" }],
-    ownerDepId: [{ required: true, message: "所属学院不能为空", trigger: "change" }],
     level: [{ required: true, message: "级别不能为空", trigger: "change" }],
     grade: [{ required: true, message: "等级不能为空", trigger: "change" }],
     track: [{ required: true, message: "赛道不能为空", trigger: "blur" }],
@@ -681,6 +670,7 @@ const validateCertificateNo = (rule, value, callback) => {
   } else {
     const params = {
       certificateNo: value,
+      competitionId: form.value.competitionId,
       achievementId: form.value.achievementId
     };
     request({
@@ -914,10 +904,11 @@ function submitAddParticipant() {
         samAchievementParticipantList.value.push({
           studentId: participantForm.value.studentId,
           studentName: participantForm.value.studentName,
+          school: participantForm.value.school,
           orderNo: samAchievementParticipantList.value.length + 1,
           manager: samAchievementParticipantList.value.length === 0 ? 1 : 0
         });
-        reIndexList(samAchievementParticipantList.value);
+        reIndexList(samAchievementParticipantList.value, 'participant');
         addParticipantVisible.value = false;
       };
 
@@ -1238,6 +1229,7 @@ function open(id) {
         orderNo: 1,
         isFixed: true // 标记为固定
       });
+      reIndexList(samAchievementAdvisorList.value, 'advisor');
     } else if (props.sourceMode === 'responsible') {
       const roles = userStore.roles || [];
       const isTeacher = roles.includes('teacher');
@@ -1251,14 +1243,24 @@ function open(id) {
           orderNo: 1,
           isFixed: true
         });
+        reIndexList(samAchievementAdvisorList.value, 'advisor');
       } else {
         // 学生端：我负责的成果，默认填入当前学生为第一负责人
-        samAchievementParticipantList.value.push({
-          studentId: userStore.name,
-          studentName: userStore.nickName,
-          orderNo: 1,
-          manager: 1,
-          isFixed: true // 标记为固定
+        listStudent({ no: userStore.name }).then(res => {
+          let school = null;
+          if (res.rows && res.rows.length > 0) {
+            school = res.rows[0].school;
+          }
+          samAchievementParticipantList.value.push({
+            studentId: userStore.name,
+            studentName: userStore.nickName,
+            school: school,
+            orderNo: 1,
+            manager: 1,
+            isFixed: true // 标记为固定
+          });
+          reIndexList(samAchievementParticipantList.value, 'participant');
+          updateSnapshot();
         });
       }
     } else {
@@ -1273,18 +1275,25 @@ function open(id) {
           teacherName: userStore.nickName,
           orderNo: 1
         });
+        reIndexList(samAchievementAdvisorList.value, 'advisor');
       } else if (isStudent && roles.length === 1) {
-        samAchievementParticipantList.value.push({
-          studentId: userStore.name,
-          studentName: userStore.nickName,
-          orderNo: 1,
-          manager: 1
+        listStudent({ no: userStore.name }).then(res => {
+          let school = null;
+          if (res.rows && res.rows.length > 0) {
+            school = res.rows[0].school;
+          }
+          samAchievementParticipantList.value.push({
+            studentId: userStore.name,
+            studentName: userStore.nickName,
+            school: school,
+            orderNo: 1,
+            manager: 1
+          });
+          reIndexList(samAchievementParticipantList.value, 'participant');
+          updateSnapshot();
         });
       }
     }
-
-    reIndexList(samAchievementParticipantList.value);
-    reIndexList(samAchievementAdvisorList.value);
 
     updateSnapshot();
     // 新增模式下检查草稿
@@ -1568,12 +1577,20 @@ function getDeptTree() {
   });
 }
 
-function reIndexList(list) {
+function reIndexList(list, type) {
   list.forEach((item, index) => {
     item.orderNo = index + 1;
     // 无论是选手还是导师，排在第一位的都自动设为 manager
     item.manager = (index === 0) ? 1 : 0;
   });
+
+  // 自动绑定第一学生负责人的学院
+  if (type === 'participant' && list.length > 0) {
+    const first = list[0];
+    if (first.school) {
+      form.value.ownerDepId = Number(first.school);
+    }
+  }
 }
 
 function tableRowClassName({ row }) {
