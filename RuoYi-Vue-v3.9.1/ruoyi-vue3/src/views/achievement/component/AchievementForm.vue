@@ -39,14 +39,7 @@
                     </el-col>
                   </el-row>
                   <el-row>
-                    <el-col :span="12">
-                      <el-form-item label="类别" prop="category">
-                        <el-select v-model="form.category" placeholder="请选择类别" filterable>
-                          <el-option v-for="dict in achievement_category" :key="dict.value" :label="dict.label" :value="dict.value" />
-                        </el-select>
-                      </el-form-item>
-                    </el-col>
-                    <el-col :span="12">
+                    <el-col :span="24">
                       <el-form-item label="届次" prop="sessionId">
                         <el-select 
                           v-model="form.sessionId" 
@@ -258,14 +251,7 @@
                 </el-col>
               </el-row>
               <el-row>
-                <el-col :span="12">
-                  <el-form-item label="类别" prop="category">
-                    <el-select v-model="form.category" placeholder="请选择类别" filterable>
-                      <el-option v-for="dict in achievement_category" :key="dict.value" :label="dict.label" :value="dict.value" />
-                    </el-select>
-                  </el-form-item>
-                </el-col>
-                <el-col :span="12">
+                <el-col :span="24">
                   <el-form-item label="届次" prop="sessionId">
                     <el-select 
                       v-model="form.sessionId" 
@@ -485,11 +471,19 @@
 
   <el-dialog title="添加参赛选手" v-model="addParticipantVisible" width="500px" append-to-body :close-on-click-modal="false">
     <el-form ref="addParticipantRef" :model="participantForm" :rules="addParticipantRules" label-width="80px">
+      <el-form-item label="查找学生">
+        <el-input v-model="participantSearchKeyword" placeholder="输入学号或姓名后回车搜索" @keyup.enter="handleParticipantSearch" clearable>
+          <template #append>
+            <el-button @click="handleParticipantSearch"><el-icon><Search /></el-icon></el-button>
+          </template>
+        </el-input>
+        <div style="font-size: 12px; color: #909399; margin-top: 5px;">支持学号或姓名双向查找</div>
+      </el-form-item>
       <el-form-item label="学号" prop="studentId">
-        <el-input v-model="participantForm.studentId" placeholder="请输入学号后点击空白处" @blur="handleParticipantIdBlur" clearable />
+        <el-input v-model="participantForm.studentId" placeholder="学号" :disabled="!isParticipantNew" />
       </el-form-item>
       <el-form-item label="姓名" prop="studentName">
-        <el-input v-model="participantForm.studentName" placeholder="自动带出，或手动输入" :disabled="!isParticipantNew" />
+        <el-input v-model="participantForm.studentName" placeholder="姓名" :disabled="!isParticipantNew" />
       </el-form-item>
       
       <template v-if="isParticipantNew">
@@ -547,11 +541,19 @@
 
   <el-dialog title="添加指导老师" v-model="addAdvisorVisible" width="500px" append-to-body :close-on-click-modal="false">
     <el-form ref="addAdvisorRef" :model="advisorForm" :rules="addAdvisorRules" label-width="80px">
+      <el-form-item label="查找老师">
+        <el-input v-model="advisorSearchKeyword" placeholder="输入工号或姓名后回车搜索" @keyup.enter="handleAdvisorSearch" clearable>
+          <template #append>
+            <el-button @click="handleAdvisorSearch"><el-icon><Search /></el-icon></el-button>
+          </template>
+        </el-input>
+        <div style="font-size: 12px; color: #909399; margin-top: 5px;">支持工号或姓名双向查找</div>
+      </el-form-item>
       <el-form-item label="工号" prop="teacherId">
-        <el-input v-model="advisorForm.teacherId" placeholder="请输入工号后点击空白处" @blur="handleAdvisorIdBlur" clearable />
+        <el-input v-model="advisorForm.teacherId" placeholder="工号" :disabled="!isAdvisorNew" />
       </el-form-item>
       <el-form-item label="姓名" prop="teacherName">
-        <el-input v-model="advisorForm.teacherName" placeholder="自动带出，或手动输入" :disabled="!isAdvisorNew" />
+        <el-input v-model="advisorForm.teacherName" placeholder="姓名" :disabled="!isAdvisorNew" />
       </el-form-item>
       
       <template v-if="isAdvisorNew">
@@ -587,6 +589,20 @@
         <el-button @click="addAdvisorVisible = false">取 消</el-button>
       </div>
     </template>
+  </el-dialog>
+
+  <el-dialog title="选择学生" v-model="studentSelectVisible" width="600px" append-to-body>
+    <el-table :data="studentOptions" @row-click="selectStudent" border highlight-current-row>
+      <el-table-column label="学号" prop="no" align="center" />
+      <el-table-column label="姓名" prop="name" align="center" />
+    </el-table>
+  </el-dialog>
+
+  <el-dialog title="选择老师" v-model="teacherSelectVisible" width="600px" append-to-body>
+    <el-table :data="teacherOptions" @row-click="selectTeacher" border highlight-current-row>
+      <el-table-column label="工号" prop="no" align="center" />
+      <el-table-column label="姓名" prop="teacherName" align="center" />
+    </el-table>
   </el-dialog>
 </template>
 
@@ -646,12 +662,19 @@ const checkedAdvisor = ref([]);
 const competitionOptions = ref([]);
 const sessionOptions = ref([]);
 
+const studentSelectVisible = ref(false);
+const studentOptions = ref([]);
+const participantSearchKeyword = ref("");
+
+const teacherSelectVisible = ref(false);
+const teacherOptions = ref([]);
+const advisorSearchKeyword = ref("");
+
 const data = reactive({
   form: { competitionId: null },
   formSnapshot: "",
   rules: {
     competitionId: [{ required: true, message: "比赛不能为空", trigger: "change" }],
-    category: [{ required: true, message: "类别不能为空", trigger: "change" }],
     sessionId: [{ required: true, message: "届次不能为空", trigger: "change" }],
     level: [{ required: true, message: "级别不能为空", trigger: "change" }],
     grade: [{ required: true, message: "等级不能为空", trigger: "change" }],
@@ -848,6 +871,7 @@ const addParticipantRules = {
 
 function openAddParticipantDialog() {
   participantForm.value = { studentId: '', studentName: '', school: '', department: '', major: '', class_name: '', class_year: '' };
+  participantSearchKeyword.value = "";
   isParticipantNew.value = false;
   addParticipantVisible.value = true;
 }
@@ -863,32 +887,133 @@ const addAdvisorRules = {
 
 function openAddAdvisorDialog() {
   advisorForm.value = { teacherId: '', teacherName: '', school: '', department: '' };
+  advisorSearchKeyword.value = "";
   isAdvisorNew.value = false;
   addAdvisorVisible.value = true;
 }
 
 const searchingParticipant = ref(false);
-function handleParticipantIdBlur() {
-  const id = participantForm.value.studentId;
-  if (!id) return;
+function handleParticipantSearch() {
+  const keyword = participantSearchKeyword.value;
+  if (!keyword) return;
   
   searchingParticipant.value = true;
-  listStudent({ no: id }).then(res => {
-    if (res.rows && res.rows.length > 0) {
-      const student = res.rows[0];
-      participantForm.value.studentName = student.name;
-      participantForm.value.school = student.school;
-      participantForm.value.department = student.department;
-      participantForm.value.major = student.major;
-      participantForm.value.class_name = student.className;
-      participantForm.value.class_year = student.classYear;
-      isParticipantNew.value = false;
+  // 同时按学号和姓名查
+  const queryByNo = listStudent({ no: keyword });
+  const queryByName = listStudent({ name: keyword });
+  
+  Promise.all([queryByNo, queryByName]).then(results => {
+    let allStudents = [];
+    results.forEach(res => {
+      if (res.rows && res.rows.length > 0) {
+        allStudents = allStudents.concat(res.rows);
+      }
+    });
+    
+    // 去重 (以 no 为准)
+    const uniqueStudents = [];
+    const ids = new Set();
+    allStudents.forEach(s => {
+      if (!ids.has(s.no)) {
+        ids.add(s.no);
+        uniqueStudents.push(s);
+      }
+    });
+
+    if (uniqueStudents.length === 1) {
+      applyStudentInfo(uniqueStudents[0]);
+    } else if (uniqueStudents.length > 1) {
+      studentOptions.value = uniqueStudents;
+      studentSelectVisible.value = true;
     } else {
       isParticipantNew.value = true;
+      // 模糊匹配：如果是纯数字或字母，预填到学号；否则预填到姓名
+      if (/^[a-zA-Z0-9]+$/.test(keyword)) {
+        participantForm.value.studentId = keyword;
+        participantForm.value.studentName = "";
+      } else {
+        participantForm.value.studentId = "";
+        participantForm.value.studentName = keyword;
+      }
     }
   }).finally(() => {
     searchingParticipant.value = false;
   });
+}
+
+function applyStudentInfo(student) {
+  participantForm.value.studentId = student.no;
+  participantForm.value.studentName = student.name;
+  participantForm.value.school = student.school;
+  participantForm.value.department = student.department;
+  participantForm.value.major = student.major;
+  participantForm.value.class_name = student.className;
+  participantForm.value.class_year = student.classYear;
+  isParticipantNew.value = false;
+  studentSelectVisible.value = false;
+}
+
+function selectStudent(row) {
+  applyStudentInfo(row);
+}
+
+const searchingAdvisor = ref(false);
+function handleAdvisorSearch() {
+  const keyword = advisorSearchKeyword.value;
+  if (!keyword) return;
+
+  searchingAdvisor.value = true;
+  const queryByNo = listTeacher({ no: keyword });
+  const queryByName = listTeacher({ teacherName: keyword });
+
+  Promise.all([queryByNo, queryByName]).then(results => {
+    let allTeachers = [];
+    results.forEach(res => {
+      if (res.rows && res.rows.length > 0) {
+        allTeachers = allTeachers.concat(res.rows);
+      }
+    });
+
+    const uniqueTeachers = [];
+    const ids = new Set();
+    allTeachers.forEach(t => {
+      if (!ids.has(t.no)) {
+        ids.add(t.no);
+        uniqueTeachers.push(t);
+      }
+    });
+
+    if (uniqueTeachers.length === 1) {
+      applyTeacherInfo(uniqueTeachers[0]);
+    } else if (uniqueTeachers.length > 1) {
+      teacherOptions.value = uniqueTeachers;
+      teacherSelectVisible.value = true;
+    } else {
+      isAdvisorNew.value = true;
+      if (/^[a-zA-Z0-9]+$/.test(keyword)) {
+        advisorForm.value.teacherId = keyword;
+        advisorForm.value.teacherName = "";
+      } else {
+        advisorForm.value.teacherId = "";
+        advisorForm.value.teacherName = keyword;
+      }
+    }
+  }).finally(() => {
+    searchingAdvisor.value = false;
+  });
+}
+
+function applyTeacherInfo(teacher) {
+  advisorForm.value.teacherId = teacher.no;
+  advisorForm.value.teacherName = teacher.teacherName;
+  advisorForm.value.school = teacher.school;
+  advisorForm.value.department = teacher.department;
+  isAdvisorNew.value = false;
+  teacherSelectVisible.value = false;
+}
+
+function selectTeacher(row) {
+  applyTeacherInfo(row);
 }
 
 function submitAddParticipant() {
@@ -929,27 +1054,6 @@ function submitAddParticipant() {
         pushToList();
       }
     }
-  });
-}
-
-const searchingAdvisor = ref(false);
-function handleAdvisorIdBlur() {
-  const id = advisorForm.value.teacherId;
-  if (!id) return;
-
-  searchingAdvisor.value = true;
-  listTeacher({ no: id }).then(res => {
-    if (res.rows && res.rows.length > 0) {
-      const teacher = res.rows[0];
-      advisorForm.value.teacherName = teacher.teacherName;
-      advisorForm.value.school = teacher.school;
-      advisorForm.value.department = teacher.department;
-      isAdvisorNew.value = false;
-    } else {
-      isAdvisorNew.value = true;
-    }
-  }).finally(() => {
-    searchingAdvisor.value = false;
   });
 }
 
@@ -1429,7 +1533,7 @@ function loadDetail(id) {
 
 function reset() {
   form.value = {
-    competitionId: null, achievementId: null, sessionId: null, category: null, name: null, teamName: null,
+    competitionId: null, achievementId: null, sessionId: null, category: "3", name: null, teamName: null,
     level: null, grade: null, track: null, certificateNo: null, groupId: null, ownerDepId: null,
     awardTime: null, fee: null, isReimburse: 0,
     fileAward: null, fileNotice: null, fileWork: null, filePayment: null, fileInvoice: null, fileReceiptCode: null
