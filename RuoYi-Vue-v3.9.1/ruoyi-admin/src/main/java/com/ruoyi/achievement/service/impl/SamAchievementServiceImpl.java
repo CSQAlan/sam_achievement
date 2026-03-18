@@ -126,6 +126,16 @@ public class SamAchievementServiceImpl implements ISamAchievementService
         return samAchievementMapper.selectSamAchievementListByUserId(samAchievement);
     }
 
+    @Override
+    public List<SamAchievement> selectSamAchievementListByUserId(SamAchievement samAchievement)
+    {
+        // 验证用户ID
+        if (samAchievement.getParams() == null || StringUtils.isEmpty((String) samAchievement.getParams().get("userId"))) {
+            throw new ServiceException("用户ID不能为空");
+        }
+        return samAchievementMapper.selectSamAchievementListByUserId(samAchievement);
+    }
+
     /**
      * 新增成果录入
      * 

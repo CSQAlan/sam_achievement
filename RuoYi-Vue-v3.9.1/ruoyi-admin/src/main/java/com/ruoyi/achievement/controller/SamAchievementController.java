@@ -15,7 +15,6 @@ import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 import com.ruoyi.common.annotation.Log;
 import com.ruoyi.common.core.controller.BaseController;
@@ -176,7 +175,7 @@ public class SamAchievementController extends BaseController
         // 使用统一的查询方法，查找该用户在“选手”或“指导老师”中出现的所有记录
         samAchievement.getParams().put("userId", username);
         List<SamAchievement> list = samAchievementService.selectSamAchievementListByUserId(samAchievement);
-
+        
         return getDataTable(list);
     }
 
@@ -189,7 +188,7 @@ public class SamAchievementController extends BaseController
     {
         // 获取当前用户工号
         String username = SecurityUtils.getUsername();
-
+        
         // 核心逻辑：如果是老师或者管理员，查询本用户参与指导的所有成果
         if (SecurityUtils.hasRole("teacher") || SecurityUtils.isAdmin(SecurityUtils.getUserId())) {
             startPage();

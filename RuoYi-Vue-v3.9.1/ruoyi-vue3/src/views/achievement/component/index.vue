@@ -1,167 +1,127 @@
 ﻿<template>
   <div class="achievement-manage-root">
     <div v-show="!pageModeActive" class="app-container">
-      <!-- 搜索表单 -->
-      <el-form :model="queryParams" ref="queryRef" v-show="showSearch" label-width="68px" class="achievement-search-form">
-        <el-row :gutter="10" class="search-row search-row-primary">
-
-          <el-col :span="5">
-            <el-form-item label="比赛" prop="track" class="search-item" label-width="40px">
-              <el-input
-                  v-model="queryParams.track"
-                  placeholder="请输入比赛"
-                  clearable
-                  @keyup.enter="handleQuery"
-              />
-            </el-form-item>
-          </el-col>
-          <el-col :span="5">
-            <el-form-item label="届次" prop="sessionId" class="search-item" label-width="40px">
-              <el-input
-                  v-model="queryParams.sessionId"
-                  placeholder="请输入届次"
-                  clearable
-                  @keyup.enter="handleQuery"
-              />
-            </el-form-item>
-          </el-col>
-          <el-col :span="5">
-            <el-form-item label="成果编号" prop="achievementId" class="search-item">
-              <el-input
-                  v-model="queryParams.achievementId"
-                  placeholder="请输入成果编号"
-                  clearable
-                  @keyup.enter="handleQuery"
-              />
-            </el-form-item>
-          </el-col>
-          <el-col :span="9" class="search-action-col">
-            <el-form-item class="search-item search-action-item">
-              <div class="search-action-row">
-                <el-button type="primary" icon="Search" @click="handleQuery">搜索</el-button>
-                <el-button icon="Refresh" @click="resetQuery">重置</el-button>
-                <el-button link type="primary" @click="toggleAdvancedSearch">
-                  {{ advancedSearchExpanded ? '收起筛选' : '展开筛选' }}
-                </el-button>
-              </div>
-            </el-form-item>
-          </el-col>
-        </el-row>
-
-        <el-row v-show="advancedSearchExpanded" :gutter="16" class="search-row search-row-advanced">
-          <el-col :span="4">
-            <el-form-item label="类别" prop="category" class="search-item">
-              <el-select v-model="queryParams.category" placeholder="请选择类别" clearable>
-                <el-option
-                    v-for="dict in achievement_category"
-                    :key="dict.value"
-                    :label="dict.label"
-                    :value="dict.value"
-                />
-              </el-select>
-            </el-form-item>
-          </el-col>
-          <el-col :span="4">
-            <el-form-item label="参赛选手" prop="contestant" class="search-item">
-              <el-input
-                  v-model="queryParams.contestant"
-                  placeholder="请输入参赛选手"
-                  clearable
-                  @keyup.enter="handleQuery"
-              />
-            </el-form-item>
-          </el-col>
-          <el-col :span="4">
-            <el-form-item label="指导老师" prop="instructor" class="search-item">
-              <el-input
-                  v-model="queryParams.instructor"
-                  placeholder="请输入指导老师"
-                  clearable
-                  @keyup.enter="handleQuery"
-              />
-            </el-form-item>
-          </el-col>
-          <el-col :span="4">
-            <el-form-item label="作品名称" prop="name" class="search-item">
-              <el-input
-                  v-model="queryParams.name"
-                  placeholder="请输入作品名称"
-                  clearable
-                  @keyup.enter="handleQuery"
-              />
-            </el-form-item>
-          </el-col>
-          <el-col :span="4">
-            <el-form-item label="级别" prop="level" class="search-item">
-              <el-select v-model="queryParams.level" placeholder="请选择级别" clearable>
-                <el-option
-                    v-for="dict in award_level_type"
-                    :key="dict.value"
-                    :label="dict.label"
-                    :value="dict.value"
-                />
-              </el-select>
-            </el-form-item>
-          </el-col>
-          <el-col :span="4">
-            <el-form-item label="获奖等级" prop="grade" class="search-item">
-              <el-select v-model="queryParams.grade" placeholder="请选择获奖等级" clearable>
-                <el-option
-                    v-for="dict in award_rank"
-                    :key="dict.value"
-                    :label="dict.label"
-                    :value="dict.value"
-                />
-              </el-select>
-            </el-form-item>
-          </el-col>
-          <el-col :span="4">
-            <el-form-item label="证书编号" prop="certificateNo" class="search-item">
-              <el-input
-                  v-model="queryParams.certificateNo"
-                  placeholder="请输入证书编号"
-                  clearable
-                  @keyup.enter="handleQuery"
-              />
-            </el-form-item>
-          </el-col>
-          <el-col :span="4">
-            <el-form-item label="组别" prop="groupId" class="search-item">
-              <el-select v-model="queryParams.groupId" placeholder="请选择组别" clearable>
-                <el-option
-                    v-for="dict in group_type"
-                    :key="dict.value"
-                    :label="dict.label"
-                    :value="dict.value"
-                />
-              </el-select>
-            </el-form-item>
-          </el-col>
-          <el-col :span="4">
-            <el-form-item label="获奖时间" prop="awardTime" class="search-item">
-              <el-date-picker
-                  v-model="queryParams.awardTimeStart"
-                  type="daterange"
-                  value-format="YYYY-MM-DD"
-                  range-separator="至"
-                  start-placeholder="开始时间"
-                  end-placeholder="结束时间"
-              />
-            </el-form-item>
-          </el-col>
-          <el-col :span="4" v-if="showReviewStatusFilter">
-            <el-form-item label="审核状态" prop="reviewStatus" class="search-item">
-              <el-select v-model="queryParams.reviewStatus" placeholder="请选择审核状态" clearable>
-                <el-option
-                    v-for="dict in auditStatusFilterOptions"
-                    :key="dict.value"
-                    :label="dict.label"
-                    :value="dict.value"
-                />
-              </el-select>
-            </el-form-item>
-          </el-col>
-        </el-row>
+      <el-form :model="queryParams" ref="queryRef" :inline="true" v-show="showSearch" label-width="68px">
+        <el-form-item label="成果ID" prop="achievementId">
+          <el-input
+              v-model="queryParams.achievementId"
+              placeholder="请输入成果ID"
+              clearable
+              @keyup.enter="handleQuery"
+          />
+        </el-form-item>
+        <el-form-item label="比赛" prop="track">
+          <el-input
+              v-model="queryParams.track"
+              placeholder="请输入比赛"
+              clearable
+              @keyup.enter="handleQuery"
+          />
+        </el-form-item>
+        <el-form-item label="届次" prop="sessionId">
+          <el-input
+              v-model="queryParams.sessionId"
+              placeholder="请输入届次"
+              clearable
+              @keyup.enter="handleQuery"
+          />
+        </el-form-item>
+        <el-form-item label="参赛选手" prop="contestant">
+          <el-input
+              v-model="queryParams.contestant"
+              placeholder="请输入参赛选手"
+              clearable
+              @keyup.enter="handleQuery"
+          />
+        </el-form-item>
+        <el-form-item label="指导老师" prop="instructor">
+          <el-input
+              v-model="queryParams.instructor"
+              placeholder="请输入指导老师"
+              clearable
+              @keyup.enter="handleQuery"
+          />
+        </el-form-item>
+        <el-form-item label="类别" prop="category">
+          <el-select v-model="queryParams.category" placeholder="请选择类别" clearable>
+            <el-option
+                v-for="dict in achievement_category"
+                :key="dict.value"
+                :label="dict.label"
+                :value="dict.value"
+            />
+          </el-select>
+        </el-form-item>
+        <el-form-item label="作品名称" prop="name">
+          <el-input
+              v-model="queryParams.name"
+              placeholder="请输入作品名称"
+              clearable
+              @keyup.enter="handleQuery"
+          />
+        </el-form-item>
+        <el-form-item label="级别" prop="level">
+          <el-select v-model="queryParams.level" placeholder="请选择级别" clearable>
+            <el-option
+                v-for="dict in award_level_type"
+                :key="dict.value"
+                :label="dict.label"
+                :value="dict.value"
+            />
+          </el-select>
+        </el-form-item>
+        <el-form-item label="获奖等级" prop="grade">
+          <el-select v-model="queryParams.grade" placeholder="请选择获奖等级" clearable>
+            <el-option
+                v-for="dict in award_rank"
+                :key="dict.value"
+                :label="dict.label"
+                :value="dict.value"
+            />
+          </el-select>
+        </el-form-item>
+        <el-form-item label="证书编号" prop="certificateNo">
+          <el-input
+              v-model="queryParams.certificateNo"
+              placeholder="请输入证书编号"
+              clearable
+              @keyup.enter="handleQuery"
+          />
+        </el-form-item>
+        <el-form-item label="组别" prop="groupId">
+          <el-select v-model="queryParams.groupId" placeholder="请选择组别" clearable>
+            <el-option
+                v-for="dict in group_type"
+                :key="dict.value"
+                :label="dict.label"
+                :value="dict.value"
+            />
+          </el-select>
+        </el-form-item>
+        <el-form-item label="获奖时间" prop="awardTime">
+          <el-date-picker
+              v-model="queryParams.awardTimeStart"
+              type="daterange"
+              value-format="YYYY-MM-DD"
+              range-separator="至"
+              start-placeholder="开始时间"
+              end-placeholder="结束时间"
+          />
+        </el-form-item>
+        <el-form-item label="审核状态" prop="reviewStatus">
+          <el-select v-model="queryParams.reviewStatus" placeholder="请选择审核状态" clearable>
+            <el-option
+                v-for="dict in auditStatus"
+                :key="dict.value"
+                :label="dict.label"
+                :value="dict.value"
+            />
+          </el-select>
+        </el-form-item>
+        <el-form-item>
+          <el-button type="primary" icon="Search" @click="handleQuery">搜索</el-button>
+          <el-button icon="Refresh" @click="resetQuery">重置</el-button>
+        </el-form-item>
       </el-form>
 
       <el-row :gutter="10" class="mb8">
@@ -177,13 +137,14 @@
         </el-col>
         <el-col :span="1.5">
           <el-button
-              v-if="showEdit && canUseEditAction"
+              v-if="showEdit"
               type="success"
               plain
               icon="Edit"
-              :disabled="single || !canEditSelected"
+              :disabled="single"
               @click="handleUpdate"
-          >审核</el-button>
+              v-hasPermi="permEdit"
+          >修改</el-button>
         </el-col>
         <el-col :span="1.5">
           <el-button
@@ -214,7 +175,7 @@
               style="width: 100%;"
           >
             <el-option
-                v-for="dict in auditStatusBatchOptions"
+                v-for="dict in auditStatus"
                 :key="dict.value"
                 :label="dict.label"
                 :value="dict.value"
@@ -230,16 +191,6 @@
               @click="handleBatchReviewStatus"
               v-hasPermi="permEdit"
           >批量审核</el-button>
-        </el-col>
-        <el-col v-if="showBatchRejectReason" :span="6">
-          <el-input
-              v-model="batchRejectReason"
-              type="textarea"
-              :rows="1"
-              maxlength="200"
-              show-word-limit
-              :placeholder="batchRejectReasonPlaceholder"
-          />
         </el-col>
       </el-row>
 
@@ -317,14 +268,14 @@
             <el-button link type="primary" icon="View" @click="handleReview(scope.row)" v-hasPermi="[...permReview, ...permQuery]">详情</el-button>
 
             <el-button
-                v-if="showEdit && canUseEditAction"
+                v-if="showEdit"
                 link
                 type="primary"
                 icon="Edit"
                 @click="handleRowUpdate(scope.row)"
                 v-hasPermi="permEdit"
                 :disabled="!checkEditable(scope.row)"
-            >审核</el-button>
+            >修改</el-button>
 
             <el-button
                 v-if="showDelete"
@@ -383,12 +334,12 @@
 import { ref, reactive, computed, getCurrentInstance, nextTick, watch, onActivated } from 'vue';
 import { useRoute, useRouter } from 'vue-router';
 import { useDict } from '@/utils/dict';
-import useUserStore from '@/store/modules/user';
-import auth from '@/plugins/auth';
 import { Warning } from '@element-plus/icons-vue';
 import AchievementForm from '../component/AchievementForm.vue';
 import { listManage, getManage, addManage, updateManage, delManage } from '@/api/achievement/manage';
 import { batchUpdateReviewStatus } from '@/api/achievement/review_batch';
+// 引入用户状态管理
+import useUserStore from '@/store/modules/user';
 
 const props = defineProps({
   listFn: { type: Function, default: null },
@@ -403,7 +354,6 @@ const props = defineProps({
   pageMode: { type: Boolean, default: false },
   reviewRoute: { type: String, default: '' },
   reviewSource: { type: String, default: '' },
-  reviewPerm: { type: Array, default: null },
   showAdd: { type: Boolean, default: true },
   showEdit: { type: Boolean, default: true },
   showDelete: { type: Boolean, default: true },
@@ -414,6 +364,7 @@ const props = defineProps({
 const { proxy } = getCurrentInstance();
 const route = useRoute();
 const router = useRouter();
+// 实例化用户状态
 const userStore = useUserStore();
 
 const listFn = computed(() => props.listFn || listManage);
@@ -440,12 +391,7 @@ const permRemove = computed(() => [`${permissionPrefix.value}:remove`]);
 const permExport = computed(() => [`${permissionPrefix.value}:export`]);
 const permQuery = computed(() => [`${permissionPrefix.value}:query`]);
 const permReview = computed(() => [`${permissionPrefix.value}:review`]);
-const canUseEditAction = computed(() => props.showEdit);
 const canBatchReview = computed(() => !!reviewSource.value);
-const isUnreviewedPage = computed(() => {
-  return reviewSource.value === 'college_level_unreviewed' || reviewSource.value === 'school_level_unreviewed';
-});
-const showReviewStatusFilter = computed(() => !isUnreviewedPage.value);
 
 const { achievement_category, group_type, award_rank, award_level_type, college_audit_status, school_audit_status } = useDict(
     'achievement_category',
@@ -481,23 +427,14 @@ const total = ref(0);
 const single = ref(true);
 const multiple = ref(true);
 const ids = ref([]);
-const selectedRows = ref([]);
 const tableRef = ref(null);
 const batchReviewStatus = ref(null);
-const batchRejectReason = ref('');
 const achievementFormRef = ref(null);
 const achievementDialogRef = ref(null);
 const pageModeActive = ref(false);
 const pageModeKey = ref(0);
-const advancedSearchExpanded = ref(false);
 const formReadOnly = ref(false);
 const formShowSubmit = ref(true);
-const isStudentUser = computed(() => (userStore.roles || []).map(role => String(role).replace(/^ROLE_/, '').toLowerCase()).includes('student'));
-const canEditSelected = computed(() => selectedRows.value.length === 1 && checkEditable(selectedRows.value[0]));
-const isCollegeBatchReject = computed(() => reviewSource.value.startsWith('college') && String(batchReviewStatus.value) === '1');
-const isSchoolBatchReject = computed(() => reviewSource.value.startsWith('school') && String(batchReviewStatus.value) === '0');
-const showBatchRejectReason = computed(() => isCollegeBatchReject.value || isSchoolBatchReject.value);
-const batchRejectReasonPlaceholder = computed(() => isCollegeBatchReject.value ? '请输入院级批量驳回原因' : '请输入校级批量驳回原因');
 
 function hashString(input) {
   let hash = 0;
@@ -520,33 +457,9 @@ function buildPageKey() {
 
 const auditStatus = computed(() => {
   if (props.auditDict && Array.isArray(props.auditDict)) return props.auditDict;
-  if (reviewSource.value.startsWith('college')) return college_audit_status.value;
-  if (reviewSource.value.startsWith('school')) return school_audit_status.value;
-  return (college_audit_status.value && college_audit_status.value.length)
+  return queryParams.reviewStatus === 'college'
       ? college_audit_status.value
       : school_audit_status.value;
-});
-const auditStatusFilterOptions = computed(() => {
-  const options = auditStatus.value || [];
-  if (reviewSource.value === 'college_level_reviewed' || reviewSource.value === 'college_level_unreviewed') {
-    return options.filter((d) => ['1', '2'].includes(String(d.value)));
-  }
-  if (reviewSource.value === 'school_level_reviewed' || reviewSource.value === 'school_level_unreviewed') {
-    return options.filter((d) => ['0', '1'].includes(String(d.value)));
-  }
-  return options;
-});
-const auditStatusBatchOptions = computed(() => {
-  if (reviewSource.value === 'college_level_unreviewed') {
-    return (college_audit_status.value || []).filter((d) => ['1', '2'].includes(String(d.value)));
-  }
-  if (reviewSource.value === 'college_level_reviewed') {
-    return college_audit_status.value || [];
-  }
-  if (reviewSource.value === 'school_level_unreviewed' || reviewSource.value === 'school_level_reviewed') {
-    return (school_audit_status.value || []).filter((d) => ['0', '1'].includes(String(d.value)));
-  }
-  return auditStatus.value || [];
 });
 
 function normalizeReviewStatusBySource() {
@@ -591,12 +504,11 @@ function getList() {
   listFn.value(finalParams).then(response => {
     const rows = (response.rows || []).map((row) => normalizeRowStatus(row));
     let filtered = filterRowsBySource(rows);
-    const hasClientStatusFilter = queryParams.reviewStatus !== null && queryParams.reviewStatus !== '' && queryParams.reviewStatus !== undefined;
-    if (hasClientStatusFilter) {
+    if (queryParams.reviewStatus !== null && queryParams.reviewStatus !== '' && queryParams.reviewStatus !== undefined) {
       filtered = filtered.filter((row) => String(row.reviewStatus) === String(queryParams.reviewStatus));
     }
     listData.value = filtered;
-    total.value = hasClientStatusFilter ? filtered.length : (Number.isFinite(Number(response.total)) ? Number(response.total) : filtered.length);
+    total.value = filtered.length;
     loading.value = false;
   }).catch(() => {
     loading.value = false;
@@ -651,7 +563,7 @@ function filterRowsBySource(rows) {
     return rows.filter(r => String(r.reviewResult) === '2' && String(r.schooiReviewResult) === '2');
   }
   if (source === 'school_level_reviewed') {
-    return rows.filter(r => String(r.schooiReviewResult) === '0' || String(r.schooiReviewResult) === '1');
+    return rows.filter(r => String(r.reviewResult) === '2' && (String(r.schooiReviewResult) === '0' || String(r.schooiReviewResult) === '1'));
   }
   return rows;
 }
@@ -670,19 +582,13 @@ const resetQuery = () => {
   getList();
 };
 
-function toggleAdvancedSearch() {
-  advancedSearchExpanded.value = !advancedSearchExpanded.value;
-}
-
 function handleSelectionChange(selection) {
-  selectedRows.value = selection;
   ids.value = selection.map(i => i.achievementId);
   single.value = selection.length !== 1;
   multiple.value = !selection.length;
 }
 
 function clearSelectionState() {
-  selectedRows.value = [];
   ids.value = [];
   single.value = true;
   multiple.value = true;
@@ -695,19 +601,10 @@ function handleAdd() {
 
 function handleUpdate() {
   const _achievementId = ids.value[0];
-  if (!canEditSelected.value) {
-    proxy.$modal?.msgWarning?.('当前成果仅在待审核或驳回时允许本人修改');
-    return;
-  }
-  if (!_achievementId) return;
-  if (reviewSource.value) {
-    openReviewPage(_achievementId, 'edit');
-    return;
-  }
-  openDialog(_achievementId, { readOnly: false });
+  if (_achievementId) openDialog(_achievementId, { readOnly: false });
 }
 
-/** 行内审核按钮操作 */
+/** 行内修改按钮操作 */
 function handleRowUpdate(row) {
   const _achievementId = row?.achievementId;
   if (!_achievementId) return;
@@ -753,34 +650,28 @@ function handleBatchReviewStatus() {
     proxy.$modal?.msgWarning?.('审核状态无效');
     return;
   }
-  if (showBatchRejectReason.value && !batchRejectReason.value.trim()) {
-    proxy.$modal?.msgWarning?.(isCollegeBatchReject.value ? '请输入院级批量驳回原因' : '请输入校级批量驳回原因');
-    return;
-  }
 
-  // 执行批量更新
+  const rowsToUpdate = listData.value.filter(row => ids.value.includes(row.achievementId));
+
+  rowsToUpdate.forEach(row => {
+    if (row.reviewStatus === '2' && canPushSchoolPending) {
+      row.schooiReviewResult = '2';
+    }
+  });
+
   proxy.$modal
       .confirm(`确认将选中的 ${ids.value.length} 条数据批量改为当前状态吗？`)
       .then(() => batchUpdateReviewStatus(reviewSource.value, {
         achievementIds: ids.value,
-        reviewStatus,
-        rejectReason: showBatchRejectReason.value ? batchRejectReason.value.trim() : ''
+        reviewStatus
       }))
       .then(() => {
         proxy.$modal?.msgSuccess?.('批量审核成功');
-        batchReviewStatus.value = null;
-        batchRejectReason.value = '';
         clearSelectionState();
         getList();
       })
       .catch(() => {});
 }
-
-watch(showBatchRejectReason, (visible) => {
-  if (!visible) {
-    batchRejectReason.value = '';
-  }
-});
 
 function handleReview(row) {
   const id = row?.achievementId;
@@ -891,41 +782,3 @@ export default {
   name: 'AchievementManageIndex'
 }
 </script>
-
-<style scoped>
-.achievement-search-form {
-  margin-bottom: 18px;
-}
-
-.search-row + .search-row {
-  margin-top: 2px;
-}
-
-.search-item {
-  margin-bottom: 16px;
-}
-
-.search-action-item :deep(.el-form-item__content) {
-  justify-content: flex-start;
-}
-
-.search-action-col {
-  display: flex;
-}
-
-.search-action-row {
-  min-height: 32px;
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  flex-wrap: nowrap;
-  white-space: nowrap;
-}
-
-.search-item :deep(.el-input),
-.search-item :deep(.el-select),
-.search-item :deep(.el-date-editor) {
-  width: 100%;
-}
-</style>
-

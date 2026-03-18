@@ -174,7 +174,7 @@
         <where>
             (
                 exists (select 1 from sam_achievement_participant p where p.achievement_id = a.achievement_id and p.student_id = #{params.userId})
-                or
+                or 
                 exists (select 1 from sam_achievement_advisor ad where ad.achievement_id = a.achievement_id and ad.teacher_id = #{params.userId})
             )
             <if test="name != null  and name != ''"> and a.name like concat('%', #{name}, '%')</if>
@@ -317,15 +317,6 @@
             <if test="itemIndex != null">item_index = #{itemIndex},</if>
             <if test="qualityIndex != null">quality_index = #{qualityIndex},</if>
             <if test="submittedAt != null">submitted_at = #{submittedAt},</if>
-            <if test="reviewResult != null and reviewResult == 0">
-                reviewed_at = null,
-                schooi_review_result = null,
-                school_reviewed_at = null,
-                review_reason = null,
-                school_review_reason = null,
-                audit_by = null,
-                school_audit_by = null,
-            </if>
             <if test="reviewedAt != null">reviewed_at = #{reviewedAt},</if>
             <if test="schoolReviewedAt != null">school_reviewed_at = #{schoolReviewedAt},</if>
             <if test="reviewResult != null">review_result = #{reviewResult},</if>
