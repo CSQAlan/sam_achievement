@@ -408,3 +408,4 @@ public class SysProfileController extends BaseController
         return user.getRoles().stream().anyMatch(role -> role != null && roleKey.equals(role.getRoleKey()));
     }
 }
+

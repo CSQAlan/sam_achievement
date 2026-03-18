@@ -43,29 +43,43 @@
                 />
               </el-select>
             </div>
-
+            <div class="toolbar-actions">
+              <el-button class="save-btn" :loading="saveFormLoading" @click="saveFormChanges">
+                保存修改
+              </el-button>
+              <el-button class="submit-btn" type="primary" :disabled="!selectedAuditStatus" @click="submitAudit">
+                提交审核
+              </el-button>
+            </div>
             <div v-if="showRejectReason" class="audit-field reason-field">
               <span class="audit-label">驳回原因</span>
-              <el-input
-                  v-model="rejectReason"
-                  type="textarea"
-                  :rows="1"
-                  maxlength="200"
-                  show-word-limit
-                  class="audit-reason"
-                  :placeholder="rejectReasonPlaceholder"
-              />
+              <div class="audit-reason-group">
+                <el-select
+                    v-model="rejectReason"
+                    multiple
+                    filterable
+                    clearable
+                    class="audit-reason-select"
+                    :placeholder="rejectReasonPlaceholder"
+                >
+                  <el-option
+                      v-for="opt in currentRejectReasonOptions"
+                      :key="opt.value"
+                      :label="opt.label"
+                      :value="opt.value"
+                  />
+                </el-select>
+                <el-input
+                    v-model="rejectReasonCustom"
+                    clearable
+                    class="audit-reason-input"
+                    :placeholder="rejectReasonCustomPlaceholder"
+                />
+              </div>
             </div>
           </div>
 
-          <div class="toolbar-actions">
-            <el-button class="save-btn" :loading="saveFormLoading" @click="saveFormChanges">
-              保存修改
-            </el-button>
-            <el-button class="submit-btn" type="primary" :disabled="!selectedAuditStatus" @click="submitAudit">
-            提交审核
-            </el-button>
-          </div>
+
         </div>
       </div>
     </div>
@@ -76,7 +90,6 @@
 <script setup name="ReviewPage">
 import { computed, onMounted, onActivated, ref, getCurrentInstance, watch, nextTick } from "vue";
 import { useRoute, useRouter } from "vue-router";
-import useUserStore from "@/store/modules/user";
 
 import AchievementForm from "@/views/achievement/component/AchievementForm.vue";
 
@@ -90,9 +103,9 @@ import { submitReview as submitReviewAction } from "@/api/achievement/review_bat
 const { proxy } = getCurrentInstance();
 const route = useRoute();
 const router = useRouter();
-const userStore = useUserStore();
 const AUTO_SCHOOL_REJECT_REASON = "因院级状态变更自动驳回";
 const LEGACY_AUTO_SCHOOL_REJECT_REASON = "院级状态变更，校级自动驳回";
+const REJECT_REASON_SEPARATOR = "；";
 
 const dlgRef = ref(null);
 const formKey = ref(0);
@@ -100,7 +113,12 @@ const formKey = ref(0);
 // ✅ 两套字典（按你最新定义）
 // 院级：college_audit_status 0待院级审核 1院级驳回 2院级审核通过
 // 校级：school_audit_status 2待校级审核 1校级审核通过 0校级驳回
-const { college_audit_status, school_audit_status } = proxy.useDict("college_audit_status", "school_audit_status");
+const { college_audit_status, school_audit_status, college_reason, school_reason } = proxy.useDict(
+    "college_audit_status",
+    "school_audit_status",
+    "college_reason",
+    "school_reason"
+);
 
 // ✅ API 映射
 const apiMap = {
@@ -154,7 +172,67 @@ const nextStatusOptions = computed(() => {
 });
 
 const selectedAuditStatus = ref("");
-const rejectReason = ref("");
+const rejectReason = ref([]);
+const rejectReasonCustom = ref("");
+
+function normalizeRejectReasonOptions(dictItems = []) {
+  return (dictItems || [])
+      .map((item) => {
+        const label = normalizeLooseText(item?.label);
+        const value = normalizeLooseText(item?.value);
+        if (!label && !value) return null;
+        return { label: label || value, value: value || label };
+      })
+      .filter(Boolean);
+}
+
+function splitRejectReasonText(value) {
+  const text = normalizeLooseText(value);
+  if (!text) return [];
+  return Array.from(new Set(text
+      .split(/[；;\n]+/)
+      .map((item) => normalizeLooseText(item))
+      .filter(Boolean)));
+}
+
+function findRejectReasonOption(options = [], token) {
+  const text = normalizeLooseText(token);
+  if (!text) return null;
+  return (options || []).find((opt) => opt.value === text || opt.label === text) || null;
+}
+
+function parseRejectReasonState(value, options = []) {
+  const selectedValues = [];
+  const customTexts = [];
+  splitRejectReasonText(value).forEach((item) => {
+    const matched = findRejectReasonOption(options, item);
+    if (matched) {
+      selectedValues.push(matched.value);
+    } else {
+      customTexts.push(item);
+    }
+  });
+  return {
+    selectedValues: Array.from(new Set(selectedValues)),
+    customText: Array.from(new Set(customTexts)).join(REJECT_REASON_SEPARATOR)
+  };
+}
+
+function formatRejectReasonText(values, customText = "") {
+  const manualTexts = splitRejectReasonText(customText);
+  return Array.from(new Set([...(Array.isArray(values) ? values : [])
+      .map((item) => normalizeLooseText(item))
+      .filter(Boolean), ...manualTexts]))
+      .join(REJECT_REASON_SEPARATOR);
+}
+
+const baseRejectReasonOptions = computed(() => {
+  const dictItems = isCollegeSource.value ? college_reason?.value : school_reason?.value;
+  return normalizeRejectReasonOptions(dictItems || []);
+});
+
+const currentRejectReasonOptions = computed(() => baseRejectReasonOptions.value);
+
 const auditInitialized = ref(false);
 const saveFormLoading = ref(false);
 
@@ -177,16 +255,9 @@ function normalizeLooseText(value) {
 
 const pageKey = computed(() => String(route.query.pageKey || ""));
 const pageIdsRef = ref([]);
-
-const historyRef = ref([]);
-const cursorRef = ref(-1);
-
-const historyScope = computed(() => {
-  const scopedPageKey = pageKey.value || String(route.query.fromPath || route.path || "default");
-  return `${source.value || "unknown"}_${scopedPageKey}`;
-});
-const historyKey = computed(() => `review_history_${userStore.id || "anon"}_${historyScope.value}`);
-const cursorKey = computed(() => `review_history_cursor_${userStore.id || "anon"}_${historyScope.value}`);
+const pageGroupsRef = ref([]);
+const currentPageIdsRef = ref([]);
+const currentPageIndexRef = ref(-1);
 
 function readJson(key, fallback) {
   try {
@@ -198,163 +269,137 @@ function readJson(key, fallback) {
   }
 }
 
-function writeJson(key, value) {
-  try {
-    sessionStorage.setItem(key, JSON.stringify(value));
-  } catch (e) {
-    // ignore storage errors
-  }
-}
-
 function parsePageIds(value) {
   if (!value) return [];
   return Array.from(new Set(String(value)
       .split(",")
-      .map((v) => Number(v))
-      .filter((v) => !Number.isNaN(v))))
-      .sort((a, b) => a - b);
+      .map((v) => String(v).trim())
+      .filter(Boolean)));
+}
+
+function findPageIndexById(id) {
+  const normalizedId = String(id || "");
+  if (!normalizedId) return -1;
+  return pageGroupsRef.value.findIndex((group) => group.some((item) => String(item) === normalizedId));
+}
+
+function resolveCurrentPageIdsByIndex(index) {
+  if (index < 0 || index >= pageGroupsRef.value.length) return [];
+  return pageGroupsRef.value[index] || [];
 }
 
 function loadPageIds() {
+  currentPageIndexRef.value = -1;
+
   const fromQuery = parsePageIds(route.query.pageIds);
   if (fromQuery.length > 0) {
     pageIdsRef.value = fromQuery;
     if (pageKey.value) {
       try {
-        sessionStorage.setItem(`review_page_${pageKey.value}`, fromQuery.join(","));
+        sessionStorage.setItem(`review_page_${pageKey.value}`, JSON.stringify(fromQuery));
       } catch (e) {
         // ignore storage errors
       }
     }
-    return;
-  }
-  if (pageKey.value) {
-    const stored = parsePageIds(sessionStorage.getItem(`review_page_${pageKey.value}`));
-    pageIdsRef.value = stored;
   } else {
-    pageIdsRef.value = [];
+    pageIdsRef.value = pageKey.value ? parsePageIds(readJson(`review_page_${pageKey.value}`, [])) : [];
+  }
+
+  const groupFromQuery = parsePageIds(route.query.currentPageIds);
+  if (groupFromQuery.length > 0) {
+    currentPageIdsRef.value = groupFromQuery;
+    if (pageKey.value) {
+      try {
+        sessionStorage.setItem(`review_current_page_${pageKey.value}`, JSON.stringify(groupFromQuery));
+      } catch (e) {
+        // ignore storage errors
+      }
+    }
+  } else {
+    currentPageIdsRef.value = pageKey.value ? parsePageIds(readJson(`review_current_page_${pageKey.value}`, [])) : [];
+  }
+
+  const storedGroups = pageKey.value ? readJson(`review_page_groups_${pageKey.value}`, []) : [];
+  pageGroupsRef.value = Array.isArray(storedGroups)
+      ? storedGroups.map((group) => parsePageIds(Array.isArray(group) ? group.join(",") : group)).filter((group) => group.length > 0)
+      : [];
+
+  const routePageIndex = Number(route.query.pageIndex);
+  if (Number.isFinite(routePageIndex) && routePageIndex >= 0) {
+    currentPageIndexRef.value = routePageIndex;
+  } else {
+    const routeId = String(route.query.id || "");
+    currentPageIndexRef.value = findPageIndexById(routeId);
+  }
+
+  if ((!currentPageIdsRef.value || currentPageIdsRef.value.length === 0) && currentPageIndexRef.value >= 0) {
+    currentPageIdsRef.value = resolveCurrentPageIdsByIndex(currentPageIndexRef.value);
   }
 }
 
 function persistPageIds() {
   if (!pageKey.value) return;
   try {
-    sessionStorage.setItem(`review_page_${pageKey.value}`, pageIdsRef.value.join(","));
+    sessionStorage.setItem(`review_page_${pageKey.value}`, JSON.stringify(pageIdsRef.value));
+    sessionStorage.setItem(`review_current_page_${pageKey.value}`, JSON.stringify(currentPageIdsRef.value));
+    sessionStorage.setItem(`review_page_groups_${pageKey.value}`, JSON.stringify(pageGroupsRef.value));
   } catch (e) {
     // ignore storage errors
   }
 }
 
-function loadHistory() {
-  const loaded = readJson(historyKey.value, []);
-  historyRef.value = Array.isArray(loaded) ? loaded : [];
-  const rawCursor = sessionStorage.getItem(cursorKey.value);
-  const parsed = Number(rawCursor);
-  cursorRef.value = Number.isFinite(parsed) ? parsed : -1;
-  if (cursorRef.value >= historyRef.value.length) {
-    cursorRef.value = historyRef.value.length - 1;
-  }
+function getReviewIndexById(id) {
+  const normalizedId = String(id || "");
+  if (!normalizedId) return -1;
+  return pageIdsRef.value.findIndex((item) => String(item) === normalizedId);
 }
 
-function saveHistory() {
-  writeJson(historyKey.value, historyRef.value);
-  try {
-    sessionStorage.setItem(cursorKey.value, String(cursorRef.value));
-  } catch (e) {
-    // ignore storage errors
-  }
-}
-
-function syncHistoryOnEnter() {
-  loadHistory();
-  const id = route.query.id;
-  if (!id) {
-    saveHistory();
-    return;
-  }
-
-  const nav = String(route.query.nav || "");
-  const hIndex = Number(route.query.hIndex);
-  if (nav === "history" && Number.isFinite(hIndex)) {
-    cursorRef.value = hIndex;
-    if (cursorRef.value < 0) cursorRef.value = 0;
-    if (cursorRef.value >= historyRef.value.length) {
-      cursorRef.value = historyRef.value.length - 1;
-    }
-    saveHistory();
-    return;
-  }
-
-  if (cursorRef.value >= 0 && cursorRef.value < historyRef.value.length - 1) {
-    historyRef.value = historyRef.value.slice(0, cursorRef.value + 1);
-  }
-
-  const entry = {
-    id: String(id),
-    source: source.value,
-    mode: mode.value,
-    path: route.path,
-    time: Date.now(),
-    pageKey: pageKey.value
-  };
-
-  const last = historyRef.value[historyRef.value.length - 1];
-  if (!last || String(last.id) !== String(entry.id) || String(last.source) !== String(entry.source) ||
-      String(last.path) !== String(entry.path) || String(last.mode) !== String(entry.mode)) {
-    historyRef.value.push(entry);
-  }
-  cursorRef.value = historyRef.value.length - 1;
-  saveHistory();
-}
-
-function handlePrev() {
-  loadHistory();
-  loadPageIds();
-  if (cursorRef.value <= 0 || historyRef.value.length === 0) {
-    proxy.$modal?.msgWarning?.("当前页面没有上一个审核记录");
-    return;
-  }
-  const newCursor = cursorRef.value - 1;
-  const target = historyRef.value[newCursor];
-  if (!target || !target.id) {
-    proxy.$modal?.msgWarning?.("当前页面没有上一个审核记录");
-    return;
-  }
-  cursorRef.value = newCursor;
-  saveHistory();
+function buildReviewQuery(targetId, targetPageIndex) {
   const query = {
-    id: target.id,
-    source: target.source || source.value,
-    mode: target.mode || "view",
-    nav: "history",
-    hIndex: newCursor
-  };
-  if (target.pageKey || pageKey.value) query.pageKey = target.pageKey || pageKey.value;
-  if (pageIdsRef.value.length > 0) query.pageIds = pageIdsRef.value.join(",");
-  router.push({ path: target.path || route.path, query });
-}
-
-function handleNext() {
-  loadPageIds();
-  const currentId = Number(route.query.id);
-  const ids = pageIdsRef.value || [];
-  if (Number.isNaN(currentId) || ids.length === 0) {
-    proxy.$modal?.msgWarning?.("当前页面没有需要审核的成果");
-    return;
-  }
-  const nextId = ids.find((id) => id > currentId);
-  if (!nextId) {
-    proxy.$modal?.msgWarning?.("当前页面没有需要审核的成果");
-    return;
-  }
-  const query = {
-    id: nextId,
+    id: targetId,
     source: source.value,
     mode: mode.value
   };
   if (pageKey.value) query.pageKey = pageKey.value;
-  if (pageIdsRef.value.length > 0) query.pageIds = pageIdsRef.value.join(",");
-  router.push({ path: route.path, query });
+  if (!pageKey.value && pageIdsRef.value.length > 0) query.pageIds = pageIdsRef.value.join(",");
+  if (targetPageIndex >= 0) {
+    query.pageIndex = targetPageIndex;
+    const targetPageIds = resolveCurrentPageIdsByIndex(targetPageIndex);
+    if (targetPageIds.length > 0) query.currentPageIds = targetPageIds.join(",");
+  } else if (currentPageIdsRef.value.length > 0) {
+    query.currentPageIds = currentPageIdsRef.value.join(",");
+  }
+  return query;
+}
+
+function navigateToReview(targetId, targetPageIndex) {
+  return router.push({ path: route.path, query: buildReviewQuery(targetId, targetPageIndex) });
+}
+
+function handlePrev() {
+  loadPageIds();
+  const currentId = String(route.query.id || "");
+  const currentIndex = getReviewIndexById(currentId);
+  if (currentIndex <= 0) {
+    proxy.$modal?.msgWarning?.("当前页面没有上一个成果");
+    return;
+  }
+  const prevId = pageIdsRef.value[currentIndex - 1];
+  const prevPageIndex = findPageIndexById(prevId);
+  navigateToReview(prevId, prevPageIndex);
+}
+
+function handleNext() {
+  loadPageIds();
+  const currentId = String(route.query.id || "");
+  const currentIndex = getReviewIndexById(currentId);
+  if (currentIndex < 0 || currentIndex >= pageIdsRef.value.length - 1) {
+    proxy.$modal?.msgWarning?.("当前页面没有下一个成果");
+    return;
+  }
+  const nextId = pageIdsRef.value[currentIndex + 1];
+  const nextPageIndex = findPageIndexById(nextId);
+  navigateToReview(nextId, nextPageIndex);
 }
 
 // 是否为院级来源
@@ -367,7 +412,10 @@ const isSchoolReject = computed(() => isSchoolSource.value && String(selectedAud
 
 const showRejectReason = computed(() => isCollegeReject.value || isSchoolReject.value);
 const rejectReasonPlaceholder = computed(() =>
-    isCollegeReject.value ? "请填写院级驳回原因" : "请填写校级驳回原因"
+    isCollegeReject.value ? "请选择院级驳回原因" : "请选择校级驳回原因"
+);
+const rejectReasonCustomPlaceholder = computed(() =>
+    isCollegeReject.value ? "请输入其他院级驳回原因" : "请输入其他校级驳回原因"
 );
 
 // ✅ 默认优先选“通过”
@@ -398,7 +446,10 @@ watch(
 watch(
     () => selectedAuditStatus.value,
     () => {
-      if (!showRejectReason.value) rejectReason.value = "";
+      if (!showRejectReason.value) {
+        rejectReason.value = [];
+        rejectReasonCustom.value = "";
+      }
     }
 );
 
@@ -418,9 +469,12 @@ function syncAuditFromForm() {
     }
 
     if (String(selectedAuditStatus.value) === "1") {
-      rejectReason.value = form.reviewReason || "";
+      const parsedReason = parseRejectReasonState(form.reviewReason, baseRejectReasonOptions.value);
+      rejectReason.value = parsedReason.selectedValues;
+      rejectReasonCustom.value = parsedReason.customText;
     } else {
-      rejectReason.value = "";
+      rejectReason.value = [];
+      rejectReasonCustom.value = "";
     }
   } else if (isSchoolSource.value) {
     const status = form.schooiReviewResult ?? form.schooi_review_result ?? form.schoolReviewResult ?? form.school_review_result;
@@ -431,14 +485,27 @@ function syncAuditFromForm() {
     }
 
     if (String(selectedAuditStatus.value) === "0") {
-      rejectReason.value = normalizeLooseText(form.schoolReviewReason || form.school_review_reason);
+      const parsedReason = parseRejectReasonState(form.schoolReviewReason || form.school_review_reason, baseRejectReasonOptions.value);
+      rejectReason.value = parsedReason.selectedValues;
+      rejectReasonCustom.value = parsedReason.customText;
     } else {
-      rejectReason.value = "";
+      rejectReason.value = [];
+      rejectReasonCustom.value = "";
     }
   }
 
   auditInitialized.value = true;
 }
+
+watch(
+    baseRejectReasonOptions,
+    (options) => {
+      if (!options?.length) return;
+      if (!dlgRef.value?.getForm?.()) return;
+      auditInitialized.value = false;
+      syncAuditFromForm();
+    }
+);
 
 watch(
     () => {
@@ -508,23 +575,45 @@ async function saveFormChanges() {
 
 function jumpToNextAfterAudit(currentId) {
   loadPageIds();
-  const ids = pageIdsRef.value || [];
-  const nextId = ids.find((id) => Number(id) > Number(currentId));
-  if (!nextId) {
-    if (!source.value.endsWith("reviewed")) {
-      proxy.$modal?.msgWarning?.("当前页面没有需要审核的成果");
-    }
-    handleBack();
-    return;
+  const currentIndex = getReviewIndexById(currentId);
+  if (currentIndex < 0) {
+    proxy.$modal?.msgWarning?.("当前页面没有需要审核的成果");
+    return Promise.resolve(false);
   }
-  const query = {
-    id: nextId,
-    source: source.value,
-    mode: mode.value
-  };
-  if (pageKey.value) query.pageKey = pageKey.value;
-  if (pageIdsRef.value.length > 0) query.pageIds = pageIdsRef.value.join(",");
-  router.push({ path: route.path, query });
+
+  const nextId = pageIdsRef.value[currentIndex + 1];
+  if (!nextId) {
+    return proxy.$modal
+        .confirm("当前筛选结果已全部审核完毕，是否返回列表？")
+        .then(() => {
+          handleBack();
+          return true;
+        })
+        .catch(() => {
+          proxy.$modal?.msgSuccess?.("已提交审核，留在当前页面");
+          return false;
+        });
+  }
+
+  const nextPageIndex = findPageIndexById(nextId);
+  const isLastOfCurrentPage = currentPageIdsRef.value.length > 0
+      && String(currentPageIdsRef.value[currentPageIdsRef.value.length - 1]) === String(currentId)
+      && nextPageIndex !== currentPageIndexRef.value;
+
+  const confirmText = isLastOfCurrentPage
+      ? "当前页面成果已审核完毕，是否开始审核下一页？"
+      : "审核成功，是否跳转到下一个成果？";
+
+  return proxy.$modal
+      .confirm(confirmText)
+      .then(() => {
+        navigateToReview(nextId, nextPageIndex);
+        return true;
+      })
+      .catch(() => {
+        proxy.$modal?.msgSuccess?.("已提交审核，留在当前页面");
+        return false;
+      });
 }
 
 
@@ -549,12 +638,12 @@ async function submitAudit() {
   const next = String(selectedAuditStatus.value || "");
   if (!next) return;
 
-  if (showRejectReason.value && !rejectReason.value.trim()) {
+  const rejectReasonText = showRejectReason.value ? formatRejectReasonText(rejectReason.value, rejectReasonCustom.value) : "";
+
+  if (showRejectReason.value && !rejectReasonText) {
     proxy.$modal?.msgError?.(isCollegeReject.value ? "请填写院级驳回原因" : "请填写校级驳回原因");
     return;
   }
-
-  const rejectReasonText = showRejectReason.value ? rejectReason.value.trim() : "";
 
   try {
     const supportedSources = [
@@ -575,21 +664,8 @@ async function submitAudit() {
       rejectReason: rejectReasonText
     });
 
-    if (source.value.endsWith("unreviewed")) {
-      pageIdsRef.value = pageIdsRef.value.filter((pid) => String(pid) !== String(id));
-      persistPageIds();
-    }
-
     proxy.$modal?.msgSuccess?.(isCollegeSource.value ? "院级审核成功" : "校级审核成功");
-
-    proxy.$modal
-        .confirm(`审核成功，是否跳转到下一个成果？`)
-        .then(() => {
-          jumpToNextAfterAudit(id);
-        })
-        .catch(() => {
-          proxy.$modal?.msgSuccess?.("已提交审核，留在当前页面");
-        });
+    await jumpToNextAfterAudit(id);
   } catch (e) {
     const errMsg =
         e?.response?.data?.msg ||
@@ -603,7 +679,7 @@ function loadCurrent() {
   formKey.value = Date.now();
   auditInitialized.value = false;
   loadPageIds();
-  syncHistoryOnEnter();
+  persistPageIds();
   nextTick(() => {
     const id = route.query.id;
     dlgRef.value?.open(id);
@@ -620,14 +696,14 @@ onActivated(() => {
 });
 
 watch(
-    () => [route.query.id, route.query.source, route.query.pageKey],
+    () => [route.query.id, route.query.source, route.query.pageKey, route.query.pageIndex, route.query.currentPageIds],
     () => {
       loadCurrent();
     }
 );
 
 watch(
-    () => [route.query.pageKey, route.query.pageIds],
+    () => [route.query.pageKey, route.query.pageIds, route.query.currentPageIds, route.query.pageIndex],
     () => {
       loadPageIds();
     }
@@ -641,14 +717,26 @@ watch(
 }
 .review-fixed-dock {
   position: fixed;
-  left: 50%;
+  left: calc(200px + (100vw - 200px) / 2);
   right: auto;
   bottom: 10px;
   transform: translateX(-50%);
-  width: min(1180px, calc(100vw - 36px));
+  width: min(1180px, calc(100vw - 200px - 36px));
   z-index: 2000;
   pointer-events: none;
 }
+/* 左侧菜单收起时 */
+:global(.hideSidebar) .review-fixed-dock {
+  left: calc(54px + (100vw - 54px) / 2);
+  width: min(1180px, calc(100vw - 54px - 36px));
+}
+
+/* 菜单完全隐藏时 */
+:global(.sidebarHide) .review-fixed-dock {
+  left: 50%;
+  width: min(1180px, calc(100vw - 36px));
+}
+
 .review-fixed-inner {
   width: 100%;
   margin: 0;
@@ -658,22 +746,26 @@ watch(
   border-radius: 10px;
   backdrop-filter: blur(8px);
   box-shadow: 0 10px 30px rgba(15, 23, 42, 0.12);
+  display: flex;
+  justify-content: center;
 }
 .audit-toolbar {
   display: flex;
-  justify-content: space-between;
+  justify-content: center;
   align-items: center;
   gap: 14px;
   flex-wrap: wrap;
-  padding: 8px 2px;
+  padding: 8px 16px;
   border: 0;
   background: transparent;
 }
+
 .audit-toolbar-main {
   display: flex;
   align-items: center;
+  justify-content: center;
   gap: 14px;
-  flex: 1;
+  flex: 0 1 auto;
   min-width: 0;
   flex-wrap: wrap;
 }
@@ -718,6 +810,12 @@ watch(
   flex: 1;
   min-width: 320px;
 }
+.audit-reason-group {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  width: 100%;
+}
 .audit-label {
   color: #4e5969;
   font-size: 12px;
@@ -727,9 +825,19 @@ watch(
 .audit-status-select {
   width: 210px;
 }
-.audit-reason {
+.audit-reason-select {
   width: 100%;
   min-width: 260px;
+}
+.audit-reason-select :deep(.el-select__wrapper) {
+  box-shadow: 0 0 0 1px #d6e4ff inset;
+}
+
+.audit-reason-select :deep(.el-select__wrapper.is-focused) {
+  box-shadow: 0 0 0 1px #7ea8ff inset, 0 0 0 3px rgba(31, 111, 255, 0.12);
+}
+.audit-reason-input {
+  width: 100%;
 }
 .submit-btn {
   min-width: 108px;
@@ -792,20 +900,49 @@ watch(
   border-color: #7ea8ff;
   box-shadow: 0 0 0 3px rgba(31, 111, 255, 0.12);
 }
+.toolbar-actions {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+}
 
 @media (max-width: 992px) {
   .audit-toolbar {
-    align-items: stretch;
-    padding: 4px 0;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    gap: 14px;
+    flex-wrap: wrap;
+    padding: 8px 16px;
+    border: 0;
+    background: transparent;
   }
+
   .review-page {
     padding-bottom: 138px;
   }
+
   .review-fixed-dock {
-    bottom: 8px;
-    width: calc(100vw - 12px);
+    position: fixed;
+    left: calc(200px + (100vw - 200px) / 2);
+    bottom: 10px;
+    transform: translateX(-50%);
+    width: min(1180px, calc(100vw - 200px - 36px));
+    z-index: 2000;
+    pointer-events: none;
   }
 
+  :global(.hideSidebar) .review-fixed-dock {
+    left: calc(54px + (100vw - 54px) / 2);
+    width: min(1180px, calc(100vw - 54px - 36px));
+  }
+
+  :global(.mobile) .review-fixed-dock,
+  :global(.sidebarHide) .review-fixed-dock {
+    left: 50%;
+    width: min(1180px, calc(100vw - 36px));
+  }
   .audit-toolbar-main {
     width: 100%;
   }
