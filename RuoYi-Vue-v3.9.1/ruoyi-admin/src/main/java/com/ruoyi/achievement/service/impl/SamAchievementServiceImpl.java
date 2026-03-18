@@ -303,7 +303,7 @@ public class SamAchievementServiceImpl implements ISamAchievementService
     @Override
     public boolean checkCertificateNoUnique(SamAchievement samAchievement) {
         String achievementId = StringUtils.isEmpty(samAchievement.getAchievementId()) ? "-1" : samAchievement.getAchievementId();
-        SamAchievement info = samAchievementMapper.checkCertificateNoUnique(samAchievement.getCertificateNo());
+        SamAchievement info = samAchievementMapper.checkCertificateNoUnique(samAchievement.getCertificateNo(), samAchievement.getCompetitionId());
         if (StringUtils.isNotNull(info) && !info.getAchievementId().equals(achievementId)) {
             return UserConstants.NOT_UNIQUE;
         }
