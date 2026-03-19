@@ -3,11 +3,7 @@
     <div class="page-card">
       <div class="page-header">
         <div class="header-left">
-          <div class="page-title">{{ title }}</div>
-        </div>
-        <div class="page-actions" v-if="!readOnly">
-          <el-button v-if="showSubmit" type="primary" @click="submitForm">{{ submitTextComputed }}</el-button>
-          <el-button @click="handleCancel">{{ cancelText }}</el-button>
+          <div class="page-title">  {{ isPageMode ? `${title} - 成果编号: ${form?.achievementId || '编号不存在'}` : title }}</div>
         </div>
       </div>
       <el-divider style="margin: 10px 0 20px 0"></el-divider>
@@ -40,7 +36,8 @@
                   </el-row>
                   <el-row>
                     <el-col :span="12">
-                      <el-form-item label="类别" prop="category">
+                      <el-form-item label="类别"
+                                    prop="category">
                         <el-select v-model="form.category" placeholder="请选择类别" filterable>
                           <el-option v-for="dict in achievement_category" :key="dict.value" :label="dict.label" :value="dict.value" />
                         </el-select>
@@ -52,8 +49,7 @@
                           v-model="form.sessionId" 
                           placeholder="请选择赛事" 
                           filterable 
-                          clearable 
-                          style="width: 100%"
+                          clearable
                           :disabled="readOnly || !form.competitionId"
                         >
                           <el-option v-for="item in sessionOptions" :key="item.id" :label="item.session" :value="item.id" />
@@ -69,7 +65,7 @@
                     </el-col>
                     <el-col :span="12">
                       <el-form-item label="作品名称" prop="name">
-                        <el-input v-model="form.name" placeholder="请输入作品名称(选填)" />
+                        <el-input v-model.trim="form.name" placeholder="请输入作品名称(选填)" />
                       </el-form-item>
                     </el-col>
                   </el-row>
@@ -93,7 +89,7 @@
                   <el-row>
                     <el-col :span="12">
                       <el-form-item label="赛道" prop="track">
-                        <el-input v-model="form.track" placeholder="请输入赛道" />
+                        <el-input v-model.trim="form.track" placeholder="请输入赛道" />
                         <div style="color: #909399; font-size: 12px; margin-top: 5px; line-height: 1.2;">例如蓝桥杯有c++，java数学竞赛有数学类与非数A等</div>
                       </el-form-item>
                     </el-col>
@@ -108,7 +104,7 @@
                   <el-row>
                     <el-col :span="12">
                       <el-form-item label="证书编号" prop="certificateNo">
-                        <el-input v-model="form.certificateNo" placeholder="请输入证书编号" />
+                        <el-input v-model.trim="form.certificateNo" placeholder="请输入证书编号" />
                       </el-form-item>
                     </el-col>
                     <el-col :span="12">
@@ -121,12 +117,12 @@
                   <el-row>
                     <el-col :span="12">
                       <el-form-item label="团队名称" prop="teamName">
-                        <el-input v-model="form.teamName" placeholder="请输入团队名称(选填)" />
+                        <el-input v-model.trim="form.teamName" placeholder="请输入团队名称(选填)" />
                       </el-form-item>
                     </el-col>
                     <el-col :span="12" v-if="form.isReimburse === 1">
                       <el-form-item label="报名费" prop="fee">
-                        <el-input v-model="form.fee" placeholder="请输入金额"><template #append>元</template></el-input>
+                        <el-input v-model.trim="form.fee" placeholder="请输入金额"><template #append>元</template></el-input>
                       </el-form-item>
                     </el-col>
                   </el-row>
@@ -293,7 +289,7 @@
                 </el-col>
                 <el-col :span="12">
                   <el-form-item label="作品名称" prop="name">
-                    <el-input v-model="form.name" placeholder="请输入作品名称(选填)" />
+                    <el-input v-model.trim="form.name" placeholder="请输入作品名称(选填)" />
                   </el-form-item>
                 </el-col>
               </el-row>
@@ -317,7 +313,7 @@
               <el-row>
                 <el-col :span="12">
                   <el-form-item label="赛道" prop="track">
-                    <el-input v-model="form.track" placeholder="请输入赛道" />
+                    <el-input v-model.trim="form.track" placeholder="请输入赛道" />
                     <div style="color: #909399; font-size: 12px; margin-top: 5px; line-height: 1.2;">例如蓝桥杯有c++，java数学竞赛有数学类与非数A等</div>
                   </el-form-item>
                 </el-col>
@@ -332,7 +328,7 @@
               <el-row>
                 <el-col :span="12">
                   <el-form-item label="证书编号" prop="certificateNo">
-                    <el-input v-model="form.certificateNo" placeholder="请输入证书编号" />
+                    <el-input v-model.trim="form.certificateNo" placeholder="请输入证书编号" />
                   </el-form-item>
                 </el-col>
                 <el-col :span="12">
@@ -345,12 +341,12 @@
               <el-row>
                 <el-col :span="12">
                   <el-form-item label="团队名称" prop="teamName">
-                    <el-input v-model="form.teamName" placeholder="请输入团队名称(选填)" />
+                    <el-input v-model.trim="form.teamName" placeholder="请输入团队名称(选填)" />
                   </el-form-item>
                 </el-col>
                 <el-col :span="12" v-if="form.isReimburse === 1">
                   <el-form-item label="报名费" prop="fee">
-                    <el-input v-model="form.fee" placeholder="请输入金额"><template #append>元</template></el-input>
+                    <el-input v-model.trim="form.fee" placeholder="请输入金额"><template #append>元</template></el-input>
                   </el-form-item>
                 </el-col>
               </el-row>
@@ -496,10 +492,10 @@
   <el-dialog title="添加参赛选手" v-model="addParticipantVisible" width="500px" append-to-body :close-on-click-modal="false">
     <el-form ref="addParticipantRef" :model="participantForm" :rules="addParticipantRules" label-width="80px">
       <el-form-item label="学号" prop="studentId">
-        <el-input v-model="participantForm.studentId" placeholder="请输入学号后点击空白处" @blur="handleParticipantIdBlur" clearable />
+        <el-input v-model.trim="participantForm.studentId" placeholder="请输入学号后点击空白处" @blur="handleParticipantIdBlur" clearable />
       </el-form-item>
       <el-form-item label="姓名" prop="studentName">
-        <el-input v-model="participantForm.studentName" placeholder="自动带出，或手动输入" :disabled="!isParticipantNew" />
+        <el-input v-model.trim="participantForm.studentName" placeholder="自动带出，或手动输入" :disabled="!isParticipantNew" />
       </el-form-item>
       
       <template v-if="isParticipantNew">
@@ -539,11 +535,11 @@
             style="width: 100%" 
           />
         </el-form-item>
-        <el-form-item label="班级" prop="class_name">
-          <el-input v-model="participantForm.class_name" placeholder="请输入班级" />
+        <el-form-item label="班级" prop="className">
+          <el-input v-model.trim="participantForm.className" placeholder="请输入班级" />
         </el-form-item>
-        <el-form-item label="年级" prop="class_year">
-          <el-input v-model="participantForm.class_year" placeholder="请输入年级 (例如: 2022)" />
+        <el-form-item label="年级" prop="classYear">
+          <el-input v-model.trim="participantForm.classYear" placeholder="请输入年级 (例如: 2022)" />
         </el-form-item>
       </template>
     </el-form>
@@ -558,10 +554,10 @@
   <el-dialog title="添加指导老师" v-model="addAdvisorVisible" width="500px" append-to-body :close-on-click-modal="false">
     <el-form ref="addAdvisorRef" :model="advisorForm" :rules="addAdvisorRules" label-width="80px">
       <el-form-item label="工号" prop="teacherId">
-        <el-input v-model="advisorForm.teacherId" placeholder="请输入工号后点击空白处" @blur="handleAdvisorIdBlur" clearable />
+        <el-input v-model.trim="advisorForm.teacherId" placeholder="请输入工号后点击空白处" @blur="handleAdvisorIdBlur" clearable />
       </el-form-item>
       <el-form-item label="姓名" prop="teacherName">
-        <el-input v-model="advisorForm.teacherName" placeholder="自动带出，或手动输入" :disabled="!isAdvisorNew" />
+        <el-input v-model.trim="advisorForm.teacherName" placeholder="自动带出，或手动输入" :disabled="!isAdvisorNew" />
       </el-form-item>
       
       <template v-if="isAdvisorNew">
@@ -629,6 +625,7 @@ const props = defineProps({
   titleEdit: { type: String, default: "修改成果" },
   submitText: { type: String, default: "" },
   cancelText: { type: String, default: "取 消" },
+  selfEditScene: { type: String, default: '' },
   userRole: { type: String, default: "student" },
   sourceMode: { type: String, default: "" },
 });
@@ -675,12 +672,27 @@ const data = reactive({
 });
 const { form, formSnapshot, rules } = toRefs(data);
 
+function trimIfString(value) {
+  return typeof value === "string" ? value.trim() : value;
+}
+
+function trimStringFields(target, fields) {
+  if (!target) return;
+  fields.forEach((key) => {
+    if (typeof target[key] === "string") {
+      target[key] = target[key].trim();
+    }
+  });
+}
+
 const validateCertificateNo = (rule, value, callback) => {
-  if (!value) {
+  const certificateNo = trimIfString(value);
+  form.value.certificateNo = certificateNo;
+  if (!certificateNo) {
     callback();
   } else {
     const params = {
-      certificateNo: value,
+      certificateNo,
       achievementId: form.value.achievementId
     };
     request({
@@ -731,7 +743,7 @@ function saveDraft(silent = false) {
     advisors: samAchievementAdvisorList.value
   };
   localStorage.setItem(getDraftKey(), JSON.stringify(draftData));
-  
+
   if (!silent) {
     proxy.$modal.msgSuccess("草稿已保存到本地");
     // 更新快照以避免触发离开时的修改检测
@@ -747,7 +759,7 @@ function loadDraft() {
     form.value = { ...form.value, ...draftData.form };
     samAchievementParticipantList.value = draftData.participants || [];
     samAchievementAdvisorList.value = draftData.advisors || [];
-    
+
     if (form.value.competitionId) {
       getSessionList(form.value.competitionId);
     }
@@ -857,7 +869,7 @@ const addParticipantRules = {
 };
 
 function openAddParticipantDialog() {
-  participantForm.value = { studentId: '', studentName: '', school: '', department: '', major: '', class_name: '', class_year: '' };
+  participantForm.value = { studentId: '', studentName: '', school: '', department: '', major: '', className: '', classYear: '' };
   isParticipantNew.value = false;
   addParticipantVisible.value = true;
 }
@@ -879,9 +891,10 @@ function openAddAdvisorDialog() {
 
 const searchingParticipant = ref(false);
 function handleParticipantIdBlur() {
-  const id = participantForm.value.studentId;
+  const id = trimIfString(participantForm.value.studentId);
+  participantForm.value.studentId = id;
   if (!id) return;
-  
+
   searchingParticipant.value = true;
   listStudent({ no: id }).then(res => {
     if (res.rows && res.rows.length > 0) {
@@ -910,10 +923,11 @@ function submitAddParticipant() {
 
   proxy.$refs.addParticipantRef.validate(valid => {
     if (valid) {
+      trimStringFields(participantForm.value, ["studentId", "studentName", "className", "classYear", "class_name", "class_year"]);
       const pushToList = () => {
         samAchievementParticipantList.value.push({
-          studentId: participantForm.value.studentId,
-          studentName: participantForm.value.studentName,
+          studentId: trimIfString(participantForm.value.studentId),
+          studentName: trimIfString(participantForm.value.studentName),
           orderNo: samAchievementParticipantList.value.length + 1,
           manager: samAchievementParticipantList.value.length === 0 ? 1 : 0
         });
@@ -923,16 +937,18 @@ function submitAddParticipant() {
 
       if (isParticipantNew.value) {
         addStudent({
-          no: participantForm.value.studentId,
-          name: participantForm.value.studentName,
+          no: trimIfString(participantForm.value.studentId),
+          name: trimIfString(participantForm.value.studentName),
           school: participantForm.value.school,
           department: participantForm.value.department,
           major: participantForm.value.major,
-          className: participantForm.value.class_name,
-          classYear: participantForm.value.class_year
+          className: trimIfString(participantForm.value.className ?? participantForm.value.class_name),
+          classYear: trimIfString(participantForm.value.classYear ?? participantForm.value.class_year)
         }).then(() => {
           proxy.$modal.msgSuccess("学生信息录入基础库成功");
           pushToList();
+        }).catch((error) => {
+          proxy.$modal.msgError(error?.message || "学生信息保存失败");
         });
       } else {
         pushToList();
@@ -943,7 +959,8 @@ function submitAddParticipant() {
 
 const searchingAdvisor = ref(false);
 function handleAdvisorIdBlur() {
-  const id = advisorForm.value.teacherId;
+  const id = trimIfString(advisorForm.value.teacherId);
+  advisorForm.value.teacherId = id;
   if (!id) return;
 
   searchingAdvisor.value = true;
@@ -970,10 +987,11 @@ function submitAddAdvisor() {
 
   proxy.$refs.addAdvisorRef.validate(valid => {
     if (valid) {
+      trimStringFields(advisorForm.value, ["teacherId", "teacherName"]);
       const pushToList = () => {
         samAchievementAdvisorList.value.push({
-          teacherId: advisorForm.value.teacherId,
-          teacherName: advisorForm.value.teacherName,
+          teacherId: trimIfString(advisorForm.value.teacherId),
+          teacherName: trimIfString(advisorForm.value.teacherName),
           orderNo: samAchievementAdvisorList.value.length + 1
         });
         reIndexList(samAchievementAdvisorList.value);
@@ -982,13 +1000,15 @@ function submitAddAdvisor() {
 
       if (isAdvisorNew.value) {
         addTeacher({
-          no: advisorForm.value.teacherId,
-          teacherName: advisorForm.value.teacherName,
+          no: trimIfString(advisorForm.value.teacherId),
+          teacherName: trimIfString(advisorForm.value.teacherName),
           school: advisorForm.value.school,
           department: advisorForm.value.department
         }).then(() => {
           proxy.$modal.msgSuccess("教师信息录入基础库成功");
           pushToList();
+        }).catch((error) => {
+          proxy.$modal.msgError(error?.message || "教师信息保存失败");
         });
       } else {
         pushToList();
@@ -1293,14 +1313,19 @@ function open(id) {
   initSortable();
 }
 function getForm() { return form.value; }
-defineExpose({ open, getForm, activeAttachmentTab });
+
+defineExpose({
+  open,
+  submitForm,
+  getForm
+});
 
 onMounted(() => {
   if (isPageMode.value) {
     getDeptTree();
     getCompetitionList();
     initSortable();
-    
+
     // 页面模式且没有 ID 时认为是新增，检查草稿
     const id = route.query.achievementId || route.params.id;
     if (!id) {
@@ -1457,16 +1482,25 @@ function validatePDFUpload() {
 }
 
 function submitForm() {
-  if (props.readOnly) return;
+  if (props.readOnly) return Promise.resolve(false);
   const activeRef = isPageMode.value ? outcomeRefPage.value : outcomeRefDialog.value;
-  
-  activeRef.validate(valid => {
-    if (valid) {
-      if (!validatePDFUpload()) return;
+
+  return new Promise((resolve, reject) => {
+    activeRef.validate(valid => {
+      if (!valid) {
+        resolve(false);
+        return;
+      }
+      if (!validatePDFUpload()) {
+        resolve(false);
+        return;
+      }
+
+      trimStringFields(form.value, ["name", "track", "certificateNo", "teamName", "fee"]);
 
       let attachments = [];
-      const pushFile = (type, path) => { 
-        if (path) { attachments.push({ type: type, fileUuid: path, fileType: 1 }); } 
+      const pushFile = (type, path) => {
+        if (path) { attachments.push({ type: type, fileUuid: path, fileType: 1 }); }
       };
       pushFile(1, form.value.fileAward);
       pushFile(2, form.value.fileNotice);
@@ -1476,35 +1510,39 @@ function submitForm() {
       pushFile(6, form.value.fileReceiptCode);
 
       form.value.samAchievementAttachmentList = attachments;
-      
+
       form.value.samAchievementParticipantList = samAchievementParticipantList.value.map(p => ({
         ...p,
-        studentNo: p.studentId, 
-        manager: String(p.manager) 
+        studentId: trimIfString(p.studentId),
+        studentName: trimIfString(p.studentName),
+        studentNo: trimIfString(p.studentId),
+        manager: String(p.manager)
       }));
-      
+
       form.value.samAchievementAdvisorList = samAchievementAdvisorList.value.map(a => ({
         ...a,
-        teacherNo: a.teacherId,
+        teacherId: trimIfString(a.teacherId),
+        teacherName: trimIfString(a.teacherName),
+        teacherNo: trimIfString(a.teacherId),
         manager: a.manager // 确保 manager 字段也传给后端
       }));
 
       const isEdit = form.value.achievementId != null;
       const apiFn = isEdit ? props.updateFn : props.addFn;
-      
+
       if (apiFn) {
         apiFn(form.value).then(response => {
           proxy.$modal.msgSuccess(isEdit ? "修改成功" : "新增成功");
           // 提交成功清除草稿
           clearDraft();
-          updateSnapshot(); 
+          updateSnapshot();
           if (!isPageMode.value) visible.value = false;
           emit('ok');
         });
       } else {
         proxy.$modal.msgError("未配置保存接口");
       }
-    }
+    });
   });
 }
 

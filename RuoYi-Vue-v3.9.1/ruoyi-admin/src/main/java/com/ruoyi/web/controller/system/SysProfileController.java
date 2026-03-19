@@ -147,3 +147,4 @@ public class SysProfileController extends BaseController
         return error("上传图片异常，请联系管理员");
     }
 }
+
