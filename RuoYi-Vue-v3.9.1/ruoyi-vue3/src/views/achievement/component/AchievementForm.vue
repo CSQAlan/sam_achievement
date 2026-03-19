@@ -3,11 +3,7 @@
     <div class="page-card">
       <div class="page-header">
         <div class="header-left">
-          <div class="page-title">  {{ isPageMode ? `${title} - 成果ID: ${form?.achievementId || 'ID不存在'}` : title }}</div>
-        </div>
-        <div class="page-actions" v-if="!readOnly">
-          <el-button v-if="showSubmit" type="primary" @click="submitForm">{{ submitTextComputed }}</el-button>
-          <el-button @click="handleCancel">{{ cancelText }}</el-button>
+          <div class="page-title">  {{ isPageMode ? `${title} - 成果编号: ${form?.achievementId || '编号不存在'}` : title }}</div>
         </div>
       </div>
       <el-divider style="margin: 10px 0 20px 0"></el-divider>
@@ -41,8 +37,6 @@
                   <el-row>
                     <el-col :span="12">
                       <el-form-item label="类别"
-
-
                                     prop="category">
                         <el-select v-model="form.category" placeholder="请选择类别" filterable>
                           <el-option v-for="dict in achievement_category" :key="dict.value" :label="dict.label" :value="dict.value" />
