@@ -605,7 +605,7 @@ const props = defineProps({
   sourceMode: { type: String, default: "" },
 });
 
-const { achievement_category, group_type, award_rank, award_level_type } = proxy.useDict('achievement_category', 'group_type', 'award_rank', 'award_level_type');
+const { achievement_category, group_type, award_rank, award_level_type, attach_type } = proxy.useDict('achievement_category', 'group_type', 'award_rank', 'award_level_type', 'attach_type');
 const isPageMode = computed(() => props.pageMode);
 const visible = ref(false);
 const title = ref("");
@@ -706,9 +706,7 @@ rules.value.certificateNo = [
   { validator: validateCertificateNo, trigger: "blur" }
 ];
 
-// =========================================================
 // 草稿功能逻辑
-// =========================================================
 const DRAFT_KEY_PREFIX = "ACHIEVEMENT_DRAFT_";
 const getDraftKey = () => DRAFT_KEY_PREFIX + route.path;
 
@@ -802,10 +800,7 @@ const submitTextComputed = computed(() => {
   return form.value?.achievementId ? "保 存" : "确 定";
 });
 
-// =========================================================
-// 新版：学生与老师的级联选择逻辑 (查找与动态过滤)
-// =========================================================
-
+// 学生与老师的级联选择逻辑 (查找与动态过滤)
 function findDeptNode(tree, targetVal) {
   if (!tree || targetVal == null || targetVal === '') return null;
   for (let i = 0; i < tree.length; i++) {
@@ -847,9 +842,7 @@ function handleAdvisorSchoolChange() {
   advisorForm.value.department = '';
 }
 
-// =========================================================
 // 弹窗控制与提交逻辑
-// =========================================================
 
 const addParticipantVisible = ref(false);
 const isParticipantNew = ref(false);
@@ -1140,20 +1133,25 @@ function confirmExampleKnown() {
   }
 }
 
-// =========================================================
-// 【核心修复】：替换为自定义的 UUID 转换下载接口
-// =========================================================
-const attachmentConfig = [
-  { label: '奖状(证书)', name: 'award', prop: 'fileAward', alert: '请上传获奖证书' },
-  { label: '比赛通知', name: 'notice', prop: 'fileNotice', alert: '请上传比赛通知' },
-  { label: '参赛作品', name: 'work', prop: 'fileWork', alert: '请上传参赛作品' },
-  { label: '支付记录', name: 'payment', prop: 'filePayment', alert: '请上传转账截图', type: 'warning', condition: (f) => f.isReimburse === 1 },
-  { label: '正规发票', name: 'invoice', prop: 'fileInvoice', alert: '请上传电子发票', type: 'warning', condition: (f) => f.isReimburse === 1 },
-  { label: '收款码', name: 'receipt', prop: 'fileReceiptCode', alert: '请上传用于接收报销款的收款码', type: 'warning', condition: (f) => f.isReimburse === 1 },
-];
+//替换为自定义的 UUID 转换下载接口
+const attachmentConfig = computed(() => {
+  const dict = attach_type.value || [];
+  const findDictLabel = (val) => {
+    const item = dict.find(d => d.value === val);
+    return item ? item.label : null;
+  };
 
+  return [
+    { label: findDictLabel('1') || '获奖证书', name: 'award', prop: 'fileAward', alert: `请上传${findDictLabel('1') || '获奖证书'}` },
+    { label: findDictLabel('2') || '比赛通知', name: 'notice', prop: 'fileNotice', alert: `请上传${findDictLabel('2') || '比赛通知'}` },
+    { label: findDictLabel('3') || '参赛作品', name: 'work', prop: 'fileWork', alert: `请上传${findDictLabel('3') || '参赛作品'}` },
+    { label: findDictLabel('4') || '支付记录', name: 'payment', prop: 'filePayment', alert: `请上传${findDictLabel('4') || '支付记录'}`, type: 'warning', condition: (f) => f.isReimburse === 1 },
+    { label: findDictLabel('5') || '正规发票', name: 'invoice', prop: 'fileInvoice', alert: `请上传${findDictLabel('5') || '正规发票'}`, type: 'warning', condition: (f) => f.isReimburse === 1 },
+    { label: findDictLabel('6') || '收款码', name: 'receipt', prop: 'fileReceiptCode', alert: `请上传${findDictLabel('6') || '收款码'}`, type: 'warning', condition: (f) => f.isReimburse === 1 },
+  ];
+});
 const visibleAttachments = computed(() => {
-  return attachmentConfig.filter(item => {
+  return attachmentConfig.value.filter(item => {
     if (!item.condition) return true;
     return item.condition(form.value);
   });
@@ -1549,14 +1547,26 @@ function reset() {
 
 function validatePDFUpload() {
   const f = form.value;
-  if (!f.fileAward) { proxy.$modal.msgWarning("请上传【奖状(证书)】PDF文件！"); activeAttachmentTab.value = 'award'; return false; }
-  if (!f.fileNotice) { proxy.$modal.msgWarning("请上传【比赛通知】PDF文件！"); activeAttachmentTab.value = 'notice'; return false; }
-  if (!f.fileWork) { proxy.$modal.msgWarning("请上传【参赛作品】PDF文件！"); activeAttachmentTab.value = 'work'; return false; }
+  const findLabel = (val) => {
+    const item = attach_type.value.find(d => d.value === val);
+    return item ? item.label : null;
+  };
+  
+  const awardLabel = findLabel('1') || '获奖证书';
+  const noticeLabel = findLabel('2') || '比赛通知';
+  const workLabel = findLabel('3') || '参赛作品';
+  const paymentLabel = findLabel('4') || '支付记录';
+  const invoiceLabel = findLabel('5') || '正规发票';
+  const receiptLabel = findLabel('6') || '收款码';
+
+  if (!f.fileAward) { proxy.$modal.msgWarning(`请上传【${awardLabel}】PDF文件！`); activeAttachmentTab.value = 'award'; return false; }
+  if (!f.fileNotice) { proxy.$modal.msgWarning(`请上传【${noticeLabel}】PDF文件！`); activeAttachmentTab.value = 'notice'; return false; }
+  if (!f.fileWork) { proxy.$modal.msgWarning(`请上传【${workLabel}】PDF文件！`); activeAttachmentTab.value = 'work'; return false; }
 
   if (f.isReimburse === 1) {
-    if (!f.filePayment) { proxy.$modal.msgWarning("申请报销必须上传【支付记录】PDF文件！"); activeAttachmentTab.value = 'payment'; return false; }
-    if (!f.fileInvoice) { proxy.$modal.msgWarning("申请报销必须上传【正规发票】PDF文件！"); activeAttachmentTab.value = 'invoice'; return false; }
-    if (!f.fileReceiptCode) { proxy.$modal.msgWarning("申请报销必须上传【收款码】PDF文件！"); activeAttachmentTab.value = 'receipt'; return false; }
+    if (!f.filePayment) { proxy.$modal.msgWarning(`申请报销必须上传【${paymentLabel}】PDF文件！`); activeAttachmentTab.value = 'payment'; return false; }
+    if (!f.fileInvoice) { proxy.$modal.msgWarning(`申请报销必须上传【${invoiceLabel}】PDF文件！`); activeAttachmentTab.value = 'invoice'; return false; }
+    if (!f.fileReceiptCode) { proxy.$modal.msgWarning(`申请报销必须上传【${receiptLabel}】PDF文件！`); activeAttachmentTab.value = 'receipt'; return false; }
   }
   return true;
 }
