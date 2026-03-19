@@ -700,6 +700,19 @@ function buildListParams() {
   return finalParams;
 }
 
+function applyRoutePageState() {
+  const pageNum = Number(route.query.pageNum);
+  const pageSize = Number(route.query.pageSize);
+
+  if (Number.isFinite(pageNum) && pageNum > 0) {
+    queryParams.pageNum = pageNum;
+  }
+
+  if (Number.isFinite(pageSize) && pageSize > 0) {
+    queryParams.pageSize = pageSize;
+  }
+}
+
 function getList() {
   loading.value = true;
   const finalParams = buildListParams();
@@ -1062,6 +1075,7 @@ function refreshFromRoute() {
   formReadOnly.value = false;
   formShowSubmit.value = true;
   normalizeReviewStatusBySource();
+  applyRoutePageState();
   nextTick(() => {
     getList();
   });
@@ -1117,7 +1131,9 @@ async function openReviewPage(id, mode) {
       mode,
       pageKey,
       currentPageIds: currentPageIds.join(','),
-      pageIndex: pageIndex >= 0 ? pageIndex : Math.max(Number(queryParams.pageNum || 1) - 1, 0)
+      pageIndex: pageIndex >= 0 ? pageIndex : Math.max(Number(queryParams.pageNum || 1) - 1, 0),
+      pageNum: queryParams.pageNum,
+      pageSize: queryParams.pageSize
     };
     if (!pageKey && allIds.length > 0) {
       query.pageIds = allIds.join(',');

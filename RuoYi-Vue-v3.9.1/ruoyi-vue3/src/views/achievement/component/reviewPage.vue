@@ -10,8 +10,8 @@
         :readOnly="isView"
         :showSubmit="isEdit"
         cancelText="返回"
-        titleAdd="成果审核"
-        titleEdit="成果审核"
+        :titleAdd="reviewPageTitle"
+        :titleEdit="reviewPageTitle"
         @cancel="handleBack"
         @ok="handleFormSaved"
     />
@@ -90,6 +90,7 @@
 <script setup name="ReviewPage">
 import { computed, onMounted, onActivated, ref, getCurrentInstance, watch, nextTick } from "vue";
 import { useRoute, useRouter } from "vue-router";
+import { ElMessageBox } from "element-plus";
 
 import AchievementForm from "@/views/achievement/component/AchievementForm.vue";
 
@@ -134,6 +135,14 @@ const mode = computed(() => {
   const normalized = String(route.query.mode || "edit").toLowerCase();
   return normalized === "review" ? "edit" : normalized;
 });
+const reviewPageTitle = computed(() => {
+  if (source.value === "college_level_unreviewed") return "院级成果审核（待审核）";
+  if (source.value === "college_level_reviewed") return "院级成果审核（已审核）";
+  if (source.value === "school_level_unreviewed") return "校级成果审核（待审核）";
+  if (source.value === "school_level_reviewed") return "校级成果审核（已审核）";
+  return "成果审核";
+});
+
 const isEdit = computed(() => mode.value === "edit");
 const isView = computed(() => mode.value === "view");
 const showAuditToolbar = computed(() => isEdit.value);
@@ -355,13 +364,23 @@ function getReviewIndexById(id) {
 }
 
 function buildReviewQuery(targetId, targetPageIndex) {
+  const fallbackPageNum = currentPageIndexRef.value >= 0 ? currentPageIndexRef.value + 1 : 1;
+  const targetPageNum = targetPageIndex >= 0
+      ? targetPageIndex + 1
+      : Number(route.query.pageNum || fallbackPageNum);
   const query = {
     id: targetId,
     source: source.value,
-    mode: mode.value
+    mode: mode.value,
+    pageNum: targetPageNum
   };
+  if (route.query.fromName) query.fromName = String(route.query.fromName);
+  if (route.query.fromPath) query.fromPath = String(route.query.fromPath);
+  if (route.query.from) query.from = String(route.query.from);
   if (pageKey.value) query.pageKey = pageKey.value;
   if (!pageKey.value && pageIdsRef.value.length > 0) query.pageIds = pageIdsRef.value.join(",");
+  const pageSize = Number(route.query.pageSize || 0);
+  if (pageSize > 0) query.pageSize = pageSize;
   if (targetPageIndex >= 0) {
     query.pageIndex = targetPageIndex;
     const targetPageIds = resolveCurrentPageIdsByIndex(targetPageIndex);
@@ -376,16 +395,64 @@ function navigateToReview(targetId, targetPageIndex) {
   return router.push({ path: route.path, query: buildReviewQuery(targetId, targetPageIndex) });
 }
 
+function confirmNoNextResult() {
+  return ElMessageBox.confirm(
+      "当前已经是最后一个成果，没有下一个成果了。\n\n请选择返回列表，或继续留在当前页面。",
+      "系统提示",
+      {
+        confirmButtonText: "返回列表",
+        cancelButtonText: "留在当前页面",
+        type: "warning"
+      }
+  )
+      .then(() => {
+        handleBack();
+        return true;
+      })
+      .catch(() => false);
+}
+
+function confirmNoPrevResult() {
+  return ElMessageBox.confirm(
+      "当前已经是第一个成果，没有上一个成果了。\n\n请选择返回列表，或继续留在当前页面。",
+      "系统提示",
+      {
+        confirmButtonText: "返回列表",
+        cancelButtonText: "留在当前页面",
+        type: "warning"
+      }
+  )
+      .then(() => {
+        handleBack();
+        return true;
+      })
+      .catch(() => false);
+}
+
 function handlePrev() {
   loadPageIds();
   const currentId = String(route.query.id || "");
   const currentIndex = getReviewIndexById(currentId);
   if (currentIndex <= 0) {
-    proxy.$modal?.msgWarning?.("当前页面没有上一个成果");
+    confirmNoPrevResult();
     return;
   }
   const prevId = pageIdsRef.value[currentIndex - 1];
   const prevPageIndex = findPageIndexById(prevId);
+  const isFirstOfCurrentPage = currentPageIdsRef.value.length > 0
+      && String(currentPageIdsRef.value[0]) === String(currentId)
+      && prevPageIndex !== currentPageIndexRef.value;
+
+  if (isFirstOfCurrentPage) {
+    proxy.$modal
+        ?.confirm?.("当前已到本页第一条成果，是否开始查看上一页成果？")
+        ?.then(() => {
+          navigateToReview(prevId, prevPageIndex);
+        })
+        ?.catch(() => {});
+    return;
+  }
+
   navigateToReview(prevId, prevPageIndex);
 }
 
@@ -394,11 +461,25 @@ function handleNext() {
   const currentId = String(route.query.id || "");
   const currentIndex = getReviewIndexById(currentId);
   if (currentIndex < 0 || currentIndex >= pageIdsRef.value.length - 1) {
-    proxy.$modal?.msgWarning?.("当前页面没有下一个成果");
+    confirmNoNextResult();
     return;
   }
   const nextId = pageIdsRef.value[currentIndex + 1];
   const nextPageIndex = findPageIndexById(nextId);
+  const isLastOfCurrentPage = currentPageIdsRef.value.length > 0
+      && String(currentPageIdsRef.value[currentPageIdsRef.value.length - 1]) === String(currentId)
+      && nextPageIndex !== currentPageIndexRef.value;
+
+  if (isLastOfCurrentPage) {
+    proxy.$modal
+        ?.confirm?.("当前页面成果已审核完毕，是否开始审核下一页？")
+        ?.then(() => {
+          navigateToReview(nextId, nextPageIndex);
+        })
+        ?.catch(() => {});
+    return;
+  }
+
   navigateToReview(nextId, nextPageIndex);
 }
 
@@ -523,23 +604,46 @@ watch(
     },
     { immediate: true }
 );
+function buildBackQuery() {
+  const query = {};
+  const currentPageNum = currentPageIndexRef.value >= 0
+      ? currentPageIndexRef.value + 1
+      : Number(route.query.pageNum || 1);
+
+  if (currentPageNum > 0) query.pageNum = currentPageNum;
+
+  const pageSize = Number(route.query.pageSize || 0);
+  if (pageSize > 0) query.pageSize = pageSize;
+
+  return query;
+}
 
 function handleBack() {
-  const fromName = route.query.fromName || route.query.from;
-  if (fromName) {
-    router.push({ name: String(fromName) }).catch(() => router.back());
+  const backQuery = buildBackQuery();
+  const fromPath = route.query.fromPath;
+  if (fromPath && String(fromPath) !== String(route.path)) {
+    router.push({
+      path: String(fromPath),
+      query: backQuery
+    }).catch(() => router.back());
     return;
   }
 
-  const fromPath = route.query.fromPath;
-  if (fromPath) {
-    router.push({ path: String(fromPath) }).catch(() => router.back());
+  const fromName = route.query.fromName || route.query.from;
+  if (fromName && String(fromName) !== String(route.name || "")) {
+    router.push({
+      name: String(fromName),
+      query: backQuery
+    }).catch(() => router.back());
     return;
   }
 
   const mappedName = backRouteMap[source.value];
   if (mappedName) {
-    router.push({ name: mappedName }).catch(() => router.back());
+    router.push({
+      name: mappedName,
+      query: backQuery
+    }).catch(() => router.back());
     return;
   }
 
@@ -583,16 +687,7 @@ function jumpToNextAfterAudit(currentId) {
 
   const nextId = pageIdsRef.value[currentIndex + 1];
   if (!nextId) {
-    return proxy.$modal
-        .confirm("当前筛选结果已全部审核完毕，是否返回列表？")
-        .then(() => {
-          handleBack();
-          return true;
-        })
-        .catch(() => {
-          proxy.$modal?.msgSuccess?.("已提交审核，留在当前页面");
-          return false;
-        });
+    return confirmNoNextResult();
   }
 
   const nextPageIndex = findPageIndexById(nextId);
@@ -601,8 +696,8 @@ function jumpToNextAfterAudit(currentId) {
       && nextPageIndex !== currentPageIndexRef.value;
 
   const confirmText = isLastOfCurrentPage
-      ? "当前页面成果已审核完毕，是否开始审核下一页？"
-      : "审核成功，是否跳转到下一个成果？";
+      ? "当前已完成本页全部成果审核，是否开始审核下一页成果？"
+      : "当前成果已审核完成，是否继续审核下一个成果？";
 
   return proxy.$modal
       .confirm(confirmText)
@@ -717,24 +812,25 @@ watch(
 }
 .review-fixed-dock {
   position: fixed;
-  left: calc(200px + (100vw - 200px) / 2);
-  right: auto;
+  left: auto;
+  right: 18px;
   bottom: 10px;
-  transform: translateX(-50%);
-  width: min(1180px, calc(100vw - 200px - 36px));
+  transform: none;
+  width: calc(100% - 200px - 36px);
+  max-width: none;
   z-index: 2000;
   pointer-events: none;
 }
 /* 左侧菜单收起时 */
 :global(.hideSidebar) .review-fixed-dock {
-  left: calc(54px + (100vw - 54px) / 2);
-  width: min(1180px, calc(100vw - 54px - 36px));
+  left: auto;
+  width: calc(100% - 54px - 36px);
 }
 
 /* 菜单完全隐藏时 */
 :global(.sidebarHide) .review-fixed-dock {
-  left: 50%;
-  width: min(1180px, calc(100vw - 36px));
+  left: auto;
+  width: calc(100% - 36px);
 }
 
 .review-fixed-inner {
@@ -925,23 +1021,25 @@ watch(
 
   .review-fixed-dock {
     position: fixed;
-    left: calc(200px + (100vw - 200px) / 2);
+    left: auto;
+    right: 18px;
     bottom: 10px;
-    transform: translateX(-50%);
-    width: min(1180px, calc(100vw - 200px - 36px));
+    transform: none;
+    width: calc(100% - 200px - 36px);
+    max-width: none;
     z-index: 2000;
     pointer-events: none;
   }
 
   :global(.hideSidebar) .review-fixed-dock {
-    left: calc(54px + (100vw - 54px) / 2);
-    width: min(1180px, calc(100vw - 54px - 36px));
+    left: auto;
+    width: calc(100% - 54px - 36px);
   }
 
   :global(.mobile) .review-fixed-dock,
   :global(.sidebarHide) .review-fixed-dock {
-    left: 50%;
-    width: min(1180px, calc(100vw - 36px));
+    left: auto;
+    width: calc(100% - 36px);
   }
   .audit-toolbar-main {
     width: 100%;
