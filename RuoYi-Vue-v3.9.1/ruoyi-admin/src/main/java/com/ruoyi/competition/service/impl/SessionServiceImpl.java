@@ -1,4 +1,4 @@
-package com.ruoyi.session.service.impl;
+package com.ruoyi.competition.service.impl;
 
 import java.util.ArrayList;
 import java.util.Collections;
@@ -14,10 +14,10 @@ import com.ruoyi.common.utils.DateUtils;
 import com.ruoyi.common.utils.SecurityUtils;
 import com.ruoyi.competition.domain.Competition;
 import com.ruoyi.competition.service.ICompetitionService;
-import com.ruoyi.session.mapper.SessionMapper;
-import com.ruoyi.session.domain.Session;
-import com.ruoyi.session.service.ISessionService;
-import com.ruoyi.session.domain.Tag;
+import com.ruoyi.competition.mapper.SessionMapper;
+import com.ruoyi.competition.domain.Session;
+import com.ruoyi.competition.service.ISessionService;
+import com.ruoyi.competition.domain.Tag;
 import com.ruoyi.common.core.domain.entity.SysDictData;
 import com.ruoyi.system.service.ISysDictDataService;
 

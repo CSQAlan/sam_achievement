@@ -1,4 +1,4 @@
-package com.ruoyi.session.controller;
+package com.ruoyi.competition.controller;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -19,8 +19,8 @@ import com.ruoyi.common.annotation.Log;
 import com.ruoyi.common.core.controller.BaseController;
 import com.ruoyi.common.core.domain.AjaxResult;
 import com.ruoyi.common.enums.BusinessType;
-import com.ruoyi.session.domain.Session;
-import com.ruoyi.session.service.ISessionService;
+import com.ruoyi.competition.domain.Session;
+import com.ruoyi.competition.service.ISessionService;
 import com.ruoyi.common.utils.poi.ExcelUtil;
 import com.ruoyi.common.core.page.TableDataInfo;
 import org.springframework.web.multipart.MultipartFile;
