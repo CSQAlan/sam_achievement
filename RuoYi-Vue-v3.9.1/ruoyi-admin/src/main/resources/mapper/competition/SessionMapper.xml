@@ -2,7 +2,7 @@
 <!DOCTYPE mapper
         PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
         "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
-<mapper namespace="com.ruoyi.session.mapper.SessionMapper">
+<mapper namespace="com.ruoyi.competition.mapper.SessionMapper">
 
     <!-- 关键修改1：新增tagsList关联标签子表，解决标签列表查询 -->
     <resultMap type="Session" id="SessionResult">
@@ -24,8 +24,8 @@
         <result property="delFlag"      column="del_flag"      />
         <!-- 新增：关联查询标签子表，自动赋值到Session的tagsList字段 -->
         <collection property="tagsList"
-                    ofType="com.ruoyi.session.domain.Tag"
-                    select="com.ruoyi.session.mapper.SessionMapper.selectTagListBySessionId"
+                    ofType="com.ruoyi.competition.domain.Tag"
+                    select="com.ruoyi.competition.mapper.SessionMapper.selectTagListBySessionId"
                     column="session_id"/>
     </resultMap>
 
@@ -150,7 +150,7 @@
     </delete>
 
     <!-- ====================== 标签子表核心SQL ====================== -->
-    <insert id="insertTag" parameterType="com.ruoyi.session.domain.Tag" useGeneratedKeys="true" keyProperty="id">
+    <insert id="insertTag" parameterType="com.ruoyi.competition.domain.Tag" useGeneratedKeys="true" keyProperty="id">
         insert into sam_tag (
         competition_session_id, tag_name, create_by, create_time, del_flag
         ) values (
@@ -170,7 +170,7 @@
         </foreach>
     </insert>
 
-    <select id="selectTagListBySessionId" parameterType="Long" resultType="com.ruoyi.session.domain.Tag">
+    <select id="selectTagListBySessionId" parameterType="Long" resultType="com.ruoyi.competition.domain.Tag">
         select
         id, competition_session_id as competitionSessionId, tag_name as tagName,
         create_by as createBy, create_time as createTime,

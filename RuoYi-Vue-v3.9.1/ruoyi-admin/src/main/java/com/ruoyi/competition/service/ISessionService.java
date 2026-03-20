@@ -1,7 +1,7 @@
-package com.ruoyi.session.service;
+package com.ruoyi.competition.service;
 
 import java.util.List;
-import com.ruoyi.session.domain.Session;
+import com.ruoyi.competition.domain.Session;
 
 /**
  * 赛事届次Service接口

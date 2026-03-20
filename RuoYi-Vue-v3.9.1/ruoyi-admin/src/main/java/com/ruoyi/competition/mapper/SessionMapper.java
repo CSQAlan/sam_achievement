@@ -1,8 +1,8 @@
-package com.ruoyi.session.mapper;
+package com.ruoyi.competition.mapper;
 
 import java.util.List;
-import com.ruoyi.session.domain.Session;
-import com.ruoyi.session.domain.Tag;
+import com.ruoyi.competition.domain.Session;
+import com.ruoyi.competition.domain.Tag;
 
 /**
  * 赛事届次Mapper接口
