@@ -1,5 +1,5 @@
 {
   "dependencies": {
-    "sortablejs": "^1.15.7"
+    "@riophae/vue-treeselect": "^0.4.0"
   }
 }
