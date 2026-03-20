@@ -8,20 +8,22 @@
       <el-form-item label="盖章单位" prop="organizations">
         <el-input v-model="queryParams.organizations" placeholder="请输入盖章单位" clearable @keyup.enter="handleQuery" />
       </el-form-item>
+      <!-- 查询表单中，把 v-model 改为绑定到 List 字段 -->
       <el-form-item label="赛事类别" prop="category">
-        <el-select v-model="queryParams.category" placeholder="请选择赛事类别" clearable>
+        <el-select v-model="queryParams.categoryList" placeholder="请选择赛事类别" clearable multiple>
           <el-option v-for="dict in sys_competition_category" :key="dict.value" :label="dict.label"
             :value="dict.value" />
         </el-select>
       </el-form-item>
+
       <el-form-item label="赛事级别" prop="level">
-        <el-select v-model="queryParams.level" placeholder="请选择赛事级别" clearable>
+        <el-select v-model="queryParams.levelList" placeholder="请选择赛事级别" clearable multiple>
           <el-option v-for="dict in sys_competition_level" :key="dict.value" :label="dict.label" :value="dict.value" />
         </el-select>
       </el-form-item>
+
       <el-form-item label="标签" prop="tags">
-        <!-- 新增multiple属性，支持多选 -->
-        <el-select v-model="queryParams.tags" placeholder="请选择赛事标签" clearable multiple>
+        <el-select v-model="queryParams.tagsList" placeholder="请选择赛事标签" clearable multiple>
           <el-option v-for="dict in sys_competition_tag" :key="dict.value" :label="dict.label" :value="dict.value" />
         </el-select>
       </el-form-item>
@@ -215,10 +217,10 @@ const { sys_competition_level, sys_competition_tag, sys_competition_status, sys_
 const competitionList = ref([])
 const competitionDeptRelList = ref([])
 const deptList = ref([])
-// 【新增】学院键值对映射：{deptId: deptName}，快速通过id匹配名称
-const deptNameMap = ref({})
-// 【新增】赛事-学院关系列表：缓存所有赛事的关联学院数据，避免重复查询
-const competitionDeptAllList = ref([])
+// 【删除】冗余的 deptNameMap（无需手动映射）
+// const deptNameMap = ref({})
+// 【删除】冗余的 competitionDeptAllList（无需缓存）
+// const competitionDeptAllList = ref([])
 
 const open = ref(false)
 const loading = ref(true)
@@ -236,12 +238,16 @@ const data = reactive({
     pageNum: 1,
     pageSize: 10,
     name: null,
-    category: null,
+    // category: null,
     organizations: null,
-    level: null,
-    tags: null,
+    // level: null,
+    // tags: null,
     scopeType: null,
     status: null,
+    // 新增：多选接收字段
+    categoryList: [],
+    levelList: [],
+    tagsList: []
   },
   rules: {
     name: [
@@ -261,18 +267,12 @@ const data = reactive({
 
 const { queryParams, form, rules } = toRefs(data)
 
-// 【修改】获取学院列表 + 构建学院名键值对映射
+// 【简化】获取学院列表（仅用于新增/修改时选择学院，无需构建映射）
 function getDeptList() {
   deptList.value = []
-  deptNameMap.value = {} // 清空旧映射
   listDept({}).then(response => {
     console.log("部门接口返回完整数据：", response)
     deptList.value = response.rows || response.data || []
-    // 【新增】构建deptId -> deptName的映射，快速匹配
-    deptList.value.forEach(dept => {
-      deptNameMap.value[dept.deptId] = dept.deptName
-    })
-    console.log("学院名映射：", deptNameMap.value)
     console.log("最终学院列表：", deptList.value)
   }).catch(error => {
     console.error("获取学院列表失败：", error)
@@ -280,38 +280,21 @@ function getDeptList() {
   })
 }
 
-// 【新增】核心方法：根据赛事行数据，获取并拼接归属学院名
+// 【核心修改】直接使用后端返回的 deptNames 字段展示归属学院
 function getBelongDeptName(row) {
   if (row.scopeType === '0') {
-    return '全校'
+    return '全校'; // 适用范围为全校时显示
   }
-  // 关键修改：把 row.dept_ids 改为 row.deptIds
-  let relateDeptIds = []
-  if (row.deptIds) {
-    if (typeof row.deptIds === 'string') {
-      relateDeptIds = row.deptIds.split(',').filter(id => id)
-    } else if (Array.isArray(row.deptIds)) {
-      relateDeptIds = row.deptIds
-    }
-  }
-  const deptNames = relateDeptIds
-    .filter(deptId => deptId && deptNameMap.value[deptId])
-    .map(deptId => deptNameMap.value[deptId])
-  return deptNames.length > 0 ? deptNames.join('、') : '未配置'
+  // 后端已拼接好学院名称，直接展示，无数据则显示未配置
+  return row.deptNames || '未配置';
 }
 
-/** 【修改】查询总赛事列表：新增缓存全量赛事-学院关系 */
+/** 【简化】查询总赛事列表（无需缓存关系数据） */
 function getList() {
   loading.value = true
   listCompetition(queryParams.value).then(response => {
     competitionList.value = response.rows
     total.value = response.total
-    // 【新增】缓存全量赛事-学院关系（若后台接口返回了全量数据）
-    competitionList.value.forEach(item => {
-      if (item.competitionDeptRelList) {
-        competitionDeptAllList.value.push(...item.competitionDeptRelList)
-      }
-    })
     loading.value = false
   })
 }
@@ -348,14 +331,16 @@ function reset() {
 /** 搜索按钮操作 */
 function handleQuery() {
   queryParams.value.pageNum = 1
-  // 【新增】搜索时清空旧的关系缓存
-  competitionDeptAllList.value = []
   getList()
 }
 
 /** 重置按钮操作 */
 function resetQuery() {
   proxy.resetForm("queryRef")
+  // 手动清空多选数组，确保重置后下拉框无选中值
+  queryParams.value.categoryList = []
+  queryParams.value.levelList = []
+  queryParams.value.tagsList = []
   handleQuery()
 }
 
