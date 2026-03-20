@@ -236,7 +236,7 @@
                  <el-form-item label="比赛" prop="competitionId">
                     <el-select 
                       v-model="form.competitionId" 
-                      placeholder="请选择关联的赛事" 
+                      placeholder="请选择赛事" 
                       filterable 
                       clearable 
                       style="width: 100%"
