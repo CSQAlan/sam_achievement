@@ -134,7 +134,7 @@
                     <el-col :span="1.5"><el-button type="primary" :icon="Plus" @click="openAddParticipantDialog">添加学生</el-button></el-col>
                     <el-col :span="1.5"><el-button type="danger" :icon="Delete" @click="handleDeleteParticipant">删除选中</el-button></el-col>
                   </el-row>
-                  <el-table ref="participantTable" :data="samAchievementParticipantList" border style="width: 100%; margin-bottom: 20px;" :row-class-name="tableRowClassName">
+                  <el-table ref="participantTable" :data="samAchievementParticipantList" border style="width: 100%; margin-bottom: 20px;" :row-class-name="tableRowClassName" @selection-change="handleParticipantSelectionChange">
                     <el-table-column v-if="!readOnly" width="40" align="center">
                       <template #default="scope">
                         <el-icon v-if="!scope.row.isFixed" class="drag-handle" style="cursor: move"><Rank /></el-icon>
@@ -156,7 +156,7 @@
                     <el-col :span="1.5"><el-button type="primary" :icon="Plus" @click="openAddAdvisorDialog">添加老师</el-button></el-col>
                     <el-col :span="1.5"><el-button type="danger" :icon="Delete" @click="handleDeleteAdvisor">删除选中</el-button></el-col>
                   </el-row>
-                  <el-table ref="advisorTable" :data="samAchievementAdvisorList" border style="width: 100%;" :row-class-name="tableRowClassName">
+                  <el-table ref="advisorTable" :data="samAchievementAdvisorList" border style="width: 100%;" :row-class-name="tableRowClassName" @selection-change="handleAdvisorSelectionChange">
                    <el-table-column v-if="!readOnly" width="40" align="center">
   <template #default="scope">
     <el-icon v-if="scope.$index !== 0" class="drag-handle" style="cursor: move"><Rank /></el-icon>
@@ -346,7 +346,7 @@
                 <el-col :span="1.5"><el-button type="primary" :icon="Plus" @click="openAddParticipantDialog">添加学生</el-button></el-col>
                 <el-col :span="1.5"><el-button type="danger" :icon="Delete" @click="handleDeleteParticipant">删除选中</el-button></el-col>
               </el-row>
-              <el-table ref="participantTableDialog" :data="samAchievementParticipantList" border style="width: 100%; margin-bottom: 20px;" :row-class-name="tableRowClassName">
+              <el-table ref="participantTableDialog" :data="samAchievementParticipantList" border style="width: 100%; margin-bottom: 20px;" :row-class-name="tableRowClassName" @selection-change="handleParticipantSelectionChange">
                 <el-table-column v-if="!readOnly" width="40" align="center">
                   <template #default="scope">
                     <el-icon v-if="scope.row.manager !== 1" class="drag-handle" style="cursor: move"><Rank /></el-icon>
@@ -368,7 +368,7 @@
                 <el-col :span="1.5"><el-button type="primary" :icon="Plus" @click="openAddAdvisorDialog">添加老师</el-button></el-col>
                 <el-col :span="1.5"><el-button type="danger" :icon="Delete" @click="handleDeleteAdvisor">删除选中</el-button></el-col>
               </el-row>
-              <el-table ref="advisorTableDialog" :data="samAchievementAdvisorList" border style="width: 100%;" :row-class-name="tableRowClassName">
+              <el-table ref="advisorTableDialog" :data="samAchievementAdvisorList" border style="width: 100%;" :row-class-name="tableRowClassName" @selection-change="handleAdvisorSelectionChange">
              <el-table-column v-if="!readOnly" width="40" align="center">
   <template #default="scope">
     <el-icon v-if="scope.$index !== 0" class="drag-handle" style="cursor: move"><Rank /></el-icon>
@@ -579,7 +579,13 @@ import { onBeforeRouteLeave } from "vue-router";
 import Sortable from "sortablejs";
 import useUserStore from "@/store/modules/user";
 import { Plus, Delete, Document, Download, View, UploadFilled, Rank } from "@element-plus/icons-vue";
-import { listStudent, addStudent } from "@/api/achievement/student";
+import {
+  listStudent,
+  getStudent,
+  delStudent,
+  addStudent,
+  updateStudent,
+} from "@/api/achievement/student";
 import { listTeacher, addTeacher } from "@/api/achievement/teacher";
 import { listDept } from "@/api/system/dept";
 import { handleTree } from "@/utils/ruoyi";
@@ -1083,7 +1089,7 @@ function handleDeleteParticipant() {
     return proxy.$modal.msgError("默认填写的负责人无法删除");
   }
   samAchievementParticipantList.value = samAchievementParticipantList.value.filter(item => !checkedParticipant.value.includes(item));
-  reIndexList(samAchievementParticipantList.value);
+  reIndexList(samAchievementParticipantList.value, 'participant');
 }
 function handleParticipantSelectionChange(sel) { checkedParticipant.value = sel; }
 
