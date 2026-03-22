@@ -12,6 +12,8 @@ PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
         <result property="category"    column="category"    />
         <result property="name"    column="name"    />
         <result property="teamName"    column="team_name"    />
+        <result property="contestant"    column="contestant"    />
+        <result property="instructor"    column="instructor"    />
         <result property="level"    column="level"    />
         <result property="grade"    column="grade"    />
         <result property="track"    column="track"    />
@@ -45,6 +47,8 @@ PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
         <result property="delFlag"    column="del_flag"    />
         <result property="remark"    column="remark"    />
     </resultMap>
+
+    <resultMap id="reviewedListResult" type="reviewed" extends="reviewedResult" />
 
     <resultMap id="reviewedSamAchievementParticipantResult" type="reviewed" extends="reviewedResult">
         <collection property="samAchievementParticipantList" ofType="SamAchievementParticipant" column="achievement_id" select="selectSamAchievementParticipantList" />
@@ -90,6 +94,8 @@ PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
             a.category,
             a.name,
             a.team_name,
+            p_view.contestant,
+            ad_view.instructor,
             a.level,
             a.grade,
             a.track,
@@ -125,9 +131,25 @@ PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
         from sam_achievement a
         left join sam_competition_session s on a.session_id = s.session_id
         left join sam_competition c on s.competition_id = c.id
+        left join (
+            select
+                p.achievement_id,
+                group_concat(concat(ifnull(s.name, '-'), '(', ifnull(p.student_id, '-'), ')') order by p.order_no separator '，') as contestant
+            from sam_achievement_participant p
+            left join sam_student s on p.student_id = s.no
+            group by p.achievement_id
+        ) p_view on p_view.achievement_id = a.achievement_id
+        left join (
+            select
+                ad.achievement_id,
+                group_concat(concat(ifnull(t.teacher_name, '-'), '(', ifnull(ad.teacher_id, '-'), ')') order by ad.order_no separator '，') as instructor
+            from sam_achievement_advisor ad
+            left join sam_teacher t on ad.teacher_id = t.no
+            group by ad.achievement_id
+        ) ad_view on ad_view.achievement_id = a.achievement_id
     </sql>
 
-    <select id="selectreviewedList" parameterType="reviewed" resultMap="reviewedSamAchievementParticipantResult">
+    <select id="selectreviewedList" parameterType="reviewed" resultMap="reviewedListResult">
         <include refid="selectreviewedVo"/>
         <where>  
             <if test="achievementId != null  and achievementId != ''"> and a.achievement_id = #{achievementId}</if>
@@ -165,6 +187,14 @@ PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
     <select id="selectreviewedByAchievementId" parameterType="String" resultMap="reviewedSamAchievementParticipantResult">
         <include refid="selectreviewedVo"/>
         where a.achievement_id = #{achievementId}
+    </select>
+
+    <select id="selectreviewedByAchievementIds" resultMap="reviewedResult">
+        <include refid="selectreviewedVo"/>
+        where a.achievement_id in
+        <foreach item="achievementId" collection="achievementIds" open="(" separator="," close=")">
+            #{achievementId}
+        </foreach>
     </select>
 
     <select id="selectSamAchievementParticipantList" resultMap="SamAchievementParticipantResult">

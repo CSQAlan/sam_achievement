@@ -24,6 +24,14 @@ public interface reviewedMapper
     public reviewed selectreviewedByAchievementId(String achievementId);
 
     /**
+     * 按成果ID批量查询成果审核信息
+     *
+     * @param achievementIds 成果ID集合
+     * @return 成果审核集合
+     */
+    public List<reviewed> selectreviewedByAchievementIds(@Param("achievementIds") String[] achievementIds);
+
+    /**
      * 查询成果审核列表
      *
      * @param reviewed 成果审核

@@ -173,7 +173,8 @@
               type="success"
               plain
               icon="Edit"
-              :disabled="single || !canEditSelected"
+              :disabled="openingReviewPage || single || !canEditSelected"
+              :loading="openingReviewPage && !single && canEditSelected"
               @click="handleUpdate"
           >修改</el-button>
         </el-col>
@@ -198,17 +199,6 @@
               v-hasPermi="permExport"
           >导出</el-button>
         </el-col>
-        <el-col v-if="canBatchReview" :span="2">
-          <el-button
-              type="success"
-              plain
-              :disabled="!listData.length"
-              @click="handleSelectCurrentPage"
-          >
-            {{ allCurrentPageSelected ? '取消本页' : '全选本页' }}
-          </el-button>
-        </el-col>
-
         <el-col v-if="canBatchReview" :span="2">
           <el-button
               type="warning"
@@ -247,7 +237,8 @@
               type="primary"
               plain
               icon="Edit"
-              :disabled="multiple || batchReviewStatus === null || batchReviewStatus === undefined || batchReviewStatus === ''"
+              :loading="batchReviewLoading"
+              :disabled="batchReviewLoading || multiple || batchReviewStatus === null || batchReviewStatus === undefined || batchReviewStatus === ''"
               @click="handleBatchReviewStatus"
               v-hasPermi="permEdit"
           >
@@ -356,7 +347,15 @@
         </el-table-column>
         <el-table-column label="操作" align="center" class-name="small-padding fixed-width">
           <template #default="scope">
-            <el-button link type="primary" icon="View" @click="handleReview(scope.row)" v-hasPermi="[...permReview, ...permQuery]">详情</el-button>
+            <el-button
+                link
+                type="primary"
+                icon="View"
+                @click="handleReview(scope.row)"
+                v-hasPermi="[...permReview, ...permQuery]"
+                :disabled="openingReviewPage"
+                :loading="openingReviewPage && String(openingReviewPageId) === String(scope.row?.achievementId)"
+            >详情</el-button>
 
             <el-button
                 v-if="showEdit && canUseEditAction"
@@ -365,7 +364,8 @@
                 icon="Edit"
                 @click="handleRowUpdate(scope.row)"
                 v-hasPermi="permEdit"
-                :disabled="!checkEditable(scope.row)"
+                :disabled="openingReviewPage || !checkEditable(scope.row)"
+                :loading="openingReviewPage && String(openingReviewPageId) === String(scope.row?.achievementId)"
             >审核</el-button>
 
             <el-button
@@ -422,7 +422,7 @@
 </template>
 
 <script setup>
-import { ref, reactive, computed, getCurrentInstance, nextTick, watch, onActivated } from 'vue';
+import { ref, reactive, computed, getCurrentInstance, nextTick, watch, onActivated, onMounted, onBeforeUnmount } from 'vue';
 import { useRoute, useRouter } from 'vue-router';
 import { useDict } from '@/utils/dict';
 import useUserStore from '@/store/modules/user';
@@ -458,6 +458,8 @@ const route = useRoute();
 const router = useRouter();
 const userStore = useUserStore();
 const REJECT_REASON_SEPARATOR = '；';
+const REVIEW_NAV_READY_EVENT = 'achievement-review-navigation-ready';
+const REVIEW_RESULT_APPLIED_EVENT = 'achievement-review-result-applied';
 
 const listFn = computed(() => props.listFn || listManage);
 const getFn = computed(() => props.getFn || getManage);
@@ -549,6 +551,12 @@ const batchRejectReasonCustomPlaceholder = computed(() => isCollegeBatchReject.v
 const selectAllLoading = ref(false);
 const allResultsSelected = ref(false);
 const allResultsCount = ref(0);
+const allResultIds = ref([]);
+const excludedIds = ref([]);
+const syncingSelection = ref(false);
+const batchReviewLoading = ref(false);
+const openingReviewPage = ref(false);
+const openingReviewPageId = ref('');
 const hasBatchSelection = computed(() => ids.value.length > 0);
 
 function normalizeLooseText(value) {
@@ -717,7 +725,7 @@ function getList() {
   loading.value = true;
   const finalParams = buildListParams();
 
-  listFn.value(finalParams).then(response => {
+  return listFn.value(finalParams).then(response => {
     const rows = (response.rows || []).map((row) => normalizeRowStatus(row));
     let filtered = filterRowsBySource(rows);
     const hasClientStatusFilter = queryParams.reviewStatus !== null && queryParams.reviewStatus !== '' && queryParams.reviewStatus !== undefined;
@@ -726,7 +734,10 @@ function getList() {
     }
     listData.value = filtered;
     total.value = hasClientStatusFilter ? filtered.length : (Number.isFinite(Number(response.total)) ? Number(response.total) : filtered.length);
-    if (!allResultsSelected.value) {
+    if (allResultsSelected.value) {
+      rebuildSelectedIdsInAllResultsMode();
+      syncCurrentPageSelection();
+    } else {
       tableRef.value?.clearSelection?.();
       selectedRows.value = [];
       ids.value = [];
@@ -734,8 +745,9 @@ function getList() {
       multiple.value = true;
     }
     loading.value = false;
-  }).catch(() => {
+  }).catch((error) => {
     loading.value = false;
+    return Promise.reject(error);
   });
 }
 
@@ -833,48 +845,80 @@ function toggleAdvancedSearch() {
 }
 
 function handleSelectionChange(selection) {
-  // 只要用户手动勾选表格，就退出“全选全部”模式
-  if (allResultsSelected.value) {
-    allResultsSelected.value = false;
-    allResultsCount.value = 0;
-  }
+  if (syncingSelection.value) return;
 
   selectedRows.value = selection;
+
+  if (allResultsSelected.value) {
+    const currentPageIds = normalizeIdList((listData.value || []).map((row) => row.achievementId));
+    const currentSelectedIds = normalizeIdList((selection || []).map((row) => row.achievementId));
+    const currentSelectedSet = new Set(currentSelectedIds);
+    const nextExcludedSet = new Set((excludedIds.value || []).map((id) => String(id)));
+
+    currentPageIds.forEach((id) => {
+      const normalizedId = String(id);
+      if (currentSelectedSet.has(normalizedId)) {
+        nextExcludedSet.delete(normalizedId);
+      } else {
+        nextExcludedSet.add(normalizedId);
+      }
+    });
+
+    excludedIds.value = Array.from(nextExcludedSet);
+    rebuildSelectedIdsInAllResultsMode();
+    return;
+  }
+
   ids.value = selection.map(i => i.achievementId);
   single.value = selection.length !== 1;
   multiple.value = !selection.length;
 }
 
-function handleSelectCurrentPage() {
-  const rows = listData.value || [];
-  if (!rows.length) {
-    proxy.$modal?.msgWarning?.('当前页没有可选成果');
-    return;
-  }
-
-  allResultsSelected.value = false;
-  allResultsCount.value = 0;
-
-  nextTick(() => {
-    if (!tableRef.value) return;
-
-    if (allCurrentPageSelected.value) {
-      rows.forEach(row => {
-        tableRef.value.toggleRowSelection(row, false);
-      });
-      return;
-    }
-
-    tableRef.value.clearSelection();
-    rows.forEach(row => {
-      tableRef.value.toggleRowSelection(row, true);
-    });
-  });
-}
 function normalizeIdList(values) {
   return Array.from(new Set((values || [])
       .map((value) => value === null || value === undefined ? '' : String(value).trim())
       .filter(Boolean)));
+}
+
+function rebuildSelectedIdsInAllResultsMode() {
+  const excludedSet = new Set((excludedIds.value || []).map((id) => String(id)));
+  ids.value = (allResultIds.value || []).filter((id) => !excludedSet.has(String(id)));
+  allResultsCount.value = ids.value.length;
+  single.value = true;
+  multiple.value = ids.value.length === 0;
+}
+
+function syncCurrentPageSelection() {
+  nextTick(() => {
+    if (!tableRef.value) return;
+
+    const rows = listData.value || [];
+    const excludedSet = new Set((excludedIds.value || []).map((id) => String(id)));
+    const selectedSet = new Set((ids.value || []).map((id) => String(id)));
+
+    syncingSelection.value = true;
+    tableRef.value.clearSelection();
+
+    rows.forEach((row) => {
+      const rowId = String(row?.achievementId ?? '');
+      const shouldSelect = allResultsSelected.value
+          ? !excludedSet.has(rowId)
+          : selectedSet.has(rowId);
+
+      if (shouldSelect) {
+        tableRef.value.toggleRowSelection(row, true);
+      }
+    });
+
+    selectedRows.value = rows.filter((row) => {
+      const rowId = String(row?.achievementId ?? '');
+      return allResultsSelected.value
+          ? !excludedSet.has(rowId)
+          : selectedSet.has(rowId);
+    });
+
+    syncingSelection.value = false;
+  });
 }
 
 async function fetchReviewNavigationSnapshot(options = {}) {
@@ -920,6 +964,44 @@ async function fetchReviewNavigationSnapshot(options = {}) {
   };
 }
 
+function notifyReviewNavigationReady(pageKey, source) {
+  if (!pageKey || typeof window === 'undefined' || typeof window.dispatchEvent !== 'function') return;
+  window.dispatchEvent(new CustomEvent(REVIEW_NAV_READY_EVENT, {
+    detail: {
+      pageKey,
+      source
+    }
+  }));
+}
+
+async function prepareReviewNavigationSnapshotInBackground(pageKey, currentPageIds = []) {
+  if (!pageKey) return;
+
+  try {
+    sessionStorage.setItem(`review_current_page_${pageKey}`, JSON.stringify(currentPageIds));
+  } catch (e) {
+    // ignore storage errors
+  }
+
+  try {
+    const snapshot = await fetchReviewNavigationSnapshot();
+    const allIds = snapshot.allIds || [];
+    const pageGroups = snapshot.pageGroups || [];
+
+    try {
+      sessionStorage.setItem(`review_page_${pageKey}`, JSON.stringify(allIds));
+      sessionStorage.setItem(`review_page_groups_${pageKey}`, JSON.stringify(pageGroups));
+      sessionStorage.setItem(`review_current_page_${pageKey}`, JSON.stringify(currentPageIds));
+    } catch (e) {
+      // ignore storage errors
+    }
+
+    notifyReviewNavigationReady(pageKey, reviewSource.value);
+  } catch (e) {
+    // 后台预取失败不阻断页面进入，审核页仍可先正常打开
+  }
+}
+
 async function fetchAllResultIds() {
   const snapshot = await fetchReviewNavigationSnapshot({ pageSize: 500 });
   return snapshot.allIds;
@@ -937,14 +1019,14 @@ async function handleSelectAllResults() {
   try {
     const allIds = await fetchAllResultIds();
 
-    ids.value = allIds;
-    selectedRows.value = [];
-    single.value = true;
-    multiple.value = allIds.length === 0;
+    allResultIds.value = allIds;
+    excludedIds.value = [];
+    ids.value = [...allIds];
     allResultsSelected.value = true;
     allResultsCount.value = allIds.length;
-
-    tableRef.value?.clearSelection?.();
+    single.value = true;
+    multiple.value = allIds.length === 0;
+    syncCurrentPageSelection();
 
     proxy.$modal?.msgSuccess?.(`已选中当前筛选条件下全部 ${allIds.length} 条成果`);
   } catch (e) {
@@ -957,6 +1039,8 @@ async function handleSelectAllResults() {
 function clearSelectionState() {
   selectedRows.value = [];
   ids.value = [];
+  allResultIds.value = [];
+  excludedIds.value = [];
   single.value = true;
   multiple.value = true;
   allResultsSelected.value = false;
@@ -1012,8 +1096,63 @@ function handleExport() {
   proxy.download(exportUrl.value, { ...queryParams }, `${base}_${new Date().getTime()}.xlsx`);
 }
 
-function handleBatchReviewStatus() {
+function applyBatchReviewResultToList(reviewStatus, rejectReasonText = '') {
+  const selectedIdSet = new Set((ids.value || []).map((id) => String(id)));
+  if (!selectedIdSet.size) return;
+
+  const updatedRows = (listData.value || []).map((row) => {
+    if (!selectedIdSet.has(String(row.achievementId))) {
+      return row;
+    }
+
+    const nextRow = { ...row };
+    if (reviewSource.value.startsWith('college')) {
+      nextRow.reviewResult = reviewStatus;
+      nextRow.reviewReason = String(reviewStatus) === '1' ? rejectReasonText : '';
+    } else if (reviewSource.value.startsWith('school')) {
+      nextRow.schooiReviewResult = reviewStatus;
+      nextRow.schoolReviewReason = String(reviewStatus) === '0' ? rejectReasonText : '';
+    }
+
+    return normalizeRowStatus(nextRow);
+  });
+
+  listData.value = filterRowsBySource(updatedRows);
+}
+
+function applySingleReviewResultToList(achievementId, reviewStatus, rejectReasonText = '') {
+  const normalizedId = String(achievementId || '');
+  if (!normalizedId) return;
+
+  const updatedRows = (listData.value || []).map((row) => {
+    if (String(row.achievementId) !== normalizedId) {
+      return row;
+    }
+
+    const nextRow = { ...row };
+    if (reviewSource.value.startsWith('college')) {
+      nextRow.reviewResult = reviewStatus;
+      nextRow.reviewReason = String(reviewStatus) === '1' ? rejectReasonText : '';
+    } else if (reviewSource.value.startsWith('school')) {
+      nextRow.schooiReviewResult = reviewStatus;
+      nextRow.schoolReviewReason = String(reviewStatus) === '0' ? rejectReasonText : '';
+    }
+
+    return normalizeRowStatus(nextRow);
+  });
+
+  listData.value = filterRowsBySource(updatedRows);
+}
+
+function handleReviewResultApplied(event) {
+  const detail = event?.detail || {};
+  if (detail.source && String(detail.source) !== String(reviewSource.value || '')) return;
+  applySingleReviewResultToList(detail.achievementId, detail.reviewStatus, detail.rejectReason || '');
+}
+
+async function handleBatchReviewStatus() {
   if (!canBatchReview.value) return;
+  if (batchReviewLoading.value) return;
   if (!ids.value.length) {
     proxy.$modal?.msgWarning?.('请先选择要批量审核的数据');
     return;
@@ -1034,23 +1173,40 @@ function handleBatchReviewStatus() {
     return;
   }
 
-  // 执行批量更新
-  proxy.$modal
-      .confirm(`确认将选中的 ${ids.value.length} 条数据批量改为当前状态吗？`)
-      .then(() => batchUpdateReviewStatus(reviewSource.value, {
-        achievementIds: ids.value,
-        reviewStatus,
-        rejectReason: rejectReasonText
-      }))
-      .then(() => {
-        proxy.$modal?.msgSuccess?.('批量审核成功');
-        batchReviewStatus.value = null;
-        batchRejectReason.value = [];
-        batchRejectReasonCustom.value = '';
-        clearSelectionState();
-        getList();
-      })
-      .catch(() => {});
+  try {
+    await proxy.$modal.confirm(`确认将选中的 ${ids.value.length} 条数据批量改为当前状态吗？`);
+  } catch (e) {
+    return;
+  }
+
+  batchReviewLoading.value = true;
+  try {
+    await batchUpdateReviewStatus(reviewSource.value, {
+      achievementIds: ids.value,
+      reviewStatus,
+      rejectReason: rejectReasonText
+    });
+
+    applyBatchReviewResultToList(reviewStatus, rejectReasonText);
+    batchReviewStatus.value = null;
+    batchRejectReason.value = [];
+    batchRejectReasonCustom.value = '';
+    clearSelectionState();
+    try {
+      await getList();
+      proxy.$modal?.msgSuccess?.('批量审核成功');
+    } catch (refreshError) {
+      proxy.$modal?.msgSuccess?.('批量审核成功，列表正在同步最新状态');
+    }
+  } catch (e) {
+    const errMsg =
+        e?.response?.data?.msg ||
+        e?.message ||
+        '批量审核失败';
+    proxy.$modal?.msgError?.(errMsg);
+  } finally {
+    batchReviewLoading.value = false;
+  }
 }
 
 watch(showBatchRejectReason, (visible) => {
@@ -1085,8 +1241,20 @@ watch(() => route.fullPath, () => {
   refreshFromRoute();
 });
 
+onMounted(() => {
+  if (typeof window !== 'undefined') {
+    window.addEventListener(REVIEW_RESULT_APPLIED_EVENT, handleReviewResultApplied);
+  }
+});
+
 onActivated(() => {
   refreshFromRoute();
+});
+
+onBeforeUnmount(() => {
+  if (typeof window !== 'undefined') {
+    window.removeEventListener(REVIEW_RESULT_APPLIED_EVENT, handleReviewResultApplied);
+  }
 });
 
 function openPageForm(id, options = {}) {
@@ -1108,44 +1276,39 @@ function openDialog(id, options = {}) {
 }
 
 async function openReviewPage(id, mode) {
+  if (openingReviewPage.value) return;
+
+  openingReviewPage.value = true;
+  openingReviewPageId.value = String(id || '');
+
   try {
     const currentPageIds = normalizeIdList((listData.value || []).map((row) => row?.achievementId));
-    const snapshot = await fetchReviewNavigationSnapshot();
-    const allIds = snapshot.allIds || [];
-    const pageGroups = snapshot.pageGroups || [];
-    const normalizedId = String(id);
-    const pageIndex = pageGroups.findIndex((group) => group.some((item) => String(item) === normalizedId));
     const pageKey = buildPageKey();
-    if (pageKey) {
-      try {
-        sessionStorage.setItem(`review_page_${pageKey}`, JSON.stringify(allIds));
-        sessionStorage.setItem(`review_page_groups_${pageKey}`, JSON.stringify(pageGroups));
-        sessionStorage.setItem(`review_current_page_${pageKey}`, JSON.stringify(currentPageIds));
-      } catch (e) {
-        // ignore storage errors
-      }
-    }
+
     const query = {
       id,
       source: reviewSource.value,
       mode,
       pageKey,
       currentPageIds: currentPageIds.join(','),
-      pageIndex: pageIndex >= 0 ? pageIndex : Math.max(Number(queryParams.pageNum || 1) - 1, 0),
+      pageIndex: Math.max(Number(queryParams.pageNum || 1) - 1, 0),
       pageNum: queryParams.pageNum,
       pageSize: queryParams.pageSize
     };
-    if (!pageKey && allIds.length > 0) {
-      query.pageIds = allIds.join(',');
-    }
     if (route?.name) query.fromName = String(route.name);
     if (route?.path) query.fromPath = String(route.path);
+
+    void prepareReviewNavigationSnapshotInBackground(pageKey, currentPageIds);
+
     await router.push({
       path: reviewRoute.value,
       query
     });
   } catch (e) {
     proxy.$modal?.msgError?.('进入审核页失败，请稍后重试');
+  } finally {
+    openingReviewPage.value = false;
+    openingReviewPageId.value = '';
   }
 }
 
@@ -1172,15 +1335,6 @@ function checkEditable(row) {
   return true;
 }
 getList();
-
-const allCurrentPageSelected = computed(() => {
-  const rows = listData.value || [];
-  if (!rows.length) return false;
-
-  return rows.every(row =>
-      selectedRows.value.some(item => String(item.achievementId) === String(row.achievementId))
-  );
-});
 
 </script>
 

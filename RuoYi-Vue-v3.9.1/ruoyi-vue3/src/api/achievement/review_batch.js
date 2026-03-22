@@ -14,6 +14,7 @@ export function batchUpdateReviewStatus(source, data) {
   return request({
     url: '/achievement/review/batchSubmit',
     method: 'put',
+    timeout: 60000,
     data: {
       source,
       ...data
