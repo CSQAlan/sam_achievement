@@ -88,7 +88,7 @@
 </template>
 
 <script setup name="ReviewPage">
-import { computed, onMounted, onActivated, ref, getCurrentInstance, watch, nextTick } from "vue";
+import { computed, onMounted, onActivated, onBeforeUnmount, ref, getCurrentInstance, watch, nextTick } from "vue";
 import { useRoute, useRouter } from "vue-router";
 import { ElMessageBox } from "element-plus";
 
@@ -107,6 +107,8 @@ const router = useRouter();
 const AUTO_SCHOOL_REJECT_REASON = "因院级状态变更自动驳回";
 const LEGACY_AUTO_SCHOOL_REJECT_REASON = "院级状态变更，校级自动驳回";
 const REJECT_REASON_SEPARATOR = "；";
+const REVIEW_NAV_READY_EVENT = "achievement-review-navigation-ready";
+const REVIEW_RESULT_APPLIED_EVENT = "achievement-review-result-applied";
 
 const dlgRef = ref(null);
 const formKey = ref(0);
@@ -759,6 +761,7 @@ async function submitAudit() {
       rejectReason: rejectReasonText
     });
 
+    notifyReviewResultApplied(id, Number(next), rejectReasonText);
     proxy.$modal?.msgSuccess?.(isCollegeSource.value ? "院级审核成功" : "校级审核成功");
     await jumpToNextAfterAudit(id);
   } catch (e) {
@@ -782,12 +785,41 @@ function loadCurrent() {
   });
 }
 
+function handleReviewNavigationReady(event) {
+  const detail = event?.detail || {};
+  if (detail.pageKey && String(detail.pageKey) !== String(pageKey.value || "")) return;
+  if (detail.source && String(detail.source) !== String(source.value || "")) return;
+  loadPageIds();
+  persistPageIds();
+}
+
+function notifyReviewResultApplied(achievementId, reviewStatus, rejectReasonText = "") {
+  if (!achievementId || typeof window === "undefined" || typeof window.dispatchEvent !== "function") return;
+  window.dispatchEvent(new CustomEvent(REVIEW_RESULT_APPLIED_EVENT, {
+    detail: {
+      achievementId: String(achievementId),
+      source: source.value,
+      reviewStatus,
+      rejectReason: rejectReasonText
+    }
+  }));
+}
+
 onMounted(() => {
+  if (typeof window !== "undefined") {
+    window.addEventListener(REVIEW_NAV_READY_EVENT, handleReviewNavigationReady);
+  }
   loadCurrent();
 });
 
 onActivated(() => {
   loadCurrent();
+});
+
+onBeforeUnmount(() => {
+  if (typeof window !== "undefined") {
+    window.removeEventListener(REVIEW_NAV_READY_EVENT, handleReviewNavigationReady);
+  }
 });
 
 watch(
@@ -820,6 +852,8 @@ watch(
   max-width: none;
   z-index: 2000;
   pointer-events: none;
+  display: flex;
+  justify-content: center;
 }
 /* 左侧菜单收起时 */
 :global(.hideSidebar) .review-fixed-dock {
@@ -834,8 +868,9 @@ watch(
 }
 
 .review-fixed-inner {
-  width: 100%;
-  margin: 0;
+  width: fit-content;
+  max-width: 100%;
+  margin: 0 auto;
   pointer-events: auto;
   background: rgba(255, 255, 255, 0.96);
   border: 1px solid var(--el-border-color-light);
@@ -903,8 +938,13 @@ watch(
   flex: 0 0 auto;
 }
 .reason-field {
-  flex: 1;
-  min-width: 320px;
+  flex: 0 0 100%;
+  width: 100%;
+  min-width: 0;
+  padding-left: 0;
+}
+.reason-field::before {
+  display: none;
 }
 .audit-reason-group {
   display: flex;
@@ -1029,6 +1069,8 @@ watch(
     max-width: none;
     z-index: 2000;
     pointer-events: none;
+    display: flex;
+    justify-content: center;
   }
 
   :global(.hideSidebar) .review-fixed-dock {
