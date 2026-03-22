@@ -81,7 +81,13 @@
                   <el-row>
                     <el-col :span="12">
                       <el-form-item label="赛道" prop="track">
-                        <el-input v-model="form.track" placeholder="请输入赛道" />
+                        <el-autocomplete
+                          v-model="form.track"
+                          :fetch-suggestions="queryTrackSearch"
+                          clearable
+                          placeholder="请输入或选择赛道"
+                          style="width: 100%"
+                        />
                         <div style="color: #909399; font-size: 12px; margin-top: 5px; line-height: 1.2;">例如蓝桥杯有c++，java数学竞赛有数学类与非数A等</div>
                       </el-form-item>
                     </el-col>
@@ -293,7 +299,13 @@
               <el-row>
                 <el-col :span="12">
                   <el-form-item label="赛道" prop="track">
-                    <el-input v-model="form.track" placeholder="请输入赛道" />
+                    <el-autocomplete
+                      v-model="form.track"
+                      :fetch-suggestions="queryTrackSearch"
+                      clearable
+                      placeholder="请输入或选择赛道"
+                      style="width: 100%"
+                    />
                     <div style="color: #909399; font-size: 12px; margin-top: 5px; line-height: 1.2;">例如蓝桥杯有c++，java数学竞赛有数学类与非数A等</div>
                   </el-form-item>
                 </el-col>
@@ -573,7 +585,7 @@
 </template>
 
 <script setup name="AchievementForm">
-import { getCurrentInstance, ref, reactive, toRefs, computed, onMounted, watch, nextTick } from "vue";
+import { getCurrentInstance, ref, reactive, toRefs, computed, onMounted, onBeforeUnmount, onUnmounted, watch, nextTick } from "vue";
 import { useRoute } from "vue-router";
 import { onBeforeRouteLeave } from "vue-router";
 import Sortable from "sortablejs";
@@ -587,6 +599,7 @@ import {
   updateStudent,
 } from "@/api/achievement/student";
 import { listTeacher, addTeacher } from "@/api/achievement/teacher";
+import { listTracks } from "@/api/achievement/manage";
 import { listDept } from "@/api/system/dept";
 import { handleTree } from "@/utils/ruoyi";
 import request from '@/utils/request';
@@ -683,6 +696,35 @@ const data = reactive({
   }
 });
 const { form, formSnapshot, rules } = toRefs(data);
+
+const trackSuggestions = ref([]);
+const queryTrackSearch = async (queryString, cb) => {
+  if (!form.value.competitionId || !form.value.sessionId) {
+    cb([]);
+    return;
+  }
+  
+  if (trackSuggestions.value.length === 0) {
+    try {
+      const res = await listTracks(form.value.competitionId, form.value.sessionId);
+      if (res.data) {
+        trackSuggestions.value = res.data.map(t => ({ value: t }));
+      }
+    } catch (e) {
+      console.error("获取赛道建议失败", e);
+    }
+  }
+
+  const results = queryString
+    ? trackSuggestions.value.filter(t => t.value.toLowerCase().includes(queryString.toLowerCase()))
+    : trackSuggestions.value;
+  
+  cb(results);
+};
+
+watch(() => [form.value.competitionId, form.value.sessionId], () => {
+  trackSuggestions.value = [];
+});
 
 const validateCertificateNo = (rule, value, callback) => {
   if (!value) {
@@ -1404,6 +1446,19 @@ function open(id) {
 function getForm() { return form.value; }
 defineExpose({ open, getForm, activeAttachmentTab });
 
+const sortableInstances = ref([]);
+const sortableTimeout = ref(null);
+
+onUnmounted(() => {
+  if (sortableTimeout.value) {
+    clearTimeout(sortableTimeout.value);
+  }
+  sortableInstances.value.forEach(instance => {
+    instance.destroy();
+  });
+  sortableInstances.value = [];
+});
+
 onMounted(() => {
   if (isPageMode.value) {
     getDeptTree();
@@ -1419,58 +1474,44 @@ onMounted(() => {
 });
 
 function initSortable() {
-  setTimeout(() => {
-    const pTable = participantTable.value || participantTableDialog.value;
-    if (pTable) {
-      const el = pTable.$el.querySelector('.el-table__body-wrapper tbody') || pTable.$el.querySelector('tbody');
-      if (el) {
-        Sortable.create(el, {
-          handle: '.drag-handle',
-          filter: '.fixed-row', // 禁止拖动带 fixed-row 类的行
-          onMove: (evt) => {
-            // 禁止拖动到带 fixed-row 类的行上方（即禁止覆盖索引为0的位置）
-            return evt.related.className.indexOf('fixed-row') === -1;
-          },
-          onEnd: ({ newIndex, oldIndex }) => {
-            if (newIndex === oldIndex) return;
-            const list = [...samAchievementParticipantList.value];
-            const currRow = list.splice(oldIndex, 1)[0];
-            list.splice(newIndex, 0, currRow);
-            samAchievementParticipantList.value = [];
-            nextTick(() => {
-              samAchievementParticipantList.value = list;
-              reIndexList(samAchievementParticipantList.value);
-            });
-          }
-        });
-      }
-    }
+  if (sortableTimeout.value) clearTimeout(sortableTimeout.value);
+  
+  sortableTimeout.value = setTimeout(() => {
+    // 清除旧实例
+    sortableInstances.value.forEach(instance => instance.destroy());
+    sortableInstances.value = [];
 
-    const aTable = advisorTable.value || advisorTableDialog.value;
-    if (aTable) {
-      const el = aTable.$el.querySelector('.el-table__body-wrapper tbody') || aTable.$el.querySelector('tbody');
-      if (el) {
-        Sortable.create(el, {
-          handle: '.drag-handle',
-          filter: '.fixed-row', // 禁止拖动带 fixed-row 类的行
-          onMove: (evt) => {
-            // 禁止拖动到带 fixed-row 类的行上方
-            return evt.related.className.indexOf('fixed-row') === -1;
-          },
-          onEnd: ({ newIndex, oldIndex }) => {
-            if (newIndex === oldIndex) return;
-            const list = [...samAchievementAdvisorList.value];
-            const currRow = list.splice(oldIndex, 1)[0];
-            list.splice(newIndex, 0, currRow);
-            samAchievementAdvisorList.value = [];
-            nextTick(() => {
-              samAchievementAdvisorList.value = list;
-              reIndexList(samAchievementAdvisorList.value);
-            });
-          }
-        });
+    const tables = [
+      { ref: participantTable.value || participantTableDialog.value, list: samAchievementParticipantList },
+      { ref: advisorTable.value || advisorTableDialog.value, list: samAchievementAdvisorList }
+    ];
+
+    tables.forEach(({ ref: tableRef, list }) => {
+      if (tableRef && tableRef.$el) {
+        const el = tableRef.$el.querySelector('.el-table__body-wrapper tbody') || tableRef.$el.querySelector('tbody');
+        if (el) {
+          const instance = Sortable.create(el, {
+            handle: '.drag-handle',
+            filter: '.fixed-row',
+            onMove: (evt) => {
+              return evt.related.className.indexOf('fixed-row') === -1;
+            },
+            onEnd: ({ newIndex, oldIndex }) => {
+              if (newIndex === oldIndex) return;
+              const newList = [...list.value];
+              const currRow = newList.splice(oldIndex, 1)[0];
+              newList.splice(newIndex, 0, currRow);
+              list.value = [];
+              nextTick(() => {
+                list.value = newList;
+                reIndexList(list.value);
+              });
+            }
+          });
+          sortableInstances.value.push(instance);
+        }
       }
-    }
+    });
   }, 500);
 }
 

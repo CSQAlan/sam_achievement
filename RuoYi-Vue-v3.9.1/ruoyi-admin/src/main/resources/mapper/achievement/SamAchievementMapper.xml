@@ -208,6 +208,14 @@
         where achievement_id = #{achievement_id}
     </select>
 
+    <select id="selectTrackList" resultType="String">
+        select distinct a.track
+        from sam_achievement a
+        left join sam_competition_session s on a.session_id = s.session_id
+        where s.competition_id = #{competitionId} and a.session_id = #{sessionId}
+        and a.track is not null and a.track != ''
+    </select>
+
     <select id="checkCertificateNoUnique" resultMap="SamAchievementResult">
         <include refid="selectSamAchievementVo"/>
         where a.certificate_no = #{certificateNo} and s.competition_id = #{competitionId} limit 1
