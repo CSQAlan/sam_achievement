@@ -543,4 +543,17 @@ public class SamAchievementServiceImpl implements ISamAchievementService
         samAchievementMapper.deleteSamAchievementAttachmentByAchievementId(achievementId);
         return samAchievementMapper.deleteSamAchievementByAchievementId(achievementId);
     }
+
+    /**
+     * 根据比赛和届次查询已有的赛道列表
+     *
+     * @param competitionId 比赛ID
+     * @param sessionId 届次ID
+     * @return 赛道列表
+     */
+    @Override
+    public List<String> selectTrackList(Long competitionId, Long sessionId)
+    {
+        return samAchievementMapper.selectTrackList(competitionId, sessionId);
+    }
 }
