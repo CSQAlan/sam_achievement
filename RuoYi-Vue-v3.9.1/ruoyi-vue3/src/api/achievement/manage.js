@@ -42,3 +42,26 @@ export function delManage(achievementId) {
     method: 'delete'
   })
 }
+export function listParticipatedAchievement(query) {
+  return request({
+    url: '/achievement/manage/list-participated',
+    method: 'get',
+    params: query
+  })
+}
+
+export function listGuidedAchievement(query) {
+  return request({
+    url: '/achievement/manage/list-guided',
+    method: 'get',
+    params: query
+  })
+}
+
+export function listResponsibleAchievement(query) {
+  return request({
+    url: '/achievement/manage/list-responsible',
+    method: 'get',
+    params: query
+  })
+}
