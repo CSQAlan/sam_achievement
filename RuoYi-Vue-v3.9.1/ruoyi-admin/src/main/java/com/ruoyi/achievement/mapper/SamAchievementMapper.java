@@ -9,15 +9,15 @@ import com.ruoyi.achievement.domain.SamAchievementAdvisor;
 
 /**
  * 成果录入Mapper接口
- * 
+ *
  * @author 王璨
  * @date 2026-02-03
  */
-public interface SamAchievementMapper 
+public interface SamAchievementMapper
 {
     /**
      * 查询成果录入
-     * 
+     *
      * @param achievementId 成果录入主键
      * @return 成果录入
      */
@@ -25,7 +25,7 @@ public interface SamAchievementMapper
 
     /**
      * 查询成果录入列表
-     * 
+     *
      * @param samAchievement 成果录入
      * @return 成果录入集合
      */
@@ -35,6 +35,11 @@ public interface SamAchievementMapper
      * 查询我参与的成果列表（学生端-非负责人）
      */
     public List<SamAchievement> selectSamAchievementListByStudentId(SamAchievement samAchievement);
+
+    /**
+     * 查询我负责的成果列表（学生端-负责人）
+     */
+    public List<SamAchievement> selectSamAchievementListByResponsibleStudentId(SamAchievement samAchievement);
 
     /**
      * 查询我指导的成果列表（教师端）
@@ -48,7 +53,7 @@ public interface SamAchievementMapper
 
     /**
      * 新增成果录入
-     * 
+     *
      * @param samAchievement 成果录入
      * @return 结果
      */
@@ -56,7 +61,7 @@ public interface SamAchievementMapper
 
     /**
      * 修改成果录入
-     * 
+     *
      * @param samAchievement 成果录入
      * @return 结果
      */
@@ -64,7 +69,7 @@ public interface SamAchievementMapper
 
     /**
      * 删除成果录入
-     * 
+     *
      * @param achievementId 成果录入主键
      * @return 结果
      */
@@ -72,7 +77,7 @@ public interface SamAchievementMapper
 
     /**
      * 批量删除成果录入
-     * 
+     *
      * @param achievementIds 需要删除的数据主键集合
      * @return 结果
      */
@@ -100,7 +105,7 @@ public interface SamAchievementMapper
      * 批量删除参赛选手
      */
     public int deleteSamAchievementParticipantByParticipantIds(String[] achievementIds);
-    
+
     /**
      * 批量新增参赛选手
      */

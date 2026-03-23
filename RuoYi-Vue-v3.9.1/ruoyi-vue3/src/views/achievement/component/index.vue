@@ -1211,6 +1211,14 @@ function applyBatchReviewResultToList(reviewStatus, rejectReasonText = '') {
     if (reviewSource.value.startsWith('college')) {
       nextRow.reviewResult = reviewStatus;
       nextRow.reviewReason = String(reviewStatus) === '1' ? rejectReasonText : '';
+      if (String(reviewStatus) === '2') {
+        nextRow.schooiReviewResult = 2;
+        nextRow.schoolReviewReason = '';
+        nextRow.schoolAuditBy = null;
+        nextRow.schoolReviewedAt = null;
+      } else if (String(reviewStatus) === '0' || String(reviewStatus) === '1') {
+        nextRow.schooiReviewResult = 0;
+      }
     } else if (reviewSource.value.startsWith('school')) {
       nextRow.schooiReviewResult = reviewStatus;
       nextRow.schoolReviewReason = String(reviewStatus) === '0' ? rejectReasonText : '';
@@ -1235,6 +1243,14 @@ function applySingleReviewResultToList(achievementId, reviewStatus, rejectReason
     if (reviewSource.value.startsWith('college')) {
       nextRow.reviewResult = reviewStatus;
       nextRow.reviewReason = String(reviewStatus) === '1' ? rejectReasonText : '';
+      if (String(reviewStatus) === '2') {
+        nextRow.schooiReviewResult = 2;
+        nextRow.schoolReviewReason = '';
+        nextRow.schoolAuditBy = null;
+        nextRow.schoolReviewedAt = null;
+      } else if (String(reviewStatus) === '0' || String(reviewStatus) === '1') {
+        nextRow.schooiReviewResult = 0;
+      }
     } else if (reviewSource.value.startsWith('school')) {
       nextRow.schooiReviewResult = reviewStatus;
       nextRow.schoolReviewReason = String(reviewStatus) === '0' ? rejectReasonText : '';

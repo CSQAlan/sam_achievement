@@ -302,6 +302,13 @@ public class reviewedServiceImpl implements IreviewedService
         {
             update.setReviewResult(reviewStatus);
             update.setReviewReason(Objects.equals(reviewStatus, COLLEGE_REJECT) ? rejectReason : null);
+            if (Objects.equals(reviewStatus, COLLEGE_PASS))
+            {
+                update.setSchooiReviewResult(SCHOOL_PENDING);
+                update.setSchoolReviewReason(null);
+                update.setSchoolAuditBy(null);
+                update.setSchoolReviewedAt(null);
+            }
             if (!Objects.equals(reviewStatus, COLLEGE_PENDING))
             {
                 update.setReviewedAt(DateUtils.getNowDate());
@@ -626,12 +633,16 @@ public class reviewedServiceImpl implements IreviewedService
         }
         requestedCollege = incoming.getReviewResult();
         requestedSchool = incoming.getSchooiReviewResult();
-        if (stageCollege
-                && Objects.equals(requestedCollege, COLLEGE_PASS)
-                && requestedSchool == null
-                && (existingSchool == null || Objects.equals(existingSchool, SCHOOL_PENDING)))
+        boolean resetSchoolOnCollegePass = stageCollege
+                && requestedCollege != null
+                && !Objects.equals(requestedCollege, existingCollege)
+                && Objects.equals(requestedCollege, COLLEGE_PASS);
+        if (resetSchoolOnCollegePass)
         {
             incoming.setSchooiReviewResult(SCHOOL_PENDING);
+            incoming.setSchoolReviewReason(null);
+            incoming.setSchoolAuditBy(null);
+            incoming.setSchoolReviewedAt(null);
             requestedSchool = incoming.getSchooiReviewResult();
         }
         boolean allowCollegeReAudit = stageCollege
@@ -700,7 +711,7 @@ public class reviewedServiceImpl implements IreviewedService
                     }
                 }
             }
-            else if (!StringUtils.hasText(incoming.getSchoolReviewReason()))
+            else if (!resetSchoolOnCollegePass && !StringUtils.hasText(incoming.getSchoolReviewReason()))
             {
                 incoming.setSchoolReviewReason(existing.getSchoolReviewReason());
             }
@@ -708,10 +719,10 @@ public class reviewedServiceImpl implements IreviewedService
             {
                 if (Objects.equals(requestedCollege, COLLEGE_PASS))
                 {
-                    if (requestedSchool == null && (existingSchool == null || Objects.equals(existingSchool, SCHOOL_PENDING)))
-                    {
-                        incoming.setSchooiReviewResult(SCHOOL_PENDING);
-                    }
+                    incoming.setSchooiReviewResult(SCHOOL_PENDING);
+                    incoming.setSchoolReviewReason(null);
+                    incoming.setSchoolAuditBy(null);
+                    incoming.setSchoolReviewedAt(null);
                 }
                 else if (Objects.equals(requestedCollege, COLLEGE_PENDING) || Objects.equals(requestedCollege, COLLEGE_REJECT))
                 {

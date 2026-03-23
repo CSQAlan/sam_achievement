@@ -1,6 +1,7 @@
 package com.ruoyi.framework.security.filter;
 
 import java.io.IOException;
+import java.util.Arrays;
 import java.util.List;
 import javax.servlet.FilterChain;
 import javax.servlet.ServletException;
@@ -27,7 +28,7 @@ public class ProfileCompletionFilter extends OncePerRequestFilter
 {
     private static final String PROFILE_PATH = "/user/profile";
 
-    private final List<RequestMatcher> allowedMatchers = List.of(
+    private final List<RequestMatcher> allowedMatchers = Arrays.asList(
             new AntPathRequestMatcher("/logout"),
             new AntPathRequestMatcher("/getInfo"),
             new AntPathRequestMatcher("/getRouters"),
@@ -61,7 +62,7 @@ public class ProfileCompletionFilter extends OncePerRequestFilter
         }
 
         LoginUser loginUser = (LoginUser) authentication.getPrincipal();
-        if (loginUser.getUser() == null || loginUser.getUser().getProfileInitialized() == 1)
+        if (loginUser.getUser() == null || Integer.valueOf(1).equals(loginUser.getUser().getProfileInitialized()))
         {
             chain.doFilter(request, response);
             return;
