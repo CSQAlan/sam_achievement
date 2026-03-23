@@ -16,10 +16,10 @@
         @ok="handleFormSaved"
     />
 
-    <!-- ✅ 固定底部审核工具条：不随页面滚动消失 -->
-    <div v-if="showAuditToolbar" class="review-fixed-dock">
+    <!-- ✅ 固定底部工具条：详情/审核页面都显示导航，审核页额外显示审核操作 -->
+    <div v-if="showBottomDock" class="review-fixed-dock">
       <div class="review-fixed-inner">
-        <div class="audit-toolbar">
+        <div class="audit-toolbar" :class="{ 'audit-toolbar--nav-only': !showAuditControls }">
           <div class="audit-toolbar-main">
             <div class="nav-toolbar">
 
@@ -28,7 +28,7 @@
               <el-button class="nav-btn next-btn" plain @click="handleNext">下一个</el-button>
             </div>
 
-            <div class="audit-field status-field">
+            <div v-if="showAuditControls" class="audit-field status-field">
               <span class="audit-label">审核后状态</span>
               <el-select
                   v-model="selectedAuditStatus"
@@ -43,7 +43,7 @@
                 />
               </el-select>
             </div>
-            <div class="toolbar-actions">
+            <div v-if="showAuditControls" class="toolbar-actions">
               <el-button class="save-btn" :loading="saveFormLoading" @click="saveFormChanges">
                 保存修改
               </el-button>
@@ -51,7 +51,7 @@
                 提交审核
               </el-button>
             </div>
-            <div v-if="showRejectReason" class="audit-field reason-field">
+            <div v-if="showAuditControls && showRejectReason" class="audit-field reason-field">
               <span class="audit-label">驳回原因</span>
               <div class="audit-reason-group">
                 <el-select
@@ -147,7 +147,8 @@ const reviewPageTitle = computed(() => {
 
 const isEdit = computed(() => mode.value === "edit");
 const isView = computed(() => mode.value === "view");
-const showAuditToolbar = computed(() => isEdit.value);
+const showBottomDock = computed(() => isEdit.value || isView.value);
+const showAuditControls = computed(() => isEdit.value);
 const currentApi = computed(() => apiMap[source.value] || apiMap.college_level_unreviewed);
 
 const backRouteMap = {
@@ -889,6 +890,9 @@ watch(
   padding: 8px 16px;
   border: 0;
   background: transparent;
+}
+.audit-toolbar--nav-only {
+  padding: 10px 16px;
 }
 
 .audit-toolbar-main {

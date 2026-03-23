@@ -85,6 +85,10 @@ public class SamAchievement extends BaseEntity
     /** 是否报销 */
     private Integer isReimburse;
 
+    /** 审核状态 */
+    private String reimbursementStatus;
+
+
     /** 是否补录 */
     private Integer isSupplement;
 
