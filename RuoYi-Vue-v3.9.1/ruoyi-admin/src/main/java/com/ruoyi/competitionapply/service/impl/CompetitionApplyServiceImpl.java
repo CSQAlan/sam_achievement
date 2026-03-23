@@ -3,22 +3,26 @@ package com.ruoyi.competitionapply.service.impl;
 import java.util.Date;
 import java.util.List;
 import java.util.ArrayList;
+import java.util.stream.Collectors;
 
+import com.ruoyi.achievement.domain.FileUuid;
+import com.ruoyi.achievement.mapper.FileUuidMapper;
 import com.ruoyi.common.core.domain.entity.SysUser;
+import com.ruoyi.common.exception.ServiceException;
 import com.ruoyi.common.utils.DateUtils;
-import com.ruoyi.common.utils.uuid.IdUtils;
 import com.ruoyi.common.utils.SecurityUtils;
-import com.ruoyi.common.utils.file.FileUploadUtils;
-import com.ruoyi.system.mapper.SysUserMapper;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
-import org.springframework.web.multipart.MultipartFile;
 import com.ruoyi.common.utils.StringUtils;
 import org.springframework.transaction.annotation.Transactional;
+import com.ruoyi.competition.domain.Competition;
+import com.ruoyi.competition.domain.CompetitionDeptRel;
+import com.ruoyi.competition.service.ICompetitionService;
 import com.ruoyi.competitionapply.domain.CompetitionApplyAttachment;
 import com.ruoyi.competitionapply.mapper.CompetitionApplyMapper;
 import com.ruoyi.competitionapply.domain.CompetitionApply;
 import com.ruoyi.competitionapply.service.ICompetitionApplyService;
+import com.ruoyi.system.mapper.SysUserMapper;
 
 /**
  * 赛事申请Service业务层处理
@@ -32,9 +36,21 @@ public class CompetitionApplyServiceImpl implements ICompetitionApplyService
     @Autowired
     private CompetitionApplyMapper competitionApplyMapper;
 
-    // 注入用户Mapper，查询当前用户的dept_id
+    /**
+     * 兜底查询用户信息：
+     * 某些场景下（如登录信息未完整回填deptId）需要从数据库补全。
+     */
     @Autowired
     private SysUserMapper sysUserMapper;
+
+    @Autowired
+    private FileUuidMapper fileUuidMapper;
+
+    /**
+     * 审核通过后需要生成赛事主表数据（sam_competition）
+     */
+    @Autowired
+    private ICompetitionService competitionService;
 
     /**
      * 查询赛事申请（关联查询附件列表，供前端修改页面使用）
@@ -52,12 +68,12 @@ public class CompetitionApplyServiceImpl implements ICompetitionApplyService
             List<CompetitionApplyAttachment> attachmentList = competitionApplyMapper.selectCompetitionApplyAttachmentListByApplyId(id);
             competitionApply.setCompetitionApplyAttachmentList(attachmentList);
 
-            // 拼接附件地址字符串（兼容前端upload-file组件的v-model）
+            // 兼容 upload-file 组件：v-model 只需要 uuid 串（逗号分隔）
             if (attachmentList != null && !attachmentList.isEmpty()) {
                 StringBuilder attachmentUrls = new StringBuilder();
                 for (CompetitionApplyAttachment attachment : attachmentList) {
-                    if (StringUtils.isNotBlank(attachment.getPath())) {
-                        attachmentUrls.append(attachment.getPath()).append(",");
+                    if (StringUtils.isNotBlank(attachment.getUuid())) {
+                        attachmentUrls.append(attachment.getUuid()).append(",");
                     }
                 }
                 if (attachmentUrls.length() > 0) {
@@ -67,6 +83,120 @@ public class CompetitionApplyServiceImpl implements ICompetitionApplyService
             }
         }
         return competitionApply;
+    }
+
+    /**
+     * 规范化附件列表：
+     * 1) uuid 由上传接口生成，这里严禁再生成 uuid；
+     * 2) 子表仅保存 uuid + 元数据，不保存真实路径；真实路径由 FileUuidMapper 反查；
+     * 3) 兼容两种前端入参：competitionApplyAttachmentList（优先） 或 attachmentUrls（兜底）。
+     */
+    private List<CompetitionApplyAttachment> normalizeAttachments(CompetitionApply competitionApply, SysUser currentUser)
+    {
+        List<CompetitionApplyAttachment> sourceList = competitionApply.getCompetitionApplyAttachmentList();
+        List<String> uuidList = new ArrayList<>();
+
+        // A. 优先从子表列表取 uuid
+        if (StringUtils.isNotNull(sourceList) && !sourceList.isEmpty())
+        {
+            for (CompetitionApplyAttachment item : sourceList)
+            {
+                if (item == null)
+                {
+                    continue;
+                }
+                // 兼容旧前端字段：如果误传到 path，这里也允许兜底成 uuid
+                String uuid = StringUtils.isNotBlank(item.getUuid()) ? item.getUuid() : "0";
+                uuid = StringUtils.trim(uuid);
+                if (StringUtils.isNotBlank(uuid))
+                {
+                    uuidList.add(uuid);
+                }
+            }
+        }
+        else
+        {
+            // B. 兜底从 attachmentUrls 解析（逗号分隔的 uuid 串）
+            String attachmentUrls = competitionApply.getAttachmentUrls();
+            if (StringUtils.isNotBlank(attachmentUrls))
+            {
+                String[] uuidArray = attachmentUrls.split(",");
+                for (String uuid : uuidArray)
+                {
+                    String trimmed = StringUtils.trim(uuid);
+                    if (StringUtils.isNotBlank(trimmed))
+                    {
+                        uuidList.add(trimmed);
+                    }
+                }
+            }
+        }
+
+        // 去重 + 保序
+        uuidList = uuidList.stream().distinct().collect(Collectors.toList());
+        if (uuidList.isEmpty())
+        {
+            return new ArrayList<>();
+        }
+
+        Date now = new Date();
+        Long applyId = competitionApply.getId();
+        List<CompetitionApplyAttachment> result = new ArrayList<>();
+        for (String uuid : uuidList)
+        {
+            CompetitionApplyAttachment attachment = new CompetitionApplyAttachment();
+            // 子表是申请表的子表：必须关联主表ID
+            attachment.setCompetitionApplyId(applyId);
+            // 只存 uuid（真实路径由 sys_file_uuid 反查）
+            attachment.setUuid(uuid);
+            attachment.setDelFlag("0");
+
+            // 附件类型：前端应提交 attachmentType；若未传则给默认值 1
+            Integer attachmentType = null;
+            if (StringUtils.isNotNull(sourceList))
+            {
+                for (CompetitionApplyAttachment item : sourceList)
+                {
+                    String itemUuid = item == null ? null : (StringUtils.isNotBlank(item.getUuid()) ? item.getUuid() : "0");
+                    if (StringUtils.equals(StringUtils.trim(itemUuid), uuid))
+                    {
+                        attachmentType = item.getAttachmentType();
+                        if (StringUtils.isNotBlank(item.getDocumentName()))
+                        {
+                            attachment.setDocumentName(item.getDocumentName());
+                        }
+                        break;
+                    }
+                }
+            }
+            attachment.setAttachmentType(attachmentType == null ? 1 : attachmentType);
+
+            // 若前端未传文件名，则通过 uuid 反查 originName 作为展示名
+            if (StringUtils.isBlank(attachment.getDocumentName()))
+            {
+                FileUuid fileUuid = fileUuidMapper.selectFileUuidById(uuid);
+                if (fileUuid != null && StringUtils.isNotBlank(fileUuid.getOriginName()))
+                {
+                    attachment.setDocumentName(fileUuid.getOriginName());
+                }
+                else
+                {
+                    attachment.setDocumentName(uuid);
+                }
+            }
+
+            // 审计字段
+            if (StringUtils.isNotNull(currentUser))
+            {
+                attachment.setCreateBy(currentUser.getUserName());
+                attachment.setUpdateBy(currentUser.getUserName());
+            }
+            attachment.setCreateTime(now);
+            attachment.setUpdateTime(now);
+
+            result.add(attachment);
+        }
+        return result;
     }
 
     /**
@@ -91,7 +221,21 @@ public class CompetitionApplyServiceImpl implements ICompetitionApplyService
         SysUser currentUser = SecurityUtils.getLoginUser().getUser();
         if (StringUtils.isNotNull(currentUser)) {
             competitionApply.setApplicantUserId(currentUser.getUserId().toString());
-            competitionApply.setApplicantDepId(currentUser.getDeptId().toString());
+            // 注意：deptId 可能为空（比如用户未绑定部门，或登录信息未回填deptId），避免空指针
+            Long deptId = currentUser.getDeptId();
+            if (deptId == null && currentUser.getUserId() != null) {
+                // 兜底：从数据库查询一次用户信息获取deptId
+                SysUser dbUser = sysUserMapper.selectUserById(currentUser.getUserId());
+                if (dbUser != null) {
+                    deptId = dbUser.getDeptId();
+                }
+            }
+            if (deptId != null) {
+                competitionApply.setApplicantDepId(deptId.toString());
+            } else if (StringUtils.isBlank(competitionApply.getApplicantDepId())) {
+                // 前端若传空串，这里统一置空，避免写入数值字段时报类型转换错误
+                competitionApply.setApplicantDepId(null);
+            }
             competitionApply.setCreateBy(currentUser.getUserName());
             competitionApply.setUpdateBy(currentUser.getUserName());
         }
@@ -104,79 +248,16 @@ public class CompetitionApplyServiceImpl implements ICompetitionApplyService
         Long mainId = competitionApply.getId();
         if (mainResult <= 0 || mainId == null) return 0;
 
-        // 3. 解析前端传的 attachmentUrls，拆分成子表数据（核心新增）
-        String attachmentUrls = competitionApply.getAttachmentUrls();
-        if (StringUtils.isNotBlank(attachmentUrls)) {
-            // 按逗号拆分文件地址
-            String[] urlArray = attachmentUrls.split(",");
-            for (String url : urlArray) {
-                if (StringUtils.isBlank(url)) continue;
-                // 组装子表对象（适配你的新实体类）
-                CompetitionApplyAttachment attachment = new CompetitionApplyAttachment();
-                attachment.setCompetitionApplyId(mainId); // 关联主表ID
-                attachment.setUuid(IdUtils.fastUUID()); // 生成UUID
-                attachment.setPath(url); // 存文件地址
-                attachment.setDocumentName(url.substring(url.lastIndexOf("/") + 1)); // 从地址截取文件名
-                attachment.setAttachmentType(1); // 默认类型
-                attachment.setDelFlag("0");
-                // 填充继承字段
-                attachment.setCreateBy(currentUser.getUserName());
-                attachment.setCreateTime(new Date());
-                attachment.setUpdateBy(currentUser.getUserName());
-                attachment.setUpdateTime(new Date());
-                // 插入子表
-                competitionApplyMapper.insertCompetitionApplyAttachment(attachment);
-            }
-        }
+        // 3. 写入子表（仅保存 uuid + 元数据；uuid 在上传时生成）
+        List<CompetitionApplyAttachment> attachmentList = normalizeAttachments(competitionApply, currentUser);
+        if (!attachmentList.isEmpty())
+        {
+            // 将临时文件标记为正式文件（is_temp: 1 -> 0）
+            String[] uuids = attachmentList.stream().map(CompetitionApplyAttachment::getUuid).toArray(String[]::new);
+            fileUuidMapper.updateFileUuidStatus(uuids, 0);
 
-        return mainResult;
-    }
-
-    /**
-     * 新增赛事申请（带文件上传）- 核心新增方法
-     */
-    @Transactional // 事务保证主表+子表原子性
-    @Override
-    public int insertCompetitionApplyWithFile(CompetitionApply competitionApply, MultipartFile[] files) throws Exception {
-        // ========== 1. 复用原有逻辑，先插入主表并填充默认值 ==========
-        int mainResult = this.insertCompetitionApply(competitionApply);
-        if (mainResult <= 0) {
-            throw new Exception("主表插入失败，无法继续上传附件");
-        }
-
-        SysUser currentUser = SecurityUtils.getLoginUser().getUser();
-        Long mainId = competitionApply.getId(); // 主表主键ID
-
-        // ========== 2. 处理文件上传并存入子表 ==========
-        if (files != null && files.length > 0) {
-            for (MultipartFile file : files) {
-                if (!file.isEmpty()) {
-                    // 2.1 生成UUID（作为文件唯一标识）
-                    String uuid = IdUtils.fastUUID(); // RuoYi自带工具类，生成无横线的UUID
-
-                    // 2.2 上传文件到服务器（RuoYi自带工具类，返回文件相对路径）
-                    // 存储目录：/profile/competition/attachment（可根据业务调整）
-                    String filePath = FileUploadUtils.upload("/profile/competition/attachment", file);
-
-                    // 2.3 组装子表对象（匹配新实体类字段）
-                    CompetitionApplyAttachment attachment = new CompetitionApplyAttachment();
-                    attachment.setCompetitionApplyId(mainId); // 关联主表ID
-                    attachment.setUuid(uuid); // 存入UUID
-                    attachment.setPath(filePath); // 存入文件路径
-                    attachment.setDocumentName(file.getOriginalFilename()); // 存入原始文件名
-                    attachment.setAttachmentType(1); // 附件类型（1=赛事相关，可自定义）
-                    attachment.setDelFlag("0"); // 默认未删除
-
-                    // 2.4 填充继承字段（创建人/时间）
-                    attachment.setCreateBy(currentUser.getUserName());
-                    attachment.setCreateTime(new Date());
-                    attachment.setUpdateBy(currentUser.getUserName());
-                    attachment.setUpdateTime(new Date());
-
-                    // 2.5 插入子表
-                    competitionApplyMapper.insertCompetitionApplyAttachment(attachment);
-                }
-            }
+            competitionApply.setCompetitionApplyAttachmentList(attachmentList);
+            insertCompetitionApplyAttachment(competitionApply);
         }
 
         return mainResult;
@@ -199,68 +280,19 @@ public class CompetitionApplyServiceImpl implements ICompetitionApplyService
         }
         competitionApply.setUpdateTime(DateUtils.getNowDate());
 
-        // ========== 核心修复：从attachmentUrls兜底解析附件列表 ==========
-        List<CompetitionApplyAttachment> newAttachmentList = competitionApply.getCompetitionApplyAttachmentList();
-
-        // 如果前端传的列表为空/null，从attachmentUrls解析
-        if (StringUtils.isNull(newAttachmentList) || newAttachmentList.isEmpty()) {
-            newAttachmentList = new ArrayList<>();
-            String attachmentUrls = competitionApply.getAttachmentUrls();
-            if (StringUtils.isNotBlank(attachmentUrls)) {
-                String[] urlArray = attachmentUrls.split(",");
-                for (String url : urlArray) {
-                    if (StringUtils.isBlank(url)) continue;
-                    CompetitionApplyAttachment attachment = new CompetitionApplyAttachment();
-                    attachment.setCompetitionApplyId(competitionApply.getId());
-                    attachment.setUuid(IdUtils.fastUUID()); // 生成新UUID
-                    attachment.setPath(url);
-                    attachment.setDocumentName(url.substring(url.lastIndexOf("/") + 1));
-                    attachment.setAttachmentType(1);
-                    attachment.setDelFlag("0");
-                    // 填充创建/更新信息
-                    if (StringUtils.isNotNull(currentUser)) {
-                        attachment.setCreateBy(currentUser.getUserName());
-                        attachment.setUpdateBy(currentUser.getUserName());
-                    }
-                    attachment.setCreateTime(new Date());
-                    attachment.setUpdateTime(new Date());
-                    newAttachmentList.add(attachment);
-                }
-            }
-            // 把解析后的列表塞回对象，复用后续逻辑
-            competitionApply.setCompetitionApplyAttachmentList(newAttachmentList);
-        }
+        // 子表仅保存 uuid：uuid 在上传时生成，这里只做规范化与入库
+        List<CompetitionApplyAttachment> newAttachmentList = normalizeAttachments(competitionApply, currentUser);
+        competitionApply.setCompetitionApplyAttachmentList(newAttachmentList);
 
         // ========== 删旧插新逻辑 ==========
-        if (StringUtils.isNotNull(newAttachmentList)) {
-            // 1. 先删除该赛事原有所有附件
-            competitionApplyMapper.deleteCompetitionApplyAttachmentByApplyId(competitionApply.getId());
-
-            // 2. 只有新列表非空时，才批量插入新附件
-            if (!newAttachmentList.isEmpty()) {
-                for (CompetitionApplyAttachment attachment : newAttachmentList) {
-                    attachment.setCompetitionApplyId(competitionApply.getId());
-                    attachment.setUuid(StringUtils.isBlank(attachment.getUuid()) ? IdUtils.fastUUID() : attachment.getUuid());
-                    attachment.setAttachmentType(StringUtils.isNull(attachment.getAttachmentType()) ? 1 : attachment.getAttachmentType());
-                    attachment.setDelFlag(StringUtils.isNull(attachment.getDelFlag()) ? "0" : attachment.getDelFlag());
-
-                    // 填充更新字段
-                    if (StringUtils.isNotNull(currentUser)) {
-                        attachment.setUpdateBy(currentUser.getUserName());
-                    }
-                    attachment.setUpdateTime(new Date());
-
-                    // 新增附件补充创建字段
-                    if (StringUtils.isNull(attachment.getId())) {
-                        if (StringUtils.isNotNull(currentUser)) {
-                            attachment.setCreateBy(currentUser.getUserName());
-                        }
-                        attachment.setCreateTime(new Date());
-                    }
-                }
-                // 批量插入新附件
-                insertCompetitionApplyAttachment(competitionApply);
-            }
+        // 1. 先删除该申请原有所有附件（子表）
+        competitionApplyMapper.deleteCompetitionApplyAttachmentByApplyId(competitionApply.getId());
+        // 2. 再插入新附件列表
+        if (!newAttachmentList.isEmpty())
+        {
+            String[] uuids = newAttachmentList.stream().map(CompetitionApplyAttachment::getUuid).toArray(String[]::new);
+            fileUuidMapper.updateFileUuidStatus(uuids, 0);
+            insertCompetitionApplyAttachment(competitionApply);
         }
 
         // 3. 仅更新主表信息
@@ -324,6 +356,104 @@ public class CompetitionApplyServiceImpl implements ICompetitionApplyService
     @Override
     public List<CompetitionApplyAttachment> selectCompetitionApplyAttachmentListByApplyId(Long applyId) {
         return competitionApplyMapper.selectCompetitionApplyAttachmentListByApplyId(applyId);
+    }
+
+    /**
+     * 审核赛事申请：
+     * 1. 通过：写入审核信息，生成赛事并回写 competitionId
+     * 2. 驳回：写入审核信息与驳回原因，不生成赛事
+     *
+     * 备注：审核更新只更新主表字段，不触碰附件子表。
+     */
+    @Transactional
+    @Override
+    public int reviewCompetitionApply(Long id, String status, String auditRemark)
+    {
+        // 1) 参数校验：只允许 1(通过) 或 2(驳回)
+        if (!"1".equals(status) && !"2".equals(status))
+        {
+            throw new ServiceException("审核状态不合法，仅支持：1(通过)、2(驳回)");
+        }
+        if ("2".equals(status) && StringUtils.isBlank(auditRemark))
+        {
+            throw new ServiceException("驳回原因不能为空");
+        }
+
+        // 2) 查询申请记录，校验是否存在
+        CompetitionApply existing = competitionApplyMapper.selectCompetitionApplyById(id);
+        if (existing == null)
+        {
+            throw new ServiceException("赛事申请不存在");
+        }
+
+        // 3) 已通过且已生成赛事的，不重复生成
+        Long competitionId = existing.getCompetitionId();
+        if ("1".equals(status) && competitionId == null)
+        {
+            // 3.1 生成赛事主表数据（sam_competition）
+            Competition competition = new Competition();
+            competition.setName(existing.getName());
+            competition.setCategory(existing.getCategory());
+            competition.setOrganizations(existing.getOrganizations());
+            competition.setLevel(existing.getLevel());
+            competition.setTags(existing.getTags());
+            competition.setScopeType(existing.getScopeType());
+            // 默认启用
+            competition.setStatus("1");
+            competition.setMemo(existing.getMemo());
+            competition.setDelFlag("0");
+
+            // 适用范围为“指定学院”时，默认把申请人学院写入赛事-部门关系
+            if ("1".equals(existing.getScopeType()) && StringUtils.isNotBlank(existing.getApplicantDepId()))
+            {
+                try
+                {
+                    CompetitionDeptRel rel = new CompetitionDeptRel();
+                    rel.setDeptId(Long.valueOf(existing.getApplicantDepId()));
+                    rel.setDelFlag("0");
+                    List<CompetitionDeptRel> relList = new ArrayList<>();
+                    relList.add(rel);
+                    competition.setCompetitionDeptRelList(relList);
+                }
+                catch (NumberFormatException ignore)
+                {
+                    // applicantDepId 非数字时忽略学院关系，不影响审核通过
+                }
+            }
+
+            SysUser auditor = SecurityUtils.getLoginUser().getUser();
+            if (auditor != null)
+            {
+                competition.setCreateBy(auditor.getUserName());
+                competition.setUpdateBy(auditor.getUserName());
+            }
+
+            competitionService.insertCompetition(competition);
+            competitionId = competition.getId();
+            if (competitionId == null)
+            {
+                throw new ServiceException("审核通过失败：赛事生成异常");
+            }
+        }
+
+        // 4) 更新申请审核字段（只更新主表字段）
+        SysUser auditor = SecurityUtils.getLoginUser().getUser();
+        CompetitionApply update = new CompetitionApply();
+        update.setId(id);
+        update.setStatus(status);
+        update.setAuditRemark(auditRemark);
+        update.setAuditTime(new Date());
+        if (auditor != null)
+        {
+            update.setAuditBy(auditor.getUserId());
+            update.setUpdateBy(auditor.getUserName());
+        }
+        update.setUpdateTime(DateUtils.getNowDate());
+        if ("1".equals(status))
+        {
+            update.setCompetitionId(competitionId);
+        }
+        return competitionApplyMapper.updateCompetitionApply(update);
     }
 
 }
