@@ -32,10 +32,23 @@ export function updateManage(data) {
   })
 }
 
+// 删除成果录入
 export function delManage(achievementId) {
   return request({
     url: '/achievement/manage/' + achievementId,
     method: 'delete'
+  })
+}
+
+// 根据比赛和届次查询已有的赛道
+export function listTracks(competitionId, sessionId) {
+  return request({
+    url: '/achievement/manage/listTracks',
+    method: 'get',
+    params: {
+      competitionId,
+      sessionId
+    }
   })
 }
 

@@ -1,4 +1,4 @@
-﻿<template>
+<template>
   <div>
     <componentIndex
       :list-fn="listCollege_level_reviewed"

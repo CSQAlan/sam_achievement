@@ -1,4 +1,4 @@
-﻿<template>
+<template>
   <div>
     <ManageIndex
       :list-fn="listCollege_level_unreviewed"

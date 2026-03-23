@@ -126,6 +126,16 @@ public class SamAchievementServiceImpl implements ISamAchievementService
         return samAchievementMapper.selectSamAchievementListByUserId(samAchievement);
     }
 
+    @Override
+    public List<SamAchievement> selectSamAchievementListByUserId(SamAchievement samAchievement)
+    {
+        // 验证用户ID
+        if (samAchievement.getParams() == null || StringUtils.isEmpty((String) samAchievement.getParams().get("userId"))) {
+            throw new ServiceException("用户ID不能为空");
+        }
+        return samAchievementMapper.selectSamAchievementListByUserId(samAchievement);
+    }
+
     /**
      * 新增成果录入
      * 
@@ -149,9 +159,30 @@ public class SamAchievementServiceImpl implements ISamAchievementService
             samAchievement.setYear((long) cal.get(Calendar.YEAR));
         }
 
+        // 4. 设置所属学院 (选取参赛选手第一个负责人的所属学院)
+        if (samAchievement.getSamAchievementParticipantList() != null) {
+            for (SamAchievementParticipant participant : samAchievement.getSamAchievementParticipantList()) {
+                if ("1".equals(participant.getManager())) {
+                    // 如果前端传了学院信息，直接使用
+                    if (StringUtils.isNotEmpty(participant.getSchool())) {
+                        samAchievement.setOwnerDepId(participant.getSchool());
+                    } else if (StringUtils.isNotEmpty(participant.getStudentId())) {
+                        // 如果前端没传，根据学号查档案
+                        SamStudent query = new SamStudent();
+                        query.setNo(participant.getStudentId());
+                        List<SamStudent> students = samStudentService.selectSamStudentList(query);
+                        if (students != null && !students.isEmpty() && StringUtils.isNotEmpty(students.get(0).getSchool())) {
+                            samAchievement.setOwnerDepId(students.get(0).getSchool());
+                        }
+                    }
+                    break;
+                }
+            }
+        }
+
         samAchievement.setCreateTime(DateUtils.getNowDate());
 
-        // 4. 插入主表
+        // 5. 插入主表
         int rows = samAchievementMapper.insertSamAchievement(samAchievement);
 
         // 5. 处理参赛选手 (包含自动补录学生档案)
@@ -706,6 +737,19 @@ public class SamAchievementServiceImpl implements ISamAchievementService
         samAchievementMapper.deleteSamAchievementAdvisorByAchievementId(achievementId);
         samAchievementMapper.deleteSamAchievementAttachmentByAchievementId(achievementId);
         return samAchievementMapper.deleteSamAchievementByAchievementId(achievementId);
+    }
+
+    /**
+     * 根据比赛和届次查询已有的赛道列表
+     *
+     * @param competitionId 比赛ID
+     * @param sessionId 届次ID
+     * @return 赛道列表
+     */
+    @Override
+    public List<String> selectTrackList(Long competitionId, Long sessionId)
+    {
+        return samAchievementMapper.selectTrackList(competitionId, sessionId);
     }
 }
 

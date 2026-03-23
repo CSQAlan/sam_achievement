@@ -1,4 +1,4 @@
-﻿<template>
+<template>
   <div>
     <ManageIndex
       :list-fn="listSchool_level_reviewed"
