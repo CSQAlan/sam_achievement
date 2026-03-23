@@ -143,6 +143,14 @@
         where id = #{id}
     </select>
 
+    <select id="selectCompetitionByNameExact" parameterType="String" resultType="Competition">
+        select id, name, category, organizations, level, tags, scope_type, status, memo, create_by, create_time, update_by, update_time, del_flag
+        from sam_competition
+        where del_flag = '0'
+          and name = #{name}
+        limit 1
+    </select>
+
     <select id="selectCompetitionDeptRelList" resultMap="CompetitionDeptRelResult">
         select id, session_id, dept_id, sort, create_by, create_time, update_by, update_time, remark, del_flag
         from sam_competition_dept_rel

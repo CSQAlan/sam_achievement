@@ -9,9 +9,12 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.util.CollectionUtils;
+import com.ruoyi.achievement.domain.FileUuid;
+import com.ruoyi.achievement.mapper.FileUuidMapper;
 import com.ruoyi.common.exception.ServiceException;
 import com.ruoyi.common.utils.DateUtils;
 import com.ruoyi.common.utils.SecurityUtils;
+import com.ruoyi.common.utils.StringUtils;
 import com.ruoyi.competition.domain.Competition;
 import com.ruoyi.competition.service.ICompetitionService;
 import com.ruoyi.competition.mapper.SessionMapper;
@@ -40,6 +43,55 @@ public class SessionServiceImpl implements ISessionService {
     @Autowired
     private ISysDictDataService sysDictDataService;
 
+    @Autowired
+    private FileUuidMapper fileUuidMapper;
+
+    private int resolveYear(Integer year) {
+        if (year != null && year > 0) {
+            return year;
+        }
+        return java.time.LocalDate.now().getYear();
+    }
+
+    private void validateAndFinalizeNoticeUuid(String uuid) {
+        if (StringUtils.isBlank(uuid)) {
+            throw new ServiceException("参赛通知附件不能为空，请上传PDF通知文件");
+        }
+        FileUuid fileRecord = fileUuidMapper.selectFileUuidById(uuid);
+        if (fileRecord == null || StringUtils.isBlank(fileRecord.getOriginName())) {
+            throw new ServiceException("参赛通知附件无效，请重新上传");
+        }
+        String originName = fileRecord.getOriginName().trim().toLowerCase();
+        if (!originName.endsWith(".pdf")) {
+            throw new ServiceException("参赛通知仅支持PDF文件，请重新上传");
+        }
+        fileUuidMapper.updateFileUuidStatus(new String[] { uuid }, 0);
+    }
+
+    private void syncTagsToSubTable(Long sessionId, String tagsCode, String operName) {
+        sessionMapper.deleteTagBySessionId(sessionId);
+        if (StringUtils.isBlank(tagsCode)) {
+            return;
+        }
+        String[] tagArray = tagsCode.split(",");
+        List<Tag> tagList = new ArrayList<>();
+        for (String tagValue : tagArray) {
+            if (StringUtils.isBlank(tagValue)) {
+                continue;
+            }
+            Tag tag = new Tag();
+            tag.setCompetitionSessionId(sessionId);
+            tag.setTagName(tagValue.trim());
+            tag.setCreateBy(operName);
+            tag.setCreateTime(DateUtils.getNowDate());
+            tag.setDelFlag("0");
+            tagList.add(tag);
+        }
+        if (!tagList.isEmpty()) {
+            sessionMapper.batchInsertTag(tagList);
+        }
+    }
+
     // ========== 原有方法：完整保留 ==========
     @Override
     public Session selectSessionById(Long id) {
@@ -61,8 +113,17 @@ public class SessionServiceImpl implements ISessionService {
     @Transactional(rollbackFor = Exception.class)
     @Override
     public int insertSession(Session session) {
+        // year：默认当前年
+        session.setYear(resolveYear(session.getYear()));
+        // uuid：必填且必须为PDF
+        validateAndFinalizeNoticeUuid(session.getUuid());
+
         session.setCreateTime(DateUtils.getNowDate());
-        return sessionMapper.insertSession(session);
+        int result = sessionMapper.insertSession(session);
+        if (result > 0 && session.getId() != null) {
+            syncTagsToSubTable(session.getId(), session.getTags(), SecurityUtils.getUsername());
+        }
+        return result;
     }
 
     @Transactional(rollbackFor = Exception.class)
@@ -71,6 +132,11 @@ public class SessionServiceImpl implements ISessionService {
         if (session.getId() == null) {
             throw new ServiceException("修改届次必须传入主键ID！");
         }
+        // year：为空则默认当前年（避免被更新成null）
+        session.setYear(resolveYear(session.getYear()));
+        // uuid：必填且必须为PDF
+        validateAndFinalizeNoticeUuid(session.getUuid());
+
         session.setUpdateTime(DateUtils.getNowDate());
         int updateCount = sessionMapper.updateSession(session);
         // 关键：校验是否真的更新了记录
@@ -78,32 +144,8 @@ public class SessionServiceImpl implements ISessionService {
             throw new ServiceException("届次记录不存在或已被删除，无法修改！");
         }
 
-        // ========== 新增：同步更新标签子表 ==========
-        Long sessionId = session.getId();
-        String tagsCode = session.getTags(); // 拿到修改后的标签编码
-
-        // 1. 先删除该届次下所有旧标签
-        sessionMapper.deleteTagBySessionId(sessionId);
-
-        // 2. 插入新标签（和导入逻辑保持一致）
-        if (tagsCode != null && !tagsCode.trim().isEmpty()) {
-            String[] tagArray = tagsCode.split(",");
-            List<Tag> tagList = new ArrayList<>();
-            String operName = SecurityUtils.getUsername(); // 获取当前操作人
-            for (String tagValue : tagArray) {
-                if (tagValue.trim().isEmpty()) continue;
-                Tag tag = new Tag();
-                tag.setCompetitionSessionId(sessionId);
-                tag.setTagName(tagValue.trim());
-                tag.setCreateBy(operName);
-                tag.setCreateTime(DateUtils.getNowDate());
-                tag.setDelFlag("0");
-                tagList.add(tag);
-            }
-            if (!tagList.isEmpty()) {
-                sessionMapper.batchInsertTag(tagList);
-            }
-        }
+        // 同步更新标签子表
+        syncTagsToSubTable(session.getId(), session.getTags(), SecurityUtils.getUsername());
 
         return updateCount;
     }
