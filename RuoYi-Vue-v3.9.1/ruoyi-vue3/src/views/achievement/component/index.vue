@@ -6,23 +6,47 @@
         <el-row :gutter="10" class="search-row search-row-primary">
 
           <el-col :span="5">
-            <el-form-item label="比赛" prop="track" class="search-item" label-width="40px">
-              <el-input
-                  v-model="queryParams.track"
-                  placeholder="请输入比赛"
+            <el-form-item label="比赛" prop="competitionId" class="search-item" label-width="40px">
+              <el-select
+                  v-model="queryParams.competitionId"
+                  placeholder="请输入关键字搜索比赛"
                   clearable
-                  @keyup.enter="handleQuery"
-              />
+                  filterable
+                  remote
+                  reserve-keyword
+                  :remote-method="remoteSearchCompetition"
+                  :loading="competitionLoading"
+                  style="width: 100%;"
+                  @change="handleCompetitionFilterChange"
+                  @visible-change="handleCompetitionDropdownVisible"
+              >
+                <el-option
+                    v-for="item in competitionOptions"
+                    :key="item.id"
+                    :label="item.name"
+                    :value="item.id"
+                />
+              </el-select>
             </el-form-item>
           </el-col>
           <el-col :span="4">
             <el-form-item label="届次" prop="sessionId" class="search-item" label-width="40px">
-              <el-input
+              <el-select
                   v-model="queryParams.sessionId"
-                  placeholder="请输入届次"
+                  placeholder="请先选择比赛"
                   clearable
-                  @keyup.enter="handleQuery"
-              />
+                  filterable
+                  :disabled="!queryParams.competitionId"
+                  :loading="sessionLoading"
+                  style="width: 100%;"
+              >
+                <el-option
+                    v-for="item in sessionOptions"
+                    :key="item.id"
+                    :label="item.session"
+                    :value="item.id"
+                />
+              </el-select>
             </el-form-item>
           </el-col>
 
@@ -431,6 +455,8 @@ import { Warning } from '@element-plus/icons-vue';
 import AchievementForm from '../component/AchievementForm.vue';
 import { listManage, getManage, addManage, updateManage, delManage } from '@/api/achievement/manage';
 import { batchUpdateReviewStatus } from '@/api/achievement/review_batch';
+import { listCompetition } from '@/api/competition/competition';
+import { listSession } from '@/api/session/session';
 
 const props = defineProps({
   listFn: { type: Function, default: null },
@@ -507,6 +533,7 @@ const queryParams = reactive({
   pageNum: 1,
   pageSize: 10,
   achievementId: null,
+  competitionId: null,
   sessionId: null,
   category: null,
   name: null,
@@ -531,6 +558,10 @@ const ids = ref([]);
 const selectedRows = ref([]);
 const tableRef = ref(null);
 const batchReviewStatus = ref(null);
+const competitionOptions = ref([]);
+const sessionOptions = ref([]);
+const competitionLoading = ref(false);
+const sessionLoading = ref(false);
 
 const batchRejectReason = ref([]);
 const batchRejectReasonCustom = ref('');
@@ -708,6 +739,76 @@ function buildListParams() {
   return finalParams;
 }
 
+function mapCompetitionOptions(rows = []) {
+  return (rows || [])
+      .map((item) => {
+        const id = normalizeLooseText(item?.id ?? item?.competitionId);
+        const name = normalizeLooseText(item?.name ?? item?.competitionName);
+        if (!id || !name) return null;
+        return { ...item, id, name };
+      })
+      .filter(Boolean);
+}
+
+function mapSessionOptions(rows = []) {
+  return (rows || [])
+      .map((item) => {
+        const id = normalizeLooseText(item?.id ?? item?.sessionId);
+        const session = normalizeLooseText(item?.session);
+        if (!id || !session) return null;
+        return { ...item, id, session };
+      })
+      .filter(Boolean);
+}
+
+async function remoteSearchCompetition(keyword = '') {
+  competitionLoading.value = true;
+  try {
+    const response = await listCompetition({
+      pageNum: 1,
+      pageSize: 50,
+      name: normalizeLooseText(keyword) || undefined
+    });
+    competitionOptions.value = mapCompetitionOptions(response?.rows || response?.data || []);
+  } finally {
+    competitionLoading.value = false;
+  }
+}
+
+async function loadSessionOptions(competitionId) {
+  const normalizedCompetitionId = normalizeLooseText(competitionId);
+  if (!normalizedCompetitionId) {
+    sessionOptions.value = [];
+    return;
+  }
+
+  sessionLoading.value = true;
+  try {
+    const response = await listSession({
+      pageNum: 1,
+      pageSize: 200,
+      competitionId: normalizedCompetitionId
+    });
+    sessionOptions.value = mapSessionOptions(response?.rows || response?.data || []);
+  } finally {
+    sessionLoading.value = false;
+  }
+}
+
+function handleCompetitionDropdownVisible(visible) {
+  if (visible && !competitionOptions.value.length) {
+    void remoteSearchCompetition();
+  }
+}
+
+function handleCompetitionFilterChange(val) {
+  queryParams.sessionId = null;
+  sessionOptions.value = [];
+  if (val) {
+    void loadSessionOptions(val);
+  }
+}
+
 function applyRoutePageState() {
   const pageNum = Number(route.query.pageNum);
   const pageSize = Number(route.query.pageSize);
@@ -837,6 +938,7 @@ const resetQuery = () => {
   });
   queryParams.pageNum = 1;
   queryParams.pageSize = 10;
+  sessionOptions.value = [];
   getList();
 };
 

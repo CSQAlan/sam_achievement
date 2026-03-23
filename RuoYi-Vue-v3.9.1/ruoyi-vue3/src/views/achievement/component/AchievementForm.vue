@@ -1,9 +1,12 @@
 <template>
   <div v-if="isPageMode" class="app-container outcome-page">
-    <div class="page-card">
-      <div class="page-header">
+    <div class="page-card" v-loading="detailLoading">
+    <div class="page-header">
         <div class="header-left">
-          <div class="page-title">  {{ isPageMode ? `${title} - 成果编号: ${form?.achievementId || '编号不存在'}` : title }}</div>
+          <div class="page-title">
+            {{ isPageMode ? `${title}${displayAchievementId ? ` - 成果编号: ${displayAchievementId}` : ''}` : title }}
+          </div>
+
         </div>
       </div>
       <el-divider style="margin: 10px 0 20px 0"></el-divider>
@@ -235,7 +238,7 @@
     @closed="reset"
     top="5vh"
   >
-    <div class="outcome-body">
+    <div class="outcome-body" v-loading="detailLoading">
       <el-form ref="outcomeRefDialog" :model="form" :rules="rules" label-width="110px" :disabled="readOnly">
         <el-row :gutter="20">
             <el-col :span="12">
@@ -638,6 +641,8 @@ const deptOptions = ref([]);
 const outcomeRefPage = ref(null);
 const outcomeRefDialog = ref(null);
 const activeAttachmentTab = ref('award');
+const detailLoading = ref(false);
+const pendingAchievementId = ref("");
 
 const uploadUrl = ref("/dev-api/attachment/upload");
 const userStore = useUserStore();
@@ -671,6 +676,21 @@ const data = reactive({
   }
 });
 const { form, formSnapshot, rules } = toRefs(data);
+
+const displayAchievementId = computed(() => {
+  const formId = form.value?.achievementId;
+  if (formId !== null && formId !== undefined && String(formId).trim() !== "") {
+    return String(formId);
+  }
+  if (pendingAchievementId.value !== null && pendingAchievementId.value !== undefined && String(pendingAchievementId.value).trim() !== "") {
+    return String(pendingAchievementId.value);
+  }
+  const routeId = route.query.id || route.query.achievementId || route.params.id;
+  if (routeId !== null && routeId !== undefined && String(routeId).trim() !== "") {
+    return String(routeId);
+  }
+  return "";
+});
 
 function trimIfString(value) {
   return typeof value === "string" ? value.trim() : value;
@@ -1239,6 +1259,7 @@ function handleCompetitionChange(val) {
 
 function open(id) {
   if (!isPageMode.value) visible.value = true;
+  pendingAchievementId.value = id ? String(id) : "";
   reset();
   getDeptTree();
   getCompetitionList();
@@ -1246,9 +1267,12 @@ function open(id) {
   activeAttachmentTab.value = 'award';
   if (id) {
     title.value = props.titleEdit;
+    detailLoading.value = true;
     loadDetail(id);
   } else {
     title.value = props.titleAdd;
+    detailLoading.value = false;
+    pendingAchievementId.value = "";
     // 【核心修改】：根据 sourceMode 进行默认填充
     if (props.sourceMode === 'guided') {
       // 教师端：我指导的成果，默认填入当前教师为第一指导老师
@@ -1392,7 +1416,12 @@ function initSortable() {
 
 // === 【核心修复】：增强的数据回显逻辑 ===
 function loadDetail(id) {
-  if (!props.getFn) return;
+  if (!props.getFn) {
+    detailLoading.value = false;
+    return;
+  }
+  pendingAchievementId.value = id ? String(id) : pendingAchievementId.value;
+  detailLoading.value = true;
   props.getFn(id).then(response => {
     const d = response.data;
     
@@ -1428,6 +1457,8 @@ function loadDetail(id) {
 
     form.value = d; // 一次性赋值给响应式对象
     
+    pendingAchievementId.value = d && d.achievementId != null ? String(d.achievementId) : pendingAchievementId.value;
+
     if (d.competitionId) {
         getSessionList(d.competitionId);
     }
@@ -1440,6 +1471,10 @@ function loadDetail(id) {
     if (form.value.isReimburse == null) form.value.isReimburse = 0;
     
     updateSnapshot();
+  }).catch(() => {
+    // keep pendingAchievementId so the header remains stable while the caller handles the error
+  }).finally(() => {
+    detailLoading.value = false;
   });
 }
 

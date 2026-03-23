@@ -153,6 +153,7 @@ PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
         <include refid="selectreviewedVo"/>
         <where>  
             <if test="achievementId != null  and achievementId != ''"> and a.achievement_id = #{achievementId}</if>
+            <if test="competitionId != null  and competitionId != ''"> and s.competition_id = #{competitionId}</if>
             <if test="sessionId != null  and sessionId != ''"> and a.session_id = #{sessionId}</if>
             <if test="category != null  and category != ''"> and a.category like concat('%', #{category}, '%')</if>
             <if test="name != null  and name != ''"> and a.name like concat('%', #{name}, '%')</if>
