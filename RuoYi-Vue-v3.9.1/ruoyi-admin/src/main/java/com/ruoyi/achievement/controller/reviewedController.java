@@ -20,7 +20,9 @@ import com.ruoyi.common.enums.BusinessType;
 import com.ruoyi.common.exception.ServiceException;
 import com.ruoyi.common.utils.SecurityUtils;
 import com.ruoyi.common.utils.StringUtils;
+import com.ruoyi.achievement.domain.SamAchievement;
 import com.ruoyi.achievement.domain.reviewed;
+import com.ruoyi.achievement.service.ISamAchievementService;
 import com.ruoyi.achievement.service.IreviewedService;
 import com.ruoyi.common.utils.poi.ExcelUtil;
 import com.ruoyi.common.core.page.TableDataInfo;
@@ -31,6 +33,9 @@ public class reviewedController extends BaseController
 {
     @Autowired
     private IreviewedService reviewedService;
+
+    @Autowired
+    private ISamAchievementService samAchievementService;
 
     public static class BatchReviewStatusRequest
     {
@@ -78,6 +83,28 @@ public class reviewedController extends BaseController
         {
             this.rejectReason = rejectReason;
         }
+    }
+
+    private AjaxResult saveReviewForm(SamAchievement samAchievement)
+    {
+        SamAchievement existing = samAchievementService.selectSamAchievementByAchievementId(samAchievement.getAchievementId());
+        if (existing == null)
+        {
+            return AjaxResult.error("鏈壘鍒板搴旂殑鎴愭灉淇℃伅");
+        }
+
+        // Keep current review state unchanged when saving from the review page.
+        samAchievement.setReviewResult(existing.getReviewResult());
+        samAchievement.setSchooiReviewResult(existing.getSchooiReviewResult());
+        samAchievement.setReviewedAt(existing.getReviewedAt());
+        samAchievement.setSchoolReviewedAt(existing.getSchoolReviewedAt());
+        samAchievement.setReviewReason(existing.getReviewReason());
+        samAchievement.setSchoolReviewReason(existing.getSchoolReviewReason());
+        samAchievement.setAuditBy(existing.getAuditBy());
+        samAchievement.setSchoolAuditBy(existing.getSchoolAuditBy());
+        samAchievement.setSubmittedAt(existing.getSubmittedAt());
+
+        return toAjax(samAchievementService.updateSamAchievement(samAchievement));
     }
 
     public static class ReviewSubmitRequest
@@ -138,7 +165,7 @@ public class reviewedController extends BaseController
     {
         if (request == null)
         {
-            return error("请求参数不能为空");
+            return error("璇锋眰鍙傛暟涓嶈兘涓虹┖");
         }
         return toAjax(reviewedService.batchSubmitReview(source, request.getAchievementIds(), request.getReviewStatus(), request.getRejectReason()));
     }
@@ -148,11 +175,11 @@ public class reviewedController extends BaseController
         String permission = resolveReviewEditPermission(source);
         if (StringUtils.isEmpty(permission))
         {
-            throw new ServiceException("审核来源无效");
+            throw new ServiceException("瀹℃牳鏉ユ簮鏃犳晥");
         }
         if (!SecurityUtils.hasPermi(permission))
         {
-            throw new AccessDeniedException("没有访问该审核页面的权限");
+            throw new AccessDeniedException("娌℃湁璁块棶璇ュ鏍搁〉闈㈢殑鏉冮檺");
         }
     }
 
@@ -185,7 +212,7 @@ public class reviewedController extends BaseController
     {
         if (request == null)
         {
-            return error("请求参数不能为空");
+            return error("璇锋眰鍙傛暟涓嶈兘涓虹┖");
         }
         checkReviewEditPermission(request.getSource());
         return success(reviewedService.submitReview(
@@ -206,7 +233,7 @@ public class reviewedController extends BaseController
     {
         if (request == null)
         {
-            return error("请求参数不能为空");
+            return error("璇锋眰鍙傛暟涓嶈兘涓虹┖");
         }
         checkReviewEditPermission(request.getSource());
         return toAjax(reviewedService.batchSubmitReview(
@@ -241,7 +268,7 @@ public class reviewedController extends BaseController
     @GetMapping(value = "/college_level_unreviewed/{achievementId}")
     public AjaxResult getCollegeUnreviewed(@PathVariable("achievementId") String achievementId)
     {
-        return success(reviewedService.selectreviewedByAchievementId(achievementId));
+        return success(samAchievementService.selectSamAchievementByAchievementId(achievementId));
     }
 
     @PreAuthorize("@ss.hasPermi('achievement:college_level_unreviewed:add')")
@@ -256,10 +283,9 @@ public class reviewedController extends BaseController
     @PreAuthorize("@ss.hasPermi('achievement:college_level_unreviewed:edit')")
     @Log(title = "College Unreviewed", businessType = BusinessType.UPDATE)
     @PutMapping("/college_level_unreviewed")
-    public AjaxResult editCollegeUnreviewed(@RequestBody reviewed reviewed)
+    public AjaxResult editCollegeUnreviewed(@RequestBody SamAchievement samAchievement)
     {
-        applyFilter(reviewed, "college", "unreviewed");
-        return toAjax(reviewedService.updatereviewed(reviewed));
+        return saveReviewForm(samAchievement);
     }
 
     @PreAuthorize("@ss.hasPermi('achievement:college_level_unreviewed:edit')")
@@ -303,7 +329,7 @@ public class reviewedController extends BaseController
     @GetMapping(value = "/college_level_reviewed/{achievementId}")
     public AjaxResult getCollegeReviewed(@PathVariable("achievementId") String achievementId)
     {
-        return success(reviewedService.selectreviewedByAchievementId(achievementId));
+        return success(samAchievementService.selectSamAchievementByAchievementId(achievementId));
     }
 
     @PreAuthorize("@ss.hasPermi('achievement:college_level_reviewed:add')")
@@ -318,10 +344,9 @@ public class reviewedController extends BaseController
     @PreAuthorize("@ss.hasPermi('achievement:college_level_reviewed:edit')")
     @Log(title = "College Reviewed", businessType = BusinessType.UPDATE)
     @PutMapping("/college_level_reviewed")
-    public AjaxResult editCollegeReviewed(@RequestBody reviewed reviewed)
+    public AjaxResult editCollegeReviewed(@RequestBody SamAchievement samAchievement)
     {
-        applyFilter(reviewed, "college", "reviewed");
-        return toAjax(reviewedService.updatereviewed(reviewed));
+        return saveReviewForm(samAchievement);
     }
 
     @PreAuthorize("@ss.hasPermi('achievement:college_level_reviewed:edit')")
@@ -365,7 +390,7 @@ public class reviewedController extends BaseController
     @GetMapping(value = "/school_level_unreviewed/{achievementId}")
     public AjaxResult getSchoolUnreviewed(@PathVariable("achievementId") String achievementId)
     {
-        return success(reviewedService.selectreviewedByAchievementId(achievementId));
+        return success(samAchievementService.selectSamAchievementByAchievementId(achievementId));
     }
 
     @PreAuthorize("@ss.hasPermi('achievement:school_level_unreviewed:add')")
@@ -380,10 +405,9 @@ public class reviewedController extends BaseController
     @PreAuthorize("@ss.hasPermi('achievement:school_level_unreviewed:edit')")
     @Log(title = "School Unreviewed", businessType = BusinessType.UPDATE)
     @PutMapping("/school_level_unreviewed")
-    public AjaxResult editSchoolUnreviewed(@RequestBody reviewed reviewed)
+    public AjaxResult editSchoolUnreviewed(@RequestBody SamAchievement samAchievement)
     {
-        applyFilter(reviewed, "school", "unreviewed");
-        return toAjax(reviewedService.updatereviewed(reviewed));
+        return saveReviewForm(samAchievement);
     }
 
     @PreAuthorize("@ss.hasPermi('achievement:school_level_unreviewed:edit')")
@@ -427,7 +451,7 @@ public class reviewedController extends BaseController
     @GetMapping(value = "/school_level_reviewed/{achievementId}")
     public AjaxResult getSchoolReviewed(@PathVariable("achievementId") String achievementId)
     {
-        return success(reviewedService.selectreviewedByAchievementId(achievementId));
+        return success(samAchievementService.selectSamAchievementByAchievementId(achievementId));
     }
 
     @PreAuthorize("@ss.hasPermi('achievement:school_level_reviewed:add')")
@@ -442,10 +466,9 @@ public class reviewedController extends BaseController
     @PreAuthorize("@ss.hasPermi('achievement:school_level_reviewed:edit')")
     @Log(title = "School Reviewed", businessType = BusinessType.UPDATE)
     @PutMapping("/school_level_reviewed")
-    public AjaxResult editSchoolReviewed(@RequestBody reviewed reviewed)
+    public AjaxResult editSchoolReviewed(@RequestBody SamAchievement samAchievement)
     {
-        applyFilter(reviewed, "school", "reviewed");
-        return toAjax(reviewedService.updatereviewed(reviewed));
+        return saveReviewForm(samAchievement);
     }
 
     @PreAuthorize("@ss.hasPermi('achievement:school_level_reviewed:edit')")
@@ -464,3 +487,4 @@ public class reviewedController extends BaseController
         return toAjax(reviewedService.deletereviewedByAchievementIds(achievementIds));
     }
 }
+
