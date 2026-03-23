@@ -1460,10 +1460,48 @@ function getSessionList(competitionId) {
   request({
     url: '/session/session/list',
     method: 'get',
-    params: { competitionId: competitionId, pageNum: 1, pageSize: 100 } 
+    params: { competitionId: competitionId, pageNum: 1, pageSize: 100 }
   }).then(response => {
     sessionOptions.value = response.rows || [];
+    // 列表加载完成后，尝试自动匹配一次
+    autoMatchSession();
   });
+}
+
+/**
+ * 自动匹配届次逻辑
+ * 根据：赛事(competitionId) + 获奖级别(level) + 获奖时间(awardTime) 智能推断
+ */
+function autoMatchSession() {
+  const { competitionId, level, awardTime } = form.value;
+  
+  // 核心条件不全，或候选项还没加载好，则跳过
+  if (!competitionId || !level || !awardTime || !sessionOptions.value.length) {
+    return;
+  }
+
+  // 1. 解析时间
+  const date = new Date(awardTime);
+  const year = date.getFullYear();
+  const month = date.getMonth() + 1; // getMonth 是 0-11
+
+  // 2. 设定搜索年份窗口 (解决跨年问题)
+  // 1-4月获奖，可能属于去年或当年的比赛；5-12月获奖，基本属于当年比赛
+  const targetYears = month <= 4 ? [year.toString(), (year - 1).toString()] : [year.toString()];
+
+  // 3. 在候选列表中筛选
+  const matched = sessionOptions.value.filter(item => {
+    // A. 级别必须一致 (注意类型转换或弱等于)
+    const isLevelMatch = item.level == level;
+    // B. 年份匹配：session 字段通常包含年份文字，如 "2025" 或 "2025第十八届"
+    const isYearMatch = targetYears.some(y => item.session && item.session.includes(y));
+    return isLevelMatch && isYearMatch;
+  });
+
+  // 4. 自动赋值：只有当推断结果唯一时才自动勾选，避免歧义
+  if (matched.length === 1) {
+    form.value.sessionId = matched[0].id;
+  }
 }
 
 function handleCompetitionChange(val) {
@@ -1473,6 +1511,11 @@ function handleCompetitionChange(val) {
     getSessionList(val);
   }
 }
+
+// 监听级别和时间的变化，实时触发匹配逻辑
+watch(() => [form.value.level, form.value.awardTime], () => {
+  autoMatchSession();
+});
 
 function open(id) {
   if (!isPageMode.value) visible.value = true;
