@@ -110,8 +110,13 @@ public class SamAchievementController extends BaseController
      */
     @PreAuthorize("@ss.hasAnyPermi('achievement:manage:query,achievement:manage:participated:query,achievement:manage:guided:query')")
     @GetMapping(value = "/{achievementId}")
-    public AjaxResult getInfo(@PathVariable("achievementId") String achievementId)
+    public AjaxResult getInfo(@PathVariable("achievementId") String achievementId,
+                              @RequestParam(value = "selfEditScene", required = false) String selfEditScene)
     {
+        if (StringUtils.isNotEmpty(selfEditScene))
+        {
+            return success(samAchievementService.selectSamAchievementForSelf(achievementId, selfEditScene));
+        }
         return success(samAchievementService.selectSamAchievementByAchievementId(achievementId));
     }
 
@@ -190,7 +195,28 @@ public class SamAchievementController extends BaseController
     }
 
     /**
-     * 查询我指导的成果列表（教师端-包含在指导老师列表的所有成果）
+     * Responsible achievement list
+     */
+    @PreAuthorize("@ss.hasPermi('achievement:manage:list')")
+    @GetMapping("/list-responsible")
+    public TableDataInfo listResponsible(SamAchievement samAchievement)
+    {
+        startPage();
+        String username = SecurityUtils.getUsername();
+        if (StringUtils.isEmpty(username)) {
+            throw new com.ruoyi.common.exception.ServiceException("Current user info cannot be empty");
+        }
+        if (samAchievement.getParams() == null) {
+            samAchievement.setParams(new HashMap<>());
+        }
+        samAchievement.getParams().put("studentId", username);
+        List<SamAchievement> list = samAchievementService.selectSamAchievementListByResponsibleStudentId(samAchievement);
+
+        return getDataTable(list);
+    }
+
+    /**
+     * Query achievements guided by the current teacher
      */
     @PreAuthorize("@ss.hasPermi('achievement:manage:guided:list')")
     @GetMapping("/list-guided")

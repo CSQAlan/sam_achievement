@@ -153,7 +153,6 @@
                  ) ad_view on ad_view.achievement_id = a.achievement_id
     </sql>
 
-    <select id="selectSamAchievementList" parameterType="SamAchievement" resultMap="SamAchievementSamAchievementParticipantResult">
     <select id="selectSamAchievementList" parameterType="SamAchievement" resultMap="SamAchievementListResult">
         <include refid="selectSamAchievementVo"/>
         <where>
@@ -178,6 +177,17 @@
         <where>
             and p.student_id = #{params.studentId}
             <if test="params.manager != null and params.manager != ''"> and p.manager = #{params.manager}</if>
+            <if test="name != null  and name != ''"> and a.name like concat('%', #{name}, '%')</if>
+            <if test="reviewResult != null  and reviewResult != ''"> and a.review_result = #{reviewResult}</if>
+        </where>
+    </select>
+
+    <select id="selectSamAchievementListByResponsibleStudentId" parameterType="SamAchievement" resultMap="SamAchievementListResult">
+        <include refid="selectSamAchievementVo"/>
+        inner join sam_achievement_participant p on a.achievement_id = p.achievement_id
+        <where>
+            and p.student_id = #{params.studentId}
+            and p.manager = '1'
             <if test="name != null  and name != ''"> and a.name like concat('%', #{name}, '%')</if>
             <if test="reviewResult != null  and reviewResult != ''"> and a.review_result = #{reviewResult}</if>
         </where>
@@ -232,9 +242,11 @@
         where achievement_id = #{achievement_id}
     </select>
 
-    <select id="checkCertificateNoUnique" parameterType="String" resultMap="SamAchievementResult">
+    <select id="checkCertificateNoUnique" resultMap="SamAchievementResult">
         <include refid="selectSamAchievementVo"/>
-        where a.certificate_no = #{certificateNo} limit 1
+        where a.certificate_no = #{certificateNo}
+        <if test="competitionId != null and competitionId != ''">and s.competition_id = #{competitionId}</if>
+        limit 1
     </select>
 
     <select id="selectTrackList" resultType="String">
@@ -243,11 +255,6 @@
         left join sam_competition_session s on a.session_id = s.session_id
         where s.competition_id = #{competitionId} and a.session_id = #{sessionId}
         and a.track is not null and a.track != ''
-    </select>
-
-    <select id="checkCertificateNoUnique" resultMap="SamAchievementResult">
-        <include refid="selectSamAchievementVo"/>
-        where a.certificate_no = #{certificateNo} and s.competition_id = #{competitionId} limit 1
     </select>
 
     <insert id="insertSamAchievement" parameterType="SamAchievement" useGeneratedKeys="true" keyProperty="achievementId">
