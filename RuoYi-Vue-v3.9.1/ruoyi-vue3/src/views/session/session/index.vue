@@ -4,6 +4,10 @@
       <el-form-item label="届次" prop="session">
         <el-input v-model="queryParams.session" placeholder="请输入届次" clearable @keyup.enter="handleQuery" />
       </el-form-item>
+      <el-form-item label="年份" prop="year">
+        <el-input-number v-model="queryParams.year" :min="2000" :max="2100" controls-position="right"
+          placeholder="请输入年份" style="width: 140px" />
+      </el-form-item>
       <el-form-item label="赛事类别" prop="category">
         <el-select v-model="queryParams.category" placeholder="请选择赛事类别" clearable>
           <el-option v-for="dict in sys_competition_category" :key="dict.value" :label="dict.label"
@@ -72,6 +76,7 @@
         </template>
       </el-table-column>
       <el-table-column label="届次" align="center" prop="session" />
+      <el-table-column label="年份" align="center" prop="year" width="100" />
       <el-table-column label="赛事类别" align="center" prop="category">
         <template #default="scope">
           <dict-tag :options="sys_competition_category" :value="scope.row.category" />
@@ -107,44 +112,79 @@
       v-model:limit="queryParams.pageSize" @pagination="getList" />
 
     <!-- 添加或修改赛事届次对话框 -->
-    <el-dialog :title="title" v-model="open" width="500px" append-to-body>
+    <el-dialog :title="title" v-model="open" width="1100px" append-to-body>
       <el-form ref="sessionRef" :model="form" :rules="rules" label-width="80px">
-        <el-form-item label="赛事名称" prop="competitionId">
-          <el-select v-model="form.competitionId" placeholder="请选择赛事名称" clearable filterable style="width:100%;">
-            <el-option v-for="comp in competitionList" :key="comp.id" :label="comp.name" :value="comp.id" />
-          </el-select>
-        </el-form-item>
-        <el-form-item label="届次" prop="session">
-          <el-input v-model="form.session" placeholder="请输入届次" />
-        </el-form-item>
-        <el-form-item label="赛事类别" prop="category">
-          <el-radio-group v-model="form.category">
-            <el-radio v-for="dict in sys_competition_category" :key="dict.value" :label="dict.value">{{ dict.label
-            }}</el-radio>
-          </el-radio-group>
-        </el-form-item>
-        <el-form-item label="盖章单位" prop="organizations">
-          <el-input v-model="form.organizations" placeholder="请输入盖章单位" />
-        </el-form-item>
-        <el-form-item label="赛事级别" prop="level">
-          <el-radio-group v-model="form.level">
-            <el-radio v-for="dict in sys_competition_level" :key="dict.value" :label="dict.value">{{ dict.label
-            }}</el-radio>
-          </el-radio-group>
-        </el-form-item>
-        <el-form-item label="状态" prop="status">
-          <el-radio-group v-model="form.status">
-            <el-radio v-for="dict in sys_competition_status" :key="dict.value" :label="dict.value">{{ dict.label
-            }}</el-radio>
-          </el-radio-group>
-        </el-form-item>
-        <el-form-item label="赛事标签" prop="tags">
-          <el-checkbox-group v-model="form.tags">
-            <el-checkbox v-for="dict in sys_competition_tag" :key="dict.value" :label="dict.value">
-              {{ dict.label }}
-            </el-checkbox>
-          </el-checkbox-group>
-        </el-form-item>
+        <el-row :gutter="20">
+          <el-col :span="11">
+            <el-form-item label="赛事名称" prop="competitionId">
+              <el-select v-model="form.competitionId" placeholder="请选择赛事名称" clearable filterable style="width:100%;">
+                <el-option v-for="comp in competitionList" :key="comp.id" :label="comp.name" :value="comp.id" />
+              </el-select>
+            </el-form-item>
+            <el-form-item label="年份" prop="year">
+              <el-input-number v-model="form.year" :min="2000" :max="2100" controls-position="right"
+                placeholder="请输入年份" style="width: 180px" />
+            </el-form-item>
+            <el-form-item label="届次" prop="session">
+              <el-input v-model="form.session" placeholder="请输入届次" />
+            </el-form-item>
+            <el-form-item label="赛事类别" prop="category">
+              <el-radio-group v-model="form.category">
+                <el-radio v-for="dict in sys_competition_category" :key="dict.value" :label="dict.value">{{ dict.label
+                }}</el-radio>
+              </el-radio-group>
+            </el-form-item>
+            <el-form-item label="盖章单位" prop="organizations">
+              <el-input v-model="form.organizations" placeholder="请输入盖章单位" />
+            </el-form-item>
+            <el-form-item label="赛事级别" prop="level">
+              <el-radio-group v-model="form.level">
+                <el-radio v-for="dict in sys_competition_level" :key="dict.value" :label="dict.value">{{ dict.label
+                }}</el-radio>
+              </el-radio-group>
+            </el-form-item>
+            <el-form-item label="状态" prop="status">
+              <el-radio-group v-model="form.status">
+                <el-radio v-for="dict in sys_competition_status" :key="dict.value" :label="dict.value">{{ dict.label
+                }}</el-radio>
+              </el-radio-group>
+            </el-form-item>
+            <el-form-item label="赛事标签" prop="tags">
+              <el-checkbox-group v-model="form.tags">
+                <el-checkbox v-for="dict in sys_competition_tag" :key="dict.value" :label="dict.value">
+                  {{ dict.label }}
+                </el-checkbox>
+              </el-checkbox-group>
+            </el-form-item>
+          </el-col>
+
+          <el-col :span="13">
+            <div class="attach-card">
+              <el-divider content-position="left">参赛通知（PDF）</el-divider>
+
+              <el-form-item label-width="0" prop="uuid">
+                <upload-file v-if="!form.uuid" v-model="form.uuid" :limit="1" :fileSize="50" :fileType="['pdf']"
+                  class="hide-file-list" @update:modelValue="handleNoticeUuidChange" />
+              </el-form-item>
+
+              <div v-if="form.uuid" class="custom-file-row">
+                <div class="file-name">
+                  <el-icon class="mr5"><Document /></el-icon>
+                  <span>{{ form.uuid }}</span>
+                </div>
+                <div class="file-action">
+                  <el-button link type="primary" :icon="View" @click="handleOpenNoticeDetail(form.uuid)">预览</el-button>
+                  <el-button link type="primary" :icon="Download" @click="handleDownloadNotice(form.uuid)">下载</el-button>
+                  <el-button link type="danger" :icon="Delete" @click="handleDeleteNotice">删除</el-button>
+                </div>
+              </div>
+
+              <div v-if="noticePreviewUrl" class="preview-box">
+                <iframe :src="noticePreviewUrl" width="100%" height="520px" frameborder="0"></iframe>
+              </div>
+            </div>
+          </el-col>
+        </el-row>
       </el-form>
       <template #footer>
         <div class="dialog-footer">
@@ -189,6 +229,9 @@ import { listSession, getSession, delSession, addSession, updateSession } from "
 // 核心新增：导入/导出模板接口（和后端Controller接口对应）
 import { exportTemplateSession, importDataSession } from "@/api/session/session"
 import { listCompetition } from "@/api/competition/competition"
+import request from "@/utils/request"
+import UploadFile from "@/components/FileUpload"
+import { Delete, Document, Download, View } from "@element-plus/icons-vue"
 
 const { proxy } = getCurrentInstance()
 const { sys_competition_tag, sys_competition_status, sys_competition_del_flag, sys_competition_category, sys_competition_level } = proxy.useDict('sys_competition_tag', 'sys_competition_status', 'sys_competition_del_flag', 'sys_competition_category', 'sys_competition_level')
@@ -223,6 +266,7 @@ const data = reactive({
     pageSize: 10,
     competitionId: null,
     session: null,
+    year: null,
     category: null,
     organizations: null,
     level: null,
@@ -235,6 +279,12 @@ const data = reactive({
     ],
     session: [
       { required: true, message: "届次不能为空", trigger: "blur" }
+    ],
+    year: [
+      { required: true, message: "年份不能为空", trigger: "change" }
+    ],
+    uuid: [
+      { required: true, message: "参赛通知不能为空（仅PDF）", trigger: "change" }
     ],
     category: [
       { required: true, message: "赛事类别不能为空", trigger: "change" }
@@ -252,6 +302,116 @@ const data = reactive({
 })
 
 const { queryParams, form, rules } = toRefs(data)
+
+const noticePreviewUrl = ref("")
+
+function normalizeUuid(value) {
+  if (Array.isArray(value)) return normalizeUuid(value[0])
+  if (value === null || value === undefined) return ""
+  const normalized = String(value).trim()
+  if (!normalized) return ""
+  return normalized.includes(",") ? normalized.split(",")[0].trim() : normalized
+}
+
+function revokeNoticePreview() {
+  if (noticePreviewUrl.value) {
+    window.URL.revokeObjectURL(noticePreviewUrl.value)
+    noticePreviewUrl.value = ""
+  }
+}
+
+async function fetchPdfObjectUrl(uuid) {
+  const blob = await request({
+    url: "/attachment/download",
+    method: "get",
+    params: { resource: uuid },
+    responseType: "blob",
+  })
+  const blobData = blob?.data || blob
+  return window.URL.createObjectURL(new Blob([blobData], { type: "application/pdf" }))
+}
+
+async function loadNoticePreview(uuid) {
+  revokeNoticePreview()
+  const normalizedUuid = normalizeUuid(uuid)
+  if (!normalizedUuid) return
+  try {
+    noticePreviewUrl.value = await fetchPdfObjectUrl(normalizedUuid)
+  } catch (e) {
+    console.error("参赛通知预览加载失败", e)
+    noticePreviewUrl.value = ""
+  }
+}
+
+function handleNoticeUuidChange(val) {
+  const uuid = normalizeUuid(val)
+  form.value.uuid = uuid || null
+  if (uuid) {
+    loadNoticePreview(uuid)
+  } else {
+    revokeNoticePreview()
+  }
+}
+
+async function handleOpenNoticeDetail(uuid) {
+  const normalizedUuid = normalizeUuid(uuid)
+  if (!normalizedUuid) {
+    proxy.$modal.msgError("文件标识无效")
+    return
+  }
+  proxy.$modal.loading("正在准备文件...")
+  const previewWindow = window.open("about:blank", "_blank")
+  try {
+    const pdfUrl = await fetchPdfObjectUrl(normalizedUuid)
+    proxy.$modal.closeLoading()
+    if (previewWindow) {
+      previewWindow.location.href = pdfUrl
+    } else {
+      window.URL.revokeObjectURL(pdfUrl)
+      proxy.$modal.msgWarning("浏览器拦截了弹窗，请允许弹窗后重试")
+    }
+  } catch (e) {
+    proxy.$modal.closeLoading()
+    if (previewWindow) previewWindow.close()
+    proxy.$modal.msgError("文件获取失败，请稍后重试")
+  }
+}
+
+async function handleDownloadNotice(uuid) {
+  const normalizedUuid = normalizeUuid(uuid)
+  if (!normalizedUuid) {
+    proxy.$modal.msgError("文件标识无效")
+    return
+  }
+  proxy.$modal.loading("正在下载文件...")
+  try {
+    const blobResp = await request({
+      url: "/attachment/download",
+      method: "get",
+      params: { resource: normalizedUuid },
+      responseType: "blob",
+    })
+    const blobData = blobResp?.data || blobResp
+    const url = window.URL.createObjectURL(new Blob([blobData]))
+    const link = document.createElement("a")
+    link.href = url
+    link.download = `${normalizedUuid}.pdf`
+    document.body.appendChild(link)
+    link.click()
+    document.body.removeChild(link)
+    window.URL.revokeObjectURL(url)
+  } finally {
+    proxy.$modal.closeLoading()
+  }
+}
+
+function handleDeleteNotice() {
+  proxy.$modal.confirm("是否确认删除参赛通知附件？").then(() => {
+    form.value.uuid = null
+    revokeNoticePreview()
+    proxy.$modal.msgSuccess("已删除")
+  }).catch(() => { })
+}
 
 // 获取赛事主表列表并去重
 // 获取赛事主表列表（修复去重逻辑，保留全量数据）
@@ -291,9 +451,12 @@ function cancel() {
 
 // 表单重置
 function reset() {
+  revokeNoticePreview()
   form.value = {
     id: null,
     competitionId: null,
+    year: new Date().getFullYear(),
+    uuid: null,
     session: null,
     category: null,
     organizations: null,
@@ -355,6 +518,9 @@ function handleUpdate(row) {
       form.value.tags = []
     }
     tagList.value = response.data.tagList
+    if (form.value.uuid) {
+      loadNoticePreview(form.value.uuid)
+    }
     open.value = true
     title.value = "修改赛事届次"
   })
@@ -486,7 +652,65 @@ function handleImportSubmit() {
   })
 }
 
+onBeforeUnmount(() => {
+  revokeNoticePreview()
+})
+
 // 页面初始化
 getList()
 getCompetitionList()
 </script>
+
+<style scoped>
+.attach-card {
+  height: 100%;
+  min-height: 620px;
+  padding: 16px;
+  border: 1px solid #e5e7eb;
+  border-radius: 8px;
+  background: #f9fafb;
+}
+
+.preview-box {
+  margin-top: 10px;
+  border: 1px solid #dcdfe6;
+  border-radius: 4px;
+  overflow: hidden;
+  background: #f5f7fa;
+}
+
+.custom-file-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  padding: 12px 16px;
+  border: 1px solid #dcdfe6;
+  border-radius: 4px;
+  background: #f5f7fa;
+  margin-top: 8px;
+}
+
+.file-name {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  align-items: center;
+}
+
+.file-name span {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.file-action {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.mr5 {
+  margin-right: 5px;
+}
+</style>

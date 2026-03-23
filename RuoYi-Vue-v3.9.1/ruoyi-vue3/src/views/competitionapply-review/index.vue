@@ -120,6 +120,8 @@
       <el-table-column label="申请人学号" align="center" prop="userName" />
       <el-table-column label="申请人学院" align="center" prop="deptName" />
       <el-table-column label="赛事名称" align="center" prop="name" />
+      <el-table-column label="年份" align="center" prop="year" width="100" />
+      <el-table-column label="届次" align="center" prop="session" width="120" />
       <el-table-column label="赛事类别" align="center" prop="category">
         <template #default="scope">
           <dict-tag
@@ -199,6 +201,19 @@
           >
             <el-form-item label="赛事名称" prop="name">
               <el-input v-model="form.name" placeholder="请输入赛事名称" />
+            </el-form-item>
+            <el-form-item label="年份" prop="year">
+              <el-input-number
+                v-model="form.year"
+                :min="2000"
+                :max="2100"
+                controls-position="right"
+                placeholder="请输入年份"
+                style="width: 180px"
+              />
+            </el-form-item>
+            <el-form-item label="届次" prop="session">
+              <el-input v-model="form.session" placeholder="例如：2025、十二届" />
             </el-form-item>
             <el-form-item label="赛事类别" prop="category">
               <el-radio-group v-model="form.category">
@@ -540,7 +555,7 @@ const defaultAttachmentConfig = [
   },
   {
     name: "notice",
-    dictValue: "3",
+    dictValue: "2",
     fallbackLabel: "通知文件",
     alert: "请上传通知文件 PDF 文件",
   },
@@ -570,6 +585,8 @@ function createDefaultForm() {
     applicantUserId: userStore.id,
     applicantDepId: userStore.deptId || "",
     name: null,
+    year: new Date().getFullYear(),
+    session: null,
     category: null,
     organizations: null,
     level: null,

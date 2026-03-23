@@ -7,6 +7,10 @@ import java.util.stream.Collectors;
 
 import com.ruoyi.achievement.domain.FileUuid;
 import com.ruoyi.achievement.mapper.FileUuidMapper;
+import com.ruoyi.achievement.domain.SamStudent;
+import com.ruoyi.achievement.domain.SamTeacher;
+import com.ruoyi.achievement.mapper.SamStudentMapper;
+import com.ruoyi.achievement.mapper.SamTeacherMapper;
 import com.ruoyi.common.core.domain.entity.SysUser;
 import com.ruoyi.common.exception.ServiceException;
 import com.ruoyi.common.utils.DateUtils;
@@ -17,12 +21,17 @@ import com.ruoyi.common.utils.StringUtils;
 import org.springframework.transaction.annotation.Transactional;
 import com.ruoyi.competition.domain.Competition;
 import com.ruoyi.competition.domain.CompetitionDeptRel;
+import com.ruoyi.competition.domain.Session;
+import com.ruoyi.competition.mapper.SessionMapper;
 import com.ruoyi.competition.service.ICompetitionService;
+import com.ruoyi.competition.service.ISessionService;
 import com.ruoyi.competitionapply.domain.CompetitionApplyAttachment;
 import com.ruoyi.competitionapply.mapper.CompetitionApplyMapper;
 import com.ruoyi.competitionapply.domain.CompetitionApply;
 import com.ruoyi.competitionapply.service.ICompetitionApplyService;
 import com.ruoyi.system.mapper.SysUserMapper;
+import com.ruoyi.system.mapper.SysDeptMapper;
+import com.ruoyi.common.core.domain.entity.SysDept;
 
 /**
  * 赛事申请Service业务层处理
@@ -46,11 +55,154 @@ public class CompetitionApplyServiceImpl implements ICompetitionApplyService
     @Autowired
     private FileUuidMapper fileUuidMapper;
 
+    @Autowired
+    private SamStudentMapper samStudentMapper;
+
+    @Autowired
+    private SamTeacherMapper samTeacherMapper;
+
+    @Autowired
+    private SysDeptMapper sysDeptMapper;
+
     /**
      * 审核通过后需要生成赛事主表数据（sam_competition）
      */
     @Autowired
     private ICompetitionService competitionService;
+
+    @Autowired
+    private ISessionService sessionService;
+
+    @Autowired
+    private SessionMapper sessionMapper;
+
+    private static final int NOTICE_ATTACHMENT_TYPE = 2;
+
+    /**
+     * 解析“学院deptId”（稳定优先）：
+     * 1) 优先从学生表/教师表取school（约定为学院deptId字符串）；
+     * 2) 兜底从sys_user.dept_id（通常是叶子节点）沿parentId向上找到学院节点（parentId=0的子节点）；
+     * 3) parentId链断裂时，再兜底用ancestors取第二段（0,学院,...）。
+     */
+    private Long resolveCollegeDeptId(SysUser currentUser)
+    {
+        if (currentUser == null || StringUtils.isBlank(currentUser.getUserName()))
+        {
+            return null;
+        }
+        String no = StringUtils.trim(currentUser.getUserName());
+
+        // A. 学生档案优先
+        SamStudent studentQuery = new SamStudent();
+        studentQuery.setNo(no);
+        List<SamStudent> students = samStudentMapper.selectSamStudentList(studentQuery);
+        if (students != null && !students.isEmpty())
+        {
+            Long deptId = parseDeptId(students.get(0).getSchool());
+            if (deptId != null)
+            {
+                return deptId;
+            }
+        }
+
+        // B. 教师档案
+        SamTeacher teacherQuery = new SamTeacher();
+        teacherQuery.setNo(no);
+        List<SamTeacher> teachers = samTeacherMapper.selectSamTeacherList(teacherQuery);
+        if (teachers != null && !teachers.isEmpty())
+        {
+            Long deptId = parseDeptId(teachers.get(0).getSchool());
+            if (deptId != null)
+            {
+                return deptId;
+            }
+        }
+
+        // C. 兜底：sys_user.deptId（通常是叶子节点）
+        return resolveCollegeFromDeptTree(currentUser.getDeptId());
+    }
+
+    private Long parseDeptId(String value)
+    {
+        if (StringUtils.isBlank(value))
+        {
+            return null;
+        }
+        try
+        {
+            return Long.valueOf(StringUtils.trim(value));
+        }
+        catch (NumberFormatException ignore)
+        {
+            return null;
+        }
+    }
+
+    private Long resolveCollegeFromDeptTree(Long deptId)
+    {
+        if (deptId == null)
+        {
+            return null;
+        }
+        // 1) 沿parentId向上找“学院节点”（parentId=0的子节点）
+        Long currentId = deptId;
+        int guard = 0;
+        while (currentId != null && guard++ < 20)
+        {
+            SysDept current = sysDeptMapper.selectDeptById(currentId);
+            if (current == null)
+            {
+                break;
+            }
+            Long parentId = current.getParentId();
+            if (parentId != null && parentId == 0L)
+            {
+                return current.getDeptId();
+            }
+            currentId = parentId;
+        }
+
+        // 2) 兜底：用ancestors第二段（0,学院,...）
+        SysDept leaf = sysDeptMapper.selectDeptById(deptId);
+        if (leaf != null && StringUtils.isNotBlank(leaf.getAncestors()))
+        {
+            String[] parts = StringUtils.trim(leaf.getAncestors()).split(",");
+            if (parts.length >= 2)
+            {
+                try
+                {
+                    return Long.valueOf(parts[1]);
+                }
+                catch (NumberFormatException ignore)
+                {
+                    return null;
+                }
+            }
+        }
+        return null;
+    }
+
+    private String resolveNoticeUuid(Long applyId)
+    {
+        List<CompetitionApplyAttachment> list = competitionApplyMapper.selectCompetitionApplyAttachmentListByApplyId(applyId);
+        if (list == null || list.isEmpty())
+        {
+            return null;
+        }
+        for (CompetitionApplyAttachment item : list)
+        {
+            if (item == null)
+            {
+                continue;
+            }
+            Integer type = item.getAttachmentType();
+            if (type != null && type == NOTICE_ATTACHMENT_TYPE && StringUtils.isNotBlank(item.getUuid()))
+            {
+                return StringUtils.trim(item.getUuid());
+            }
+        }
+        return null;
+    }
 
     /**
      * 查询赛事申请（关联查询附件列表，供前端修改页面使用）
@@ -221,27 +373,32 @@ public class CompetitionApplyServiceImpl implements ICompetitionApplyService
         SysUser currentUser = SecurityUtils.getLoginUser().getUser();
         if (StringUtils.isNotNull(currentUser)) {
             competitionApply.setApplicantUserId(currentUser.getUserId().toString());
-            // 注意：deptId 可能为空（比如用户未绑定部门，或登录信息未回填deptId），避免空指针
-            Long deptId = currentUser.getDeptId();
-            if (deptId == null && currentUser.getUserId() != null) {
-                // 兜底：从数据库查询一次用户信息获取deptId
+            // 申请人学院：稳定优先，从学生/教师档案取学院deptId；否则从sys_user.deptId上提
+            Long collegeDeptId = resolveCollegeDeptId(currentUser);
+            if (collegeDeptId == null && currentUser.getUserId() != null)
+            {
+                // 兜底：登录信息未回填deptId时，从库里补一次deptId再上提
                 SysUser dbUser = sysUserMapper.selectUserById(currentUser.getUserId());
-                if (dbUser != null) {
-                    deptId = dbUser.getDeptId();
+                if (dbUser != null)
+                {
+                    collegeDeptId = resolveCollegeFromDeptTree(dbUser.getDeptId());
                 }
             }
-            if (deptId != null) {
-                competitionApply.setApplicantDepId(deptId.toString());
-            } else if (StringUtils.isBlank(competitionApply.getApplicantDepId())) {
-                // 前端若传空串，这里统一置空，避免写入数值字段时报类型转换错误
-                competitionApply.setApplicantDepId(null);
-            }
+            competitionApply.setApplicantDepId(collegeDeptId == null ? null : String.valueOf(collegeDeptId));
             competitionApply.setCreateBy(currentUser.getUserName());
             competitionApply.setUpdateBy(currentUser.getUserName());
         }
         if (StringUtils.isNull(competitionApply.getStatus())) competitionApply.setStatus("0");
         if (StringUtils.isNull(competitionApply.getScopeType())) competitionApply.setScopeType("0");
         if (StringUtils.isNull(competitionApply.getCreateTime())) competitionApply.setCreateTime(new Date());
+        if (competitionApply.getYear() == null || competitionApply.getYear() <= 0)
+        {
+            competitionApply.setYear(java.time.LocalDate.now().getYear());
+        }
+        if (StringUtils.isBlank(competitionApply.getSession()))
+        {
+            throw new ServiceException("届次不能为空");
+        }
 
         // 2. 插入主表（确保ID回写）
         int mainResult = competitionApplyMapper.insertCompetitionApply(competitionApply);
@@ -310,6 +467,16 @@ public class CompetitionApplyServiceImpl implements ICompetitionApplyService
             competitionApply.setAuditTime(null);
             competitionApply.setAuditRemark(null);
             competitionApply.setCompetitionId(null);
+            competitionApply.setSessionId(null);
+        }
+
+        if (competitionApply.getYear() == null || competitionApply.getYear() <= 0)
+        {
+            competitionApply.setYear(java.time.LocalDate.now().getYear());
+        }
+        if (StringUtils.isBlank(competitionApply.getSession()))
+        {
+            throw new ServiceException("届次不能为空");
         }
 
         // 填充更新人、更新时间
@@ -467,51 +634,115 @@ public class CompetitionApplyServiceImpl implements ICompetitionApplyService
 
         // 3) 已通过且已生成赛事的，不重复生成
         Long competitionId = existing.getCompetitionId();
-        if ("1".equals(status) && competitionId == null)
+        Long sessionId = existing.getSessionId();
+        if ("1".equals(status))
         {
-            // 3.1 生成赛事主表数据（sam_competition）
-            Competition competition = new Competition();
-            competition.setName(existing.getName());
-            competition.setCategory(existing.getCategory());
-            competition.setOrganizations(existing.getOrganizations());
-            competition.setLevel(existing.getLevel());
-            competition.setTags(existing.getTags());
-            competition.setScopeType(existing.getScopeType());
-            // 默认启用
-            competition.setStatus("1");
-            competition.setMemo(existing.getMemo());
-            competition.setDelFlag("0");
-
-            // 适用范围为“指定学院”时，默认把申请人学院写入赛事-部门关系
-            if ("1".equals(existing.getScopeType()) && StringUtils.isNotBlank(existing.getApplicantDepId()))
-            {
-                try
-                {
-                    CompetitionDeptRel rel = new CompetitionDeptRel();
-                    rel.setDeptId(Long.valueOf(existing.getApplicantDepId()));
-                    rel.setDelFlag("0");
-                    List<CompetitionDeptRel> relList = new ArrayList<>();
-                    relList.add(rel);
-                    competition.setCompetitionDeptRelList(relList);
-                }
-                catch (NumberFormatException ignore)
-                {
-                    // applicantDepId 非数字时忽略学院关系，不影响审核通过
-                }
-            }
-
-            SysUser auditor = SecurityUtils.getLoginUser().getUser();
-            if (auditor != null)
-            {
-                competition.setCreateBy(auditor.getUserName());
-                competition.setUpdateBy(auditor.getUserName());
-            }
-
-            competitionService.insertCompetition(competition);
-            competitionId = competition.getId();
+            // 3.1 先保证存在主赛事（按名称唯一）
             if (competitionId == null)
             {
-                throw new ServiceException("审核通过失败：赛事生成异常");
+                Competition comp = competitionService.selectCompetitionByCompName(existing.getName());
+                if (comp == null)
+                {
+                    Competition competition = new Competition();
+                    competition.setName(existing.getName());
+                    competition.setCategory(existing.getCategory());
+                    competition.setOrganizations(existing.getOrganizations());
+                    competition.setLevel(existing.getLevel());
+                    competition.setTags(existing.getTags());
+                    competition.setScopeType(existing.getScopeType());
+                    // 默认启用
+                    competition.setStatus("1");
+                    competition.setMemo(existing.getMemo());
+                    competition.setDelFlag("0");
+
+                    // 适用范围为“指定学院”时，默认把申请人学院写入赛事-部门关系
+                    if ("1".equals(existing.getScopeType()) && StringUtils.isNotBlank(existing.getApplicantDepId()))
+                    {
+                        try
+                        {
+                            CompetitionDeptRel rel = new CompetitionDeptRel();
+                            rel.setDeptId(Long.valueOf(existing.getApplicantDepId()));
+                            rel.setDelFlag("0");
+                            List<CompetitionDeptRel> relList = new ArrayList<>();
+                            relList.add(rel);
+                            competition.setCompetitionDeptRelList(relList);
+                        }
+                        catch (NumberFormatException ignore)
+                        {
+                            // applicantDepId 非数字时忽略学院关系，不影响审核通过
+                        }
+                    }
+
+                    SysUser auditor = SecurityUtils.getLoginUser().getUser();
+                    if (auditor != null)
+                    {
+                        competition.setCreateBy(auditor.getUserName());
+                        competition.setUpdateBy(auditor.getUserName());
+                    }
+
+                    competitionService.insertCompetition(competition);
+                    comp = competitionService.selectCompetitionByCompName(existing.getName());
+                    if (comp == null)
+                    {
+                        throw new ServiceException("审核通过失败：赛事生成异常");
+                    }
+                }
+                competitionId = comp.getId();
+            }
+
+            // 3.2 再保证存在届次（主赛事 + 届次文本唯一）
+            if (sessionId == null)
+            {
+                if (StringUtils.isBlank(existing.getSession()))
+                {
+                    throw new ServiceException("审核通过失败：届次不能为空");
+                }
+                if (existing.getYear() == null || existing.getYear() <= 0)
+                {
+                    throw new ServiceException("审核通过失败：年份不能为空");
+                }
+
+                String noticeUuid = resolveNoticeUuid(id);
+                if (StringUtils.isBlank(noticeUuid))
+                {
+                    throw new ServiceException("审核通过失败：未找到通知文件附件");
+                }
+
+                Session query = new Session();
+                query.setCompetitionId(competitionId);
+                query.setSession(existing.getSession());
+                List<Session> existSessions = sessionMapper.selectSessionList(query);
+                if (existSessions != null && !existSessions.isEmpty())
+                {
+                    sessionId = existSessions.get(0).getId();
+                }
+                else
+                {
+                    Session newSession = new Session();
+                    newSession.setCompetitionId(competitionId);
+                    newSession.setSession(existing.getSession());
+                    newSession.setYear(existing.getYear());
+                    newSession.setUuid(noticeUuid);
+                    newSession.setCategory(existing.getCategory());
+                    newSession.setOrganizations(existing.getOrganizations());
+                    newSession.setLevel(existing.getLevel());
+                    newSession.setTags(existing.getTags());
+                    newSession.setStatus("1");
+                    newSession.setDelFlag("0");
+
+                    SysUser auditor = SecurityUtils.getLoginUser().getUser();
+                    if (auditor != null)
+                    {
+                        newSession.setCreateBy(auditor.getUserName());
+                        newSession.setUpdateBy(auditor.getUserName());
+                    }
+                    sessionService.insertSession(newSession);
+                    sessionId = newSession.getId();
+                    if (sessionId == null)
+                    {
+                        throw new ServiceException("审核通过失败：届次生成异常");
+                    }
+                }
             }
         }
 
@@ -531,6 +762,7 @@ public class CompetitionApplyServiceImpl implements ICompetitionApplyService
         if ("1".equals(status))
         {
             update.setCompetitionId(competitionId);
+            update.setSessionId(sessionId);
         }
         return competitionApplyMapper.updateCompetitionApply(update);
     }

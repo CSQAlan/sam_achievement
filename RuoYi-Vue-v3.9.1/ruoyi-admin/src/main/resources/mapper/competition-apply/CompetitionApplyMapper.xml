@@ -10,6 +10,8 @@
         <result property="applicantUserId" column="applicant_user_id" />
         <result property="applicantDepId"  column="applicant_dep_id"  />
         <result property="name"         column="name"              />
+        <result property="session"      column="session"           />
+        <result property="year"         column="year"              />
         <result property="category"     column="category"          />
         <result property="organizations" column="organizations"     />
         <result property="level"        column="level"             />
@@ -21,6 +23,7 @@
         <result property="auditTime"    column="audit_time"        />
         <result property="auditRemark"  column="audit_remark"      />
         <result property="competitionId" column="competition_id"    />
+        <result property="sessionId"    column="session_id"        />
         <result property="createBy"     column="create_by"         />
         <result property="createTime"   column="create_time"       />
         <result property="updateBy"     column="update_by"         />
@@ -58,6 +61,8 @@
         a.applicant_user_id,
         a.applicant_dep_id,
         a.name,
+        a.session,
+        a.year,
         a.category,
         a.organizations,
         a.level,
@@ -69,6 +74,7 @@
         a.audit_time,
         a.audit_remark,
         a.competition_id,
+        a.session_id,
         a.create_by,
         a.create_time,
         a.update_by,
@@ -101,6 +107,8 @@
                 AND d.dept_name LIKE CONCAT('%', #{deptName}, '%')
             </if>
             <if test="name != null  and name != ''"> and name like concat('%', #{name}, '%')</if>
+            <if test="session != null and session != ''"> and a.session = #{session}</if>
+            <if test="year != null"> and a.year = #{year}</if>
             <if test="category != null  and category != ''"> and category = #{category}</if>
             <if test="level != null  and level != ''"> and level = #{level}</if>
             <if test="scopeType != null  and scopeType != ''"> and scope_type = #{scopeType}</if>
@@ -141,6 +149,8 @@
             <if test="applicantUserId != null">applicant_user_id,</if>
             <if test="applicantDepId != null">applicant_dep_id,</if>
             <if test="name != null and name != ''">name,</if>
+            <if test="session != null and session != ''">session,</if>
+            <if test="year != null">year,</if>
             <if test="category != null and category != ''">category,</if>
             <if test="organizations != null and organizations != ''">organizations,</if>
             <if test="level != null and level != ''">level,</if>
@@ -152,6 +162,7 @@
             <if test="auditTime != null">audit_time,</if>
             <if test="auditRemark != null">audit_remark,</if>
             <if test="competitionId != null">competition_id,</if>
+            <if test="sessionId != null">session_id,</if>
             <if test="createBy != null">create_by,</if>
             <if test="createTime != null">create_time,</if>
             <if test="updateBy != null">update_by,</if>
@@ -163,6 +174,8 @@
             <if test="applicantUserId != null">#{applicantUserId},</if>
             <if test="applicantDepId != null">#{applicantDepId},</if>
             <if test="name != null and name != ''">#{name},</if>
+            <if test="session != null and session != ''">#{session},</if>
+            <if test="year != null">#{year},</if>
             <if test="category != null and category != ''">#{category},</if>
             <if test="organizations != null and organizations != ''">#{organizations},</if>
             <if test="level != null and level != ''">#{level},</if>
@@ -174,6 +187,7 @@
             <if test="auditTime != null">#{auditTime},</if>
             <if test="auditRemark != null">#{auditRemark},</if>
             <if test="competitionId != null">#{competitionId},</if>
+            <if test="sessionId != null">#{sessionId},</if>
             <if test="createBy != null">#{createBy},</if>
             <if test="createTime != null">#{createTime},</if>
             <if test="updateBy != null">#{updateBy},</if>
@@ -190,6 +204,8 @@
             <if test="applicantUserId != null">applicant_user_id = #{applicantUserId},</if>
             <if test="applicantDepId != null">applicant_dep_id = #{applicantDepId},</if>
             <if test="name != null and name != ''">name = #{name},</if>
+            <if test="session != null and session != ''">session = #{session},</if>
+            <if test="year != null">year = #{year},</if>
             <if test="category != null and category != ''">category = #{category},</if>
             <if test="organizations != null and organizations != ''">organizations = #{organizations},</if>
             <if test="level != null and level != ''">level = #{level},</if>
@@ -201,6 +217,7 @@
             <if test="auditTime != null">audit_time = #{auditTime},</if>
             <if test="auditRemark != null">audit_remark = #{auditRemark},</if>
             <if test="competitionId != null">competition_id = #{competitionId},</if>
+            <if test="sessionId != null">session_id = #{sessionId},</if>
             <if test="createBy != null">create_by = #{createBy},</if>
             <if test="createTime != null">create_time = #{createTime},</if>
             <if test="updateBy != null">update_by = #{updateBy},</if>

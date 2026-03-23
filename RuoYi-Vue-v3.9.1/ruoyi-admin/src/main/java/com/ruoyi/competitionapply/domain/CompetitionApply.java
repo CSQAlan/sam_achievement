@@ -45,6 +45,14 @@ public class CompetitionApply extends BaseEntity
     @Excel(name = "赛事名称")
     private String name;
 
+    /** 届次（例如2025、十二届） */
+    @Excel(name = "届次")
+    private String session;
+
+    /** 年份（默认当前年） */
+    @Excel(name = "年份")
+    private Integer year;
+
     /** 赛事类别 */
     @Excel(name = "赛事类别",dictType = "sys_competition_category")
     private String category;
@@ -90,6 +98,9 @@ public class CompetitionApply extends BaseEntity
 
     /** 生成赛事ID */
     private Long competitionId;
+
+    /** 生成届次ID */
+    private Long sessionId;
 
     /** 删除标记 */
     private String delFlag;
@@ -157,6 +168,26 @@ public class CompetitionApply extends BaseEntity
     public String getName()
     {
         return name;
+    }
+
+    public String getSession()
+    {
+        return session;
+    }
+
+    public void setSession(String session)
+    {
+        this.session = session;
+    }
+
+    public Integer getYear()
+    {
+        return year;
+    }
+
+    public void setYear(Integer year)
+    {
+        this.year = year;
     }
 
     public void setCategory(String category)
@@ -277,6 +308,16 @@ public class CompetitionApply extends BaseEntity
     public Long getCompetitionId()
     {
         return competitionId;
+    }
+
+    public Long getSessionId()
+    {
+        return sessionId;
+    }
+
+    public void setSessionId(Long sessionId)
+    {
+        this.sessionId = sessionId;
     }
 
     public void setDelFlag(String delFlag)
