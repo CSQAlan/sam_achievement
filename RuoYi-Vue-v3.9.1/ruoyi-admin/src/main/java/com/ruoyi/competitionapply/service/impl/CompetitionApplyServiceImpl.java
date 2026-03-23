@@ -273,8 +273,46 @@ public class CompetitionApplyServiceImpl implements ICompetitionApplyService
     @Override
     public int updateCompetitionApply(CompetitionApply competitionApply)
     {
-        // 填充更新人、更新时间
+        // 1) 先查原记录：用于权限与状态判断
+        if (competitionApply == null || competitionApply.getId() == null)
+        {
+            throw new ServiceException("参数错误：申请ID不能为空");
+        }
+        CompetitionApply existing = competitionApplyMapper.selectCompetitionApplyById(competitionApply.getId());
+        if (existing == null)
+        {
+            throw new ServiceException("赛事申请不存在");
+        }
+
+        // 2) 只有申请人本人才能修改（管理员不走此页面，后续要放开可再调整）
         SysUser currentUser = SecurityUtils.getLoginUser().getUser();
+        if (currentUser == null || currentUser.getUserId() == null)
+        {
+            throw new ServiceException("用户信息异常，无法修改");
+        }
+        String currentUserId = String.valueOf(currentUser.getUserId());
+        if (!StringUtils.equals(currentUserId, existing.getApplicantUserId()))
+        {
+            throw new ServiceException("无权限：只能修改自己的申请");
+        }
+
+        // 3) 状态流转：
+        // - 通过(1)：冻结，不允许再修改
+        // - 驳回(2)：允许覆盖原记录；提交后重置为待审(0)，并清空上次审核信息
+        if ("1".equals(existing.getStatus()))
+        {
+            throw new ServiceException("已审核通过，不能再修改");
+        }
+        if ("2".equals(existing.getStatus()))
+        {
+            competitionApply.setStatus("0");
+            competitionApply.setAuditBy(null);
+            competitionApply.setAuditTime(null);
+            competitionApply.setAuditRemark(null);
+            competitionApply.setCompetitionId(null);
+        }
+
+        // 填充更新人、更新时间
         if (StringUtils.isNotNull(currentUser)) {
             competitionApply.setUpdateBy(currentUser.getUserName());
         }
@@ -309,6 +347,29 @@ public class CompetitionApplyServiceImpl implements ICompetitionApplyService
     @Override
     public int deleteCompetitionApplyByIds(Long[] ids)
     {
+        // 仅允许删除自己的申请，且已通过的申请不允许删除
+        SysUser currentUser = SecurityUtils.getLoginUser().getUser();
+        if (currentUser == null || currentUser.getUserId() == null)
+        {
+            throw new ServiceException("用户信息异常，无法删除");
+        }
+        String currentUserId = String.valueOf(currentUser.getUserId());
+        for (Long id : ids)
+        {
+            CompetitionApply existing = competitionApplyMapper.selectCompetitionApplyById(id);
+            if (existing == null)
+            {
+                continue;
+            }
+            if (!StringUtils.equals(currentUserId, existing.getApplicantUserId()))
+            {
+                throw new ServiceException("无权限：只能删除自己的申请");
+            }
+            if ("1".equals(existing.getStatus()))
+            {
+                throw new ServiceException("已审核通过，不能删除");
+            }
+        }
         // 删除关联的附件
         competitionApplyMapper.deleteCompetitionApplyAttachmentByApplyIds(ids);
         return competitionApplyMapper.deleteCompetitionApplyByIds(ids);
@@ -324,6 +385,24 @@ public class CompetitionApplyServiceImpl implements ICompetitionApplyService
     @Override
     public int deleteCompetitionApplyById(Long id)
     {
+        SysUser currentUser = SecurityUtils.getLoginUser().getUser();
+        if (currentUser == null || currentUser.getUserId() == null)
+        {
+            throw new ServiceException("用户信息异常，无法删除");
+        }
+        CompetitionApply existing = competitionApplyMapper.selectCompetitionApplyById(id);
+        if (existing == null)
+        {
+            return 0;
+        }
+        if (!StringUtils.equals(String.valueOf(currentUser.getUserId()), existing.getApplicantUserId()))
+        {
+            throw new ServiceException("无权限：只能删除自己的申请");
+        }
+        if ("1".equals(existing.getStatus()))
+        {
+            throw new ServiceException("已审核通过，不能删除");
+        }
         // 删除关联的附件
         competitionApplyMapper.deleteCompetitionApplyAttachmentByApplyId(id);
         return competitionApplyMapper.deleteCompetitionApplyById(id);

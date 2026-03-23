@@ -21,7 +21,9 @@ import com.ruoyi.common.annotation.Log;
 import com.ruoyi.common.config.RuoYiConfig;
 import com.ruoyi.common.core.controller.BaseController;
 import com.ruoyi.common.core.domain.AjaxResult;
+import com.ruoyi.common.core.domain.entity.SysUser;
 import com.ruoyi.common.enums.BusinessType;
+import com.ruoyi.common.utils.SecurityUtils;
 import com.ruoyi.common.utils.StringUtils;
 import com.ruoyi.common.utils.file.FileUtils; // 保留这个导入，适配你的工具类
 import com.ruoyi.competitionapply.domain.CompetitionApply;
@@ -53,6 +55,13 @@ public class CompetitionApplyController extends BaseController
     @GetMapping("/list")
     public TableDataInfo list(CompetitionApply competitionApply)
     {
+        // 普通用户：只允许查询自己的申请；管理员（admin角色/超级管理员）可以查看全部
+        SysUser currentUser = SecurityUtils.getLoginUser().getUser();
+        boolean isAdmin = currentUser != null && (currentUser.isAdmin() || SecurityUtils.hasRole("admin"));
+        if (!isAdmin && currentUser != null && currentUser.getUserId() != null)
+        {
+            competitionApply.setApplicantUserId(String.valueOf(currentUser.getUserId()));
+        }
         startPage();
         List<CompetitionApply> list = competitionApplyService.selectCompetitionApplyList(competitionApply);
         return getDataTable(list);
