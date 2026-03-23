@@ -79,11 +79,12 @@
             </div>
           </div>
 
-
+          <el-button class="submit-btn" type="primary" :disabled="!selectedAuditStatus" @click="submitAudit">
+            提交审核
+          </el-button>
         </div>
       </div>
     </div>
-
   </div>
 </template>
 
@@ -743,6 +744,17 @@ async function submitAudit() {
     return;
   }
 
+  // ✅ 尽可能拿到当前登录用户（按你项目实际字段可能不同）
+  const auditUser =
+      proxy?.$store?.state?.user?.userName ||
+      proxy?.$store?.state?.user?.nickName ||
+      proxy?.$store?.state?.user?.name ||
+      "";
+
+  const now = new Date();
+  const collegeAuditReason = isCollegeReject.value ? rejectReason.value.trim() : "";
+  const schoolAuditReason = isSchoolReject.value ? rejectReason.value.trim() : "";
+
   try {
     const supportedSources = [
       "college_level_unreviewed",
@@ -766,6 +778,7 @@ async function submitAudit() {
     proxy.$modal?.msgSuccess?.(isCollegeSource.value ? "院级审核成功" : "校级审核成功");
     await jumpToNextAfterAudit(id);
   } catch (e) {
+    proxy.$modal?.msgError?.("审核失败（可能已归档/已推送或接口限制）");
     const errMsg =
         e?.response?.data?.msg ||
         e?.message ||

@@ -1,4 +1,5 @@
 import { createWebHistory, createRouter } from 'vue-router'
+
 /* Layout */
 import Layout from '@/layout'
 
@@ -48,16 +49,6 @@ export const constantRoutes = [
     hidden: true
   },
   {
-    path: '/noredirect',
-    redirect: '/user/profile',
-    hidden: true
-  },
-  {
-    path: '/achievement/noredirect',
-    redirect: '/user/profile',
-    hidden: true
-  },
-  {
     path: "/:pathMatch(.*)*",
     component: () => import('@/views/error/404'),
     hidden: true
@@ -84,7 +75,7 @@ export const constantRoutes = [
     path: '/user',
     component: Layout,
     hidden: true,
-    redirect: '/noredirect',
+    redirect: 'noredirect',
     children: [
       {
         path: 'profile/:activeTab?',
@@ -167,12 +158,23 @@ export const dynamicRoutes = [
         meta: { title: '修改生成配置', activeMenu: '/tool/gen' }
       }
     ]
-  }
+  },
+  
+  // 新增报销项目关联成果路由
+  // 在路由配置中添加
+{
+  path: '/reimbursement/achievement',
+  component: () => import('@/views/system/view/index.vue'),  // 直接使用组件，不用Layout
+  name: 'ReimbursementAchievement',
+  hidden: true,
+  meta: { title: '关联成果', icon: 'list' }
+}
 ]
 
 const router = createRouter({
   history: createWebHistory(),
-  routes: constantRoutes,
+   // 合并 constantRoutes 和 dynamicRoutes
+  routes: [...constantRoutes, ...dynamicRoutes],
   scrollBehavior(to, from, savedPosition) {
     if (savedPosition) {
       return savedPosition

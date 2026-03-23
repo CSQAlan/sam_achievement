@@ -2,7 +2,7 @@ package com.ruoyi.achievement.mapper;
 
 import java.util.List;
 import java.util.Map;
-import org.apache.ibatis.annotations.Mapper;
+import org.apache.ibatis.annotations.Param;
 import com.ruoyi.achievement.domain.SamAchievement;
 import com.ruoyi.achievement.domain.SamAchievementParticipant;
 import com.ruoyi.achievement.domain.SamAchievementAdvisor;
@@ -13,7 +13,6 @@ import com.ruoyi.achievement.domain.SamAchievementAdvisor;
  * @author 王璨
  * @date 2026-02-03
  */
-@Mapper
 public interface SamAchievementMapper 
 {
     /**
@@ -36,11 +35,6 @@ public interface SamAchievementMapper
      * 查询我参与的成果列表（学生端-非负责人）
      */
     public List<SamAchievement> selectSamAchievementListByStudentId(SamAchievement samAchievement);
-
-    /**
-     * 查询我负责的成果列表（学生负责人）
-     */
-    public List<SamAchievement> selectSamAchievementListByResponsibleStudentId(SamAchievement samAchievement);
 
     /**
      * 查询我指导的成果列表（教师端）
@@ -88,9 +82,19 @@ public interface SamAchievementMapper
      * 校验证书编号是否唯一
      *
      * @param certificateNo 证书编号
+     * @param competitionId 赛事ID
      * @return 结果
      */
-    public SamAchievement checkCertificateNoUnique(String certificateNo);
+    public SamAchievement checkCertificateNoUnique(@Param("certificateNo") String certificateNo, @Param("competitionId") String competitionId);
+
+    /**
+     * 根据比赛和届次查询已有的赛道列表
+     *
+     * @param competitionId 比赛ID
+     * @param sessionId 届次ID
+     * @return 赛道列表
+     */
+    public List<String> selectTrackList(@Param("competitionId") Long competitionId, @Param("sessionId") Long sessionId);
 
     /**
      * 批量删除参赛选手
