@@ -63,6 +63,9 @@ public class Session extends BaseEntity
     private String status;
     private String delFlag;
 
+    /** 新增year年份和uuid（对应每一个届次的比赛通知）**/
+    private String uuid;
+    private int year;
     // ====================== getter/setter 完整实现 ======================
     public Long getId() {return id;}
     public void setId(Long id) {this.id = id;}
@@ -121,5 +124,21 @@ public class Session extends BaseEntity
                 .append("tagsList", getTagsList())
                 .append("delFlag", getDelFlag())
                 .toString();
+    }
+
+    public String getUuid() {
+        return uuid;
+    }
+
+    public void setUuid(String uuid) {
+        this.uuid = uuid;
+    }
+
+    public int getYear() {
+        return year;
+    }
+
+    public void setYear(int year) {
+        this.year = year;
     }
 }

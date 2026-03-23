@@ -65,6 +65,12 @@ public class CompetitionApply extends BaseEntity
     @Excel(name = "审核状态",dictType = "sys_shenhe_status")
     private String status;
 
+    /**
+     * 查询用：审核类型
+     * 0=未审核（只查待审），1=已审核（查通过+驳回），为空=全部
+     */
+    private String reviewedFlag;
+
     /** 标签 */
     @Excel(name = "标签",dictType = "sys_competition_tag")
     private String tags;
@@ -201,6 +207,16 @@ public class CompetitionApply extends BaseEntity
     public String getStatus()
     {
         return status;
+    }
+
+    public String getReviewedFlag()
+    {
+        return reviewedFlag;
+    }
+
+    public void setReviewedFlag(String reviewedFlag)
+    {
+        this.reviewedFlag = reviewedFlag;
     }
 
     public void setTags(String tags)

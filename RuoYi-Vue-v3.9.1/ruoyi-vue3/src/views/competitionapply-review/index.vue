@@ -7,17 +7,17 @@
       label-width="90px"
       v-show="showSearch"
     >
-      <el-form-item label="申请人学号" prop="applicantUserId">
+      <el-form-item label="申请人学号" prop="userName">
         <el-input
-          v-model="queryParams.applicantUserId"
+          v-model="queryParams.userName"
           placeholder="请输入申请人学号"
           clearable
           @keyup.enter="handleQuery"
         />
       </el-form-item>
-      <el-form-item label="申请人学院" prop="applicantDepId">
+      <el-form-item label="申请人学院" prop="deptName">
         <el-input
-          v-model="queryParams.applicantDepId"
+          v-model="queryParams.deptName"
           placeholder="请输入申请人学院"
           clearable
           @keyup.enter="handleQuery"
@@ -73,14 +73,26 @@
           />
         </el-select>
       </el-form-item>
+      <el-form-item label="审核范围" prop="reviewedFlag">
+        <el-select
+          v-model="queryParams.reviewedFlag"
+          placeholder="请选择审核范围"
+          clearable
+        >
+          <el-option label="全部" value="" />
+          <el-option label="未审核" value="0" />
+          <el-option label="已审核" value="1" />
+        </el-select>
+      </el-form-item>
       <el-form-item label="审核状态" prop="status">
         <el-select
           v-model="queryParams.status"
           placeholder="请选择审核状态"
           clearable
+          :disabled="String(queryParams.reviewedFlag) === '0'"
         >
           <el-option
-            v-for="dict in sys_shenhe_status"
+            v-for="dict in statusOptions"
             :key="dict.value"
             :label="dict.label"
             :value="dict.value"
@@ -459,15 +471,28 @@ const routePreviewUrl = ref("");
 const queryParams = ref({
   pageNum: 1,
   pageSize: 10,
-  applicantUserId: null,
-  applicantDepId: null,
+  userName: null,
+  deptName: null,
   name: null,
   category: null,
   level: null,
   scopeType: null,
-  // 审核页面默认只看“待审”
+  // 审核页面默认只看“未审核（待审）”
+  reviewedFlag: "0",
   status: "0",
   memo: null,
+});
+
+const statusOptions = computed(() => {
+  const options = sys_shenhe_status.value || [];
+  const reviewedFlag = String(queryParams.value.reviewedFlag ?? "");
+  if (reviewedFlag === "1") {
+    return options.filter((item) => ["1", "2"].includes(String(item.value)));
+  }
+  if (reviewedFlag === "0") {
+    return options.filter((item) => String(item.value) === "0");
+  }
+  return options;
 });
 
 const rules = {
@@ -821,6 +846,20 @@ function resetQuery() {
   proxy.resetForm("queryRef");
   handleQuery();
 }
+
+watch(
+  () => queryParams.value.reviewedFlag,
+  (flag) => {
+    const reviewedFlag = String(flag ?? "");
+    // 未审核：强制待审；已审核：默认不过滤具体结果；全部：不过滤
+    if (reviewedFlag === "0") {
+      queryParams.value.status = "0";
+      return;
+    }
+    queryParams.value.status = null;
+  },
+  { immediate: true }
+);
 
 function handleSelectionChange(selection) {
   ids.value = selection.map((item) => item.id);

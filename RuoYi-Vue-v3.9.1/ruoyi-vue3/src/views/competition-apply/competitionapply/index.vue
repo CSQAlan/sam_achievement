@@ -7,22 +7,6 @@
       label-width="90px"
       v-show="showSearch"
     >
-      <el-form-item label="申请人学号" prop="applicantUserId">
-        <el-input
-          v-model="queryParams.applicantUserId"
-          placeholder="请输入申请人学号"
-          clearable
-          @keyup.enter="handleQuery"
-        />
-      </el-form-item>
-      <el-form-item label="申请人学院" prop="applicantDepId">
-        <el-input
-          v-model="queryParams.applicantDepId"
-          placeholder="请输入申请人学院"
-          clearable
-          @keyup.enter="handleQuery"
-        />
-      </el-form-item>
       <el-form-item label="赛事名称" prop="name">
         <el-input
           v-model="queryParams.name"
@@ -112,7 +96,7 @@
           type="success"
           plain
           icon="Edit"
-          :disabled="single"
+          :disabled="single || !canEditSelection"
           @click="handleUpdate()"
           v-hasPermi="['competition-apply:competitionapply:edit']"
         >
@@ -124,7 +108,7 @@
           type="danger"
           plain
           icon="Delete"
-          :disabled="multiple"
+          :disabled="multiple || !canDeleteSelection"
           @click="handleDelete()"
           v-hasPermi="['competition-apply:competitionapply:remove']"
         >
@@ -202,6 +186,7 @@
       >
         <template #default="scope">
           <el-button
+            v-if="String(scope.row.status) !== '1'"
             link
             type="primary"
             icon="Edit"
@@ -211,6 +196,7 @@
             修改
           </el-button>
           <el-button
+            v-if="String(scope.row.status) !== '1'"
             link
             type="primary"
             icon="Delete"
@@ -219,6 +205,7 @@
           >
             删除
           </el-button>
+          <span v-else class="text-muted">已通过</span>
         </template>
       </el-table-column>
     </el-table>
@@ -493,19 +480,20 @@ const showSearch = ref(true);
 const loading = ref(false);
 const competitionapplyList = ref([]);
 const ids = ref([]);
+const selectedRows = ref([]);
 const single = ref(true);
 const multiple = ref(true);
 const total = ref(0);
 const open = ref(false);
 const title = ref("");
+const canEditSelection = ref(false);
+const canDeleteSelection = ref(false);
 const activeAttachmentTab = ref("certificate");
 const routePreviewUrl = ref("");
 
 const queryParams = ref({
   pageNum: 1,
   pageSize: 10,
-  applicantUserId: null,
-  applicantDepId: null,
   name: null,
   category: null,
   level: null,
@@ -867,9 +855,17 @@ function resetQuery() {
 }
 
 function handleSelectionChange(selection) {
+  selectedRows.value = selection || [];
   ids.value = selection.map((item) => item.id);
   single.value = selection.length !== 1;
   multiple.value = selection.length === 0;
+
+  // 已通过(1)的申请：不允许修改/删除
+  canEditSelection.value =
+    selection.length === 1 && String(selection[0]?.status) !== "1";
+  canDeleteSelection.value =
+    selection.length > 0 &&
+    selection.every((row) => String(row?.status) !== "1");
 }
 
 function handleAdd() {
@@ -881,6 +877,11 @@ function handleAdd() {
 function handleUpdate(row) {
   const id = row?.id || ids.value[0];
   if (!id) {
+    return;
+  }
+  const status = row?.status ?? selectedRows.value?.[0]?.status;
+  if (String(status) === "1") {
+    proxy.$modal.msgWarning("已审核通过，不能再修改");
     return;
   }
   reset();
@@ -998,6 +999,10 @@ getList();
   border: 1px solid #dcdfe6;
   border-radius: 4px;
   background: #f5f7fa;
+}
+
+.text-muted {
+  color: var(--el-text-color-secondary);
 }
 
 .file-name {

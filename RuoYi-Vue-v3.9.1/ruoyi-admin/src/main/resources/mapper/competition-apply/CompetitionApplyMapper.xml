@@ -86,18 +86,37 @@
     <select id="selectCompetitionApplyList" parameterType="CompetitionApply" resultMap="CompetitionApplyResult">
         <include refid="selectCompetitionApplyVo"/>
         <where>
+            <!-- applicantUserId/applicantDepId：按ID精确匹配（用于后端强约束/精确过滤） -->
             <if test="applicantUserId != null and applicantUserId != ''">
-                AND u.user_name LIKE CONCAT('%', #{applicantUserId}, '%')
+                and a.applicant_user_id = #{applicantUserId}
             </if>
             <if test="applicantDepId != null and applicantDepId != ''">
-                AND d.dept_name LIKE CONCAT('%', #{applicantDepId}, '%')
+                and a.applicant_dep_id = #{applicantDepId}
+            </if>
+            <!-- userName/deptName：按展示名称模糊匹配（管理员筛选用） -->
+            <if test="userName != null and userName != ''">
+                AND u.user_name LIKE CONCAT('%', #{userName}, '%')
+            </if>
+            <if test="deptName != null and deptName != ''">
+                AND d.dept_name LIKE CONCAT('%', #{deptName}, '%')
             </if>
             <if test="name != null  and name != ''"> and name like concat('%', #{name}, '%')</if>
             <if test="category != null  and category != ''"> and category = #{category}</if>
             <if test="level != null  and level != ''"> and level = #{level}</if>
             <if test="scopeType != null  and scopeType != ''"> and scope_type = #{scopeType}</if>
             <if test="status != null  and status != ''"> and a.status = #{status}</if>
-            <if test="memo != null  and memo != ''"> and memo = #{memo}</if>
+            <!-- reviewedFlag：已审核/未审核快捷筛选；当显式传status时，以status为准 -->
+            <if test="reviewedFlag != null and reviewedFlag != '' and (status == null or status == '')">
+                <choose>
+                    <when test="reviewedFlag == '0'">
+                        and a.status = '0'
+                    </when>
+                    <when test="reviewedFlag == '1'">
+                        and a.status in ('1','2')
+                    </when>
+                </choose>
+            </if>
+            <if test="memo != null  and memo != ''"> and a.memo = #{memo}</if>
         </where>
     </select>
 
