@@ -1319,7 +1319,7 @@ import {
 import { listStudent, addStudent } from "@/api/achievement/student";
 import { listTeacher, addTeacher } from "@/api/achievement/teacher";
 import { listDept } from "@/api/system/dept";
-import { handleTree } from "@/utils/ruoyi";
+import { handleTree, blobValidate } from "@/utils/ruoyi";
 import request from "@/utils/request";
 import FileUpload from "@/components/FileUpload";
 
@@ -1957,6 +1957,29 @@ const previewUrls = reactive({
   receipt: "",
 });
 
+async function getBlobErrorMessage(blob, fallback = "文件获取失败，请稍后重试") {
+  try {
+    const text = await blob.text();
+    const data = JSON.parse(text);
+    return data?.msg || fallback;
+  } catch (e) {
+    return fallback;
+  }
+}
+
+async function ensurePdfBlob(blob, fallback = "文件获取失败，请稍后重试") {
+  const blobData = blob?.data || blob;
+  if (!blobData) {
+    throw new Error(fallback);
+  }
+
+  if (!blobValidate(blobData)) {
+    throw new Error(await getBlobErrorMessage(blobData, fallback));
+  }
+
+  return new Blob([blobData], { type: "application/pdf" });
+}
+
 function loadSafePreview(uuid, type) {
   if (!uuid) {
     if (previewUrls[type]) window.URL.revokeObjectURL(previewUrls[type]);
@@ -1969,12 +1992,10 @@ function loadSafePreview(uuid, type) {
     params: { resource: uuid },
     responseType: "blob",
   })
-    .then((blob) => {
+    .then(async (blob) => {
       if (previewUrls[type]) window.URL.revokeObjectURL(previewUrls[type]);
 
-      // 【关键修复】：兼容若依拦截器，确保拿到的是纯净的二进制数据
-      const blobData = blob.data || blob;
-      const blobWithMime = new Blob([blobData], { type: "application/pdf" });
+      const blobWithMime = await ensurePdfBlob(blob, "PDF预览加载失败");
       previewUrls[type] = window.URL.createObjectURL(blobWithMime);
     })
     .catch((err) => {
@@ -1995,11 +2016,10 @@ function handleOpenDetail(uuid) {
     params: { resource: uuid },
     responseType: "blob",
   })
-    .then((blob) => {
+    .then(async (blob) => {
       proxy.$modal.closeLoading();
 
-      const blobData = blob.data || blob;
-      const blobWithMime = new Blob([blobData], { type: "application/pdf" });
+      const blobWithMime = await ensurePdfBlob(blob, "文件获取失败，请稍后重试");
       const blobUrl = window.URL.createObjectURL(blobWithMime);
 
       // 将刚才的空白页重定向到生成的 PDF 链接
@@ -2014,7 +2034,7 @@ function handleOpenDetail(uuid) {
     .catch((err) => {
       proxy.$modal.closeLoading();
       if (newWin) newWin.close();
-      proxy.$modal.msgError("文件获取失败，请稍后重试");
+      proxy.$modal.msgError(err?.message || "文件获取失败，请稍后重试");
     });
 }
 function handleDownload(uuid) {
@@ -2028,13 +2048,10 @@ function handleDownload(uuid) {
     params: { resource: uuid },
     responseType: "blob", // 告诉 axios 我们要接收的是二进制数据流
   })
-    .then((blob) => {
+    .then(async (blob) => {
       proxy.$modal.closeLoading();
 
-      // 兼容若依拦截器，提取纯净数据
-      const blobData = blob.data || blob;
-      // 强制指定为 PDF 类型
-      const blobWithMime = new Blob([blobData], { type: "application/pdf" });
+      const blobWithMime = await ensurePdfBlob(blob, "下载失败，请稍后重试");
       const blobUrl = window.URL.createObjectURL(blobWithMime);
 
       // 创建一个隐藏的 a 标签来触发浏览器原生下载
@@ -2053,7 +2070,7 @@ function handleDownload(uuid) {
     .catch((err) => {
       proxy.$modal.closeLoading();
       console.error("下载异常", err);
-      proxy.$modal.msgError("下载失败，请稍后重试");
+      proxy.$modal.msgError(err?.message || "下载失败，请稍后重试");
     });
 }
 watch(
@@ -2501,16 +2518,22 @@ function submitForm() {
       const apiFn = isEdit ? props.updateFn : props.addFn;
 
       if (apiFn) {
-        apiFn(form.value).then((response) => {
-          proxy.$modal.msgSuccess(isEdit ? "修改成功" : "新增成功");
-          // 提交成功清除草稿
-          clearDraft();
-          updateSnapshot();
-          if (!isPageMode.value) visible.value = false;
-          emit("ok");
-        });
+        apiFn(form.value)
+          .then((response) => {
+            proxy.$modal.msgSuccess(isEdit ? "修改成功" : "新增成功");
+            // 提交成功清除草稿
+            clearDraft();
+            updateSnapshot();
+            if (!isPageMode.value) visible.value = false;
+            emit("ok");
+            resolve(true);
+          })
+          .catch((error) => {
+            reject(error);
+          });
       } else {
         proxy.$modal.msgError("未配置保存接口");
+        resolve(false);
       }
     });
   });
