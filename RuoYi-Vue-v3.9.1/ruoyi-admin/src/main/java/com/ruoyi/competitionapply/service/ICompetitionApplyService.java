@@ -1,7 +1,6 @@
 package com.ruoyi.competitionapply.service;
 
 import java.util.List;
-import org.springframework.web.multipart.MultipartFile; // 新增导入
 import com.ruoyi.competitionapply.domain.CompetitionApply;
 import com.ruoyi.competitionapply.domain.CompetitionApplyAttachment; // 新增导入
 
@@ -36,16 +35,6 @@ public interface ICompetitionApplyService
      * @return 结果
      */
     public int insertCompetitionApply(CompetitionApply competitionApply);
-
-    /**
-     * 新增赛事申请（带文件上传）- 核心新增方法
-     *
-     * @param competitionApply 赛事申请表单数据
-     * @param files 上传的附件文件（可多文件，允许为null）
-     * @return 结果
-     * @throws Exception 文件上传/数据库操作异常
-     */
-    public int insertCompetitionApplyWithFile(CompetitionApply competitionApply, MultipartFile[] files) throws Exception;
 
     /**
      * 修改赛事申请
@@ -85,5 +74,17 @@ public interface ICompetitionApplyService
      * @return 附件列表
      */
     public List<CompetitionApplyAttachment> selectCompetitionApplyAttachmentListByApplyId(Long applyId);
+
+    /**
+     * 审核赛事申请
+     * status：0=待审，1=通过，2=驳回，3=撤回
+     * 审核通过时会自动生成赛事（sam_competition）并回写competitionId
+     *
+     * @param id 赛事申请主键
+     * @param status 审核状态（1通过/2驳回）
+     * @param auditRemark 审核意见（驳回必填）
+     * @return 更新结果
+     */
+    int reviewCompetitionApply(Long id, String status, String auditRemark);
 
 }

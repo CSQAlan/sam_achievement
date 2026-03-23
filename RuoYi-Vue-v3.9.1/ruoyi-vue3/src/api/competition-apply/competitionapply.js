@@ -43,6 +43,15 @@ export function delCompetitionapply(id) {
   })
 }
 
+// 审核赛事申请（通过/驳回）
+export function reviewCompetitionapply(id, data) {
+  return request({
+    url: `/competition-apply/competitionapply/review/${id}`,
+    method: 'put',
+    data
+  })
+}
+
 // ====================== 新增：文件预览相关接口 ======================
 /**
  * 1. 查询指定赛事申请的附件列表

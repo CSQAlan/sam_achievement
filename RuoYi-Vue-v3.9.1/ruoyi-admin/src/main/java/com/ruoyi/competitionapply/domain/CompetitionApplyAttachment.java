@@ -29,8 +29,7 @@ public class CompetitionApplyAttachment extends BaseEntity
     private String uuid; // 新增字段，对应数据库uuid
 
     /** 文件路径 */
-    @Excel(name = "文件路径")
-    private String path; // 新增字段，对应数据库path
+
 
     /** 文档名称 */
     @Excel(name = "文档名称")
@@ -72,15 +71,7 @@ public class CompetitionApplyAttachment extends BaseEntity
         return uuid;
     }
 
-    public void setPath(String path)
-    {
-        this.path = path;
-    }
 
-    public String getPath()
-    {
-        return path;
-    }
 
     public void setDocumentName(String documentName)
     {
@@ -118,7 +109,7 @@ public class CompetitionApplyAttachment extends BaseEntity
                 .append("id", getId())
                 .append("competitionApplyId", getCompetitionApplyId())
                 .append("uuid", getUuid())
-                .append("path", getPath())
+
                 .append("documentName", getDocumentName())
                 .append("attachmentType", getAttachmentType())
                 .append("createBy", getCreateBy())
