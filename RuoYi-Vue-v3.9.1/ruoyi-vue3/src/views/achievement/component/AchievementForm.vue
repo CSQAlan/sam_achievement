@@ -236,15 +236,15 @@
                             <!-- 循环显示多个文件预览和操作行 -->
                            <template v-if="item.isMultiple && getFileList(form[item.prop]).length > 0">
   <div style="display: flex; flex-wrap: wrap; gap: 10px;">
-    <div v-for="(uuid, idx) in getFileList(form[item.prop])" :key="uuid"
+    <div v-for="(uuid) in getFileList(form[item.prop])" :key="uuid"
                                      :style="{
                                        marginBottom: '20px', 
                                        border: '1px dashed #ccc', 
                                        padding: '10px',
-                                       width: ((item.name === 'work' && form.hasFileWork === 1) || (item.name === 'photo' && form.hasFilePhoto === 1)) ? 'calc(33.33% - 7px)' : '100%',
+                                      width: ((item.name === 'work' && form.hasFileWork === 1) || (item.name === 'photo' && form.hasFilePhoto === 1)) ? 'calc(50% - 5px)' : '100%',
                                        boxSizing: 'border-box'
                                      }">
-                                  <div v-if="previewUrls[item.name] && previewUrls[item.name][idx]" class="preview-box">
+                                 <div v-if="previewUrls[item.name] && previewUrls[item.name][uuid]" class="preview-box">
                                <iframe :src="previewUrls[item.name][uuid]" width="100%"
                                             :height="((item.name === 'work' && form.hasFileWork === 1) || (item.name === 'photo' && form.hasFilePhoto === 1)) ? '200px' : '650px'" 
                                             frameborder="0"></iframe>
@@ -523,10 +523,10 @@
                                    marginBottom: '20px', 
                                    border: '1px dashed #ccc', 
                                    padding: '10px',
-                                   width: ((item.name === 'work' && form.hasFileWork === 1) || (item.name === 'photo' && form.hasFilePhoto === 1)) ? 'calc(33.33% - 7px)' : '100%',
+                                  width: ((item.name === 'work' && form.hasFileWork === 1) || (item.name === 'photo' && form.hasFilePhoto === 1)) ? 'calc(50% - 5px)' : '100%',
                                    boxSizing: 'border-box'
                                  }">
-                              <div v-if="previewUrls[item.name] && previewUrls[item.name][idx]" class="preview-box">
+                              <div v-if="previewUrls[item.name] && previewUrls[item.name][uuid]" class="preview-box">
                               <iframe :src="previewUrls[item.name][uuid]" width="100%"
                                         :height="((item.name === 'work' && form.hasFileWork === 1) || (item.name === 'photo' && form.hasFilePhoto === 1)) ? '200px' : '650px'" 
                                         frameborder="0"></iframe>
@@ -1356,10 +1356,11 @@ const visibleAttachments = computed(() => {
 
 const previewUrls = reactive({ award: "", notice: "", work: {}, photo: {}, payment: "", invoice: "", receipt: "" });
 
+// 生成安全的本地预览流
 function loadSafePreview(uuid, type, index = null) {
   if (!uuid) return;
 
-  // 对于多图类型，如果已经有预览了，不再重复加载
+  // 多图如果已有预览，跳过
   if (type === 'work' || type === 'photo') {
     if (previewUrls[type][uuid]) return;
   }
@@ -1370,8 +1371,16 @@ function loadSafePreview(uuid, type, index = null) {
     params: { resource: uuid },
     responseType: 'blob'
   }).then(blob => {
-    const blobData = blob.data || blob; 
-    const blobWithMime = new Blob([blobData], { type: 'application/pdf' });
+    const blobData = blob.data || blob;
+    let fileName = getFileName(uuid) || '';
+    
+    // 态识别文件类型，防止把图片强行当成 PDF 导致白屏
+    let mimeType = 'application/pdf'; // 默认当做 PDF
+    if (fileName.match(/\.(jpg|jpeg|png|gif)$/i) || (blobData.type && blobData.type.startsWith('image/'))) {
+      mimeType = blobData.type || 'image/jpeg';
+    }
+    
+    const blobWithMime = new Blob([blobData], { type: mimeType });
     const url = window.URL.createObjectURL(blobWithMime);
 
     if (type === 'work' || type === 'photo') {
@@ -1708,10 +1717,20 @@ function reset() {
   
   Object.keys(uploadUnlocked).forEach(k => uploadUnlocked[k] = false);
   
+ //区分单文件和多文件，防止多图的对象结构被破坏
   Object.keys(previewUrls).forEach(key => {
-    if (previewUrls[key]) {
-      window.URL.revokeObjectURL(previewUrls[key]);
-      previewUrls[key] = "";
+    if (typeof previewUrls[key] === 'string') {
+      if (previewUrls[key]) {
+        window.URL.revokeObjectURL(previewUrls[key]);
+        previewUrls[key] = "";
+      }
+    } else {
+      if (previewUrls[key]) {
+        Object.values(previewUrls[key]).forEach(url => {
+          if (url) window.URL.revokeObjectURL(url);
+        });
+        previewUrls[key] = {}; // 这里必须保持是对象 {}，绝不能变成 ""
+      }
     }
   });
   if(outcomeRefPage.value) outcomeRefPage.value.resetFields();
@@ -1782,17 +1801,21 @@ function submitForm() {
       if (!validatePDFUpload()) return;
 
       let attachments = [];
-      const pushFile = (type, path) => { 
+      const pushFile = (type, path) => {
         if (!path) return;
         if (Array.isArray(path)) {
           path.forEach(p => {
             if (p) attachments.push({ type: type, fileUuid: p, fileType: 1 });
           });
         } else {
-          attachments.push({ type: type, fileUuid: path, fileType: 1 }); 
+          // 兼容可能存在的逗号分隔字符串 (处理某些组件返回拼接字符串的情况)
+          const uuids = String(path).split(',');
+          uuids.forEach(u => {
+            const trimmed = u.trim();
+            if (trimmed) attachments.push({ type: type, fileUuid: trimmed, fileType: 1 });
+          });
         }
-      };
-      pushFile(1, form.value.fileAward);
+      };      pushFile(1, form.value.fileAward);
       pushFile(2, form.value.fileNotice);
       pushFile(3, form.value.fileWork);
       pushFile(8, form.value.filePhoto);
@@ -1833,9 +1856,18 @@ function submitForm() {
   });
 }
 
+//兼容若依上传后变成字符串的删除逻辑
 function handleRemoveFile(prop, uuid) {
+  if (!form.value[prop]) return;
+
   if (Array.isArray(form.value[prop])) {
+    // 如果是数组，直接过滤掉当前 uuid
     form.value[prop] = form.value[prop].filter(id => id !== uuid);
+  } else if (typeof form.value[prop] === 'string') {
+    // 如果是若依拼接的字符串，先拆成数组，过滤后再拼回去
+    let arr = form.value[prop].split(',').filter(id => id && id !== uuid);
+    // 如果删完还有剩余，保留字符串；如果全删光了，设为 null 触发必填校验
+    form.value[prop] = arr.length > 0 ? arr.join(',') : null;
   } else {
     form.value[prop] = null;
   }
@@ -1954,6 +1986,64 @@ onBeforeRouteLeave((to, from, next) => {
 
 function goToCompetitionApply() {
   proxy.$router.push('/views/competition-apply/index');
+}
+// 查看详情（在新标签页打开文件）
+function handleOpenDetail(uuid) {
+  if (!uuid) return proxy.$modal.msgError("文件不存在");
+  
+  // 使用 request 请求，自动携带 token
+  request({
+    url: '/attachment/download',
+    method: 'get',
+    params: { resource: uuid },
+    responseType: 'blob'
+  }).then(blob => {
+    const blobData = blob.data || blob; 
+    const blobWithMime = new Blob([blobData], { type: 'application/pdf' });
+    const url = window.URL.createObjectURL(blobWithMime);
+    window.open(url, '_blank');
+  }).catch(() => {
+    proxy.$modal.msgError("文件获取失败，请重试");
+  });
+}
+
+// 下载文件
+// 下载文件
+function handleDownload(uuid) {
+  if (!uuid) return proxy.$modal.msgError("文件不存在");
+  
+  request({
+    url: '/attachment/download',
+    method: 'get',
+    params: { resource: uuid },
+    responseType: 'blob'
+  }).then(blob => {
+    const blobData = blob.data || blob;
+    let fileName = getFileName(uuid) || '下载文件';
+    
+    // 【核心修复】：如果文件名没有小数点（没有后缀），强行加上 .pdf
+    if (!fileName.includes('.')) {
+      fileName += '.pdf';
+    }
+
+    // 推断正确的 MIME 类型
+    let mimeType = blobData.type;
+    if (!mimeType || mimeType === 'application/octet-stream') {
+      mimeType = fileName.toLowerCase().endsWith('.pdf') ? 'application/pdf' : 'image/jpeg';
+    }
+
+    const url = window.URL.createObjectURL(new Blob([blobData], { type: mimeType }));
+    const a = document.createElement('a');
+    a.style.display = 'none';
+    a.href = url;
+    a.download = fileName;
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    window.URL.revokeObjectURL(url); // 释放内存
+  }).catch(() => {
+    proxy.$modal.msgError("文件下载失败，请重试");
+  });
 }
 </script>
 
