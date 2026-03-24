@@ -126,6 +126,18 @@
         where session_id = #{id}
     </update>
 
+    <update id="updateSessionStatusByIds">
+        update sam_competition_session
+        set status = #{status},
+            update_by = #{updateBy},
+            update_time = now()
+        where session_id in
+        <foreach item="id" collection="ids" open="(" separator="," close=")">
+            #{id}
+        </foreach>
+          and del_flag = '0'
+    </update>
+
     <!-- 拆分删除方法1：删除成果表 -->
     <delete id="deleteAchievementBySessionId" parameterType="Long">
         delete from sam_achievement where session_id = #{sessionId} and del_flag = '0'

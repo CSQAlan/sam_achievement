@@ -65,6 +65,15 @@
         <el-button type="primary" plain icon="UploadFilled" @click="handleImportOpen"
           v-hasPermi="['session:session:import']">批量导入</el-button>
       </el-col>
+      <!-- 新增：批量启用“预录” -->
+      <el-col :span="2.2">
+        <el-button type="success" plain icon="CircleCheck" :disabled="!hasPreRecordSelection" @click="handleEnablePreRecord"
+          v-hasPermi="['session:session:edit']">批量启用预录</el-button>
+      </el-col>
+      <el-col :span="2.4">
+        <el-button type="primary" plain icon="CopyDocument" :disabled="!selectedRows.length" @click="handleBatchCopySelected"
+          v-hasPermi="['session:session:add']">批量复制（所选）</el-button>
+      </el-col>
       <right-toolbar v-model:showSearch="showSearch" @queryTable="getList"></right-toolbar>
     </el-row>
 
@@ -100,6 +109,8 @@
       </el-table-column>
       <el-table-column label="操作" align="center" class-name="small-padding fixed-width">
         <template #default="scope">
+          <el-button link type="primary" icon="DocumentCopy" @click="handleCopyTemplate(scope.row)"
+            v-hasPermi="['session:session:add']">复制模板</el-button>
           <el-button link type="primary" icon="Edit" @click="handleUpdate(scope.row)"
             v-hasPermi="['session:session:edit']">修改</el-button>
           <el-button link type="primary" icon="Delete" @click="handleDelete(scope.row)"
@@ -162,6 +173,26 @@
             <div class="attach-card">
               <el-divider content-position="left">参赛通知（PDF）</el-divider>
 
+              <div v-if="templateUuid" class="template-block">
+                <el-divider content-position="left">模板通知（只读）</el-divider>
+                <div class="custom-file-row">
+                  <div class="file-name">
+                    <el-icon class="mr5"><Document /></el-icon>
+                    <span>{{ templateUuid }}</span>
+                  </div>
+                  <div class="file-action">
+                    <el-button link type="primary" :icon="View" @click="handleOpenNoticeDetail(templateUuid)">预览</el-button>
+                    <el-button link type="primary" :icon="Download" @click="handleDownloadNotice(templateUuid)">下载</el-button>
+                  </div>
+                </div>
+
+                <div v-if="templatePreviewUrl" class="preview-box template-preview">
+                  <iframe :src="templatePreviewUrl" width="100%" height="240px" frameborder="0"></iframe>
+                </div>
+
+                <el-divider content-position="left">新参赛通知（必须重新上传）</el-divider>
+              </div>
+
               <el-form-item label-width="0" prop="uuid">
                 <upload-file v-if="!form.uuid" v-model="form.uuid" :limit="1" :fileSize="50" :fileType="['pdf']"
                   class="hide-file-list" @update:modelValue="handleNoticeUuidChange" />
@@ -221,13 +252,91 @@
         </div>
       </template>
     </el-dialog>
+
+    <!-- 新增：批量复制（勾选多条模板；每条必须上传新通知PDF） -->
+    <el-dialog title="批量复制（所选模板）" v-model="batchOpen" width="90vw" top="5vh" append-to-body class="batch-copy-dialog">
+      <el-row :gutter="20">
+        <el-col :span="14">
+          <el-table :data="batchItems" highlight-current-row @row-click="handleBatchRowClick" max-height="520px">
+            <el-table-column type="index" width="55" align="center" label="#" />
+            <el-table-column label="赛事" min-width="160" align="center" prop="competitionName" />
+            <el-table-column label="模板届次" min-width="140" align="center" prop="templateSession" />
+            <el-table-column label="年份" width="140" align="center">
+              <template #default="scope">
+                <el-input-number v-model="scope.row.year" :min="2000" :max="2100" controls-position="right" style="width: 120px" />
+              </template>
+            </el-table-column>
+            <el-table-column label="届次" min-width="180" align="center">
+              <template #default="scope">
+                <el-input v-model="scope.row.session" placeholder="请输入届次" />
+              </template>
+            </el-table-column>
+            <el-table-column label="参赛通知(PDF)" min-width="260" align="center">
+              <template #default="scope">
+                <el-tag v-if="!scope.row.uuid" type="info">未上传</el-tag>
+                <span v-else class="ellipsis">{{ scope.row.uuid }}</span>
+              </template>
+            </el-table-column>
+          </el-table>
+        </el-col>
+
+        <el-col :span="10">
+          <div class="attach-card batch-attach">
+            <el-divider content-position="left">当前行模板通知（只读）</el-divider>
+            <div v-if="activeBatchItem?.templateUuid" class="custom-file-row">
+              <div class="file-name">
+                <el-icon class="mr5"><Document /></el-icon>
+                <span>{{ activeBatchItem.templateUuid }}</span>
+              </div>
+              <div class="file-action">
+                <el-button link type="primary" :icon="View" @click="handleOpenNoticeDetail(activeBatchItem.templateUuid)">预览</el-button>
+                <el-button link type="primary" :icon="Download" @click="handleDownloadNotice(activeBatchItem.templateUuid)">下载</el-button>
+              </div>
+            </div>
+            <div v-if="batchTemplatePreviewUrl" class="preview-box template-preview">
+              <iframe :src="batchTemplatePreviewUrl" width="100%" height="220px" frameborder="0"></iframe>
+            </div>
+
+            <el-divider content-position="left">当前行新通知（必传PDF）</el-divider>
+            <div v-if="activeBatchItem && !activeBatchItem.uuid" class="batch-upload">
+              <upload-file v-model="batchItems[batchActiveIndex].uuid" :limit="1" :fileSize="50" :fileType="['pdf']"
+                :isShowTip="false" buttonText="上传PDF" class="hide-file-list"
+                @update:modelValue="val => handleBatchItemUuidChange(batchActiveIndex, val)" />
+              <div class="text-muted">上传成功后即可在下方预览，并允许提交批量复制</div>
+            </div>
+
+            <div v-if="activeBatchItem?.uuid" class="custom-file-row">
+              <div class="file-name">
+                <el-icon class="mr5"><Document /></el-icon>
+                <span>{{ activeBatchItem.uuid }}</span>
+              </div>
+              <div class="file-action">
+                <el-button link type="primary" :icon="View" @click="handleBatchSelectAndPreview(batchActiveIndex)">预览</el-button>
+                <el-button link type="primary" :icon="Download" @click="handleDownloadNotice(activeBatchItem.uuid)">下载</el-button>
+                <el-button link type="danger" :icon="Delete" @click="handleBatchItemDeleteUuid(batchActiveIndex)">删除</el-button>
+              </div>
+            </div>
+
+            <div v-if="batchPreviewUrl" class="preview-box">
+              <iframe :src="batchPreviewUrl" width="100%" height="300px" frameborder="0"></iframe>
+            </div>
+            <div v-else class="text-muted">点击左侧表格行切换当前行</div>
+          </div>
+        </el-col>
+      </el-row>
+
+      <template #footer>
+        <div class="dialog-footer">
+          <el-button @click="handleBatchCancel">取 消</el-button>
+          <el-button type="primary" @click="handleBatchSubmit">确 定 批 量 复 制</el-button>
+        </div>
+      </template>
+    </el-dialog>
   </div>
 </template>
 
 <script setup name="Session">
-import { listSession, getSession, delSession, addSession, updateSession } from "@/api/session/session"
-// 核心新增：导入/导出模板接口（和后端Controller接口对应）
-import { exportTemplateSession, importDataSession } from "@/api/session/session"
+import { listSession, getSession, delSession, addSession, updateSession, exportTemplateSession, importDataSession, updateSessionStatusByIds, batchCopySession } from "@/api/session/session"
 import { listCompetition } from "@/api/competition/competition"
 import request from "@/utils/request"
 import UploadFile from "@/components/FileUpload"
@@ -243,11 +352,14 @@ const open = ref(false)
 const loading = ref(true)
 const showSearch = ref(true)
 const ids = ref([])
+const selectedRows = ref([])
 const checkedTag = ref([])
 const single = ref(true)
 const multiple = ref(true)
 const total = ref(0)
 const title = ref("")
+
+const hasPreRecordSelection = computed(() => selectedRows.value.some(item => String(item?.status) === "2"))
 
 // 新增：导入相关响应式变量
 const importOpen = ref(false) // 导入弹窗开关
@@ -304,6 +416,16 @@ const data = reactive({
 const { queryParams, form, rules } = toRefs(data)
 
 const noticePreviewUrl = ref("")
+const templateUuid = ref("")
+const templatePreviewUrl = ref("")
+
+const batchOpen = ref(false)
+const batchTemplatePreviewUrl = ref("")
+const batchItems = ref([])
+const batchActiveIndex = ref(0)
+const batchPreviewUrl = ref("")
+
+const activeBatchItem = computed(() => batchItems.value?.[batchActiveIndex.value] || null)
 
 function normalizeUuid(value) {
   if (Array.isArray(value)) return normalizeUuid(value[0])
@@ -317,6 +439,27 @@ function revokeNoticePreview() {
   if (noticePreviewUrl.value) {
     window.URL.revokeObjectURL(noticePreviewUrl.value)
     noticePreviewUrl.value = ""
+  }
+}
+
+function revokeTemplatePreview() {
+  if (templatePreviewUrl.value) {
+    window.URL.revokeObjectURL(templatePreviewUrl.value)
+    templatePreviewUrl.value = ""
+  }
+}
+
+function revokeBatchTemplatePreview() {
+  if (batchTemplatePreviewUrl.value) {
+    window.URL.revokeObjectURL(batchTemplatePreviewUrl.value)
+    batchTemplatePreviewUrl.value = ""
+  }
+}
+
+function revokeBatchPreview() {
+  if (batchPreviewUrl.value) {
+    window.URL.revokeObjectURL(batchPreviewUrl.value)
+    batchPreviewUrl.value = ""
   }
 }
 
@@ -340,6 +483,42 @@ async function loadNoticePreview(uuid) {
   } catch (e) {
     console.error("参赛通知预览加载失败", e)
     noticePreviewUrl.value = ""
+  }
+}
+
+async function loadTemplatePreview(uuid) {
+  revokeTemplatePreview()
+  const normalizedUuid = normalizeUuid(uuid)
+  if (!normalizedUuid) return
+  try {
+    templatePreviewUrl.value = await fetchPdfObjectUrl(normalizedUuid)
+  } catch (e) {
+    console.error("模板通知预览加载失败", e)
+    templatePreviewUrl.value = ""
+  }
+}
+
+async function loadBatchTemplatePreview(uuid) {
+  revokeBatchTemplatePreview()
+  const normalizedUuid = normalizeUuid(uuid)
+  if (!normalizedUuid) return
+  try {
+    batchTemplatePreviewUrl.value = await fetchPdfObjectUrl(normalizedUuid)
+  } catch (e) {
+    console.error("批量复制-模板通知预览加载失败", e)
+    batchTemplatePreviewUrl.value = ""
+  }
+}
+
+async function loadBatchPreview(uuid) {
+  revokeBatchPreview()
+  const normalizedUuid = normalizeUuid(uuid)
+  if (!normalizedUuid) return
+  try {
+    batchPreviewUrl.value = await fetchPdfObjectUrl(normalizedUuid)
+  } catch (e) {
+    console.error("批量复制-通知预览加载失败", e)
+    batchPreviewUrl.value = ""
   }
 }
 
@@ -452,6 +631,8 @@ function cancel() {
 // 表单重置
 function reset() {
   revokeNoticePreview()
+  revokeTemplatePreview()
+  templateUuid.value = ""
   form.value = {
     id: null,
     competitionId: null,
@@ -462,7 +643,8 @@ function reset() {
     organizations: null,
     level: null,
     tags: [],
-    status: null,
+    status: "1",
+    templateSessionId: null,
     createBy: null,
     createTime: null,
     updateBy: null,
@@ -488,9 +670,331 @@ function resetQuery() {
 
 // 多选框选中数据
 function handleSelectionChange(selection) {
+  selectedRows.value = selection || []
   ids.value = selection.map(item => item.id)
   single.value = selection.length != 1
   multiple.value = !selection.length
+}
+
+function handleEnablePreRecord() {
+  const preRecordIds = selectedRows.value
+    .filter(item => String(item?.status) === "2")
+    .map(item => item.id)
+
+  if (!preRecordIds.length) {
+    proxy.$modal.msgWarning("请先选择状态为“预录”的届次")
+    return
+  }
+
+  proxy.$modal.confirm(`确认将选中的${preRecordIds.length}条“预录”届次批量启用？`).then(() => {
+    return updateSessionStatusByIds({ ids: preRecordIds, status: "1" })
+  }).then(() => {
+    proxy.$modal.msgSuccess("已批量启用")
+    getList()
+  }).catch(() => { })
+}
+
+function chineseToNumber(text) {
+  if (!text) return null
+  const digitMap = { 零: 0, 一: 1, 二: 2, 两: 2, 三: 3, 四: 4, 五: 5, 六: 6, 七: 7, 八: 8, 九: 9 }
+  const unitMap = { 十: 10, 百: 100, 千: 1000, 万: 10000 }
+  let result = 0
+  let section = 0
+  let number = 0
+
+  for (const ch of String(text).trim()) {
+    if (Object.prototype.hasOwnProperty.call(digitMap, ch)) {
+      number = digitMap[ch]
+      continue
+    }
+    if (!Object.prototype.hasOwnProperty.call(unitMap, ch)) return null
+    const unit = unitMap[ch]
+    if (unit === 10000) {
+      section = (section + number) * unit
+      result += section
+      section = 0
+      number = 0
+      continue
+    }
+    if (number === 0) number = 1
+    section += number * unit
+    number = 0
+  }
+
+  return result + section + number
+}
+
+function numberToChinese(num) {
+  const n = Number(num)
+  if (!Number.isFinite(n) || n <= 0) return ""
+  const digits = ["零", "一", "二", "三", "四", "五", "六", "七", "八", "九"]
+  const units = ["", "十", "百", "千"]
+  let value = Math.floor(n)
+  let str = ""
+  let unitIndex = 0
+  let zero = false
+
+  while (value > 0 && unitIndex < units.length) {
+    const d = value % 10
+    if (d === 0) {
+      if (str && !zero) {
+        str = digits[0] + str
+        zero = true
+      }
+    } else {
+      str = digits[d] + units[unitIndex] + str
+      zero = false
+    }
+    value = Math.floor(value / 10)
+    unitIndex += 1
+  }
+
+  str = str.replace(/零+/g, "零").replace(/零$/g, "")
+  if (str.startsWith("一十")) str = str.slice(1)
+  return str
+}
+
+function incrementSessionText(text) {
+  const raw = String(text || "").trim()
+  if (!raw) return ""
+
+  if (/^\d+$/.test(raw)) {
+    return String(Number(raw) + 1)
+  }
+
+  const arabicMatch = raw.match(/第\s*(\d+)\s*届/)
+  if (arabicMatch) {
+    const next = Number(arabicMatch[1]) + 1
+    return raw.replace(arabicMatch[0], `第${next}届`)
+  }
+
+  const chineseMatch = raw.match(/第\s*([零一二三四五六七八九十百千万两]+)\s*届/)
+  if (chineseMatch) {
+    const current = chineseToNumber(chineseMatch[1])
+    if (current != null) {
+      const next = numberToChinese(current + 1)
+      if (next) return raw.replace(chineseMatch[0], `第${next}届`)
+    }
+  }
+
+  const matches = Array.from(raw.matchAll(/(\d+)/g))
+  if (matches.length) {
+    const last = matches[matches.length - 1]
+    const start = last.index ?? -1
+    if (start >= 0) {
+      const next = String(Number(last[1]) + 1)
+      return raw.slice(0, start) + next + raw.slice(start + last[1].length)
+    }
+  }
+
+  return raw
+}
+
+async function handleCopyTemplate(row) {
+  const templateId = row?.id
+  if (!templateId) {
+    proxy.$modal.msgError("模板ID无效")
+    return
+  }
+
+  reset()
+  getCompetitionList()
+
+  proxy.$modal.loading("正在加载模板...")
+  try {
+    const resp = await getSession(templateId)
+    const template = resp?.data || {}
+
+    templateUuid.value = normalizeUuid(template.uuid)
+    if (templateUuid.value) {
+      await loadTemplatePreview(templateUuid.value)
+    }
+
+    const templateYear = Number(template.year)
+    form.value.competitionId = template.competitionId ?? null
+    form.value.category = template.category ?? null
+    form.value.organizations = template.organizations ?? null
+    form.value.level = template.level ?? null
+    form.value.year = Number.isFinite(templateYear) && templateYear > 0 ? templateYear + 1 : new Date().getFullYear()
+    form.value.session = incrementSessionText(template.session) || template.session || null
+    form.value.status = "2" // 预录：后端会强制覆盖
+    form.value.templateSessionId = templateId
+    form.value.uuid = null // 强制重新上传通知
+
+    if (template.tags && typeof template.tags === "string") {
+      form.value.tags = template.tags.split(",").map(s => s.trim()).filter(Boolean)
+    } else {
+      form.value.tags = []
+    }
+
+    open.value = true
+    title.value = "复制赛事届次模板"
+  } catch (e) {
+    console.error("复制模板失败", e)
+    proxy.$modal.msgError("复制模板失败，请稍后重试")
+  } finally {
+    proxy.$modal.closeLoading()
+  }
+}
+
+function incrementSessionTextBy(text, steps) {
+  let value = String(text || "").trim()
+  if (!value) return ""
+  const count = Number(steps) || 0
+  for (let i = 0; i < count; i++) {
+    value = incrementSessionText(value)
+  }
+  return value
+}
+
+function resetBatchCopyState() {
+  revokeBatchTemplatePreview()
+  batchItems.value = []
+  batchActiveIndex.value = 0
+  revokeBatchPreview()
+}
+
+async function handleBatchCopySelected() {
+  if (!selectedRows.value.length) {
+    proxy.$modal.msgWarning("请先勾选要复制的届次模板")
+    return
+  }
+  if (selectedRows.value.length > 50) {
+    proxy.$modal.msgWarning("单次批量复制最多支持50条")
+    return
+  }
+
+  resetBatchCopyState()
+  batchOpen.value = true
+
+  proxy.$modal.loading("正在加载所选模板...")
+  try {
+    const ids = selectedRows.value.map(r => r.id).filter(Boolean)
+    const details = await Promise.all(ids.map(id => getSession(id)))
+    const items = details.map((resp, idx) => {
+      const template = resp?.data || {}
+      const templateYear = Number(template.year)
+      const year = Number.isFinite(templateYear) && templateYear > 0 ? templateYear + 1 : new Date().getFullYear()
+      const templateSession = template.session || ""
+
+      return {
+        templateSessionId: template.id || ids[idx],
+        competitionName: template.competitionName || getCompetitionName(template.competitionId) || selectedRows.value[idx]?.competitionName || "",
+        templateSession: templateSession,
+        templateUuid: normalizeUuid(template.uuid),
+        year,
+        session: incrementSessionText(templateSession) || templateSession || "",
+        uuid: null,
+      }
+    })
+
+    batchItems.value = items
+    batchActiveIndex.value = 0
+    if (activeBatchItem.value?.templateUuid) {
+      await loadBatchTemplatePreview(activeBatchItem.value.templateUuid)
+    }
+  } catch (e) {
+    console.error("批量复制所选模板失败", e)
+    proxy.$modal.msgError("批量复制失败，请稍后重试")
+    batchOpen.value = false
+    resetBatchCopyState()
+  } finally {
+    proxy.$modal.closeLoading()
+  }
+}
+
+function handleBatchRowClick(row) {
+  const idx = batchItems.value.indexOf(row)
+  if (idx >= 0) {
+    batchActiveIndex.value = idx
+    if (row?.templateUuid) {
+      loadBatchTemplatePreview(row.templateUuid)
+    } else {
+      revokeBatchTemplatePreview()
+    }
+    if (row?.uuid) {
+      loadBatchPreview(row.uuid)
+    } else {
+      revokeBatchPreview()
+    }
+  }
+}
+
+function handleBatchItemUuidChange(index, val) {
+  const uuid = normalizeUuid(val)
+  if (!batchItems.value[index]) return
+  batchItems.value[index].uuid = uuid || null
+  if (index === batchActiveIndex.value) {
+    if (uuid) loadBatchPreview(uuid)
+    else revokeBatchPreview()
+  }
+}
+
+function handleBatchItemDeleteUuid(index) {
+  if (!batchItems.value[index]) return
+  batchItems.value[index].uuid = null
+  if (index === batchActiveIndex.value) {
+    revokeBatchPreview()
+  }
+}
+
+function handleBatchSelectAndPreview(index) {
+  const item = batchItems.value?.[index]
+  if (!item) return
+  batchActiveIndex.value = index
+  if (!item.uuid) {
+    proxy.$modal.msgWarning("请先上传该行的参赛通知PDF")
+    return
+  }
+  loadBatchPreview(item.uuid)
+}
+
+function handleBatchCancel() {
+  batchOpen.value = false
+  resetBatchCopyState()
+}
+
+function handleBatchSubmit() {
+  if (!batchItems.value.length) {
+    proxy.$modal.msgError("请至少生成一条待复制记录")
+    return
+  }
+
+  for (let i = 0; i < batchItems.value.length; i++) {
+    const rowNo = i + 1
+    const item = batchItems.value[i]
+    if (!item?.year) {
+      proxy.$modal.msgError(`第${rowNo}行：年份不能为空`)
+      return
+    }
+    if (!String(item?.session || "").trim()) {
+      proxy.$modal.msgError(`第${rowNo}行：届次不能为空`)
+      return
+    }
+    if (!String(item?.uuid || "").trim()) {
+      proxy.$modal.msgError(`第${rowNo}行：参赛通知不能为空（仅PDF）`)
+      return
+    }
+  }
+
+  proxy.$modal.confirm(`确认批量复制${batchItems.value.length}条届次？（每条将生成“预录”状态）`).then(() => {
+    proxy.$modal.loading("正在提交...")
+    return batchCopySession({
+      items: batchItems.value.map(item => ({
+        templateSessionId: item.templateSessionId,
+        year: item.year,
+        session: String(item.session || "").trim(),
+        uuid: String(item.uuid || "").trim(),
+      }))
+    })
+  }).then(resp => {
+    proxy.$modal.msgSuccess(resp?.msg || "批量复制成功")
+    batchOpen.value = false
+    resetBatchCopyState()
+    getList()
+  }).catch(() => { }).finally(() => {
+    proxy.$modal.closeLoading()
+  })
 }
 
 /** 新增按钮操作 */
@@ -654,6 +1158,9 @@ function handleImportSubmit() {
 
 onBeforeUnmount(() => {
   revokeNoticePreview()
+  revokeTemplatePreview()
+  revokeBatchPreview()
+  revokeBatchTemplatePreview()
 })
 
 // 页面初始化
@@ -712,5 +1219,45 @@ getCompetitionList()
 
 .mr5 {
   margin-right: 5px;
+}
+
+.template-block {
+  margin-bottom: 12px;
+}
+
+.template-preview {
+  background: #ffffff;
+}
+
+.batch-attach {
+  min-height: 620px;
+}
+
+.ml10 {
+  margin-left: 10px;
+}
+
+.text-muted {
+  color: #909399;
+  font-size: 13px;
+  margin-top: 8px;
+}
+
+.ellipsis {
+  display: inline-block;
+  max-width: 220px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  vertical-align: bottom;
+}
+
+.batch-upload {
+  margin-bottom: 12px;
+}
+
+:deep(.batch-copy-dialog .el-dialog__body) {
+  max-height: 82vh;
+  overflow-y: auto;
 }
 </style>

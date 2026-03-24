@@ -68,6 +68,12 @@ public class Session extends BaseEntity
 
     /** 年份：允许为空；新增时后端默认当前年 */
     private Integer year;
+
+    /**
+     * 复制模板用：模板届次ID（不入库）
+     * 前端“复制模板”新增时传入，用于后端校验必须重新上传通知（uuid不能复用模板uuid）。
+     */
+    private Long templateSessionId;
     // ====================== getter/setter 完整实现 ======================
     public Long getId() {return id;}
     public void setId(Long id) {this.id = id;}
@@ -142,5 +148,15 @@ public class Session extends BaseEntity
 
     public void setYear(Integer year) {
         this.year = year;
+    }
+
+    public Long getTemplateSessionId()
+    {
+        return templateSessionId;
+    }
+
+    public void setTemplateSessionId(Long templateSessionId)
+    {
+        this.templateSessionId = templateSessionId;
     }
 }
