@@ -140,12 +140,16 @@
         </el-form-item>
         <el-form-item label="赛事标签" prop="tags">
           <el-checkbox-group v-model="form.tags">
-            <el-checkbox v-for="dict in sys_competition_tag" :key="dict.value" :label="dict.value">
+            <el-checkbox v-for="dict in sys_competition_tag" :key="dict.value" :label="dict.label">
               {{ dict.label }}
             </el-checkbox>
           </el-checkbox-group>
         </el-form-item>
-      </el-form>
+        <el-form-item label="比赛通知" prop="uuid">
+          <file-upload v-model="form.uuid" :limit="1" :file-type="['pdf']" />
+        </el-form-item>
+        </el-form>
+
       <template #footer>
         <div class="dialog-footer">
           <el-button type="primary" @click="submitForm">确 定</el-button>

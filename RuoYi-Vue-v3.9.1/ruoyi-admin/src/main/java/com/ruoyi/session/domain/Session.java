@@ -62,6 +62,9 @@ public class Session extends BaseEntity
     // ====================== 状态 ======================
     private String status;
     private String delFlag;
+    
+    /** 比赛通知文件UUID */
+    private String uuid;
 
     // ====================== getter/setter 完整实现 ======================
     public Long getId() {return id;}
@@ -93,6 +96,9 @@ public class Session extends BaseEntity
 
     public String getDelFlag() {return delFlag;}
     public void setDelFlag(String delFlag) {this.delFlag = delFlag;}
+
+    public String getUuid() {return uuid;}
+    public void setUuid(String uuid) {this.uuid = uuid;}
 
     // 导入专用字段getter/setter
     public String getCategoryImport() {return categoryImport;}

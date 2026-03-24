@@ -840,8 +840,15 @@ const queryTrackSearch = async (queryString, cb) => {
   cb(results);
 };
 
-watch(() => [form.value.competitionId, form.value.sessionId], () => {
+watch(() => [form.value.competitionId, form.value.sessionId], ([compId, sessionId]) => {
   trackSuggestions.value = [];
+  // 当比赛和届次都选择后，尝试从届次信息中提取比赛通知 UUID 并回显
+  if (compId && sessionId && sessionOptions.value.length > 0) {
+    const session = sessionOptions.value.find(s => s.id === sessionId);
+    if (session && session.uuid) {
+      form.value.fileNotice = session.uuid;
+    }
+  }
 });
 
 const validateCertificateNo = (rule, value, callback) => {
