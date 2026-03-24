@@ -6,7 +6,6 @@
           <div class="page-title">{{ title }}</div>
         </div>
         <div class="page-actions" v-if="!readOnly">
-          <el-button type="info" :icon="Document" @click="saveDraft">保存草稿</el-button>
           <el-button v-if="showSubmit" type="primary" @click="submitForm">{{ submitTextComputed }}</el-button>
           <el-button @click="handleCancel">{{ cancelText }}</el-button>
         </div>
@@ -33,21 +32,14 @@
                         >
                           <el-option v-for="item in competitionOptions" :key="item.competitionId" :label="item.competitionName" :value="item.competitionId" />
                         </el-select>
-                        <div style="margin-top: 5px;">
+                        <div style="margin-top: 5px; line-height: 1.2;">
                           <el-link type="primary" @click="goToCompetitionApply">比赛找不到？点击这里申请赛事！</el-link>
                         </div>
                       </el-form-item>
                     </el-col>
                   </el-row>
                   <el-row>
-                    <el-col :span="12">
-                      <el-form-item label="类别" prop="category">
-                        <el-select v-model="form.category" placeholder="请选择类别" filterable>
-                          <el-option v-for="dict in achievement_category" :key="dict.value" :label="dict.label" :value="dict.value" />
-                        </el-select>
-                      </el-form-item>
-                    </el-col>
-                    <el-col :span="12">
+                    <el-col :span="24">
                       <el-form-item label="届次" prop="sessionId">
                         <el-select 
                           v-model="form.sessionId" 
@@ -63,12 +55,7 @@
                     </el-col>
                   </el-row>
                   <el-row>
-                    <el-col :span="12">
-                      <el-form-item label="所属学院" prop="ownerDepId">
-                        <el-tree-select v-model="form.ownerDepId" :data="deptOptions" :props="{ value: 'deptId', label: 'deptName', children: 'children' }" value-key="deptId" placeholder="请选择所属学院" check-strictly />
-                      </el-form-item>
-                    </el-col>
-                    <el-col :span="12">
+                    <el-col :span="24">
                       <el-form-item label="作品名称" prop="name">
                         <el-input v-model="form.name" placeholder="请输入作品名称(选填)" />
                       </el-form-item>
@@ -87,7 +74,7 @@
                         <el-select v-model="form.grade" placeholder="请选择" style="width: 100%">
                           <el-option v-for="dict in award_rank" :key="dict.value" :label="dict.label" :value="dict.value" />
                         </el-select>
-                        <div style="color: #909399; font-size: 12px; margin-top: 5px;">如果比赛或者表彰没有区分等级，请选择一等奖。</div>
+                        <div style="color: #909399; font-size: 12px; margin-top: 5px; line-height: 1.2;">如果比赛或者表彰没有区分等级，请选择一等奖。</div>
                       </el-form-item>
                     </el-col>
                   </el-row>
@@ -95,7 +82,7 @@
                     <el-col :span="12">
                       <el-form-item label="赛道" prop="track">
                         <el-input v-model="form.track" placeholder="请输入赛道" />
-                        <div style="color: #909399; font-size: 12px; margin-top: 5px;">例如蓝桥杯有c++，java数学竞赛有数学类与非数A等</div>
+                        <div style="color: #909399; font-size: 12px; margin-top: 5px; line-height: 1.2;">例如蓝桥杯有c++，java数学竞赛有数学类与非数A等</div>
                       </el-form-item>
                     </el-col>
                     <el-col :span="12">
@@ -115,7 +102,7 @@
                     <el-col :span="12">
                       <el-form-item label="获奖时间" prop="awardTime">
                         <el-date-picker clearable v-model="form.awardTime" type="date" value-format="YYYY-MM-DD" placeholder="选择日期" style="width: 100%" />
-                        <div style="color: #909399; font-size: 12px; margin-top: 5px;">获奖时间为奖状上日期为准，若只有年月，请填写当月最后一天。</div>
+                        <div style="color: #909399; font-size: 12px; margin-top: 5px; line-height: 1.2;">获奖时间为奖状上日期为准，若只有年月，请填写当月最后一天。</div>
                       </el-form-item>
                     </el-col>
                   </el-row>
@@ -137,7 +124,7 @@
                       <el-radio :label="1">是 (需要上传凭证)</el-radio>
                       <el-radio :label="0">否</el-radio>
                     </el-radio-group>
-                    <div style="color: #F56C6C; font-size: 12px; margin-top: 5px; font-weight: bold;">
+                    <div style="color: #F56C6C; font-size: 12px; margin-top: 5px; line-height: 1.2; font-weight: bold;">
                       如果报名者没有通过其他途径报销，请上传发票（PDF）和填写报名金额。注意：同一张发票只能报销一次
                     </div>
                   </el-form-item>
@@ -147,10 +134,10 @@
                     <el-col :span="1.5"><el-button type="primary" :icon="Plus" @click="openAddParticipantDialog">添加学生</el-button></el-col>
                     <el-col :span="1.5"><el-button type="danger" :icon="Delete" @click="handleDeleteParticipant">删除选中</el-button></el-col>
                   </el-row>
-                  <el-table ref="participantTable" :data="samAchievementParticipantList" border style="width: 100%; margin-bottom: 20px;">
+                  <el-table ref="participantTable" :data="samAchievementParticipantList" border style="width: 100%; margin-bottom: 20px;" :row-class-name="tableRowClassName">
                     <el-table-column v-if="!readOnly" width="40" align="center">
                       <template #default="scope">
-                        <el-icon v-if="scope.row.manager !== 1" class="drag-handle" style="cursor: move"><Rank /></el-icon>
+                        <el-icon v-if="!scope.row.isFixed" class="drag-handle" style="cursor: move"><Rank /></el-icon>
                       </template>
                     </el-table-column>
                     <el-table-column v-if="!readOnly" type="selection" width="50" align="center" />
@@ -169,7 +156,7 @@
                     <el-col :span="1.5"><el-button type="primary" :icon="Plus" @click="openAddAdvisorDialog">添加老师</el-button></el-col>
                     <el-col :span="1.5"><el-button type="danger" :icon="Delete" @click="handleDeleteAdvisor">删除选中</el-button></el-col>
                   </el-row>
-                  <el-table ref="advisorTable" :data="samAchievementAdvisorList" border style="width: 100%;">
+                  <el-table ref="advisorTable" :data="samAchievementAdvisorList" border style="width: 100%;" :row-class-name="tableRowClassName">
                    <el-table-column v-if="!readOnly" width="40" align="center">
   <template #default="scope">
     <el-icon v-if="scope.$index !== 0" class="drag-handle" style="cursor: move"><Rank /></el-icon>
@@ -249,7 +236,7 @@
                  <el-form-item label="比赛" prop="competitionId">
                     <el-select 
                       v-model="form.competitionId" 
-                      placeholder="请选择关联的赛事" 
+                      placeholder="请选择赛事" 
                       filterable 
                       clearable 
                       style="width: 100%"
@@ -257,21 +244,14 @@
                     >
                       <el-option v-for="item in competitionOptions" :key="item.competitionId" :label="item.competitionName" :value="item.competitionId" />
                     </el-select>
-                    <div style="margin-top: 5px;">
+                    <div style="margin-top: 5px; line-height: 1.2;">
                       <el-link type="primary" @click="goToCompetitionApply">比赛找不到？点击这里申请赛事！</el-link>
                     </div>
                   </el-form-item>
                 </el-col>
               </el-row>
               <el-row>
-                <el-col :span="12">
-                  <el-form-item label="类别" prop="category">
-                    <el-select v-model="form.category" placeholder="请选择类别" filterable>
-                      <el-option v-for="dict in achievement_category" :key="dict.value" :label="dict.label" :value="dict.value" />
-                    </el-select>
-                  </el-form-item>
-                </el-col>
-                <el-col :span="12">
+                <el-col :span="24">
                   <el-form-item label="届次" prop="sessionId">
                     <el-select 
                       v-model="form.sessionId" 
@@ -287,12 +267,7 @@
                 </el-col>
               </el-row>
               <el-row>
-                <el-col :span="12">
-                  <el-form-item label="所属学院" prop="ownerDepId">
-                    <el-tree-select v-model="form.ownerDepId" :data="deptOptions" :props="{ value: 'deptId', label: 'deptName', children: 'children' }" value-key="deptId" placeholder="请选择所属学院" check-strictly />
-                  </el-form-item>
-                </el-col>
-                <el-col :span="12">
+                <el-col :span="24">
                   <el-form-item label="作品名称" prop="name">
                     <el-input v-model="form.name" placeholder="请输入作品名称(选填)" />
                   </el-form-item>
@@ -311,7 +286,7 @@
                     <el-select v-model="form.grade" placeholder="请选择" style="width: 100%">
                       <el-option v-for="dict in award_rank" :key="dict.value" :label="dict.label" :value="dict.value" />
                     </el-select>
-                    <div style="color: #909399; font-size: 12px; margin-top: 5px;">如果比赛或者表彰没有区分等级，请选择一等奖。</div>
+                    <div style="color: #909399; font-size: 12px; margin-top: 5px; line-height: 1.2;">如果比赛或者表彰没有区分等级，请选择一等奖。</div>
                   </el-form-item>
                 </el-col>
               </el-row>
@@ -319,7 +294,7 @@
                 <el-col :span="12">
                   <el-form-item label="赛道" prop="track">
                     <el-input v-model="form.track" placeholder="请输入赛道" />
-                    <div style="color: #909399; font-size: 12px; margin-top: 5px;">例如蓝桥杯有c++，java数学竞赛有数学类与非数A等</div>
+                    <div style="color: #909399; font-size: 12px; margin-top: 5px; line-height: 1.2;">例如蓝桥杯有c++，java数学竞赛有数学类与非数A等</div>
                   </el-form-item>
                 </el-col>
                 <el-col :span="12">
@@ -339,7 +314,7 @@
                 <el-col :span="12">
                   <el-form-item label="获奖时间" prop="awardTime">
                     <el-date-picker clearable v-model="form.awardTime" type="date" value-format="YYYY-MM-DD" placeholder="选择日期" style="width: 100%" />
-                    <div style="color: #909399; font-size: 12px; margin-top: 5px;">获奖时间为奖状上日期为准，若只有年月，请填写当月最后一天。</div>
+                    <div style="color: #909399; font-size: 12px; margin-top: 5px; line-height: 1.2;">获奖时间为奖状上日期为准，若只有年月，请填写当月最后一天。</div>
                   </el-form-item>
                 </el-col>
               </el-row>
@@ -371,7 +346,7 @@
                 <el-col :span="1.5"><el-button type="primary" :icon="Plus" @click="openAddParticipantDialog">添加学生</el-button></el-col>
                 <el-col :span="1.5"><el-button type="danger" :icon="Delete" @click="handleDeleteParticipant">删除选中</el-button></el-col>
               </el-row>
-              <el-table ref="participantTableDialog" :data="samAchievementParticipantList" border style="width: 100%; margin-bottom: 20px;">
+              <el-table ref="participantTableDialog" :data="samAchievementParticipantList" border style="width: 100%; margin-bottom: 20px;" :row-class-name="tableRowClassName">
                 <el-table-column v-if="!readOnly" width="40" align="center">
                   <template #default="scope">
                     <el-icon v-if="scope.row.manager !== 1" class="drag-handle" style="cursor: move"><Rank /></el-icon>
@@ -393,7 +368,7 @@
                 <el-col :span="1.5"><el-button type="primary" :icon="Plus" @click="openAddAdvisorDialog">添加老师</el-button></el-col>
                 <el-col :span="1.5"><el-button type="danger" :icon="Delete" @click="handleDeleteAdvisor">删除选中</el-button></el-col>
               </el-row>
-              <el-table ref="advisorTableDialog" :data="samAchievementAdvisorList" border style="width: 100%;">
+              <el-table ref="advisorTableDialog" :data="samAchievementAdvisorList" border style="width: 100%;" :row-class-name="tableRowClassName">
              <el-table-column v-if="!readOnly" width="40" align="center">
   <template #default="scope">
     <el-icon v-if="scope.$index !== 0" class="drag-handle" style="cursor: move"><Rank /></el-icon>
@@ -456,7 +431,6 @@
           <slot name="footer-left" :form="form"></slot>
         </div>
         <div class="footer-right">
-          <el-button v-if="!readOnly" type="info" :icon="Document" @click="saveDraft">保存草稿</el-button>
           <el-button v-if="showSubmit && !readOnly" type="primary" @click="submitForm">
             {{ submitTextComputed }}
           </el-button>
@@ -497,48 +471,33 @@
 
   <el-dialog title="添加参赛选手" v-model="addParticipantVisible" width="500px" append-to-body :close-on-click-modal="false">
     <el-form ref="addParticipantRef" :model="participantForm" :rules="addParticipantRules" label-width="80px">
+      <el-form-item label="查找学生">
+        <el-input v-model="participantSearchKeyword" placeholder="输入学号或姓名后回车搜索" @keyup.enter="handleParticipantSearch" clearable>
+          <template #append>
+            <el-button @click="handleParticipantSearch"><el-icon><Search /></el-icon></el-button>
+          </template>
+        </el-input>
+        <div style="font-size: 12px; color: #909399; margin-top: 5px;">支持学号或姓名双向查找</div>
+      </el-form-item>
       <el-form-item label="学号" prop="studentId">
-        <el-input v-model="participantForm.studentId" placeholder="请输入学号后点击空白处" @blur="handleParticipantIdBlur" clearable />
+        <el-input v-model="participantForm.studentId" placeholder="学号" :disabled="!isParticipantNew" />
       </el-form-item>
       <el-form-item label="姓名" prop="studentName">
-        <el-input v-model="participantForm.studentName" placeholder="自动带出，或手动输入" :disabled="!isParticipantNew" />
+        <el-input v-model="participantForm.studentName" placeholder="姓名" :disabled="!isParticipantNew" />
       </el-form-item>
       
       <template v-if="isParticipantNew">
         <el-alert title="未匹配到该学号，请完善下方信息完成录入" type="warning" show-icon :closable="false" style="margin-bottom: 15px;" />
-        <el-form-item label="学院" prop="school">
-          <el-tree-select 
-            v-model="participantForm.school" 
-            :data="deptOptions" 
-            :props="{ value: 'deptId', label: 'deptName', children: 'children' }" 
-            value-key="deptId" 
-            placeholder="请选择学院" 
-            check-strictly 
-            style="width: 100%" 
-            @change="handleParticipantSchoolChange"
-          />
-        </el-form-item>
-        <el-form-item label="院系" prop="department">
-          <el-tree-select 
-            v-model="participantForm.department" 
-            :data="participantDepartmentOptions" 
-            :props="{ value: 'deptId', label: 'deptName', children: 'children' }" 
-            value-key="deptId" 
-            placeholder="请先选择学院，再选择院系" 
-            check-strictly 
-            style="width: 100%" 
-            @change="handleParticipantDeptChange"
-          />
-        </el-form-item>
-        <el-form-item label="专业" prop="major">
-          <el-tree-select 
-            v-model="participantForm.major" 
-            :data="participantMajorOptions" 
-            :props="{ value: 'deptId', label: 'deptName', children: 'children' }" 
-            value-key="deptId" 
-            placeholder="请先选择院系，再选择专业" 
-            check-strictly 
-            style="width: 100%" 
+        <el-form-item label="所属机构" prop="school">
+          <el-cascader
+            v-model="participantDeptCascaderValue"
+            :options="deptOptions"
+            :props="{ value: 'deptId', label: 'deptName', children: 'children' }"
+            placeholder="请选择学院/院系/专业"
+            clearable
+            filterable
+            style="width: 100%"
+            @change="handleParticipantCascaderChange"
           />
         </el-form-item>
         <el-form-item label="班级" prop="class_name">
@@ -559,36 +518,33 @@
 
   <el-dialog title="添加指导老师" v-model="addAdvisorVisible" width="500px" append-to-body :close-on-click-modal="false">
     <el-form ref="addAdvisorRef" :model="advisorForm" :rules="addAdvisorRules" label-width="80px">
+      <el-form-item label="查找老师">
+        <el-input v-model="advisorSearchKeyword" placeholder="输入工号或姓名后回车搜索" @keyup.enter="handleAdvisorSearch" clearable>
+          <template #append>
+            <el-button @click="handleAdvisorSearch"><el-icon><Search /></el-icon></el-button>
+          </template>
+        </el-input>
+        <div style="font-size: 12px; color: #909399; margin-top: 5px;">支持工号或姓名双向查找</div>
+      </el-form-item>
       <el-form-item label="工号" prop="teacherId">
-        <el-input v-model="advisorForm.teacherId" placeholder="请输入工号后点击空白处" @blur="handleAdvisorIdBlur" clearable />
+        <el-input v-model="advisorForm.teacherId" placeholder="工号" :disabled="!isAdvisorNew" />
       </el-form-item>
       <el-form-item label="姓名" prop="teacherName">
-        <el-input v-model="advisorForm.teacherName" placeholder="自动带出，或手动输入" :disabled="!isAdvisorNew" />
+        <el-input v-model="advisorForm.teacherName" placeholder="姓名" :disabled="!isAdvisorNew" />
       </el-form-item>
       
       <template v-if="isAdvisorNew">
         <el-alert title="未匹配到该工号，请完善下方信息完成录入" type="warning" show-icon :closable="false" style="margin-bottom: 15px;" />
-        <el-form-item label="学院" prop="school">
-          <el-tree-select 
-            v-model="advisorForm.school" 
-            :data="deptOptions" 
-            :props="{ value: 'deptId', label: 'deptName', children: 'children' }" 
-            value-key="deptId" 
-            placeholder="请选择学院" 
-            check-strictly 
-            style="width: 100%" 
-            @change="handleAdvisorSchoolChange"
-          />
-        </el-form-item>
-        <el-form-item label="院系" prop="department">
-          <el-tree-select 
-            v-model="advisorForm.department" 
-            :data="advisorDepartmentOptions" 
-            :props="{ value: 'deptId', label: 'deptName', children: 'children' }" 
-            value-key="deptId" 
-            placeholder="请先选择学院，再选择院系" 
-            check-strictly 
-            style="width: 100%" 
+        <el-form-item label="所属机构" prop="school">
+          <el-cascader
+            v-model="advisorDeptCascaderValue"
+            :options="deptOptions"
+            :props="{ value: 'deptId', label: 'deptName', children: 'children' }"
+            placeholder="请选择学院/院系"
+            clearable
+            filterable
+            style="width: 100%"
+            @change="handleAdvisorCascaderChange"
           />
         </el-form-item>
       </template>
@@ -599,6 +555,20 @@
         <el-button @click="addAdvisorVisible = false">取 消</el-button>
       </div>
     </template>
+  </el-dialog>
+
+  <el-dialog title="选择学生" v-model="studentSelectVisible" width="600px" append-to-body>
+    <el-table :data="studentOptions" @row-click="selectStudent" border highlight-current-row>
+      <el-table-column label="学号" prop="no" align="center" />
+      <el-table-column label="姓名" prop="name" align="center" />
+    </el-table>
+  </el-dialog>
+
+  <el-dialog title="选择老师" v-model="teacherSelectVisible" width="600px" append-to-body>
+    <el-table :data="teacherOptions" @row-click="selectTeacher" border highlight-current-row>
+      <el-table-column label="工号" prop="no" align="center" />
+      <el-table-column label="姓名" prop="teacherName" align="center" />
+    </el-table>
   </el-dialog>
 </template>
 
@@ -632,9 +602,10 @@ const props = defineProps({
   submitText: { type: String, default: "" },
   cancelText: { type: String, default: "取 消" },
   userRole: { type: String, default: "student" },
+  sourceMode: { type: String, default: "" },
 });
 
-const { achievement_category, group_type, award_rank, award_level_type } = proxy.useDict('achievement_category', 'group_type', 'award_rank', 'award_level_type');
+const { achievement_category, group_type, award_rank, award_level_type, attach_type } = proxy.useDict('achievement_category', 'group_type', 'award_rank', 'award_level_type', 'attach_type');
 const isPageMode = computed(() => props.pageMode);
 const visible = ref(false);
 const title = ref("");
@@ -657,14 +628,45 @@ const checkedAdvisor = ref([]);
 const competitionOptions = ref([]);
 const sessionOptions = ref([]);
 
+const studentSelectVisible = ref(false);
+const studentOptions = ref([]);
+const participantSearchKeyword = ref("");
+
+const teacherSelectVisible = ref(false);
+const teacherOptions = ref([]);
+const advisorSearchKeyword = ref("");
+
+const participantDeptCascaderValue = ref([]);
+const advisorDeptCascaderValue = ref([]);
+
+function handleParticipantCascaderChange(value) {
+  if (value && value.length > 0) {
+    participantForm.value.school = value[0] || '';
+    participantForm.value.department = value[1] || '';
+    participantForm.value.major = value[2] || '';
+  } else {
+    participantForm.value.school = '';
+    participantForm.value.department = '';
+    participantForm.value.major = '';
+  }
+}
+
+function handleAdvisorCascaderChange(value) {
+  if (value && value.length > 0) {
+    advisorForm.value.school = value[0] || '';
+    advisorForm.value.department = value[1] || '';
+  } else {
+    advisorForm.value.school = '';
+    advisorForm.value.department = '';
+  }
+}
+
 const data = reactive({
   form: { competitionId: null },
   formSnapshot: "",
   rules: {
     competitionId: [{ required: true, message: "比赛不能为空", trigger: "change" }],
-    category: [{ required: true, message: "类别不能为空", trigger: "change" }],
     sessionId: [{ required: true, message: "届次不能为空", trigger: "change" }],
-    ownerDepId: [{ required: true, message: "所属学院不能为空", trigger: "change" }],
     level: [{ required: true, message: "级别不能为空", trigger: "change" }],
     grade: [{ required: true, message: "等级不能为空", trigger: "change" }],
     track: [{ required: true, message: "赛道不能为空", trigger: "blur" }],
@@ -676,9 +678,35 @@ const data = reactive({
 });
 const { form, formSnapshot, rules } = toRefs(data);
 
-// =========================================================
+const validateCertificateNo = (rule, value, callback) => {
+  if (!value) {
+    callback();
+  } else {
+    const params = {
+      certificateNo: value,
+      competitionId: form.value.competitionId,
+      achievementId: form.value.achievementId
+    };
+    request({
+      url: '/achievement/manage/checkCertificateNoUnique',
+      method: 'get',
+      params: params
+    }).then(response => {
+      if (response.data === false) {
+        callback(new Error("证书编号已存在"));
+      } else {
+        callback();
+      }
+    });
+  }
+};
+
+rules.value.certificateNo = [
+  { required: true, message: "证书编号不能为空", trigger: "blur" },
+  { validator: validateCertificateNo, trigger: "blur" }
+];
+
 // 草稿功能逻辑
-// =========================================================
 const DRAFT_KEY_PREFIX = "ACHIEVEMENT_DRAFT_";
 const getDraftKey = () => DRAFT_KEY_PREFIX + route.path;
 
@@ -743,8 +771,7 @@ function checkDraft() {
     }).then(() => {
       loadDraft();
     }).catch(() => {
-      // 如果不恢复，可以选择不清理，让用户有机会再次恢复，或者清理掉。
-      // 这里建议不清理，除非用户明确想开启新表单并覆盖。
+      clearDraft();
     });
   }
 }
@@ -773,10 +800,7 @@ const submitTextComputed = computed(() => {
   return form.value?.achievementId ? "保 存" : "确 定";
 });
 
-// =========================================================
-// 新版：学生与老师的级联选择逻辑 (查找与动态过滤)
-// =========================================================
-
+// 学生与老师的级联选择逻辑 (查找与动态过滤)
 function findDeptNode(tree, targetVal) {
   if (!tree || targetVal == null || targetVal === '') return null;
   for (let i = 0; i < tree.length; i++) {
@@ -818,9 +842,7 @@ function handleAdvisorSchoolChange() {
   advisorForm.value.department = '';
 }
 
-// =========================================================
 // 弹窗控制与提交逻辑
-// =========================================================
 
 const addParticipantVisible = ref(false);
 const isParticipantNew = ref(false);
@@ -833,57 +855,10 @@ const addParticipantRules = {
 
 function openAddParticipantDialog() {
   participantForm.value = { studentId: '', studentName: '', school: '', department: '', major: '', class_name: '', class_year: '' };
+  participantDeptCascaderValue.value = [];
+  participantSearchKeyword.value = "";
   isParticipantNew.value = false;
   addParticipantVisible.value = true;
-}
-
-function handleParticipantIdBlur() {
-  const id = participantForm.value.studentId;
-  if (!id) return;
-  listStudent({ no: id }).then(res => {
-    if (res.rows && res.rows.length > 0) {
-      participantForm.value.studentName = res.rows[0].name;
-      isParticipantNew.value = false;
-    } else {
-      proxy.$modal.msgWarning("系统未找到该学号，请补充完善下方信息");
-      participantForm.value.studentName = '';
-      isParticipantNew.value = true;
-    }
-  });
-}
-
-function submitAddParticipant() {
-  proxy.$refs.addParticipantRef.validate(valid => {
-    if (valid) {
-      const pushToList = () => {
-        samAchievementParticipantList.value.push({
-          studentId: participantForm.value.studentId,
-          studentName: participantForm.value.studentName,
-          orderNo: samAchievementParticipantList.value.length + 1,
-          manager: samAchievementParticipantList.value.length === 0 ? 1 : 0
-        });
-        reIndexList(samAchievementParticipantList.value);
-        addParticipantVisible.value = false;
-      };
-
-      if (isParticipantNew.value) {
-        addStudent({
-          no: participantForm.value.studentId,
-          name: participantForm.value.studentName,
-          school: participantForm.value.school,
-          department: participantForm.value.department,
-          major: participantForm.value.major,
-          class_name: participantForm.value.class_name,
-          class_year: participantForm.value.class_year
-        }).then(() => {
-          proxy.$modal.msgSuccess("学生信息录入基础库成功");
-          pushToList();
-        });
-      } else {
-        pushToList();
-      }
-    }
-  });
 }
 
 const addAdvisorVisible = ref(false);
@@ -897,26 +872,182 @@ const addAdvisorRules = {
 
 function openAddAdvisorDialog() {
   advisorForm.value = { teacherId: '', teacherName: '', school: '', department: '' };
+  advisorSearchKeyword.value = "";
   isAdvisorNew.value = false;
   addAdvisorVisible.value = true;
 }
 
-function handleAdvisorIdBlur() {
-  const id = advisorForm.value.teacherId;
-  if (!id) return;
-  listTeacher({ no: id }).then(res => {
-    if (res.rows && res.rows.length > 0) {
-      advisorForm.value.teacherName = res.rows[0].teacherName;
-      isAdvisorNew.value = false;
+const searchingParticipant = ref(false);
+function handleParticipantSearch() {
+  const keyword = participantSearchKeyword.value;
+  if (!keyword) return;
+  
+  searchingParticipant.value = true;
+  // 同时按学号和姓名查
+  const queryByNo = listStudent({ no: keyword });
+  const queryByName = listStudent({ name: keyword });
+  
+  Promise.all([queryByNo, queryByName]).then(results => {
+    let allStudents = [];
+    results.forEach(res => {
+      if (res.rows && res.rows.length > 0) {
+        allStudents = allStudents.concat(res.rows);
+      }
+    });
+    
+    // 去重 (以 no 为准)
+    const uniqueStudents = [];
+    const ids = new Set();
+    allStudents.forEach(s => {
+      if (!ids.has(s.no)) {
+        ids.add(s.no);
+        uniqueStudents.push(s);
+      }
+    });
+
+    if (uniqueStudents.length === 1) {
+      applyStudentInfo(uniqueStudents[0]);
+    } else if (uniqueStudents.length > 1) {
+      studentOptions.value = uniqueStudents;
+      studentSelectVisible.value = true;
     } else {
-      proxy.$modal.msgWarning("系统未找到该工号，请补充完善下方信息");
-      advisorForm.value.teacherName = '';
+      isParticipantNew.value = true;
+      // 模糊匹配：如果是纯数字或字母，预填到学号；否则预填到姓名
+      if (/^[a-zA-Z0-9]+$/.test(keyword)) {
+        participantForm.value.studentId = keyword;
+        participantForm.value.studentName = "";
+      } else {
+        participantForm.value.studentId = "";
+        participantForm.value.studentName = keyword;
+      }
+    }
+  }).finally(() => {
+    searchingParticipant.value = false;
+  });
+}
+
+function applyStudentInfo(student) {
+  participantForm.value.studentId = student.no;
+  participantForm.value.studentName = student.name;
+  participantForm.value.school = student.school;
+  participantForm.value.department = student.department;
+  participantForm.value.major = student.major;
+  participantForm.value.class_name = student.className;
+  participantForm.value.class_year = student.classYear;
+  isParticipantNew.value = false;
+  studentSelectVisible.value = false;
+}
+
+function selectStudent(row) {
+  applyStudentInfo(row);
+}
+
+const searchingAdvisor = ref(false);
+function handleAdvisorSearch() {
+  const keyword = advisorSearchKeyword.value;
+  if (!keyword) return;
+
+  searchingAdvisor.value = true;
+  const queryByNo = listTeacher({ no: keyword });
+  const queryByName = listTeacher({ teacherName: keyword });
+
+  Promise.all([queryByNo, queryByName]).then(results => {
+    let allTeachers = [];
+    results.forEach(res => {
+      if (res.rows && res.rows.length > 0) {
+        allTeachers = allTeachers.concat(res.rows);
+      }
+    });
+
+    const uniqueTeachers = [];
+    const ids = new Set();
+    allTeachers.forEach(t => {
+      if (!ids.has(t.no)) {
+        ids.add(t.no);
+        uniqueTeachers.push(t);
+      }
+    });
+
+    if (uniqueTeachers.length === 1) {
+      applyTeacherInfo(uniqueTeachers[0]);
+    } else if (uniqueTeachers.length > 1) {
+      teacherOptions.value = uniqueTeachers;
+      teacherSelectVisible.value = true;
+    } else {
       isAdvisorNew.value = true;
+      if (/^[a-zA-Z0-9]+$/.test(keyword)) {
+        advisorForm.value.teacherId = keyword;
+        advisorForm.value.teacherName = "";
+      } else {
+        advisorForm.value.teacherId = "";
+        advisorForm.value.teacherName = keyword;
+      }
+    }
+  }).finally(() => {
+    searchingAdvisor.value = false;
+  });
+}
+
+function applyTeacherInfo(teacher) {
+  advisorForm.value.teacherId = teacher.no;
+  advisorForm.value.teacherName = teacher.teacherName;
+  advisorForm.value.school = teacher.school;
+  advisorForm.value.department = teacher.department;
+  isAdvisorNew.value = false;
+  teacherSelectVisible.value = false;
+}
+
+function selectTeacher(row) {
+  applyTeacherInfo(row);
+}
+
+function submitAddParticipant() {
+  // 如果还在查询中，等待一小会或者直接拦截（通常 blur 会先于 click 触发并完成请求）
+  if (searchingParticipant.value) {
+    setTimeout(submitAddParticipant, 300);
+    return;
+  }
+
+  proxy.$refs.addParticipantRef.validate(valid => {
+    if (valid) {
+      const pushToList = () => {
+        samAchievementParticipantList.value.push({
+          studentId: participantForm.value.studentId,
+          studentName: participantForm.value.studentName,
+          school: participantForm.value.school,
+          orderNo: samAchievementParticipantList.value.length + 1,
+          manager: samAchievementParticipantList.value.length === 0 ? 1 : 0
+        });
+        reIndexList(samAchievementParticipantList.value, 'participant');
+        addParticipantVisible.value = false;
+      };
+
+      if (isParticipantNew.value) {
+        addStudent({
+          no: participantForm.value.studentId,
+          name: participantForm.value.studentName,
+          school: participantForm.value.school,
+          department: participantForm.value.department,
+          major: participantForm.value.major,
+          className: participantForm.value.class_name,
+          classYear: participantForm.value.class_year
+        }).then(() => {
+          proxy.$modal.msgSuccess("学生信息录入基础库成功");
+          pushToList();
+        });
+      } else {
+        pushToList();
+      }
     }
   });
 }
 
 function submitAddAdvisor() {
+  if (searchingAdvisor.value) {
+    setTimeout(submitAddAdvisor, 300);
+    return;
+  }
+
   proxy.$refs.addAdvisorRef.validate(valid => {
     if (valid) {
       const pushToList = () => {
@@ -948,6 +1079,9 @@ function submitAddAdvisor() {
 
 function handleDeleteParticipant() {
   if (checkedParticipant.value.length == 0) return proxy.$modal.msgError("请选择删除项");
+  if (checkedParticipant.value.some(item => item.isFixed)) {
+    return proxy.$modal.msgError("默认填写的负责人无法删除");
+  }
   samAchievementParticipantList.value = samAchievementParticipantList.value.filter(item => !checkedParticipant.value.includes(item));
   reIndexList(samAchievementParticipantList.value);
 }
@@ -955,12 +1089,13 @@ function handleParticipantSelectionChange(sel) { checkedParticipant.value = sel;
 
 function handleDeleteAdvisor() {
   if (checkedAdvisor.value.length == 0) return proxy.$modal.msgError("请选择删除项");
+  if (checkedAdvisor.value.some(item => item.isFixed)) {
+    return proxy.$modal.msgError("默认填写的指导老师无法删除");
+  }
   samAchievementAdvisorList.value = samAchievementAdvisorList.value.filter(item => !checkedAdvisor.value.includes(item));
   reIndexList(samAchievementAdvisorList.value);
 }
 function handleAdvisorSelectionChange(sel) { checkedAdvisor.value = sel; }
-
-// =========================================================
 // 示例拦截与解锁
 // =========================================================
 const exampleVisible = ref(false);
@@ -998,20 +1133,25 @@ function confirmExampleKnown() {
   }
 }
 
-// =========================================================
-// 【核心修复】：替换为自定义的 UUID 转换下载接口
-// =========================================================
-const attachmentConfig = [
-  { label: '奖状(证书)', name: 'award', prop: 'fileAward', alert: '请上传获奖证书' },
-  { label: '比赛通知', name: 'notice', prop: 'fileNotice', alert: '请上传比赛通知' },
-  { label: '参赛作品', name: 'work', prop: 'fileWork', alert: '请上传参赛作品' },
-  { label: '支付记录', name: 'payment', prop: 'filePayment', alert: '请上传转账截图', type: 'warning', condition: (f) => f.isReimburse === 1 },
-  { label: '正规发票', name: 'invoice', prop: 'fileInvoice', alert: '请上传电子发票', type: 'warning', condition: (f) => f.isReimburse === 1 },
-  { label: '收款码', name: 'receipt', prop: 'fileReceiptCode', alert: '请上传用于接收报销款的收款码', type: 'warning', condition: (f) => f.isReimburse === 1 },
-];
+//替换为自定义的 UUID 转换下载接口
+const attachmentConfig = computed(() => {
+  const dict = attach_type.value || [];
+  const findDictLabel = (val) => {
+    const item = dict.find(d => d.value === val);
+    return item ? item.label : null;
+  };
 
+  return [
+    { label: findDictLabel('1') || '获奖证书', name: 'award', prop: 'fileAward', alert: `请上传${findDictLabel('1') || '获奖证书'}` },
+    { label: findDictLabel('2') || '比赛通知', name: 'notice', prop: 'fileNotice', alert: `请上传${findDictLabel('2') || '比赛通知'}` },
+    { label: findDictLabel('3') || '参赛作品', name: 'work', prop: 'fileWork', alert: `请上传${findDictLabel('3') || '参赛作品'}` },
+    { label: findDictLabel('4') || '支付记录', name: 'payment', prop: 'filePayment', alert: `请上传${findDictLabel('4') || '支付记录'}`, type: 'warning', condition: (f) => f.isReimburse === 1 },
+    { label: findDictLabel('5') || '正规发票', name: 'invoice', prop: 'fileInvoice', alert: `请上传${findDictLabel('5') || '正规发票'}`, type: 'warning', condition: (f) => f.isReimburse === 1 },
+    { label: findDictLabel('6') || '收款码', name: 'receipt', prop: 'fileReceiptCode', alert: `请上传${findDictLabel('6') || '收款码'}`, type: 'warning', condition: (f) => f.isReimburse === 1 },
+  ];
+});
 const visibleAttachments = computed(() => {
-  return attachmentConfig.filter(item => {
+  return attachmentConfig.value.filter(item => {
     if (!item.condition) return true;
     return item.condition(form.value);
   });
@@ -1174,21 +1314,81 @@ function open(id) {
     loadDetail(id);
   } else {
     title.value = props.titleAdd;
-    // 【核心修改】：根据传入角色判断默认填入学生还是老师
-    if (props.userRole === 'teacher') {
+    // 【核心修改】：根据 sourceMode 进行默认填充
+    if (props.sourceMode === 'guided') {
+      // 教师端：我指导的成果，默认填入当前教师为第一指导老师
       samAchievementAdvisorList.value.push({
         teacherId: userStore.name,
         teacherName: userStore.nickName,
-        orderNo: 1
-      });
-    } else {
-      samAchievementParticipantList.value.push({
-        studentId: userStore.name,
-        studentName: userStore.nickName,
         orderNo: 1,
-        manager: 1
+        isFixed: true // 标记为固定
       });
+      reIndexList(samAchievementAdvisorList.value, 'advisor');
+    } else if (props.sourceMode === 'responsible') {
+      const roles = userStore.roles || [];
+      const isTeacher = roles.includes('teacher');
+      const isStudent = roles.includes('student');
+
+      if (isTeacher && !isStudent) {
+        // 教师在“我负责的成果”中，应把自己设为第一指导老师
+        samAchievementAdvisorList.value.push({
+          teacherId: userStore.name,
+          teacherName: userStore.nickName,
+          orderNo: 1,
+          isFixed: true
+        });
+        reIndexList(samAchievementAdvisorList.value, 'advisor');
+      } else {
+        // 学生端：我负责的成果，默认填入当前学生为第一负责人
+        listStudent({ no: userStore.name }).then(res => {
+          let school = null;
+          if (res.rows && res.rows.length > 0) {
+            school = res.rows[0].school;
+          }
+          samAchievementParticipantList.value.push({
+            studentId: userStore.name,
+            studentName: userStore.nickName,
+            school: school,
+            orderNo: 1,
+            manager: 1,
+            isFixed: true // 标记为固定
+          });
+          reIndexList(samAchievementParticipantList.value, 'participant');
+          updateSnapshot();
+        });
+      }
+    } else {
+      // 其他情况（如参与的成果）进行普通预填
+      const roles = userStore.roles || [];
+      const isTeacher = roles.includes('teacher');
+      const isStudent = roles.includes('student');
+
+      if (isTeacher && roles.length === 1) {
+        samAchievementAdvisorList.value.push({
+          teacherId: userStore.name,
+          teacherName: userStore.nickName,
+          orderNo: 1
+        });
+        reIndexList(samAchievementAdvisorList.value, 'advisor');
+      } else if (isStudent && roles.length === 1) {
+        listStudent({ no: userStore.name }).then(res => {
+          let school = null;
+          if (res.rows && res.rows.length > 0) {
+            school = res.rows[0].school;
+          }
+          samAchievementParticipantList.value.push({
+            studentId: userStore.name,
+            studentName: userStore.nickName,
+            school: school,
+            orderNo: 1,
+            manager: 1
+          });
+          reIndexList(samAchievementParticipantList.value, 'participant');
+          updateSnapshot();
+        });
+      }
     }
+
     updateSnapshot();
     // 新增模式下检查草稿
     checkDraft();
@@ -1220,14 +1420,16 @@ function initSortable() {
       if (el) {
         Sortable.create(el, {
           handle: '.drag-handle',
+          filter: '.fixed-row', // 禁止拖动带 fixed-row 类的行
+          onMove: (evt) => {
+            // 禁止拖动到带 fixed-row 类的行上方（即禁止覆盖索引为0的位置）
+            return evt.related.className.indexOf('fixed-row') === -1;
+          },
           onEnd: ({ newIndex, oldIndex }) => {
-            let targetIndex = newIndex;
-            // 【拦截拦截】：绝不允许拖到索引 0 的位置
-            if (targetIndex === 0) targetIndex = 1; 
-
+            if (newIndex === oldIndex) return;
             const list = [...samAchievementParticipantList.value];
             const currRow = list.splice(oldIndex, 1)[0];
-            list.splice(targetIndex, 0, currRow);
+            list.splice(newIndex, 0, currRow);
             samAchievementParticipantList.value = [];
             nextTick(() => {
               samAchievementParticipantList.value = list;
@@ -1244,14 +1446,16 @@ function initSortable() {
       if (el) {
         Sortable.create(el, {
           handle: '.drag-handle',
+          filter: '.fixed-row', // 禁止拖动带 fixed-row 类的行
+          onMove: (evt) => {
+            // 禁止拖动到带 fixed-row 类的行上方
+            return evt.related.className.indexOf('fixed-row') === -1;
+          },
           onEnd: ({ newIndex, oldIndex }) => {
-            let targetIndex = newIndex;
-            // 【拦截拦截】：绝不允许拖到索引 0 的位置
-            if (targetIndex === 0) targetIndex = 1; 
-
+            if (newIndex === oldIndex) return;
             const list = [...samAchievementAdvisorList.value];
             const currRow = list.splice(oldIndex, 1)[0];
-            list.splice(targetIndex, 0, currRow);
+            list.splice(newIndex, 0, currRow);
             samAchievementAdvisorList.value = [];
             nextTick(() => {
               samAchievementAdvisorList.value = list;
@@ -1319,7 +1523,7 @@ function loadDetail(id) {
 
 function reset() {
   form.value = {
-    competitionId: null, achievementId: null, sessionId: null, category: null, name: null, teamName: null,
+    competitionId: null, achievementId: null, sessionId: null, category: "3", name: null, teamName: null,
     level: null, grade: null, track: null, certificateNo: null, groupId: null, ownerDepId: null,
     awardTime: null, fee: null, isReimburse: 0,
     fileAward: null, fileNotice: null, fileWork: null, filePayment: null, fileInvoice: null, fileReceiptCode: null
@@ -1343,14 +1547,26 @@ function reset() {
 
 function validatePDFUpload() {
   const f = form.value;
-  if (!f.fileAward) { proxy.$modal.msgWarning("请上传【奖状(证书)】PDF文件！"); activeAttachmentTab.value = 'award'; return false; }
-  if (!f.fileNotice) { proxy.$modal.msgWarning("请上传【比赛通知】PDF文件！"); activeAttachmentTab.value = 'notice'; return false; }
-  if (!f.fileWork) { proxy.$modal.msgWarning("请上传【参赛作品】PDF文件！"); activeAttachmentTab.value = 'work'; return false; }
+  const findLabel = (val) => {
+    const item = attach_type.value.find(d => d.value === val);
+    return item ? item.label : null;
+  };
+  
+  const awardLabel = findLabel('1') || '获奖证书';
+  const noticeLabel = findLabel('2') || '比赛通知';
+  const workLabel = findLabel('3') || '参赛作品';
+  const paymentLabel = findLabel('4') || '支付记录';
+  const invoiceLabel = findLabel('5') || '正规发票';
+  const receiptLabel = findLabel('6') || '收款码';
+
+  if (!f.fileAward) { proxy.$modal.msgWarning(`请上传【${awardLabel}】PDF文件！`); activeAttachmentTab.value = 'award'; return false; }
+  if (!f.fileNotice) { proxy.$modal.msgWarning(`请上传【${noticeLabel}】PDF文件！`); activeAttachmentTab.value = 'notice'; return false; }
+  if (!f.fileWork) { proxy.$modal.msgWarning(`请上传【${workLabel}】PDF文件！`); activeAttachmentTab.value = 'work'; return false; }
 
   if (f.isReimburse === 1) {
-    if (!f.filePayment) { proxy.$modal.msgWarning("申请报销必须上传【支付记录】PDF文件！"); activeAttachmentTab.value = 'payment'; return false; }
-    if (!f.fileInvoice) { proxy.$modal.msgWarning("申请报销必须上传【正规发票】PDF文件！"); activeAttachmentTab.value = 'invoice'; return false; }
-    if (!f.fileReceiptCode) { proxy.$modal.msgWarning("申请报销必须上传【收款码】PDF文件！"); activeAttachmentTab.value = 'receipt'; return false; }
+    if (!f.filePayment) { proxy.$modal.msgWarning(`申请报销必须上传【${paymentLabel}】PDF文件！`); activeAttachmentTab.value = 'payment'; return false; }
+    if (!f.fileInvoice) { proxy.$modal.msgWarning(`申请报销必须上传【${invoiceLabel}】PDF文件！`); activeAttachmentTab.value = 'invoice'; return false; }
+    if (!f.fileReceiptCode) { proxy.$modal.msgWarning(`申请报销必须上传【${receiptLabel}】PDF文件！`); activeAttachmentTab.value = 'receipt'; return false; }
   }
   return true;
 }
@@ -1384,7 +1600,8 @@ function submitForm() {
       
       form.value.samAchievementAdvisorList = samAchievementAdvisorList.value.map(a => ({
         ...a,
-        teacherNo: a.teacherId 
+        teacherNo: a.teacherId,
+        manager: a.manager // 确保 manager 字段也传给后端
       }));
 
       const isEdit = form.value.achievementId != null;
@@ -1419,6 +1636,7 @@ function handleBeforeClose(done) {
       done();
     }).catch(action => {
       if (action === 'cancel') {
+        clearDraft();
         done();
       }
     });
@@ -1450,6 +1668,7 @@ function handleCancel() {
       doExit();
     }).catch(action => {
       if (action === 'cancel') {
+        clearDraft();
         doExit();
       }
     });
@@ -1464,11 +1683,29 @@ function getDeptTree() {
   });
 }
 
-function reIndexList(list) {
+function reIndexList(list, type) {
   list.forEach((item, index) => {
     item.orderNo = index + 1;
     item.manager = (index === 0) ? 1 : 0;
   });
+
+  // 自动绑定逻辑
+  if (type === 'participant' && list.length > 0) {
+    const first = list[0];
+    if (first.school) {
+      form.value.ownerDepId = Number(first.school);
+    } else if (userStore.deptId) {
+      // 兜底：如果第一负责人没学院信息，取当前登录人的部门
+      form.value.ownerDepId = userStore.deptId;
+    }
+  }
+}
+
+function tableRowClassName({ row }) {
+  if (row.isFixed) {
+    return 'fixed-row';
+  }
+  return '';
 }
 
 function getFileName(url) { return url ? url.substring(url.lastIndexOf("/") + 1) : ""; }
@@ -1486,6 +1723,7 @@ onBeforeRouteLeave((to, from, next) => {
       next();
     }).catch(action => {
       if (action === 'cancel') {
+        clearDraft();
         next();
       } else {
         next(false);
@@ -1576,7 +1814,7 @@ function goToCompetitionApply() {
 }
 
 .preview-box {
-  margin-top: 5px;
+  margin-top: 5px; line-height: 1.2;
   border: 1px solid #ddd;
   padding: 2px;
   background-color: #fff;

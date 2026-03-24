@@ -6,6 +6,13 @@
   <component name="ChangeListManager">
     <list default="true" id="b204d056-52b8-4d02-915a-97d1bc9b8c13" name="Changes" comment="">
       <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/RuoYi-Vue-v3.9.1/ruoyi-admin/src/main/java/com/ruoyi/system/domain/SamReimbursementRatio.java" beforeDir="false" afterPath="$PROJECT_DIR$/RuoYi-Vue-v3.9.1/ruoyi-admin/src/main/java/com/ruoyi/system/domain/SamReimbursementRatio.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/RuoYi-Vue-v3.9.1/ruoyi-admin/src/main/resources/application.yml" beforeDir="false" afterPath="$PROJECT_DIR$/RuoYi-Vue-v3.9.1/ruoyi-admin/src/main/resources/application.yml" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/RuoYi-Vue-v3.9.1/ruoyi-vue3/src/router/index.js" beforeDir="false" afterPath="$PROJECT_DIR$/RuoYi-Vue-v3.9.1/ruoyi-vue3/src/router/index.js" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/RuoYi-Vue-v3.9.1/ruoyi-vue3/src/views/system/SamQualityDevelopmentForm/index.vue" beforeDir="false" afterPath="$PROJECT_DIR$/RuoYi-Vue-v3.9.1/ruoyi-vue3/src/views/system/SamQualityDevelopmentForm/index.vue" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/RuoYi-Vue-v3.9.1/ruoyi-vue3/src/views/system/SamReimbursementItems/index.vue" beforeDir="false" afterPath="$PROJECT_DIR$/RuoYi-Vue-v3.9.1/ruoyi-vue3/src/views/system/SamReimbursementItems/index.vue" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/RuoYi-Vue-v3.9.1/ruoyi-vue3/src/views/system/SamReimbursementRatio/index.vue" beforeDir="false" afterPath="$PROJECT_DIR$/RuoYi-Vue-v3.9.1/ruoyi-vue3/src/views/system/SamReimbursementRatio/index.vue" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/RuoYi-Vue-v3.9.1/sql/ruoyi-cg.sql" beforeDir="false" afterPath="$PROJECT_DIR$/RuoYi-Vue-v3.9.1/sql/ruoyi-cg.sql" afterDir="false" />
     </list>
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
@@ -27,6 +34,7 @@
   "keyToString": {
     "ModuleVcsDetector.initialDetectionPerformed": "true",
     "RunOnceActivity.ShowReadmeOnStart": "true",
+    "RunOnceActivity.TerminalTabsStorage.copyFrom.TerminalArrangementManager": "true",
     "RunOnceActivity.git.unshallow": "true",
     "git-widget-placeholder": "luo",
     "ignore.virus.scanning.warn.message": "true",
@@ -58,6 +66,7 @@
       <workItem from="1768748122300" duration="31000" />
       <workItem from="1768898036967" duration="649000" />
       <workItem from="1772271476240" duration="3659000" />
+      <workItem from="1773572156646" duration="15566000" />
     </task>
     <servers />
   </component>

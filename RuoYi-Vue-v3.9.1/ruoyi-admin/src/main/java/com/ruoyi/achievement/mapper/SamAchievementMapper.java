@@ -2,6 +2,7 @@ package com.ruoyi.achievement.mapper;
 
 import java.util.List;
 import java.util.Map;
+import org.apache.ibatis.annotations.Param;
 import com.ruoyi.achievement.domain.SamAchievement;
 import com.ruoyi.achievement.domain.SamAchievementParticipant;
 import com.ruoyi.achievement.domain.SamAchievementAdvisor;
@@ -41,6 +42,11 @@ public interface SamAchievementMapper
     public List<SamAchievement> selectSamAchievementListByTeacherId(SamAchievement samAchievement);
 
     /**
+     * 根据用户ID查询其作为学生或教师参与的所有成果列表
+     */
+    public List<SamAchievement> selectSamAchievementListByUserId(SamAchievement samAchievement);
+
+    /**
      * 新增成果录入
      * 
      * @param samAchievement 成果录入
@@ -71,6 +77,15 @@ public interface SamAchievementMapper
      * @return 结果
      */
     public int deleteSamAchievementByAchievementIds(String[] achievementIds);
+
+    /**
+     * 校验证书编号是否唯一
+     *
+     * @param certificateNo 证书编号
+     * @param competitionId 赛事ID
+     * @return 结果
+     */
+    public SamAchievement checkCertificateNoUnique(@Param("certificateNo") String certificateNo, @Param("competitionId") String competitionId);
 
     /**
      * 批量删除参赛选手

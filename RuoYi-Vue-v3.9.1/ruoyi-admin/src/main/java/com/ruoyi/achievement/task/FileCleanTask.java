@@ -47,28 +47,56 @@ public class FileCleanTask {
         }
 
         int count = 0;
+        String baseProfile = RuoYiConfig.getProfile(); // 假设为 D:/ruoyi/uploadPath
+
         for (FileUuid fileUuid : tempFiles) {
             try {
-                // 1. 获取物理路径
-                String realPath = fileUuid.getRealPath(); // 例如 /profile/upload/2026/03/01/xxx.pdf
+                String realPath = fileUuid.getRealPath();
+                boolean canDeleteFromDb = false;
+
                 if (StringUtils.isNotEmpty(realPath)) {
-                    // 去掉 /profile 前缀，拼上本地磁盘路径
-                    String relativePath = StringUtils.substringAfter(realPath, Constants.RESOURCE_PREFIX);
-                    String absolutePath = RuoYiConfig.getProfile() + relativePath;
-                    
-                    File file = new File(absolutePath);
-                    if (file.exists()) {
-                        if (file.delete()) {
-                            log.debug("成功删除临时文件：{}", absolutePath);
-                        } else {
-                            log.warn("无法删除临时文件：{}", absolutePath);
-                        }
+                    // 1. 处理相对路径：规范化去掉可能的 /profile 前缀
+                    String relativePath = realPath;
+                    if (realPath.startsWith("/profile")) {
+                        relativePath = realPath.substring(8);
                     }
+                    
+                    // 2. 规范化路径拼接：确保 baseProfile 和 relativePath 之间有且只有一个斜杠
+                    String normalizedBase = baseProfile;
+                    if (normalizedBase.endsWith("/") || normalizedBase.endsWith("\\")) {
+                        normalizedBase = normalizedBase.substring(0, normalizedBase.length() - 1);
+                    }
+                    if (!relativePath.startsWith("/") && !relativePath.startsWith("\\")) {
+                        relativePath = "/" + relativePath;
+                    }
+                    
+                    String absolutePath = normalizedBase + relativePath;
+                    File file = new File(absolutePath);
+                    
+                    // 3. 执行物理删除逻辑
+                    if (file.exists() && file.isFile()) {
+                        if (file.delete()) {
+                            log.info("【成功】物理文件已删除: {}", absolutePath);
+                            canDeleteFromDb = true;
+                        } else {
+                            log.error("【失败】物理文件删除失败（可能被系统占用）: {}", absolutePath);
+                            // 注意：删除失败不设置 canDeleteFromDb = true，留待下次定时任务重试
+                        }
+                    } else {
+                        log.warn("【跳过】磁盘未找到物理文件，视为已清理: {}", absolutePath);
+                        // 如果磁盘上确实没这个文件，留着数据库记录也没用，标记为可删除
+                        canDeleteFromDb = true; 
+                    }
+                } else {
+                    // 如果路径本身为空，直接清理数据库记录
+                    canDeleteFromDb = true;
                 }
 
-                // 2. 删除数据库记录
-                fileUuidMapper.deleteFileUuidByUuid(fileUuid.getFileUuid());
-                count++;
+                // 4. 只有物理文件“搞定了”（已删或确认不存在），才删除数据库记录
+                if (canDeleteFromDb) {
+                    fileUuidMapper.deleteFileUuidByUuid(fileUuid.getFileUuid());
+                    count++;
+                }
             } catch (Exception e) {
                 log.error("清理临时文件 {} 失败: {}", fileUuid.getFileUuid(), e.getMessage());
             }

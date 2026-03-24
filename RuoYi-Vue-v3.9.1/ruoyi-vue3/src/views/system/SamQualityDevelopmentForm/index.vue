@@ -76,7 +76,11 @@
       <el-table-column label="主键ID" align="center" prop="id" />
       <el-table-column label="年份" align="center" prop="year" />
       <el-table-column label="统计成果数" align="center" prop="amount" />
-      <el-table-column label="归属学院" align="center" prop="ownerDepId" />
+      <el-table-column label="归属学院" align="center" prop="ownerDepId">
+        <template #default="scope">
+         <span>{{ getDeptName(scope.row.ownerDepId) }}</span>
+        </template>
+      </el-table-column>
       <el-table-column label="生成时间" align="center" prop="createTime" width="180">
         <template #default="scope">
           <span>{{ parseTime(scope.row.createTime, '{y}-{m}-{d} {h}:{i}:{s}') }}</span>
@@ -221,22 +225,72 @@ const getList = async () => {
 const getDeptTree = async () => {
   try {
     const response = await listDept()
+    console.log('原始部门数据:', response.data)
+    
+    // 直接格式化
     deptOptions.value = handleTree(response.data, "deptId")
+    console.log('最终deptOptions:', deptOptions.value)
+    
   } catch (error) {
     console.error('获取部门树失败:', error)
   }
 }
 
-/** 转换部门数据结构 */
+/** 转换部门数据结构 - 用于 treeselect */
 const normalizer = (node) => {
-  if (node.children && !node.children.length) {
-    delete node.children
-  }
   return {
-    id: node.deptId,
-    label: node.deptName,
+    id: node.id,
+    label: node.label,
     children: node.children
   }
+}
+
+/** 处理树形结构数据 - 专门为 treeselect 格式化 */
+const handleTree = (data, id) => {
+  if (!data || !Array.isArray(data)) return []
+  
+  // treeselect 需要的格式：{ id, label, children }
+  const formatTreeData = (nodes) => {
+    return nodes.map(node => {
+      // 基础节点
+      const treeNode = {
+        id: node.deptId,      // 必须
+        label: node.deptName,  // 必须
+      }
+      
+      // 如果有子节点且子节点数组不为空，递归处理
+      if (node.children && Array.isArray(node.children) && node.children.length > 0) {
+        treeNode.children = formatTreeData(node.children)
+      }
+      
+      return treeNode
+    })
+  }
+  
+  const formattedData = formatTreeData(data)
+  console.log('treeselect 格式化后的数据:', formattedData)
+  return formattedData
+}
+
+/** 根据部门ID获取部门名称 */
+const getDeptName = (deptId) => {
+  if (!deptId || !deptOptions.value) return deptId
+  
+  const findDeptName = (nodes, id) => {
+    for (const node of nodes) {
+      if (Number(node.id) === Number(id)) {
+        return node.label
+      }
+      if (node.children && node.children.length > 0) {
+        const found = findDeptName(node.children, id)
+        if (found) return found
+      }
+    }
+    return null
+  }
+  
+  const deptName = findDeptName(deptOptions.value, deptId)
+  return deptName || deptId
 }
 
 // 取消按钮
