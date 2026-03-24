@@ -89,6 +89,23 @@ spring:
         # #连接池最大阻塞等待时间（使用负值表示没有限制）
         max-wait: -1ms
 
+  jackson:
+    date-format: yyyy-MM-dd HH:mm:ss
+    time-zone: GMT+8
+    # 添加以下配置，使反序列化更灵活
+    parser:
+      allow_single_quotes: true
+      allow_unquoted_field_names: true
+    deserialization:
+      # 允许接受空字符串作为null
+      accept_empty_string_as_null_object: true
+      # 允许接受单个值作为数组
+      accept_single_value_as_array: true
+      # 日期反序列化更宽松
+      adjust_dates_to_context_time_zone: true
+      # 失败时忽略未知属性
+      fail_on_unknown_properties: false
+
 # token配置
 token:
   # 令牌自定义标识
