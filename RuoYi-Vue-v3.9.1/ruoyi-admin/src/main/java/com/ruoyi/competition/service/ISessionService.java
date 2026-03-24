@@ -60,6 +60,23 @@ public interface ISessionService
     public int deleteSessionById(Long id);
 
     /**
+     * 批量更新届次状态（用于预录批量启用）
+     *
+     * @param ids 届次ID集合
+     * @param status 状态（0停用/1启用/2预录）
+     * @return 结果
+     */
+    public int updateSessionStatusByIds(Long[] ids, String status);
+
+    /**
+     * 批量复制届次模板（勾选多条模板记录；每条必须重新上传参赛通知PDF，生成预录状态）
+     *
+     * @param items 待复制条目（至少包含templateSessionId/year/session/uuid）
+     * @return 新增条数
+     */
+    public int batchCopyFromTemplates(List<Session> items);
+
+    /**
      * 批量导入赛事届次数据
      * <p>核心逻辑：1.自动处理Excel文字转字典数字键值 2.按赛事名称检索主表，无则新增 3.届次表重复校验（赛事ID+届次）4.支持更新/禁止重复</p>
      *

@@ -19,6 +19,7 @@ import com.ruoyi.common.annotation.Log;
 import com.ruoyi.common.core.controller.BaseController;
 import com.ruoyi.common.core.domain.AjaxResult;
 import com.ruoyi.common.enums.BusinessType;
+import com.ruoyi.common.utils.StringUtils;
 import com.ruoyi.competition.domain.Session;
 import com.ruoyi.competition.service.ISessionService;
 import com.ruoyi.common.utils.poi.ExcelUtil;
@@ -40,6 +41,47 @@ public class SessionController extends BaseController
 
     @Autowired
     private ISessionService sessionService;
+
+    public static class SessionStatusUpdateRequest
+    {
+        private Long[] ids;
+        private String status;
+
+        public Long[] getIds()
+        {
+            return ids;
+        }
+
+        public void setIds(Long[] ids)
+        {
+            this.ids = ids;
+        }
+
+        public String getStatus()
+        {
+            return status;
+        }
+
+        public void setStatus(String status)
+        {
+            this.status = status;
+        }
+    }
+
+    public static class SessionBatchCopyRequest
+    {
+        private List<Session> items;
+
+        public List<Session> getItems()
+        {
+            return items;
+        }
+
+        public void setItems(List<Session> items)
+        {
+            this.items = items;
+        }
+    }
 
     /**
      * 查询赛事届次列表
@@ -129,6 +171,46 @@ public class SessionController extends BaseController
     public AjaxResult remove(@PathVariable Long[] ids)
     {
         return toAjax(sessionService.deleteSessionByIds(ids));
+    }
+
+    /**
+     * 批量修改届次状态（用于“预录 -> 启用”等批处理）
+     */
+    @PreAuthorize("@ss.hasPermi('session:session:edit')")
+    @Log(title = "赛事届次", businessType = BusinessType.UPDATE)
+    @PutMapping("/status")
+    public AjaxResult updateStatus(@RequestBody SessionStatusUpdateRequest req)
+    {
+        if (req == null || req.getIds() == null || req.getIds().length == 0)
+        {
+            return error("请至少选择一条记录");
+        }
+        if (StringUtils.isBlank(req.getStatus()))
+        {
+            return error("状态不能为空");
+        }
+        return toAjax(sessionService.updateSessionStatusByIds(req.getIds(), req.getStatus()));
+    }
+
+    /**
+     * 批量复制届次模板（每条必须重新上传参赛通知PDF）
+     */
+    @PreAuthorize("@ss.hasPermi('session:session:add')")
+    @Log(title = "赛事届次", businessType = BusinessType.INSERT)
+    @PostMapping("/batchCopy")
+    public AjaxResult batchCopy(@RequestBody SessionBatchCopyRequest req)
+    {
+        if (req == null || req.getItems() == null || req.getItems().isEmpty())
+        {
+            return error("请至少添加一条待复制记录");
+        }
+        if (req.getItems().size() > 50)
+        {
+            return error("单次批量复制最多支持50条");
+        }
+
+        int count = sessionService.batchCopyFromTemplates(req.getItems());
+        return success("已批量复制" + count + "条届次（状态：预录）");
     }
 
     /**

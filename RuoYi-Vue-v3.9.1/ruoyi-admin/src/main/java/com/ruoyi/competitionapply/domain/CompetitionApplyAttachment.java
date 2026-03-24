@@ -25,8 +25,8 @@ public class CompetitionApplyAttachment extends BaseEntity
     private Long competitionApplyId; // 字段名修改为competitionApplyId，对应数据库competition_apply_id
 
     /** 文件UUID */
-    @Excel(name = "文件UUID")
-    private String uuid; // 新增字段，对应数据库uuid
+
+    private String uuid; // 新增字段，对应数据库uuidy
 
     /** 文件路径 */
 
