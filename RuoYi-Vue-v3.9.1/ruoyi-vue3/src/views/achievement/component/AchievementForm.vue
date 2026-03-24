@@ -21,10 +21,10 @@
                 <el-col :span="12">
                   <el-row>
                     <el-col :span="24">
-                      <el-form-item label="比赛" prop="competitionId">
+                      <el-form-item label="参加比赛" prop="competitionId">
                         <el-select 
                           v-model="form.competitionId" 
-                          placeholder="请选择赛事" 
+                          placeholder="第一步：请选择您参加的赛事" 
                           filterable 
                           clearable 
                           style="width: 100%"
@@ -37,13 +37,27 @@
                         </div>
                       </el-form-item>
                     </el-col>
-                  </el-row>
-                  <el-row>
+
                     <el-col :span="24">
-                      <el-form-item label="届次" prop="sessionId">
+                      <el-form-item label="获奖时间" prop="awardTime">
+                        <el-date-picker clearable v-model="form.awardTime" type="date" value-format="YYYY-MM-DD" placeholder="第二步：请按照证书上的日期选择" style="width: 100%" />
+                        <div style="color: #909399; font-size: 12px; margin-top: 5px; line-height: 1.2;">获奖时间为奖状上日期为准，若只有年月，请填写当月最后一天。</div>
+                      </el-form-item>
+                    </el-col>
+
+                    <el-col :span="24">
+                      <el-form-item label="获奖级别" prop="level">
+                        <el-select v-model="form.level" placeholder="第三步：请选择获奖级别（国家级/省级等）" style="width: 100%">
+                          <el-option v-for="dict in award_level_type" :key="dict.value" :label="dict.label" :value="dict.value" />
+                        </el-select>
+                      </el-form-item>
+                    </el-col>
+
+                    <el-col :span="24">
+                      <el-form-item label="比赛届次" prop="sessionId">
                         <el-select 
                           v-model="form.sessionId" 
-                          placeholder="请选择赛事" 
+                          placeholder="系统将根据前三步自动匹配，也可手动修改" 
                           filterable 
                           clearable 
                           style="width: 100%"
@@ -51,76 +65,56 @@
                         >
                           <el-option v-for="item in sessionOptions" :key="item.id" :label="item.session" :value="item.id" />
                         </el-select>
+                        <div v-if="form.sessionId" style="color: #67C23A; font-size: 12px; margin-top: 5px;">
+                          <el-icon style="vertical-align: middle;"><CircleCheck /></el-icon> 已根据时间与级别自动锁定届次
+                        </div>
                       </el-form-item>
                     </el-col>
-                  </el-row>
-                  <el-row>
+
                     <el-col :span="24">
-                      <el-form-item label="作品名称" prop="name">
-                        <el-input v-model="form.name" placeholder="请输入作品名称(选填)" />
-                      </el-form-item>
-                    </el-col>
-                  </el-row>
-                  <el-row>
-                    <el-col :span="12">
-                      <el-form-item label="获奖级别" prop="level">
-                        <el-select v-model="form.level" placeholder="请选择">
-                          <el-option v-for="dict in award_level_type" :key="dict.value" :label="dict.label" :value="dict.value" />
-                        </el-select>
-                      </el-form-item>
-                    </el-col>
-                    <el-col :span="12">
                       <el-form-item label="奖项等级" prop="grade">
-                        <el-select v-model="form.grade" placeholder="请选择" style="width: 100%">
+                        <el-select v-model="form.grade" placeholder="请选择奖项等级（一等奖/二等奖等）" style="width: 100%">
                           <el-option v-for="dict in award_rank" :key="dict.value" :label="dict.label" :value="dict.value" />
                         </el-select>
                         <div style="color: #909399; font-size: 12px; margin-top: 5px; line-height: 1.2;">如果比赛或者表彰没有区分等级，请选择一等奖。</div>
                       </el-form-item>
                     </el-col>
-                  </el-row>
-                  <el-row>
-                    <el-col :span="12">
-                      <el-form-item label="赛道" prop="track">
+
+                    <el-col :span="24">
+                      <el-form-item label="参赛赛道" prop="track">
                         <el-autocomplete
                           v-model="form.track"
                           :fetch-suggestions="queryTrackSearch"
                           clearable
-                          placeholder="请输入或选择赛道"
+                          placeholder="请输入或选择赛道（如：Java组、数学类等）"
                           style="width: 100%"
                         />
-                        <div style="color: #909399; font-size: 12px; margin-top: 5px; line-height: 1.2;">例如蓝桥杯有c++，java数学竞赛有数学类与非数A等</div>
                       </el-form-item>
                     </el-col>
-                    <el-col :span="12">
-                      <el-form-item label="组别" prop="groupId">
-                        <el-select v-model="form.groupId" placeholder="请选择组别" style="width: 100%">
+
+                    <el-col :span="24">
+                      <el-form-item label="证书编号" prop="certificateNo">
+                        <el-input v-model="form.certificateNo" placeholder="请输入证书上的编号" />
+                      </el-form-item>
+                    </el-col>
+
+                    <el-col :span="24">
+                      <el-form-item label="参赛组别" prop="groupId">
+                        <el-select v-model="form.groupId" placeholder="请选择参赛组别" style="width: 100%">
                           <el-option v-for="dict in group_type" :key="dict.value" :label="dict.label" :value="dict.value" />
                         </el-select>
                       </el-form-item>
                     </el-col>
-                  </el-row>
-                  <el-row>
-                    <el-col :span="12">
-                      <el-form-item label="证书编号" prop="certificateNo">
-                        <el-input v-model="form.certificateNo" placeholder="请输入证书编号" />
-                      </el-form-item>
-                    </el-col>
-                    <el-col :span="12">
-                      <el-form-item label="获奖时间" prop="awardTime">
-                        <el-date-picker clearable v-model="form.awardTime" type="date" value-format="YYYY-MM-DD" placeholder="选择日期" style="width: 100%" />
-                        <div style="color: #909399; font-size: 12px; margin-top: 5px; line-height: 1.2;">获奖时间为奖状上日期为准，若只有年月，请填写当月最后一天。</div>
-                      </el-form-item>
-                    </el-col>
-                  </el-row>
-                  <el-row>
-                    <el-col :span="12">
+
+                    <el-col :span="24">
                       <el-form-item label="团队名称" prop="teamName">
-                        <el-input v-model="form.teamName" placeholder="请输入团队名称(选填)" />
+                        <el-input v-model="form.teamName" placeholder="请输入团队名称（个人参赛可不填）" />
                       </el-form-item>
                     </el-col>
-                    <el-col :span="12" v-if="form.isReimburse === 1">
-                      <el-form-item label="报名费" prop="fee">
-                        <el-input v-model="form.fee" placeholder="请输入金额"><template #append>元</template></el-input>
+
+                    <el-col :span="24">
+                      <el-form-item label="作品名称" prop="name">
+                        <el-input v-model="form.name" placeholder="请输入获奖作品名称" />
                       </el-form-item>
                     </el-col>
                   </el-row>
@@ -305,10 +299,10 @@
             <el-col :span="12">
               <el-row>
                 <el-col :span="24">
-                 <el-form-item label="比赛" prop="competitionId">
+                  <el-form-item label="参加比赛" prop="competitionId">
                     <el-select 
                       v-model="form.competitionId" 
-                      placeholder="请选择赛事" 
+                      placeholder="第一步：请选择您参加的赛事" 
                       filterable 
                       clearable 
                       style="width: 100%"
@@ -321,13 +315,27 @@
                     </div>
                   </el-form-item>
                 </el-col>
-              </el-row>
-              <el-row>
+
                 <el-col :span="24">
-                  <el-form-item label="届次" prop="sessionId">
+                  <el-form-item label="获奖时间" prop="awardTime">
+                    <el-date-picker clearable v-model="form.awardTime" type="date" value-format="YYYY-MM-DD" placeholder="第二步：请按照证书上的日期选择" style="width: 100%" />
+                    <div style="color: #909399; font-size: 12px; margin-top: 5px; line-height: 1.2;">获奖时间为奖状上日期为准，若只有年月，请填写当月最后一天。</div>
+                  </el-form-item>
+                </el-col>
+
+                <el-col :span="24">
+                  <el-form-item label="获奖级别" prop="level">
+                    <el-select v-model="form.level" placeholder="第三步：请选择获奖级别（国家级/省级等）" style="width: 100%">
+                      <el-option v-for="dict in award_level_type" :key="dict.value" :label="dict.label" :value="dict.value" />
+                    </el-select>
+                  </el-form-item>
+                </el-col>
+
+                <el-col :span="24">
+                  <el-form-item label="比赛届次" prop="sessionId">
                     <el-select 
                       v-model="form.sessionId" 
-                      placeholder="请先选择赛事" 
+                      placeholder="系统将根据前三步自动匹配，也可手动修改" 
                       filterable 
                       clearable 
                       style="width: 100%"
@@ -335,76 +343,56 @@
                     >
                       <el-option v-for="item in sessionOptions" :key="item.id" :label="item.session" :value="item.id" />
                     </el-select>
+                    <div v-if="form.sessionId" style="color: #67C23A; font-size: 12px; margin-top: 5px;">
+                      <el-icon style="vertical-align: middle;"><CircleCheck /></el-icon> 已根据时间与级别自动锁定届次
+                    </div>
                   </el-form-item>
                 </el-col>
-              </el-row>
-              <el-row>
+
                 <el-col :span="24">
-                  <el-form-item label="作品名称" prop="name">
-                    <el-input v-model="form.name" placeholder="请输入作品名称(选填)" />
-                  </el-form-item>
-                </el-col>
-              </el-row>
-              <el-row>
-                <el-col :span="12">
-                  <el-form-item label="获奖级别" prop="level">
-                    <el-select v-model="form.level" placeholder="请选择">
-                      <el-option v-for="dict in award_level_type" :key="dict.value" :label="dict.label" :value="dict.value" />
-                    </el-select>
-                  </el-form-item>
-                </el-col>
-                <el-col :span="12">
                   <el-form-item label="奖项等级" prop="grade">
-                    <el-select v-model="form.grade" placeholder="请选择" style="width: 100%">
+                    <el-select v-model="form.grade" placeholder="请选择奖项等级（一等奖/二等奖等）" style="width: 100%">
                       <el-option v-for="dict in award_rank" :key="dict.value" :label="dict.label" :value="dict.value" />
                     </el-select>
                     <div style="color: #909399; font-size: 12px; margin-top: 5px; line-height: 1.2;">如果比赛或者表彰没有区分等级，请选择一等奖。</div>
                   </el-form-item>
                 </el-col>
-              </el-row>
-              <el-row>
-                <el-col :span="12">
-                  <el-form-item label="赛道" prop="track">
+
+                <el-col :span="24">
+                  <el-form-item label="参赛赛道" prop="track">
                     <el-autocomplete
                       v-model="form.track"
                       :fetch-suggestions="queryTrackSearch"
                       clearable
-                      placeholder="请输入或选择赛道"
+                      placeholder="请输入或选择赛道（如：Java组、数学类等）"
                       style="width: 100%"
                     />
-                    <div style="color: #909399; font-size: 12px; margin-top: 5px; line-height: 1.2;">例如蓝桥杯有c++，java数学竞赛有数学类与非数A等</div>
                   </el-form-item>
                 </el-col>
-                <el-col :span="12">
-                  <el-form-item label="组别" prop="groupId">
-                    <el-select v-model="form.groupId" placeholder="请选择组别" style="width: 100%">
+
+                <el-col :span="24">
+                  <el-form-item label="证书编号" prop="certificateNo">
+                    <el-input v-model="form.certificateNo" placeholder="请输入证书上的编号" />
+                  </el-form-item>
+                </el-col>
+
+                <el-col :span="24">
+                  <el-form-item label="参赛组别" prop="groupId">
+                    <el-select v-model="form.groupId" placeholder="请选择参赛组别" style="width: 100%">
                       <el-option v-for="dict in group_type" :key="dict.value" :label="dict.label" :value="dict.value" />
                     </el-select>
                   </el-form-item>
                 </el-col>
-              </el-row>
-              <el-row>
-                <el-col :span="12">
-                  <el-form-item label="证书编号" prop="certificateNo">
-                    <el-input v-model="form.certificateNo" placeholder="请输入证书编号" />
-                  </el-form-item>
-                </el-col>
-                <el-col :span="12">
-                  <el-form-item label="获奖时间" prop="awardTime">
-                    <el-date-picker clearable v-model="form.awardTime" type="date" value-format="YYYY-MM-DD" placeholder="选择日期" style="width: 100%" />
-                    <div style="color: #909399; font-size: 12px; margin-top: 5px; line-height: 1.2;">获奖时间为奖状上日期为准，若只有年月，请填写当月最后一天。</div>
-                  </el-form-item>
-                </el-col>
-              </el-row>
-              <el-row>
-                <el-col :span="12">
+
+                <el-col :span="24">
                   <el-form-item label="团队名称" prop="teamName">
-                    <el-input v-model="form.teamName" placeholder="请输入团队名称(选填)" />
+                    <el-input v-model="form.teamName" placeholder="请输入团队名称（个人参赛可不填）" />
                   </el-form-item>
                 </el-col>
-                <el-col :span="12" v-if="form.isReimburse === 1">
-                  <el-form-item label="报名费" prop="fee">
-                    <el-input v-model="form.fee" placeholder="请输入金额"><template #append>元</template></el-input>
+
+                <el-col :span="24">
+                  <el-form-item label="作品名称" prop="name">
+                    <el-input v-model="form.name" placeholder="请输入获奖作品名称" />
                   </el-form-item>
                 </el-col>
               </el-row>
