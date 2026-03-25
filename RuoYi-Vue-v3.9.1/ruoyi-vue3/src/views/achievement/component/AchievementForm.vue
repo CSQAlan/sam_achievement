@@ -120,10 +120,18 @@
                   </el-row>
                   <el-divider content-position="left"><i class="el-icon-money"></i> 报销申请</el-divider>
                   <el-form-item label="是否申请报销" prop="isReimburse">
-                    <el-radio-group v-model="form.isReimburse">
-                      <el-radio :label="1">是 (需要上传凭证)</el-radio>
-                      <el-radio :label="0">否</el-radio>
-                    </el-radio-group>
+                    <div style="display: flex; align-items: center; justify-content: flex-start; width: 100%;">
+                      <el-radio-group v-model="form.isReimburse">
+                        <el-radio :label="1">是 (需要上传凭证)</el-radio>
+                        <el-radio :label="0">否</el-radio>
+                      </el-radio-group>
+                      <div v-if="form.isReimburse === 1 && form.reimbursementStatus !== undefined && form.reimbursementStatus !== null" style="margin-left: 15px; display: flex; align-items: center;">
+                        <span style="font-size: 12px; color: #909399; margin-right: 8px;">报销状态:</span>
+                        <div style="transform: scale(1.5); transform-origin: left center;">
+                          <dict-tag :options="reimbursement_status" :value="form.reimbursementStatus" />
+                        </div>
+                      </div>
+                    </div>
                     <div style="color: #F56C6C; font-size: 12px; margin-top: 5px; line-height: 1.2; font-weight: bold;">
                       如果报名者没有通过其他途径报销，请上传发票（PDF）和填写报名金额。注意：同一张发票只能报销一次
                     </div>
@@ -280,6 +288,7 @@
         </el-form>
       </div>
     </div>
+
   </div>
 
   <el-dialog
@@ -398,10 +407,18 @@
               </el-row>
               <el-divider content-position="left"><i class="el-icon-money"></i> 报销申请</el-divider>
               <el-form-item label="是否申请报销" prop="isReimburse">
-                <el-radio-group v-model="form.isReimburse">
-                  <el-radio :label="1">是 (需要上传凭证)</el-radio>
-                  <el-radio :label="0">否</el-radio>
-                </el-radio-group>
+                <div style="display: flex; align-items: center; justify-content: flex-start; width: 100%;">
+                  <el-radio-group v-model="form.isReimburse">
+                    <el-radio :label="1">是 (需要上传凭证)</el-radio>
+                    <el-radio :label="0">否</el-radio>
+                  </el-radio-group>
+                  <div v-if="form.isReimburse === 1 && form.reimbursementStatus !== undefined && form.reimbursementStatus !== null" style="margin-left: 15px; display: flex; align-items: center;">
+                    <span style="font-size: 12px; color: #909399; margin-right: 8px;">报销状态:</span>
+                    <div style="transform: scale(1.5); transform-origin: left center;">
+                      <dict-tag :options="reimbursement_status" :value="form.reimbursementStatus" />
+                    </div>
+                  </div>
+                </div>
                 <div style="color: #F56C6C; font-size: 12px;font-weight: bold;">
                   如果报名者没有通过其他途径报销，请上传发票（PDF）和填写报名金额。注意：同一张发票只能报销一次
                 </div>
@@ -742,7 +759,7 @@ const props = defineProps({
   sourceMode: { type: String, default: "" },
 });
 
-const { achievement_category, group_type, award_rank, award_level_type, attach_type } = proxy.useDict('achievement_category', 'group_type', 'award_rank', 'award_level_type', 'attach_type');
+const { achievement_category, group_type, award_rank, award_level_type, attach_type, reimbursement_status } = proxy.useDict('achievement_category', 'group_type', 'award_rank', 'award_level_type', 'attach_type', 'reimbursement_status');
 const isPageMode = computed(() => props.pageMode);
 const visible = ref(false);
 const title = ref("");
