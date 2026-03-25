@@ -633,6 +633,7 @@ const attachmentTypeOptions = [
   { label: '奖状(证书)', value: 1 },
   { label: '比赛通知', value: 2 },
   { label: '参赛作品', value: 3 },
+  { label: '比赛照片', value: 8 },
   { label: '支付记录', value: 4 },
   { label: '正规发票', value: 5 },
   { label: '收款码', value: 6 }

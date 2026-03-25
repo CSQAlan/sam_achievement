@@ -21,9 +21,6 @@ import java.util.Set;
 import java.util.zip.ZipEntry;
 import java.util.zip.ZipOutputStream;
 import javax.servlet.http.HttpServletResponse;
-import org.apache.poi.ss.usermodel.Row;
-import org.apache.poi.ss.usermodel.Sheet;
-import org.apache.poi.xssf.usermodel.XSSFWorkbook;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import com.ruoyi.achievement.domain.ExportAchievementBaseVo;
@@ -35,6 +32,7 @@ import com.ruoyi.common.utils.DateUtils;
 import com.ruoyi.common.utils.SecurityUtils;
 import com.ruoyi.common.utils.StringUtils;
 import com.ruoyi.common.utils.file.FileUtils;
+import com.ruoyi.common.utils.poi.ExcelUtil;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -57,7 +55,7 @@ import com.ruoyi.system.service.ISysDeptService;
 
 /**
  * 成果录入Service业务层处理
- * 
+ *
  * @author 王璨
  * @date 2026-02-03
  */
@@ -846,40 +844,13 @@ public class SamAchievementServiceImpl implements ISamAchievementService
                 .thenComparing(item -> item == null ? "" : StringUtils.nvl(item.getAchievementId(), ""))
                 .thenComparing(item -> item == null ? "" : StringUtils.nvl(item.getFileUuid(), "")));
 
-        List<ExportAttachmentFailExcelVo> failList = new ArrayList<>();
-        Set<String> actualAttachmentKeySet = new HashSet<>();
-        for (ExportAttachmentFileVo attachmentFile : attachmentFiles)
-        {
-            if (attachmentFile == null || StringUtils.isEmpty(attachmentFile.getAchievementId()) || attachmentFile.getType() == null)
-            {
-                continue;
-            }
-            actualAttachmentKeySet.add(buildAttachmentPresenceKey(attachmentFile.getAchievementId(), attachmentFile.getType()));
-        }
-
-        for (String achievementId : ownerNameMap.keySet())
-        {
-            for (Integer type : typeList)
-            {
-                if (!actualAttachmentKeySet.contains(buildAttachmentPresenceKey(achievementId, type)))
-                {
-                    failList.add(buildAttachmentFailRecord(
-                            achievementId,
-                            ownerNameMap.get(achievementId),
-                            getAttachmentTypeName(type),
-                            "数据库中无此附件记录",
-                            null,
-                            null));
-                }
-            }
-        }
-
         response.reset();
         response.setContentType("application/zip");
         FileUtils.setAttachmentResponseHeader(response, "成果附件导出_" + DateUtils.dateTimeNow() + ".zip");
 
         Set<String> writtenDirectorySet = new HashSet<>();
         Map<String, Integer> nameCounterMap = new HashMap<>();
+        List<ExportAttachmentFailExcelVo> failList = new ArrayList<>();
         try (ZipOutputStream zipOutputStream = new ZipOutputStream(response.getOutputStream(), StandardCharsets.UTF_8))
         {
             for (Integer type : typeList)
@@ -900,23 +871,17 @@ public class SamAchievementServiceImpl implements ISamAchievementService
                     continue;
                 }
 
+                String ownerName = ownerNameMap.get(attachmentFile.getAchievementId());
                 File sourceFile = resolveAttachmentFile(attachmentFile.getRealPath());
                 if (sourceFile == null || !sourceFile.exists() || !sourceFile.isFile())
                 {
                     log.warn("Skip missing attachment file, achievementId={}, type={}, fileUuid={}, realPath={}",
                             attachmentFile.getAchievementId(), attachmentFile.getType(),
                             attachmentFile.getFileUuid(), attachmentFile.getRealPath());
-                    failList.add(buildAttachmentFailRecord(
-                            attachmentFile.getAchievementId(),
-                            ownerNameMap.get(attachmentFile.getAchievementId()),
-                            typeName,
-                            "附件记录存在，但物理文件不存在",
-                            attachmentFile.getOriginName(),
-                            attachmentFile.getFileUuid()));
+                    addAttachmentFailRecord(failList, attachmentFile, ownerName, typeName, "文件不存在或路径无效");
                     continue;
                 }
 
-                String ownerName = ownerNameMap.get(attachmentFile.getAchievementId());
                 String baseFileName = buildAttachmentExportBaseName(
                         attachmentFile.getAchievementId(),
                         ownerName,
@@ -935,13 +900,8 @@ public class SamAchievementServiceImpl implements ISamAchievementService
                     log.warn("Skip unreadable attachment file, achievementId={}, type={}, fileUuid={}, message={}",
                             attachmentFile.getAchievementId(), attachmentFile.getType(),
                             attachmentFile.getFileUuid(), ex.getMessage());
-                    failList.add(buildAttachmentFailRecord(
-                            attachmentFile.getAchievementId(),
-                            ownerNameMap.get(attachmentFile.getAchievementId()),
-                            typeName,
-                            "附件文件读取失败: " + (StringUtils.isNotEmpty(ex.getMessage()) ? ex.getMessage() : "未知错误"),
-                            attachmentFile.getOriginName(),
-                            attachmentFile.getFileUuid()));
+                    addAttachmentFailRecord(failList, attachmentFile, ownerName, typeName,
+                            "文件读取失败" + (StringUtils.isNotEmpty(ex.getMessage()) ? "：" + ex.getMessage() : ""));
                 }
                 finally
                 {
@@ -959,11 +919,7 @@ public class SamAchievementServiceImpl implements ISamAchievementService
                 }
             }
 
-            if (!failList.isEmpty())
-            {
-                addAttachmentFailReportEntry(zipOutputStream, failList);
-            }
-
+            writeFailExcelToZip(zipOutputStream, failList);
             zipOutputStream.finish();
             zipOutputStream.flush();
         }
@@ -1035,69 +991,38 @@ public class SamAchievementServiceImpl implements ISamAchievementService
         return ATTACHMENT_TYPE_NAME_MAP.get(type);
     }
 
-    private String buildAttachmentPresenceKey(String achievementId, Integer type)
+    private void addAttachmentFailRecord(List<ExportAttachmentFailExcelVo> failList,
+                                         ExportAttachmentFileVo attachmentFile,
+                                         String ownerName,
+                                         String typeName,
+                                         String failReason)
     {
-        return StringUtils.nvl(achievementId, "") + "#" + (type == null ? "" : type);
+        ExportAttachmentFailExcelVo failItem = new ExportAttachmentFailExcelVo();
+        failItem.setAchievementId(attachmentFile == null ? null : attachmentFile.getAchievementId());
+        failItem.setOwnerName(ownerName);
+        failItem.setTypeName(typeName);
+        failItem.setFailReason(failReason);
+        failItem.setOriginName(attachmentFile == null ? null : attachmentFile.getOriginName());
+        failItem.setFileUuid(attachmentFile == null ? null : attachmentFile.getFileUuid());
+        failList.add(failItem);
     }
 
-    private ExportAttachmentFailExcelVo buildAttachmentFailRecord(String achievementId,
-                                                                  String ownerName,
-                                                                  String typeName,
-                                                                  String failReason,
-                                                                  String originName,
-                                                                  String fileUuid)
+    private void writeFailExcelToZip(ZipOutputStream zipOutputStream,
+                                     List<ExportAttachmentFailExcelVo> failList) throws IOException
     {
-        ExportAttachmentFailExcelVo vo = new ExportAttachmentFailExcelVo();
-        vo.setAchievementId(achievementId);
-        vo.setOwnerName(ownerName);
-        vo.setTypeName(typeName);
-        vo.setFailReason(failReason);
-        vo.setOriginName(originName);
-        vo.setFileUuid(fileUuid);
-        return vo;
-    }
-
-    private void addAttachmentFailReportEntry(ZipOutputStream zipOutputStream,
-                                              List<ExportAttachmentFailExcelVo> failList) throws IOException
-    {
-        zipOutputStream.putNextEntry(new ZipEntry("导出失败清单.xlsx"));
-        zipOutputStream.write(buildAttachmentFailExcelBytes(failList));
-        zipOutputStream.closeEntry();
-    }
-
-    private byte[] buildAttachmentFailExcelBytes(List<ExportAttachmentFailExcelVo> failList) throws IOException
-    {
-        try (XSSFWorkbook workbook = new XSSFWorkbook();
-             ByteArrayOutputStream outputStream = new ByteArrayOutputStream())
+        if (failList == null || failList.isEmpty())
         {
-            Sheet sheet = workbook.createSheet("失败清单");
-            String[] headers = { "成果编号", "负责人姓名", "附件类别", "失败原因", "原文件名", "文件UUID" };
-            Row headerRow = sheet.createRow(0);
-            for (int i = 0; i < headers.length; i++)
-            {
-                headerRow.createCell(i).setCellValue(headers[i]);
-            }
+            return;
+        }
 
-            for (int i = 0; i < failList.size(); i++)
-            {
-                ExportAttachmentFailExcelVo item = failList.get(i);
-                Row row = sheet.createRow(i + 1);
-                row.createCell(0).setCellValue(StringUtils.nvl(item.getAchievementId(), ""));
-                row.createCell(1).setCellValue(StringUtils.nvl(item.getOwnerName(), ""));
-                row.createCell(2).setCellValue(StringUtils.nvl(item.getTypeName(), ""));
-                row.createCell(3).setCellValue(StringUtils.nvl(item.getFailReason(), ""));
-                row.createCell(4).setCellValue(StringUtils.nvl(item.getOriginName(), ""));
-                row.createCell(5).setCellValue(StringUtils.nvl(item.getFileUuid(), ""));
-            }
+        try (ByteArrayOutputStream outputStream = new ByteArrayOutputStream())
+        {
+            ExcelUtil<ExportAttachmentFailExcelVo> util = new ExcelUtil<>(ExportAttachmentFailExcelVo.class);
+            util.exportExcel(outputStream, failList, "附件导出失败清单", "附件导出失败清单");
 
-            int[] columnWidths = { 20, 20, 18, 48, 40, 40 };
-            for (int i = 0; i < columnWidths.length; i++)
-            {
-                sheet.setColumnWidth(i, columnWidths[i] * 256);
-            }
-
-            workbook.write(outputStream);
-            return outputStream.toByteArray();
+            zipOutputStream.putNextEntry(new ZipEntry("失败清单.xlsx"));
+            zipOutputStream.write(outputStream.toByteArray());
+            zipOutputStream.closeEntry();
         }
     }
 
