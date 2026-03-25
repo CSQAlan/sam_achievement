@@ -1973,8 +1973,27 @@ async function ensurePdfBlob(blob, fallback = "文件获取失败，请稍后重
     throw new Error(fallback);
   }
 
+  const mimeType = String(blobData.type || "").toLowerCase();
+
   if (!blobValidate(blobData)) {
     throw new Error(await getBlobErrorMessage(blobData, fallback));
+  }
+
+  if (
+    mimeType.includes("text/plain") ||
+    mimeType.includes("text/html") ||
+    mimeType.includes("text/xml")
+  ) {
+    throw new Error(await getBlobErrorMessage(blobData, fallback));
+  }
+
+  const buffer = await blobData.arrayBuffer();
+  const header = Array.from(new Uint8Array(buffer.slice(0, 5)))
+    .map((code) => String.fromCharCode(code))
+    .join("");
+
+  if (header !== "%PDF-") {
+    throw new Error(await getBlobErrorMessage(blobData, "当前附件不是有效的 PDF 文件"));
   }
 
   return new Blob([blobData], { type: "application/pdf" });
@@ -2001,6 +2020,7 @@ function loadSafePreview(uuid, type) {
     .catch((err) => {
       console.error("预览加载失败", err);
       previewUrls[type] = "";
+      proxy.$modal?.msgError?.(err?.message || "PDF预览加载失败");
     });
 }
 function handleOpenDetail(uuid) {

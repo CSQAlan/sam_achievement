@@ -223,6 +223,18 @@
               v-hasPermi="permExport"
           >导出</el-button>
         </el-col>
+        <el-col :span="1.5">
+          <el-button
+              v-if="showAttachmentExport"
+              type="warning"
+              plain
+              icon="Download"
+              :disabled="multiple"
+              :loading="exportAttachmentLoading"
+              @click="openExportAttachmentDialog"
+              v-hasPermi="permExport"
+          >导出附件</el-button>
+        </el-col>
         <el-col v-if="canBatchReview" :span="2">
           <el-button
               type="warning"
@@ -442,6 +454,28 @@
         @ok="handleFormOk"
         @cancel="handleFormCancel"
     />
+    <el-dialog
+        v-model="exportAttachmentDialogVisible"
+        title="导出附件"
+        width="420px"
+    >
+      <el-checkbox-group v-model="selectedAttachmentTypes" class="attachment-export-group">
+        <el-checkbox
+            v-for="item in attachmentTypeOptions"
+            :key="item.value"
+            :label="item.value"
+        >
+          {{ item.label }}
+        </el-checkbox>
+      </el-checkbox-group>
+
+      <template #footer>
+        <el-button @click="exportAttachmentDialogVisible = false">取消</el-button>
+        <el-button type="primary" :loading="exportAttachmentLoading" @click="submitExportAttachment">
+          确定导出
+        </el-button>
+      </template>
+    </el-dialog>
   </div>
 </template>
 
@@ -449,11 +483,13 @@
 import { ref, reactive, computed, getCurrentInstance, nextTick, watch, onActivated, onMounted, onBeforeUnmount } from 'vue';
 import { useRoute, useRouter } from 'vue-router';
 import { useDict } from '@/utils/dict';
+import { blobValidate } from '@/utils/ruoyi';
 import useUserStore from '@/store/modules/user';
 import auth from '@/plugins/auth';
 import { Warning } from '@element-plus/icons-vue';
+import { saveAs } from 'file-saver';
 import AchievementForm from '../component/AchievementForm.vue';
-import { listManage, getManage, addManage, updateManage, delManage } from '@/api/achievement/manage';
+import { listManage, getManage, addManage, updateManage, delManage, exportAttachmentZip } from '@/api/achievement/manage';
 import { batchUpdateReviewStatus } from '@/api/achievement/review_batch';
 import { listCompetition } from '@/api/competition/competition';
 import { listSession } from '@/api/session/session';
@@ -476,6 +512,7 @@ const props = defineProps({
   showEdit: { type: Boolean, default: true },
   showDelete: { type: Boolean, default: true },
   showExport: { type: Boolean, default: true },
+  showAttachmentExport: { type: Boolean, default: true },
   sourceMode: { type: String, default: '' }
 });
 
@@ -495,6 +532,7 @@ const delFn = computed(() => props.delFn || delManage);
 
 const exportUrl = computed(() => props.exportUrl || 'achievement/manage/export');
 const showSearch = computed(() => props.showSearch);
+const showAttachmentExport = computed(() => props.showAttachmentExport);
 const reviewRoute = computed(() => {
   if (props.reviewRoute) return props.reviewRoute;
   const parentRecord = route.matched?.[route.matched.length - 2];
@@ -588,6 +626,17 @@ const syncingSelection = ref(false);
 const batchReviewLoading = ref(false);
 const openingReviewPage = ref(false);
 const openingReviewPageId = ref('');
+const exportAttachmentDialogVisible = ref(false);
+const exportAttachmentLoading = ref(false);
+const selectedAttachmentTypes = ref([]);
+const attachmentTypeOptions = [
+  { label: '奖状(证书)', value: 1 },
+  { label: '比赛通知', value: 2 },
+  { label: '参赛作品', value: 3 },
+  { label: '支付记录', value: 4 },
+  { label: '正规发票', value: 5 },
+  { label: '收款码', value: 6 }
+];
 const hasBatchSelection = computed(() => ids.value.length > 0);
 
 function normalizeLooseText(value) {
@@ -1192,6 +1241,58 @@ function handleDelete(row) {
       .catch(() => {});
 }
 
+function openExportAttachmentDialog() {
+  if (!ids.value.length) {
+    proxy.$modal?.msgWarning?.('请先勾选成果');
+    return;
+  }
+  selectedAttachmentTypes.value = [];
+  exportAttachmentDialogVisible.value = true;
+}
+
+async function parseBlobError(blob, fallback = '导出附件失败') {
+  try {
+    const text = await blob.text();
+    const data = JSON.parse(text);
+    return data?.msg || fallback;
+  } catch (e) {
+    return fallback;
+  }
+}
+
+async function submitExportAttachment() {
+  if (!ids.value.length) {
+    proxy.$modal?.msgWarning?.('请先勾选成果');
+    return;
+  }
+  if (!selectedAttachmentTypes.value.length) {
+    proxy.$modal?.msgWarning?.('请至少选择一个附件类别');
+    return;
+  }
+
+  exportAttachmentLoading.value = true;
+  try {
+    const data = await exportAttachmentZip({
+      achievementIds: ids.value,
+      types: selectedAttachmentTypes.value,
+      sourceMode: props.sourceMode || ''
+    });
+
+    if (!blobValidate(data)) {
+      throw new Error(await parseBlobError(data, '导出附件失败'));
+    }
+
+    const blob = new Blob([data], { type: 'application/zip' });
+    saveAs(blob, `成果附件导出_${new Date().getTime()}.zip`);
+    exportAttachmentDialogVisible.value = false;
+    proxy.$modal?.msgSuccess?.('导出成功');
+  } catch (e) {
+    proxy.$modal?.msgError?.(e?.message || '导出附件失败');
+  } finally {
+    exportAttachmentLoading.value = false;
+  }
+}
+
 function handleExport() {
   const parts = exportUrl.value.split('/').filter(Boolean);
   const base = parts.length >= 2 ? parts[parts.length - 2] : 'export';
@@ -1496,6 +1597,12 @@ export default {
 .search-item :deep(.el-select),
 .search-item :deep(.el-date-editor) {
   width: 100%;
+}
+
+.attachment-export-group {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
 }
 
 .batch-reason-group {

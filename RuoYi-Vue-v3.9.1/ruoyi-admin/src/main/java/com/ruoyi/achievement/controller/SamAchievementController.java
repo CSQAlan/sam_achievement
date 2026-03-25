@@ -25,6 +25,8 @@ import com.ruoyi.achievement.domain.SamAchievement;
 import com.ruoyi.achievement.service.ISamAchievementService;
 import com.ruoyi.common.utils.poi.ExcelUtil;
 import com.ruoyi.common.core.page.TableDataInfo;
+import com.ruoyi.achievement.domain.ExportAttachmentZipReq;
+import java.io.IOException;
 
 /**
  * 成果录入Controller
@@ -241,4 +243,14 @@ public class SamAchievementController extends BaseController
         // 如果是纯学生角色（且不是管理员），或者不具备上述权限，返回空
         return getDataTable(new java.util.ArrayList<>());
     }
+
+    @PreAuthorize("@ss.hasAnyPermi('achievement:manage:export,achievement:manage:participated:export,achievement:manage:guided:export')")
+    @Log(title = "成果附件批量导出", businessType = BusinessType.EXPORT)
+    @PostMapping("/exportAttachmentZip")
+    public void exportAttachmentZip(@RequestBody ExportAttachmentZipReq req,
+                                    HttpServletResponse response) throws IOException
+    {
+        samAchievementService.exportAttachmentZip(req, response);
+    }
+
 }

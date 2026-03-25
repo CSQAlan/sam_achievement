@@ -148,7 +148,7 @@ public class SamAchievement extends BaseEntity
 
     private List<SamAchievementAdvisor> samAchievementAdvisorList;
 
-    private List<java.util.Map<String, Object>> samAchievementAttachmentList;
+    private List<SamAchievementAttachment> samAchievementAttachmentList;
 
     public void setAchievementId(String achievementId) 
     {
@@ -530,12 +530,12 @@ public class SamAchievement extends BaseEntity
         this.samAchievementAdvisorList = samAchievementAdvisorList;
     }
 
-    public List<java.util.Map<String, Object>> getSamAchievementAttachmentList()
+    public List<SamAchievementAttachment> getSamAchievementAttachmentList()
     {
         return samAchievementAttachmentList;
     }
 
-    public void setSamAchievementAttachmentList(List<java.util.Map<String, Object>> samAchievementAttachmentList)
+    public void setSamAchievementAttachmentList(List<SamAchievementAttachment> samAchievementAttachmentList)
     {
         this.samAchievementAttachmentList = samAchievementAttachmentList;
     }

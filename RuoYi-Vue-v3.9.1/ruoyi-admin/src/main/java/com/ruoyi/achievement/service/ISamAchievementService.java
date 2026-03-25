@@ -2,6 +2,9 @@ package com.ruoyi.achievement.service;
 
 import java.util.List;
 import com.ruoyi.achievement.domain.SamAchievement;
+import com.ruoyi.achievement.domain.ExportAttachmentZipReq;
+import javax.servlet.http.HttpServletResponse;
+import java.io.IOException;
 
 /**
  * 成果录入Service接口
@@ -97,4 +100,9 @@ public interface ISamAchievementService
      * @return 赛道列表
      */
     public List<String> selectTrackList(Long competitionId, Long sessionId);
+
+    /**
+     * 批量导出成果附件压缩包
+     */
+    public void exportAttachmentZip(ExportAttachmentZipReq req, HttpServletResponse response) throws IOException;
 }
