@@ -2040,7 +2040,7 @@ onBeforeRouteLeave((to, from, next) => {
 });
 
 function goToCompetitionApply() {
-  proxy.$router.push('/views/competition-apply/index');
+  proxy.$router.push('/competition-apply/competitionapply');
 }
 // 查看详情（在新标签页打开文件）
 function handleOpenDetail(uuid) {
