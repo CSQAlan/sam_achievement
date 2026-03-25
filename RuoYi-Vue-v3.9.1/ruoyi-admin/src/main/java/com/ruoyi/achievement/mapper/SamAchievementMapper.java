@@ -6,13 +6,16 @@ import org.apache.ibatis.annotations.Param;
 import com.ruoyi.achievement.domain.SamAchievement;
 import com.ruoyi.achievement.domain.SamAchievementParticipant;
 import com.ruoyi.achievement.domain.SamAchievementAdvisor;
-
+import com.ruoyi.achievement.domain.SamAchievementAttachment;
+import com.ruoyi.achievement.domain.ExportAchievementBaseVo;
+import com.ruoyi.achievement.domain.ExportAttachmentFileVo;
 /**
  * 成果录入Mapper接口
  *
  * @author 王璨
  * @date 2026-02-03
  */
+
 public interface SamAchievementMapper
 {
     /**
@@ -134,7 +137,7 @@ public interface SamAchievementMapper
     /**
      * 批量新增附件关联
      */
-    public int batchSamAchievementAttachment(List<Map<String, Object>> samAchievementAttachmentList);
+    public int batchSamAchievementAttachment(List<SamAchievementAttachment> samAchievementAttachmentList);
 
     /**
      * 通过成果录入主键删除附件信息
@@ -145,4 +148,22 @@ public interface SamAchievementMapper
      * 批量删除附件关联
      */
     public int deleteSamAchievementAttachmentByAchievementIds(String[] achievementIds);
+
+    /**
+     * 查询当前用户有权限导出的成果及负责人信息
+     */
+    public List<ExportAchievementBaseVo> selectAuthorizedExportAchievementBase(
+            @Param("achievementIds") String[] achievementIds,
+            @Param("loginName") String loginName,
+            @Param("sourceMode") String sourceMode,
+            @Param("isStudent") boolean isStudent,
+            @Param("isTeacher") boolean isTeacher,
+            @Param("isAdmin") boolean isAdmin);
+
+    /**
+     * 查询成果附件文件信息
+     */
+    public List<ExportAttachmentFileVo> selectExportAttachmentFiles(
+            @Param("achievementIds") String[] achievementIds,
+            @Param("types") Integer[] types);
 }

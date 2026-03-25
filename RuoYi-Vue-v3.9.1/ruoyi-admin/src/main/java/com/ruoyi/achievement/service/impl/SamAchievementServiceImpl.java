@@ -1,17 +1,39 @@
 package com.ruoyi.achievement.service.impl;
 
-import java.util.Calendar;
-import java.util.List;
+import java.io.BufferedInputStream;
+import java.io.File;
+import java.io.FileInputStream;
+import java.io.IOException;
+import java.io.InputStream;
+import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
+import java.util.Calendar;
+import java.util.Comparator;
+import java.util.HashMap;
+import java.util.HashSet;
+import java.util.LinkedHashMap;
+import java.util.LinkedHashSet;
+import java.util.List;
 import java.util.Map;
 import java.util.Objects;
+import java.util.Set;
+import java.util.zip.ZipEntry;
+import java.util.zip.ZipOutputStream;
+import javax.servlet.http.HttpServletResponse;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+import com.ruoyi.achievement.domain.ExportAchievementBaseVo;
+import com.ruoyi.achievement.domain.ExportAttachmentFileVo;
+import com.ruoyi.achievement.domain.ExportAttachmentZipReq;
 import com.ruoyi.common.utils.DateUtils;
 import com.ruoyi.common.utils.SecurityUtils;
 import com.ruoyi.common.utils.StringUtils;
+import com.ruoyi.common.utils.file.FileUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import com.ruoyi.achievement.domain.SamAchievement;
+import com.ruoyi.achievement.domain.SamAchievementAttachment;
 import com.ruoyi.achievement.domain.SamAchievementParticipant;
 import com.ruoyi.achievement.domain.SamAchievementAdvisor;
 import com.ruoyi.achievement.domain.SamStudent;
@@ -21,18 +43,24 @@ import com.ruoyi.achievement.service.ISamAchievementService;
 import com.ruoyi.achievement.service.ISamStudentService;
 import com.ruoyi.achievement.service.ISamTeacherService;
 import com.ruoyi.achievement.mapper.FileUuidMapper;
+import com.ruoyi.common.config.RuoYiConfig;
+import com.ruoyi.common.constant.Constants;
 import com.ruoyi.common.constant.UserConstants;
 import com.ruoyi.common.exception.ServiceException;
 
 /**
  * 成果录入Service业务层处理
- * 
+ *
  * @author 王璨
  * @date 2026-02-03
  */
 @Service
 public class SamAchievementServiceImpl implements ISamAchievementService
 {
+    private static final Logger log = LoggerFactory.getLogger(SamAchievementServiceImpl.class);
+
+    private static final Map<Integer, String> ATTACHMENT_TYPE_NAME_MAP = buildAttachmentTypeNameMap();
+
     @Autowired
     private SamAchievementMapper samAchievementMapper;
 
@@ -45,9 +73,21 @@ public class SamAchievementServiceImpl implements ISamAchievementService
     @Autowired
     private FileUuidMapper fileUuidMapper;
 
+    private static Map<Integer, String> buildAttachmentTypeNameMap()
+    {
+        Map<Integer, String> typeNameMap = new LinkedHashMap<>();
+        typeNameMap.put(1, "奖状(证书)");
+        typeNameMap.put(2, "比赛通知");
+        typeNameMap.put(3, "参赛作品");
+        typeNameMap.put(4, "支付记录");
+        typeNameMap.put(5, "正规发票");
+        typeNameMap.put(6, "收款码");
+        return typeNameMap;
+    }
+
     /**
      * 查询成果录入
-     * 
+     *
      * @param achievementId 成果录入主键
      * @return 成果录入
      */
@@ -78,7 +118,7 @@ public class SamAchievementServiceImpl implements ISamAchievementService
 
     /**
      * 查询成果录入列表
-     * 
+     *
      * @param samAchievement 成果录入
      * @return 成果录入
      */
@@ -129,7 +169,7 @@ public class SamAchievementServiceImpl implements ISamAchievementService
 
     /**
      * 新增成果录入
-     * 
+     *
      * @param samAchievement 成果录入
      * @return 结果
      */
@@ -190,7 +230,7 @@ public class SamAchievementServiceImpl implements ISamAchievementService
 
     /**
      * 修改成果录入
-     * 
+     *
      * @param samAchievement 成果录入
      * @return 结果
      */
@@ -382,7 +422,7 @@ public class SamAchievementServiceImpl implements ISamAchievementService
      * @param samAchievement 成果录入
      */
     private void validatePDFAttachments(SamAchievement samAchievement) {
-        List<Map<String, Object>> attachments = samAchievement.getSamAchievementAttachmentList();
+        List<SamAchievementAttachment> attachments = samAchievement.getSamAchievementAttachmentList();
         if (attachments == null || attachments.isEmpty()) {
             throw new ServiceException("请上传必要的PDF文件");
         }
@@ -397,8 +437,8 @@ public class SamAchievementServiceImpl implements ISamAchievementService
         boolean hasInvoice = false; // 发票
         boolean hasReceipt = false; // 收款码
 
-        for (Map<String, Object> attachment : attachments) {
-            Integer type = (Integer) attachment.get("type");
+        for (SamAchievementAttachment attachment : attachments) {
+            Integer type = attachment == null ? null : attachment.getType();
             if (type == null) continue;
             switch (type) {
                 case 1:
@@ -525,23 +565,24 @@ public class SamAchievementServiceImpl implements ISamAchievementService
      * 2. 将附件关联关系存入 sam_achievement_attachment 表
      */
     private void processAttachments(SamAchievement samAchievement) {
-        List<Map<String, Object>> attachments = samAchievement.getSamAchievementAttachmentList();
+        List<SamAchievementAttachment> attachments = samAchievement.getSamAchievementAttachmentList();
         String achievementId = samAchievement.getAchievementId();
 
         if (StringUtils.isNotNull(attachments) && attachments.size() > 0) {
             List<String> uuids = new ArrayList<>();
-            List<Map<String, Object>> insertList = new ArrayList<>();
+            List<SamAchievementAttachment> insertList = new ArrayList<>();
 
-            for (Map<String, Object> attachment : attachments) {
-                String uuid = (String) attachment.get("fileUuid");
+            for (SamAchievementAttachment attachment : attachments) {
+                if (attachment == null) {
+                    continue;
+                }
+                String uuid = attachment.getFileUuid();
                 if (StringUtils.isNotEmpty(uuid)) {
                     uuids.add(uuid);
 
-                    // 补全附件表所需字段
-                    attachment.put("achievementId", achievementId);
-                    // 如果前端没传 fileType，这里给个默认值
-                    if (attachment.get("fileType") == null) {
-                        attachment.put("fileType", 1);
+                    attachment.setAchievementId(achievementId);
+                    if (attachment.getFileType() == null) {
+                        attachment.setFileType(1);
                     }
                     insertList.add(attachment);
                 }
@@ -586,7 +627,7 @@ public class SamAchievementServiceImpl implements ISamAchievementService
                 participant.setCreateTime(DateUtils.getNowDate());
                 participant.setUpdateTime(DateUtils.getNowDate());
                 participant.setDelFlag(0L);
-                
+
                 // 核心兼容：如果前端传的是 studentId 而非 studentNo，进行补位
                 if (StringUtils.isEmpty(participant.getStudentNo()) && StringUtils.isNotEmpty(participant.getStudentId())) {
                     participant.setStudentNo(participant.getStudentId());
@@ -700,9 +741,295 @@ public class SamAchievementServiceImpl implements ISamAchievementService
         }
     }
 
+    @Override
+    public void exportAttachmentZip(ExportAttachmentZipReq req, HttpServletResponse response) throws IOException
+    {
+        if (req == null)
+        {
+            throw new ServiceException("导出参数不能为空");
+        }
+
+        List<String> achievementIdList = normalizeAchievementIds(req.getAchievementIds());
+        if (achievementIdList.isEmpty())
+        {
+            throw new ServiceException("请选择要导出的成果");
+        }
+
+        List<Integer> typeList = normalizeAttachmentTypes(req.getTypes());
+        if (typeList.isEmpty())
+        {
+            throw new ServiceException("请选择至少一个附件类别");
+        }
+
+        Long userId = SecurityUtils.getUserId();
+        boolean isAdmin = SecurityUtils.isAdmin(userId);
+        String loginName = SecurityUtils.getUsername();
+        if (!isAdmin && StringUtils.isEmpty(loginName))
+        {
+            throw new ServiceException("当前登录用户无效");
+        }
+
+        List<ExportAchievementBaseVo> authorizedAchievementList =
+                samAchievementMapper.selectAuthorizedExportAchievementBase(
+                        achievementIdList.toArray(new String[0]),
+                        loginName,
+                        normalizeSourceMode(req.getSourceMode()),
+                        SecurityUtils.hasRole("student"),
+                        SecurityUtils.hasRole("teacher"),
+                        isAdmin);
+
+        if (authorizedAchievementList == null || authorizedAchievementList.isEmpty())
+        {
+            throw new ServiceException("当前没有可导出的成果");
+        }
+
+        Map<String, String> ownerNameMap = new LinkedHashMap<>();
+        for (ExportAchievementBaseVo item : authorizedAchievementList)
+        {
+            if (item == null || StringUtils.isEmpty(item.getAchievementId()))
+            {
+                continue;
+            }
+            if (!ownerNameMap.containsKey(item.getAchievementId()))
+            {
+                ownerNameMap.put(item.getAchievementId(), defaultFileNamePart(item.getOwnerName(), "未知负责人"));
+            }
+        }
+
+        if (ownerNameMap.isEmpty())
+        {
+            throw new ServiceException("当前没有可导出的成果");
+        }
+
+        List<ExportAttachmentFileVo> attachmentFiles =
+                samAchievementMapper.selectExportAttachmentFiles(
+                        ownerNameMap.keySet().toArray(new String[0]),
+                        typeList.toArray(new Integer[0]));
+        if (attachmentFiles == null)
+        {
+            attachmentFiles = new ArrayList<>();
+        }
+
+        attachmentFiles.sort(Comparator
+                .comparingInt((ExportAttachmentFileVo item) -> attachmentTypeSortIndex(typeList, item == null ? null : item.getType()))
+                .thenComparing(item -> item == null ? "" : StringUtils.nvl(item.getAchievementId(), ""))
+                .thenComparing(item -> item == null ? "" : StringUtils.nvl(item.getFileUuid(), "")));
+
+        response.reset();
+        response.setContentType("application/zip");
+        FileUtils.setAttachmentResponseHeader(response, "成果附件导出_" + DateUtils.dateTimeNow() + ".zip");
+
+        Set<String> writtenDirectorySet = new HashSet<>();
+        Map<String, Integer> nameCounterMap = new HashMap<>();
+        try (ZipOutputStream zipOutputStream = new ZipOutputStream(response.getOutputStream(), StandardCharsets.UTF_8))
+        {
+            for (Integer type : typeList)
+            {
+                addDirectoryEntry(zipOutputStream, writtenDirectorySet, getAttachmentTypeName(type) + "/");
+            }
+
+            for (ExportAttachmentFileVo attachmentFile : attachmentFiles)
+            {
+                if (attachmentFile == null || StringUtils.isEmpty(attachmentFile.getAchievementId()))
+                {
+                    continue;
+                }
+
+                String typeName = getAttachmentTypeName(attachmentFile.getType());
+                if (StringUtils.isEmpty(typeName))
+                {
+                    continue;
+                }
+
+                File sourceFile = resolveAttachmentFile(attachmentFile.getRealPath());
+                if (sourceFile == null || !sourceFile.exists() || !sourceFile.isFile())
+                {
+                    log.warn("Skip missing attachment file, achievementId={}, type={}, fileUuid={}, realPath={}",
+                            attachmentFile.getAchievementId(), attachmentFile.getType(),
+                            attachmentFile.getFileUuid(), attachmentFile.getRealPath());
+                    continue;
+                }
+
+                String ownerName = ownerNameMap.get(attachmentFile.getAchievementId());
+                String baseFileName = buildAttachmentExportBaseName(
+                        attachmentFile.getAchievementId(),
+                        ownerName,
+                        typeName);
+                String entryName = resolveUniqueEntryName(nameCounterMap, typeName, baseFileName);
+
+                boolean opened = false;
+                try (InputStream inputStream = new BufferedInputStream(new FileInputStream(sourceFile)))
+                {
+                    zipOutputStream.putNextEntry(new ZipEntry(entryName));
+                    opened = true;
+                    copyStream(inputStream, zipOutputStream);
+                }
+                catch (Exception ex)
+                {
+                    log.warn("Skip unreadable attachment file, achievementId={}, type={}, fileUuid={}, message={}",
+                            attachmentFile.getAchievementId(), attachmentFile.getType(),
+                            attachmentFile.getFileUuid(), ex.getMessage());
+                }
+                finally
+                {
+                    if (opened)
+                    {
+                        try
+                        {
+                            zipOutputStream.closeEntry();
+                        }
+                        catch (IOException ex)
+                        {
+                            log.warn("Close zip entry failed, entryName={}, message={}", entryName, ex.getMessage());
+                        }
+                    }
+                }
+            }
+
+            zipOutputStream.finish();
+            zipOutputStream.flush();
+        }
+    }
+
+    private List<String> normalizeAchievementIds(List<String> achievementIds)
+    {
+        LinkedHashSet<String> normalizedSet = new LinkedHashSet<>();
+        if (achievementIds == null)
+        {
+            return new ArrayList<>();
+        }
+
+        for (String achievementId : achievementIds)
+        {
+            if (StringUtils.isEmpty(achievementId))
+            {
+                continue;
+            }
+            String normalized = achievementId.trim();
+            if (StringUtils.isNotEmpty(normalized))
+            {
+                normalizedSet.add(normalized);
+            }
+        }
+        return new ArrayList<>(normalizedSet);
+    }
+
+    private List<Integer> normalizeAttachmentTypes(List<Integer> types)
+    {
+        LinkedHashSet<Integer> normalizedSet = new LinkedHashSet<>();
+        if (types == null)
+        {
+            return new ArrayList<>();
+        }
+
+        for (Integer type : types)
+        {
+            if (type != null && ATTACHMENT_TYPE_NAME_MAP.containsKey(type))
+            {
+                normalizedSet.add(type);
+            }
+        }
+        return new ArrayList<>(normalizedSet);
+    }
+
+    private String normalizeSourceMode(String sourceMode)
+    {
+        if (sourceMode == null)
+        {
+            return null;
+        }
+        String normalized = sourceMode.trim().toLowerCase();
+        return StringUtils.isEmpty(normalized) ? null : normalized;
+    }
+
+    private int attachmentTypeSortIndex(List<Integer> orderedTypes, Integer type)
+    {
+        if (type == null)
+        {
+            return Integer.MAX_VALUE;
+        }
+        int index = orderedTypes.indexOf(type);
+        return index >= 0 ? index : Integer.MAX_VALUE;
+    }
+
+    private String getAttachmentTypeName(Integer type)
+    {
+        return ATTACHMENT_TYPE_NAME_MAP.get(type);
+    }
+
+    private void addDirectoryEntry(ZipOutputStream zipOutputStream, Set<String> writtenDirectorySet, String entryName) throws IOException
+    {
+        if (!writtenDirectorySet.add(entryName))
+        {
+            return;
+        }
+
+        zipOutputStream.putNextEntry(new ZipEntry(entryName));
+        zipOutputStream.closeEntry();
+    }
+
+    private File resolveAttachmentFile(String realPath)
+    {
+        if (StringUtils.isEmpty(realPath))
+        {
+            return null;
+        }
+
+        if (realPath.startsWith(Constants.RESOURCE_PREFIX))
+        {
+            return new File(RuoYiConfig.getProfile() + StringUtils.substringAfter(realPath, Constants.RESOURCE_PREFIX));
+        }
+        return new File(realPath);
+    }
+
+    private String buildAttachmentExportBaseName(String achievementId, String ownerName, String typeName)
+    {
+        return defaultFileNamePart(achievementId, "未知成果")
+                + "_"
+                + defaultFileNamePart(ownerName, "未知负责人")
+                + "_"
+                + defaultFileNamePart(typeName, "未知类别");
+    }
+
+    private String defaultFileNamePart(String value, String defaultValue)
+    {
+        String source = StringUtils.isNotEmpty(value) ? value.trim() : defaultValue;
+        String sanitized = source
+                .replaceAll("[\\\\/:*?\"<>|]", "_")
+                .replaceAll("\\s+", " ");
+        sanitized = sanitized.trim();
+        return StringUtils.isNotEmpty(sanitized) ? sanitized : defaultValue;
+    }
+
+    private String resolveUniqueEntryName(Map<String, Integer> nameCounterMap, String folderName, String baseFileName)
+    {
+        String sanitizedFolderName = defaultFileNamePart(folderName, "未分类");
+        String key = sanitizedFolderName + "/" + baseFileName;
+        Integer count = nameCounterMap.get(key);
+        if (count == null)
+        {
+            nameCounterMap.put(key, 1);
+            return sanitizedFolderName + "/" + baseFileName + ".pdf";
+        }
+
+        int next = count + 1;
+        nameCounterMap.put(key, next);
+        return sanitizedFolderName + "/" + baseFileName + "(" + next + ").pdf";
+    }
+
+    private void copyStream(InputStream inputStream, ZipOutputStream zipOutputStream) throws IOException
+    {
+        byte[] buffer = new byte[8192];
+        int length;
+        while ((length = inputStream.read(buffer)) != -1)
+        {
+            zipOutputStream.write(buffer, 0, length);
+        }
+    }
+
     /**
      * 批量删除成果录入
-     * 
+     *
      * @param achievementIds 需要删除的成果录入主键集合
      * @return 结果
      */
@@ -718,7 +1045,7 @@ public class SamAchievementServiceImpl implements ISamAchievementService
 
     /**
      * 删除成果录入信息
-     * 
+     *
      * @param achievementId 成果录入主键
      * @return 结果
      */

@@ -75,3 +75,13 @@ export function listResponsibleAchievement(query) {
     params: query
   })
 }
+
+export function exportAttachmentZip(data) {
+  return request({
+    url: '/achievement/manage/exportAttachmentZip',
+    method: 'post',
+    data: data,
+    responseType: 'blob',
+    timeout: 600000
+  })
+}

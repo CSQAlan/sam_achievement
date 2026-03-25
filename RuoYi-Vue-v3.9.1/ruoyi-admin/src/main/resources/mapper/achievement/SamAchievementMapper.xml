@@ -1,4 +1,4 @@
-<?xml version="1.0" encoding="UTF-8" ?>
+﻿<?xml version="1.0" encoding="UTF-8" ?>
 <!DOCTYPE mapper
         PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
         "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
@@ -53,7 +53,7 @@
     <resultMap id="SamAchievementSamAchievementParticipantResult" type="SamAchievement" extends="SamAchievementResult">
         <collection property="samAchievementParticipantList" ofType="SamAchievementParticipant" column="achievement_id" select="selectSamAchievementParticipantList" />
         <collection property="samAchievementAdvisorList" ofType="SamAchievementAdvisor" column="achievement_id" select="selectSamAchievementAdvisorList" />
-        <collection property="samAchievementAttachmentList" ofType="java.util.HashMap" column="achievement_id" select="selectSamAchievementAttachmentList" />
+        <collection property="samAchievementAttachmentList" ofType="SamAchievementAttachment" column="achievement_id" select="selectSamAchievementAttachmentList" />
     </resultMap>
 
     <resultMap type="SamAchievementParticipant" id="SamAchievementParticipantResult">
@@ -87,6 +87,14 @@
         <result property="updateTime"    column="update_time"    />
         <result property="delFlag"    column="del_flag"    />
         <result property="remark"    column="remark"    />
+    </resultMap>
+
+    <resultMap type="SamAchievementAttachment" id="SamAchievementAttachmentResult">
+        <result property="attachmentId" column="attachment_id" />
+        <result property="achievementId" column="achievement_id" />
+        <result property="fileUuid" column="file_uuid" />
+        <result property="type" column="type" />
+        <result property="fileType" column="file_type" />
     </resultMap>
 
     <sql id="selectSamAchievementVo">
@@ -236,8 +244,8 @@
         where a.achievement_id = #{achievement_id}
     </select>
 
-    <select id="selectSamAchievementAttachmentList" resultType="java.util.HashMap">
-        select attachment_id, achievement_id, file_uuid as fileUuid, type, file_type as fileType
+    <select id="selectSamAchievementAttachmentList" resultMap="SamAchievementAttachmentResult">
+        select attachment_id, achievement_id, file_uuid, type, file_type
         from sam_achievement_attachment
         where achievement_id = #{achievement_id}
     </select>
@@ -453,4 +461,112 @@
             #{achievementId}
         </foreach>
     </delete>
+    <resultMap id="ExportAchievementBaseVoResult"
+               type="com.ruoyi.achievement.domain.ExportAchievementBaseVo">
+        <result property="achievementId" column="achievement_id"/>
+        <result property="ownerName" column="owner_name"/>
+    </resultMap>
+
+    <resultMap id="ExportAttachmentFileVoResult"
+               type="com.ruoyi.achievement.domain.ExportAttachmentFileVo">
+        <result property="achievementId" column="achievement_id"/>
+        <result property="type" column="type"/>
+        <result property="fileUuid" column="file_uuid"/>
+        <result property="originName" column="origin_name"/>
+        <result property="realPath" column="real_path"/>
+    </resultMap>
+    <select id="selectAuthorizedExportAchievementBase"
+            resultMap="ExportAchievementBaseVoResult">
+        select
+        a.achievement_id,
+        coalesce(s_manager.name, s_first.name, '未知负责人') as owner_name
+        from sam_achievement a
+        left join sam_achievement_participant p_manager
+        on p_manager.achievement_id = a.achievement_id and p_manager.manager =
+        '1'
+        left join sam_student s_manager
+        on s_manager.no = p_manager.student_id
+        left join sam_achievement_participant p_first
+        on p_first.achievement_id = a.achievement_id
+        and p_first.order_no = (
+        select min(p2.order_no)
+        from sam_achievement_participant p2
+        where p2.achievement_id = a.achievement_id
+        )
+        left join sam_student s_first
+        on s_first.no = p_first.student_id
+        where a.achievement_id in
+        <foreach collection="achievementIds" item="id" open="(" separator=","
+                 close=")">
+            #{id}
+        </foreach>
+        <choose>
+            <when test="isAdmin">
+            </when>
+            <when test="sourceMode == 'participated'">
+                and (
+                exists (
+                select 1
+                from sam_achievement_participant p
+                where p.achievement_id = a.achievement_id
+                and p.student_id = #{loginName}
+                )
+                or exists (
+                select 1
+                from sam_achievement_advisor ad
+                where ad.achievement_id = a.achievement_id
+                and ad.teacher_id = #{loginName}
+                )
+                )
+            </when>
+            <when test="sourceMode == 'guided'">
+                and exists (
+                select 1
+                from sam_achievement_advisor ad
+                where ad.achievement_id = a.achievement_id
+                and ad.teacher_id = #{loginName}
+                )
+            </when>
+            <when test="isStudent">
+                and exists (
+                select 1
+                from sam_achievement_participant p
+                where p.achievement_id = a.achievement_id
+                and p.student_id = #{loginName}
+                and p.manager = '1'
+                )
+            </when>
+            <when test="isTeacher">
+                and exists (
+                select 1
+                from sam_achievement_advisor ad
+                where ad.achievement_id = a.achievement_id
+                and ad.teacher_id = #{loginName}
+                and ad.order_no = 1
+                )
+            </when>
+        </choose>
+    </select>
+
+    <select id="selectExportAttachmentFiles"
+            resultMap="ExportAttachmentFileVoResult">
+        select
+        att.achievement_id,
+        att.type,
+        att.file_uuid,
+        f.origin_name,
+        f.real_path
+        from sam_achievement_attachment att
+        left join sys_file_uuid f on f.file_uuid = att.file_uuid
+        where att.achievement_id in
+        <foreach collection="achievementIds" item="id" open="(" separator=","
+                 close=")">
+            #{id}
+        </foreach>
+        and att.type in
+        <foreach collection="types" item="type" open="(" separator="," close=")">
+            #{type}
+        </foreach>
+    </select>
+
 </mapper>
