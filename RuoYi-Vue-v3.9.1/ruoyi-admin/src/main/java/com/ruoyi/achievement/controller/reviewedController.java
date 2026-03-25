@@ -107,6 +107,30 @@ public class reviewedController extends BaseController
         return toAjax(samAchievementService.updateSamAchievement(samAchievement));
     }
 
+    private void initCollegeUnreviewedForInsert(SamAchievement samAchievement)
+    {
+        samAchievement.setReviewResult(0L);
+        samAchievement.setSchooiReviewResult(null);
+        samAchievement.setReviewedAt(null);
+        samAchievement.setSchoolReviewedAt(null);
+        samAchievement.setReviewReason(null);
+        samAchievement.setSchoolReviewReason(null);
+        samAchievement.setAuditBy(null);
+        samAchievement.setSchoolAuditBy(null);
+    }
+
+    private void initSchoolUnreviewedForInsert(SamAchievement samAchievement)
+    {
+        samAchievement.setReviewResult(2L);
+        samAchievement.setSchooiReviewResult(2L);
+        samAchievement.setReviewedAt(null);
+        samAchievement.setSchoolReviewedAt(null);
+        samAchievement.setReviewReason(null);
+        samAchievement.setSchoolReviewReason(null);
+        samAchievement.setAuditBy(null);
+        samAchievement.setSchoolAuditBy(null);
+    }
+
     public static class ReviewSubmitRequest
     {
         private String source;
@@ -274,10 +298,10 @@ public class reviewedController extends BaseController
     @PreAuthorize("@ss.hasPermi('achievement:college_level_unreviewed:add')")
     @Log(title = "College Unreviewed", businessType = BusinessType.INSERT)
     @PostMapping("/college_level_unreviewed")
-    public AjaxResult addCollegeUnreviewed(@RequestBody reviewed reviewed)
+    public AjaxResult addCollegeUnreviewed(@RequestBody SamAchievement samAchievement)
     {
-        applyFilter(reviewed, "college", "unreviewed");
-        return toAjax(reviewedService.insertreviewed(reviewed));
+        initCollegeUnreviewedForInsert(samAchievement);
+        return toAjax(samAchievementService.insertSamAchievement(samAchievement));
     }
 
     @PreAuthorize("@ss.hasPermi('achievement:college_level_unreviewed:edit')")
@@ -396,10 +420,10 @@ public class reviewedController extends BaseController
     @PreAuthorize("@ss.hasPermi('achievement:school_level_unreviewed:add')")
     @Log(title = "School Unreviewed", businessType = BusinessType.INSERT)
     @PostMapping("/school_level_unreviewed")
-    public AjaxResult addSchoolUnreviewed(@RequestBody reviewed reviewed)
+    public AjaxResult addSchoolUnreviewed(@RequestBody SamAchievement samAchievement)
     {
-        applyFilter(reviewed, "school", "unreviewed");
-        return toAjax(reviewedService.insertreviewed(reviewed));
+        initSchoolUnreviewedForInsert(samAchievement);
+        return toAjax(samAchievementService.insertSamAchievement(samAchievement));
     }
 
     @PreAuthorize("@ss.hasPermi('achievement:school_level_unreviewed:edit')")
