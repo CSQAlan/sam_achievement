@@ -22,6 +22,7 @@
         <result property="updateTime"   column="update_time"   />
         <result property="remark"       column="remark"        />
         <result property="delFlag"      column="del_flag"      />
+        <result property="uuid"          column="uuid"          />
         <!-- 新增：关联查询标签子表，自动赋值到Session的tagsList字段 -->
         <collection property="tagsList"
                     ofType="com.ruoyi.session.domain.Tag"
@@ -33,7 +34,7 @@
     <sql id="selectSessionVo">
         select s.session_id, s.competition_id, c.name as competitionName,
         s.session, s.category, s.organizations, s.level, s.status, s.tags,
-        s.create_by, s.create_time, s.update_by, s.update_time, s.remark, s.del_flag
+        s.create_by, s.create_time, s.update_by, s.update_time, s.remark, s.del_flag, s.uuid
         from sam_competition_session s
         left join sam_competition c on s.competition_id = c.id
     </sql>
@@ -78,6 +79,7 @@
             <if test="updateTime != null">update_time,</if>
             <if test="remark != null">remark,</if>
             <if test="delFlag != null">del_flag,</if>
+            <if test="uuid != null and uuid != ''">uuid,</if>
         </trim>
         <trim prefix="values (" suffix=")" suffixOverrides=",">
             <if test="competitionId != null">#{competitionId},</if>
@@ -93,6 +95,7 @@
             <if test="updateTime != null">#{updateTime},</if>
             <if test="remark != null">#{remark},</if>
             <if test="delFlag != null">#{delFlag},</if>
+            <if test="uuid != null and uuid != ''">#{uuid},</if>
         </trim>
     </insert>
 
@@ -112,6 +115,7 @@
             <if test="updateTime != null">update_time = #{updateTime},</if>
             <if test="remark != null">remark = #{remark},</if>
             <if test="delFlag != null">del_flag = #{delFlag},</if>
+            <if test="uuid != null and uuid != ''">uuid = #{uuid},</if>
         </trim>
         where session_id = #{id}
     </update>

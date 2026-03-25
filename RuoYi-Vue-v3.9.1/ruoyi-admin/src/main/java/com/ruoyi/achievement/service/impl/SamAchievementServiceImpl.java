@@ -15,6 +15,7 @@ import java.util.LinkedHashMap;
 import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.HashMap;
 import java.util.Objects;
 import java.util.Set;
 import java.util.zip.ZipEntry;
@@ -50,7 +51,7 @@ import com.ruoyi.common.exception.ServiceException;
 
 /**
  * 成果录入Service业务层处理
- *
+ * 
  * @author 王璨
  * @date 2026-02-03
  */
@@ -275,148 +276,6 @@ public class SamAchievementServiceImpl implements ISamAchievementService
         return samAchievementMapper.updateSamAchievement(samAchievement);
     }
 
-    private String resolveSelfEditScene(SamAchievement samAchievement)
-    {
-        if (samAchievement.getParams() == null) {
-            return null;
-        }
-        Object value = samAchievement.getParams().get("selfEditScene");
-        return normalizeSelfEditScene(value == null ? null : String.valueOf(value));
-    }
-
-    private String normalizeSelfEditScene(String scene)
-    {
-        if (scene == null) {
-            return null;
-        }
-        String normalized = scene.trim().toLowerCase();
-        return StringUtils.isEmpty(normalized) ? null : normalized;
-    }
-
-    private boolean isSelfEditScene(String scene)
-    {
-        return "responsible".equals(scene) || "guided".equals(scene);
-    }
-
-    private void validateSelfUpdatePermission(SamAchievement existing, String selfEditScene)
-    {
-        String loginName = SecurityUtils.getUsername();
-        if (StringUtils.isEmpty(loginName))
-        {
-            throw new ServiceException("当前登录账号无效");
-        }
-
-        if ("responsible".equals(selfEditScene))
-        {
-            if (!isResponsibleStudent(existing, loginName))
-            {
-                throw new ServiceException("只有成果负责人才能修改自己的成果");
-            }
-            return;
-        }
-
-        if ("guided".equals(selfEditScene))
-        {
-            if (!isGuidingTeacher(existing, loginName))
-            {
-                throw new ServiceException("只有指导教师才能修改自己指导的成果");
-            }
-            return;
-        }
-
-        throw new ServiceException("不支持的自助修改场景");
-    }
-
-    private void validateSelfUpdateStatus(SamAchievement existing)
-    {
-        Long college = existing.getReviewResult() == null ? 0L : existing.getReviewResult();
-        Long school = existing.getSchooiReviewResult();
-
-        boolean canEditCollegePending = Objects.equals(college, 0L);
-        boolean canEditCollegeRejected = Objects.equals(college, 1L);
-        boolean canEditSchoolPending = Objects.equals(college, 2L)
-                && (school == null || Objects.equals(school, 2L));
-        boolean canEditSchoolRejected = Objects.equals(college, 2L)
-                && Objects.equals(school, 0L);
-
-        if (!(canEditCollegePending || canEditCollegeRejected || canEditSchoolPending || canEditSchoolRejected))
-        {
-            throw new ServiceException("只有待院级审核、院级驳回、待校级审核、校级驳回的成果允许本人修改");
-        }
-    }
-
-    private boolean isResponsibleStudent(SamAchievement existing, String studentNo)
-    {
-        List<SamAchievementParticipant> participants = existing.getSamAchievementParticipantList();
-        if (participants == null || participants.isEmpty())
-        {
-            return false;
-        }
-
-        for (SamAchievementParticipant participant : participants)
-        {
-            String currentStudentNo = StringUtils.isNotEmpty(participant.getStudentNo())
-                    ? participant.getStudentNo()
-                    : participant.getStudentId();
-            boolean isCurrentStudent = StringUtils.isNotEmpty(currentStudentNo)
-                    && studentNo.equals(currentStudentNo);
-            boolean isManager = "1".equals(String.valueOf(participant.getManager()))
-                    || Objects.equals(participant.getOrderNo(), 1L);
-            if (isCurrentStudent && isManager)
-            {
-                return true;
-            }
-        }
-        return false;
-    }
-
-    private boolean isGuidingTeacher(SamAchievement existing, String teacherNo)
-    {
-        List<SamAchievementAdvisor> advisors = existing.getSamAchievementAdvisorList();
-        if (advisors == null || advisors.isEmpty())
-        {
-            return false;
-        }
-
-        for (SamAchievementAdvisor advisor : advisors)
-        {
-            String currentTeacherNo = StringUtils.isNotEmpty(advisor.getTeacherNo())
-                    ? advisor.getTeacherNo()
-                    : advisor.getTeacherId();
-            if (StringUtils.isNotEmpty(currentTeacherNo) && teacherNo.equals(currentTeacherNo))
-            {
-                return true;
-            }
-        }
-        return false;
-    }
-
-    private void resetReviewStateForSelfUpdate(SamAchievement samAchievement)
-    {
-        samAchievement.setReviewResult(0L);
-        samAchievement.setReviewedAt(null);
-        samAchievement.setReviewReason(null);
-        samAchievement.setAuditBy(null);
-
-        samAchievement.setSchooiReviewResult(null);
-        samAchievement.setSchoolReviewedAt(null);
-        samAchievement.setSchoolReviewReason(null);
-        samAchievement.setSchoolAuditBy(null);
-    }
-
-    private void preserveReviewState(SamAchievement existing, SamAchievement samAchievement)
-    {
-        samAchievement.setReviewResult(existing.getReviewResult());
-        samAchievement.setReviewedAt(existing.getReviewedAt());
-        samAchievement.setReviewReason(existing.getReviewReason());
-        samAchievement.setAuditBy(existing.getAuditBy());
-
-        samAchievement.setSchooiReviewResult(existing.getSchooiReviewResult());
-        samAchievement.setSchoolReviewedAt(existing.getSchoolReviewedAt());
-        samAchievement.setSchoolReviewReason(existing.getSchoolReviewReason());
-        samAchievement.setSchoolAuditBy(existing.getSchoolAuditBy());
-    }
-
     /**
      * 验证PDF文件上传
      * @param samAchievement 成果录入
@@ -565,24 +424,36 @@ public class SamAchievementServiceImpl implements ISamAchievementService
      * 2. 将附件关联关系存入 sam_achievement_attachment 表
      */
     private void processAttachments(SamAchievement samAchievement) {
-        List<SamAchievementAttachment> attachments = samAchievement.getSamAchievementAttachmentList();
+        List<Map<String, Object>> attachments = samAchievement.getSamAchievementAttachmentList();
         String achievementId = samAchievement.getAchievementId();
 
         if (StringUtils.isNotNull(attachments) && attachments.size() > 0) {
             List<String> uuids = new ArrayList<>();
-            List<SamAchievementAttachment> insertList = new ArrayList<>();
+            List<Map<String, Object>> insertList = new ArrayList<>();
 
-            for (SamAchievementAttachment attachment : attachments) {
-                if (attachment == null) {
-                    continue;
-                }
-                String uuid = attachment.getFileUuid();
-                if (StringUtils.isNotEmpty(uuid)) {
-                    uuids.add(uuid);
+            for (Map<String, Object> attachment : attachments) {
+                String uuidStr = (String) attachment.get("fileUuid");
+                if (StringUtils.isNotEmpty(uuidStr)) {
+                    // 支持以逗号分隔的多个 UUID (主要用于作品附件等)
+                    String[] splitUuids = uuidStr.split(",");
+                    for (String uuid : splitUuids) {
+                        uuid = uuid.trim();
+                        if (StringUtils.isNotEmpty(uuid)) {
+                            uuids.add(uuid);
 
                     attachment.setAchievementId(achievementId);
                     if (attachment.getFileType() == null) {
                         attachment.setFileType(1);
+                            // 构造新的附件记录
+                            Map<String, Object> newAttachment = new HashMap<>();
+                            newAttachment.put("achievementId", achievementId);
+                            newAttachment.put("fileUuid", uuid);
+                            newAttachment.put("type", attachment.get("type"));
+                            // 如果前端没传 fileType，这里给个默认值
+                            newAttachment.put("fileType", attachment.get("fileType") != null ? attachment.get("fileType") : 1);
+
+                            insertList.add(newAttachment);
+                        }
                     }
                     insertList.add(attachment);
                 }

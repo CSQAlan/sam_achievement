@@ -98,6 +98,9 @@ public class SamAchievement extends BaseEntity
     /** 实际报销金额 */
     private BigDecimal reimbursementFee;
 
+    /** 报销状态（0进行中 1已完成） */
+    private String reimbursementStatus;
+
     /** 报销百分比（0-100） */
     private String reimbursementRatio;
 
@@ -358,6 +361,16 @@ public class SamAchievement extends BaseEntity
     public BigDecimal getReimbursementFee() 
     {
         return reimbursementFee;
+    }
+
+    public void setReimbursementStatus(String reimbursementStatus)
+    {
+        this.reimbursementStatus = reimbursementStatus;
+    }
+
+    public String getReimbursementStatus()
+    {
+        return reimbursementStatus;
     }
 
     public void setReimbursementRatio(String reimbursementRatio) 
