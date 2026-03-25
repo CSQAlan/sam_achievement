@@ -914,14 +914,6 @@ async function submitAudit() {
     proxy?.$store?.state?.user?.name ||
     "";
 
-  const now = new Date();
-  const collegeAuditReason = isCollegeReject.value
-    ? rejectReason.value.trim()
-    : "";
-  const schoolAuditReason = isSchoolReject.value
-    ? rejectReason.value.trim()
-    : "";
-
   try {
     const supportedSources = [
       "college_level_unreviewed",
