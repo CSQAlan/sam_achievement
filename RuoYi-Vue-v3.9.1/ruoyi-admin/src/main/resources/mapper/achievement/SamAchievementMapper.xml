@@ -26,6 +26,7 @@
         <result property="isSupplement"    column="is_supplement"    />
         <result property="fee"    column="fee"    />
         <result property="reimbursementFee"    column="reimbursement_fee"    />
+        <result property="reimbursementStatus" column="reimbursement_status" />
         <result property="reimbursementRatio"    column="reimbursement_ratio"    />
         <result property="reimbursementItemId"    column="reimbursement_item_id"    />
         <result property="reimbursementDate"    column="reimbursement_date"    />
@@ -120,6 +121,7 @@
             a.is_supplement,
             a.fee,
             a.reimbursement_fee,
+            v.reimbursement_status,
             a.reimbursement_ratio,
             a.reimbursement_item_id,
             a.reimbursement_date,
@@ -143,6 +145,8 @@
         from sam_achievement a
                  left join sam_competition_session s on a.session_id = s.session_id
                  left join sam_competition c on s.competition_id = c.id
+                 left join sam_reimbursement_achievement_view v on a.achievement_id = v.achievement_id
+
                  left join (
                     select
                         p.achievement_id,
@@ -212,12 +216,12 @@
         </where>
     </select>
 
-    <select id="selectSamAchievementListByUserId" parameterType="SamAchievement" resultMap="SamAchievementListResult">
+    <select id="selectSamAchievementListByUserId" parameterType="SamAchievement" resultMap="SamAchievementSamAchievementParticipantResult">
         <include refid="selectSamAchievementVo"/>
         <where>
             (
                 exists (select 1 from sam_achievement_participant p where p.achievement_id = a.achievement_id and p.student_id = #{params.userId})
-                or
+                or 
                 exists (select 1 from sam_achievement_advisor ad where ad.achievement_id = a.achievement_id and ad.teacher_id = #{params.userId})
             )
             <if test="name != null  and name != ''"> and a.name like concat('%', #{name}, '%')</if>
@@ -231,7 +235,7 @@
     </select>
 
     <select id="selectSamAchievementParticipantList" resultMap="SamAchievementParticipantResult">
-        select p.participant_id, p.achievement_id, p.student_id, s.name as student_name, p.order_no, p.manager, p.create_by, p.update_by, p.create_time, p.update_time, p.del_flag, p.remark
+        select p.participant_id, p.achievement_id, p.student_id, s.name as student_name, s.school, p.order_no, p.manager, p.create_by, p.update_by, p.create_time, p.update_time, p.del_flag, p.remark
         from sam_achievement_participant p
                  left join sam_student s on p.student_id = s.no
         where p.achievement_id = #{achievement_id}
@@ -244,8 +248,8 @@
         where a.achievement_id = #{achievement_id}
     </select>
 
-    <select id="selectSamAchievementAttachmentList" resultMap="SamAchievementAttachmentResult">
-        select attachment_id, achievement_id, file_uuid, type, file_type
+    <select id="selectSamAchievementAttachmentList" resultType="java.util.HashMap">
+        select attachment_id, achievement_id, file_uuid as fileUuid, type, file_type as fileType
         from sam_achievement_attachment
         where achievement_id = #{achievement_id}
     </select>
@@ -264,6 +268,7 @@
         where s.competition_id = #{competitionId} and a.session_id = #{sessionId}
         and a.track is not null and a.track != ''
     </select>
+
 
     <insert id="insertSamAchievement" parameterType="SamAchievement" useGeneratedKeys="true" keyProperty="achievementId">
         insert into sam_achievement
