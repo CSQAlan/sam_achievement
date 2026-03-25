@@ -596,12 +596,12 @@ function clearSelectionState() {
 }
 
 function handleAdd() {
-  openDialog();
+  openPageForm();
 }
 
 function handleUpdate() {
   const _achievementId = ids.value[0];
-  if (_achievementId) openDialog(_achievementId, { readOnly: false });
+  if (_achievementId) openPageForm(_achievementId, { readOnly: false });
 }
 
 /** 行内修改按钮操作 */
