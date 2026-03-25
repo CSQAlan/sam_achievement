@@ -2,8 +2,10 @@ package com.ruoyi.achievement.service.impl;
 
 import java.util.*;
 
+import com.ruoyi.achievement.domain.SamStudent;
 import com.ruoyi.common.utils.DateUtils;
 import com.ruoyi.common.utils.SecurityUtils;
+import com.ruoyi.common.core.domain.entity.SysDept;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import com.ruoyi.common.exception.ServiceException;
@@ -12,7 +14,9 @@ import org.springframework.transaction.annotation.Transactional;
 import com.ruoyi.achievement.domain.SamAchievementParticipant;
 import com.ruoyi.achievement.mapper.reviewedMapper;
 import com.ruoyi.achievement.domain.reviewed;
+import com.ruoyi.achievement.service.ISamStudentService;
 import com.ruoyi.achievement.service.IreviewedService;
+import com.ruoyi.system.service.ISysDeptService;
 
 /**
  * 成果审核 Service 实现
@@ -22,6 +26,12 @@ public class reviewedServiceImpl implements IreviewedService
 {
     @Autowired
     private reviewedMapper reviewedMapper;
+
+    @Autowired
+    private ISamStudentService samStudentService;
+
+    @Autowired
+    private ISysDeptService deptService;
 
     private static final String STAGE_COLLEGE = "college";
     private static final String STAGE_SCHOOL = "school";
@@ -66,6 +76,11 @@ public class reviewedServiceImpl implements IreviewedService
             status = STATUS_UNREVIEWED;
         }
         applyDefaultYear(reviewed);
+        applyDefaultOwnerDepId(reviewed);
+        if (!StringUtils.hasText(reviewed.getOwnerDepId()))
+        {
+            throw new ServiceException("归属学院不能为空");
+        }
         sanitizeReasons(reviewed);
         validateInsertByStage(reviewed, stage, status);
         reviewed.setCreateTime(DateUtils.getNowDate());
@@ -436,12 +451,51 @@ public class reviewedServiceImpl implements IreviewedService
                 {
                     samAchievementParticipant.setDelFlag(0L);
                 }
+                if (!StringUtils.hasText(samAchievementParticipant.getStudentNo())
+                        && StringUtils.hasText(samAchievementParticipant.getStudentId()))
+                {
+                    samAchievementParticipant.setStudentNo(samAchievementParticipant.getStudentId());
+                }
+
+                checkAndInsertStudent(
+                        samAchievementParticipant.getStudentNo(),
+                        samAchievementParticipant.getStudentName());
                 list.add(samAchievementParticipant);
             }
             if (list.size() > 0)
             {
                 reviewedMapper.batchSamAchievementParticipant(list);
             }
+        }
+    }
+
+    private void checkAndInsertStudent(String studentNo, String studentName)
+    {
+        if (!StringUtils.hasText(studentNo) || !StringUtils.hasText(studentName))
+        {
+            return;
+        }
+
+        if (!studentNo.matches("^[a-zA-Z0-9]{4,20}$"))
+        {
+            throw new ServiceException("非法学号格式：" + studentNo);
+        }
+
+        if (studentName.length() > 50 || studentName.contains("<") || studentName.contains(">"))
+        {
+            throw new ServiceException("非法学生姓名");
+        }
+
+        SamStudent query = new SamStudent();
+        query.setNo(studentNo);
+        List<SamStudent> exists = samStudentService.selectSamStudentList(query);
+
+        if (exists == null || exists.isEmpty())
+        {
+            SamStudent newStudent = new SamStudent();
+            newStudent.setNo(studentNo);
+            newStudent.setName(studentName);
+            samStudentService.insertSamStudent(newStudent);
         }
     }
 
@@ -471,6 +525,105 @@ public class reviewedServiceImpl implements IreviewedService
         Calendar calendar = Calendar.getInstance();
         calendar.setTime(awardTime);
         incoming.setYear((long) calendar.get(Calendar.YEAR));
+    }
+
+    private void applyDefaultOwnerDepId(reviewed incoming)
+    {
+        if (StringUtils.hasText(incoming.getOwnerDepId()))
+        {
+            incoming.setOwnerDepId(normalizeDeptId(incoming.getOwnerDepId()));
+            return;
+        }
+
+        List<SamAchievementParticipant> participantList = incoming.getSamAchievementParticipantList();
+        if (participantList == null || participantList.isEmpty())
+        {
+            return;
+        }
+
+        SamAchievementParticipant managerParticipant = null;
+        for (SamAchievementParticipant participant : participantList)
+        {
+            if ("1".equals(StringUtils.trim(participant.getManager())))
+            {
+                managerParticipant = participant;
+                break;
+            }
+        }
+
+        if (managerParticipant == null)
+        {
+            managerParticipant = participantList.get(0);
+        }
+
+        String ownerDepId = resolveOwnerDepIdFromParticipant(managerParticipant);
+        if (StringUtils.hasText(ownerDepId))
+        {
+            incoming.setOwnerDepId(ownerDepId);
+        }
+    }
+
+    private String resolveOwnerDepIdFromParticipant(SamAchievementParticipant participant)
+    {
+        if (participant == null)
+        {
+            return null;
+        }
+
+        if (StringUtils.hasText(participant.getStudentId()))
+        {
+            SamStudent query = new SamStudent();
+            query.setNo(participant.getStudentId().trim());
+            List<SamStudent> students = samStudentService.selectSamStudentList(query);
+            if (students != null && !students.isEmpty())
+            {
+                String ownerDepId = normalizeDeptId(students.get(0).getSchool());
+                if (StringUtils.hasText(ownerDepId))
+                {
+                    return ownerDepId;
+                }
+            }
+        }
+
+        String ownerDepId = normalizeDeptId(participant.getSchool());
+        if (StringUtils.hasText(ownerDepId))
+        {
+            return ownerDepId;
+        }
+
+        return null;
+    }
+
+    private String normalizeDeptId(String schoolValue)
+    {
+        if (!StringUtils.hasText(schoolValue))
+        {
+            return null;
+        }
+
+        String normalized = schoolValue.trim();
+        if (normalized.matches("\\d+"))
+        {
+            return normalized;
+        }
+
+        SysDept query = new SysDept();
+        query.setDeptName(normalized);
+        List<SysDept> deptList = deptService.selectDeptList(query);
+        if (deptList == null || deptList.isEmpty())
+        {
+            return null;
+        }
+
+        for (SysDept dept : deptList)
+        {
+            if (dept != null && StringUtils.equals(normalized, dept.getDeptName()) && dept.getDeptId() != null)
+            {
+                return String.valueOf(dept.getDeptId());
+            }
+        }
+
+        return null;
     }
 
     private void validateInsertByStage(reviewed incoming, String stage, String status)

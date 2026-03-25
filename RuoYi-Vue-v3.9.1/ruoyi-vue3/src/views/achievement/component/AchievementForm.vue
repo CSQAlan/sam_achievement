@@ -655,8 +655,8 @@
         <el-input v-model="participantForm.studentName" placeholder="姓名" :disabled="!isParticipantNew" />
       </el-form-item>
       
-      <template v-if="isParticipantNew">
-        <el-alert title="未匹配到该学号，请完善下方信息完成录入" type="warning" show-icon :closable="false" style="margin-bottom: 15px;" />
+      <template v-if="isParticipantNew || !participantForm.school">
+        <el-alert :title="participantSchoolAlertText" type="warning" show-icon :closable="false" style="margin-bottom: 15px;" />
         <el-form-item label="所属机构" prop="school">
           <el-cascader
             v-model="participantDeptCascaderValue"
@@ -742,12 +742,10 @@
 </template>
 
 <script setup name="AchievementForm">
-import { getCurrentInstance, ref, reactive, toRefs, computed, onMounted, onBeforeUnmount, onUnmounted, watch, nextTick } from "vue";
-import { useRoute } from "vue-router";
-import { onBeforeRouteLeave } from "vue-router";
+import { getCurrentInstance, ref, reactive, toRefs, computed, onMounted, onUnmounted, watch, nextTick } from "vue";
+import { useRoute, onBeforeRouteLeave } from "vue-router";
 import Sortable from "sortablejs";
 import useUserStore from "@/store/modules/user";
-import { Plus, Delete, Document, Download, View, UploadFilled, Rank, InfoFilled } from "@element-plus/icons-vue";
 import {
   Plus,
   Delete,
@@ -756,7 +754,11 @@ import {
   View,
   UploadFilled,
   Rank,
+  InfoFilled,
+  Search,
+  CircleCheck,
 } from "@element-plus/icons-vue";
+import { listTracks } from "@/api/achievement/manage";
 import { listStudent, addStudent } from "@/api/achievement/student";
 import { listTeacher, addTeacher } from "@/api/achievement/teacher";
 import { listDept } from "@/api/system/dept";
@@ -783,12 +785,21 @@ const props = defineProps({
   sourceMode: { type: String, default: "" },
 });
 
-const { achievement_category, group_type, award_rank, award_level_type } =
+const {
+  achievement_category,
+  group_type,
+  award_rank,
+  award_level_type,
+  attach_type,
+  reimbursement_status,
+} =
   proxy.useDict(
     "achievement_category",
     "group_type",
     "award_rank",
-    "award_level_type"
+    "award_level_type",
+    "attach_type",
+    "reimbursement_status"
   );
 const isPageMode = computed(() => props.pageMode);
 const visible = ref(false);
@@ -859,15 +870,54 @@ function trimIfString(value) {
   return typeof value === "string" ? value.trim() : value;
 }
 
-  const results = queryString
-    ? trackSuggestions.value.filter(t => t.value.toLowerCase().includes(queryString.toLowerCase()))
+function trimStringFields(target, fields = []) {
+  if (!target || !Array.isArray(fields)) return;
+  fields.forEach((field) => {
+    if (Object.prototype.hasOwnProperty.call(target, field)) {
+      target[field] = trimIfString(target[field]);
+    }
+  });
+}
+
+const trackSuggestions = ref([]);
+
+function normalizeTrackSuggestions(rows = []) {
+  return Array.from(
+    new Set(
+      (rows || [])
+        .map((item) => trimIfString(item))
+        .filter(Boolean)
+    )
+  ).map((value) => ({ value }));
+}
+
+function loadTrackSuggestions(competitionId, sessionId) {
+  if (!competitionId || !sessionId) {
+    trackSuggestions.value = [];
+    return;
+  }
+  listTracks(competitionId, sessionId)
+    .then((response) => {
+      const rows = response?.data || response?.rows || [];
+      trackSuggestions.value = normalizeTrackSuggestions(rows);
+    })
+    .catch(() => {
+      trackSuggestions.value = [];
+    });
+}
+
+function queryTrackSearch(queryString, cb) {
+  const keyword = String(queryString || "").trim().toLowerCase();
+  const results = keyword
+    ? trackSuggestions.value.filter((item) =>
+        item.value.toLowerCase().includes(keyword)
+      )
     : trackSuggestions.value;
-  
   cb(results);
-};
+}
 
 watch(() => [form.value.competitionId, form.value.sessionId], ([compId, sessionId]) => {
-  trackSuggestions.value = [];
+  loadTrackSuggestions(compId, sessionId);
   // 当比赛和届次都选择后，尝试从届次信息中提取比赛通知 UUID 并回显
   if (compId && sessionId && sessionOptions.value.length > 0) {
     const session = sessionOptions.value.find(s => s.id === sessionId);
@@ -1005,15 +1055,23 @@ const submitTextComputed = computed(() => {
 // 学生与老师的级联选择逻辑 (查找与动态过滤)
 function findDeptNode(tree, targetVal) {
   if (!tree || targetVal == null || targetVal === '') return null;
+  const normalizedTarget = String(targetVal);
   for (let i = 0; i < tree.length; i++) {
     const node = tree[i];
-    if (node.deptId === targetVal || node.deptName === targetVal) return node;
+    if (String(node.deptId) === normalizedTarget || node.deptName === targetVal) return node;
     if (node.children && node.children.length > 0) {
       const found = findDeptNode(node.children, targetVal);
       if (found) return found;
     }
   }
   return null;
+}
+
+function resolveDeptIdBySchool(schoolValue) {
+  const node = findDeptNode(deptOptions.value, schoolValue);
+  if (!node || node.deptId == null || node.deptId === '') return null;
+  const deptId = Number(node.deptId);
+  return Number.isNaN(deptId) ? null : deptId;
 }
 
 const participantDepartmentOptions = computed(() => {
@@ -1047,10 +1105,44 @@ function handleAdvisorSchoolChange() {
   advisorForm.value.department = '';
 }
 
+function findDeptPathByIds(nodes = [], ids = [], path = []) {
+  if (!Array.isArray(ids) || !ids.length) return [];
+  for (const node of nodes || []) {
+    const currentPath = [...path, node];
+    if (node.deptId === ids[0]) {
+      if (ids.length === 1) return currentPath;
+      return findDeptPathByIds(node.children || [], ids.slice(1), currentPath);
+    }
+  }
+  return [];
+}
+
+function handleParticipantCascaderChange(value = []) {
+  const path = findDeptPathByIds(deptOptions.value, value);
+  participantForm.value.school = path[0]?.deptName || "";
+  participantForm.value.department = path[1]?.deptName || "";
+  participantForm.value.major = path[2]?.deptName || "";
+}
+
+function handleAdvisorCascaderChange(value = []) {
+  const path = findDeptPathByIds(deptOptions.value, value);
+  advisorForm.value.school = path[0]?.deptName || "";
+  advisorForm.value.department = path[1]?.deptName || "";
+}
+
 // 弹窗控制与提交逻辑
 
 const addParticipantVisible = ref(false);
 const isParticipantNew = ref(false);
+const participantSearchKeyword = ref("");
+const participantDeptCascaderValue = ref([]);
+const studentOptions = ref([]);
+const studentSelectVisible = ref(false);
+const participantSchoolAlertText = computed(() =>
+  isParticipantNew.value
+    ? "未匹配到该学号，请完善下方信息完成录入"
+    : "该学生档案未维护学院，请补选所属机构"
+);
 const participantForm = ref({ studentId: '', studentName: '', school: '', department: '', major: '', class_name: '', class_year: '' });
 const addParticipantRules = {
   studentId: [{ required: true, message: "学号不能为空", trigger: "blur" }],
@@ -1068,6 +1160,10 @@ function openAddParticipantDialog() {
 
 const addAdvisorVisible = ref(false);
 const isAdvisorNew = ref(false);
+const advisorSearchKeyword = ref("");
+const advisorDeptCascaderValue = ref([]);
+const teacherOptions = ref([]);
+const teacherSelectVisible = ref(false);
 const advisorForm = ref({ teacherId: '', teacherName: '', school: '', department: '' });
 const addAdvisorRules = {
   teacherId: [{ required: true, message: "工号不能为空", trigger: "blur" }],
@@ -1141,6 +1237,9 @@ function applyStudentInfo(student) {
   participantForm.value.class_year = student.classYear;
   isParticipantNew.value = false;
   studentSelectVisible.value = false;
+  if (!student.school) {
+    proxy.$modal.msgWarning("该学生档案未维护学院，请从所属机构中补选");
+  }
 }
 
 function selectStudent(row) {
@@ -1227,10 +1326,13 @@ function submitAddParticipant() {
         samAchievementParticipantList.value.push({
           studentId: trimIfString(participantForm.value.studentId),
           studentName: trimIfString(participantForm.value.studentName),
+          school: trimIfString(participantForm.value.school),
+          department: trimIfString(participantForm.value.department),
+          major: trimIfString(participantForm.value.major),
           orderNo: samAchievementParticipantList.value.length + 1,
           manager: samAchievementParticipantList.value.length === 0 ? 1 : 0,
         });
-        reIndexList(samAchievementParticipantList.value);
+        reIndexList(samAchievementParticipantList.value, 'participant');
         addParticipantVisible.value = false;
       };
 
@@ -1260,30 +1362,6 @@ function submitAddParticipant() {
       }
     }
   });
-}
-
-const searchingAdvisor = ref(false);
-function handleAdvisorIdBlur() {
-  const id = trimIfString(advisorForm.value.teacherId);
-  advisorForm.value.teacherId = id;
-  if (!id) return;
-
-  searchingAdvisor.value = true;
-  listTeacher({ no: id })
-    .then((res) => {
-      if (res.rows && res.rows.length > 0) {
-        const teacher = res.rows[0];
-        advisorForm.value.teacherName = teacher.teacherName;
-        advisorForm.value.school = teacher.school;
-        advisorForm.value.department = teacher.department;
-        isAdvisorNew.value = false;
-      } else {
-        isAdvisorNew.value = true;
-      }
-    })
-    .finally(() => {
-      searchingAdvisor.value = false;
-    });
 }
 
 function submitAddAdvisor() {
@@ -1336,7 +1414,7 @@ function handleDeleteParticipant() {
     samAchievementParticipantList.value.filter(
       (item) => !checkedParticipant.value.includes(item)
     );
-  reIndexList(samAchievementParticipantList.value);
+  reIndexList(samAchievementParticipantList.value, 'participant');
 }
 function handleParticipantSelectionChange(sel) {
   checkedParticipant.value = sel;
@@ -1366,6 +1444,7 @@ const uploadUnlocked = reactive({
   award: false,
   notice: false,
   work: false,
+  photo: false,
   payment: false,
   invoice: false,
   receipt: false,
@@ -1376,8 +1455,8 @@ const exampleMap = {
   'notice': '/image/tongzhi.pdf',   
   'payment': '/image/jilu.pdf',     
   'invoice': '/image/fapiao.pdf',
-  'work': '//image/zuopingzhaopian.pdf',
-  'photo': 'image/caisaizhaopian.pdf',
+  'work': '/image/zuopingzhaopian.pdf',
+  'photo': '/image/cansaizhaopian.pdf',
 };
 
 function handlePreUpload(type) {
@@ -1435,19 +1514,10 @@ const attachmentConfig = computed(() => {
   ];
 });
 const visibleAttachments = computed(() => {
-  return attachmentConfig.filter((item) => {
+  return attachmentConfig.value.filter((item) => {
     if (!item.condition) return true;
     return item.condition(form.value);
   });
-});
-
-const previewUrls = reactive({
-  award: "",
-  notice: "",
-  work: "",
-  payment: "",
-  invoice: "",
-  receipt: "",
 });
 
 async function getBlobErrorMessage(blob, fallback = "文件获取失败，请稍后重试") {
@@ -1491,40 +1561,37 @@ async function ensurePdfBlob(blob, fallback = "文件获取失败，请稍后重
 
   return new Blob([blobData], { type: "application/pdf" });
 }
-const previewUrls = reactive({ award: "", notice: "", work: {}, photo: {}, payment: "", invoice: "", receipt: "" });
+const previewUrls = reactive({
+  award: "",
+  notice: "",
+  work: {},
+  photo: {},
+  payment: "",
+  invoice: "",
+  receipt: "",
+});
 
-// 生成安全的本地预览流
-function loadSafePreview(uuid, type, index = null) {
-function loadSafePreview(uuid, type) {
-  if (!uuid) {
-    if (previewUrls[type]) window.URL.revokeObjectURL(previewUrls[type]);
+function revokePreviewUrl(url) {
+  if (url) {
+    window.URL.revokeObjectURL(url);
+  }
+}
+
+function clearPreviewByType(type) {
+  if (typeof previewUrls[type] === "string") {
+    revokePreviewUrl(previewUrls[type]);
     previewUrls[type] = "";
     return;
   }
-  request({
-    url: "/attachment/download",
-    method: "get",
-    params: { resource: uuid },
-    responseType: "blob",
-  })
-    .then(async (blob) => {
-      if (previewUrls[type]) window.URL.revokeObjectURL(previewUrls[type]);
 
-      const blobWithMime = await ensurePdfBlob(blob, "PDF预览加载失败");
-      previewUrls[type] = window.URL.createObjectURL(blobWithMime);
-    })
-    .catch((err) => {
-      console.error("预览加载失败", err);
-      previewUrls[type] = "";
-      proxy.$modal?.msgError?.(err?.message || "PDF预览加载失败");
-    });
+  Object.values(previewUrls[type] || {}).forEach((url) => revokePreviewUrl(url));
+  previewUrls[type] = {};
 }
-function handleOpenDetail(uuid) {
-  if (!uuid) return;
 
-  // 多图如果已有预览，跳过
-  if (type === 'work' || type === 'photo') {
-    if (previewUrls[type][uuid]) return;
+function loadSafePreview(uuid, type) {
+  if (!uuid) {
+    clearPreviewByType(type);
+    return;
   }
 
   request({
@@ -1534,33 +1601,25 @@ function handleOpenDetail(uuid) {
     responseType: "blob",
   })
     .then(async (blob) => {
-      proxy.$modal.closeLoading();
+      const blobWithMime = await ensurePdfBlob(blob, "PDF预览加载失败");
+      const objectUrl = window.URL.createObjectURL(blobWithMime);
 
-      const blobWithMime = await ensurePdfBlob(blob, "文件获取失败，请稍后重试");
-      const blobUrl = window.URL.createObjectURL(blobWithMime);
-    responseType: 'blob'
-  }).then(blob => {
-    const blobData = blob.data || blob;
-    let fileName = getFileName(uuid) || '';
-
-    // 态识别文件类型，防止把图片强行当成 PDF 导致白屏
-    let mimeType = 'application/pdf'; // 默认当做 PDF
-    if (fileName.match(/\.(jpg|jpeg|png|gif)$/i) || (blobData.type && blobData.type.startsWith('image/'))) {
-      mimeType = blobData.type || 'image/jpeg';
-    }
-
-    const blobWithMime = new Blob([blobData], { type: mimeType });
-    const url = window.URL.createObjectURL(blobWithMime);
-
-    if (type === 'work' || type === 'photo') {
-      previewUrls[type][uuid] = url;
-    } else {
-      if (previewUrls[type]) window.URL.revokeObjectURL(previewUrls[type]);
-      previewUrls[type] = url;
-    }
-  }).catch(err => {
-    console.error(`预览加载失败 [${type}]: ${uuid}`, err);
-  });
+      if (typeof previewUrls[type] === "string") {
+        revokePreviewUrl(previewUrls[type]);
+        previewUrls[type] = objectUrl;
+      } else {
+        revokePreviewUrl(previewUrls[type][uuid]);
+        previewUrls[type][uuid] = objectUrl;
+      }
+    })
+    .catch((err) => {
+      console.error(`预览加载失败 [${type}]: ${uuid}`, err);
+      if (typeof previewUrls[type] === "string") {
+        previewUrls[type] = "";
+      } else {
+        delete previewUrls[type][uuid];
+      }
+    });
 }
 
 /** 获取多文件列表数组 (兼容字符串和数组) */
@@ -1570,19 +1629,29 @@ function getFileList(val) {
   return val.split(',').filter(s => s !== "");
 }
 
+function syncMultiPreview(type, value) {
+  const uuids = getFileList(value);
+  const currentMap = previewUrls[type];
+
+  Object.keys(currentMap).forEach((uuid) => {
+    if (!uuids.includes(uuid)) {
+      revokePreviewUrl(currentMap[uuid]);
+      delete currentMap[uuid];
+    }
+  });
+
+  uuids.forEach((uuid) => {
+    if (!currentMap[uuid]) {
+      loadSafePreview(uuid, type);
+    }
+  });
+}
+
 watch(() => form.value.fileAward, (uuid) => loadSafePreview(uuid, 'award'));
 watch(() => form.value.fileNotice, (uuid) => loadSafePreview(uuid, 'notice'));
-watch(() => form.value.fileWork, (val) => {
-  const uuids = getFileList(val);
-  uuids.forEach(uuid => loadSafePreview(uuid, 'work'));
-}, { deep: true, immediate: true });
-watch(() => form.value.filePhoto, (val) => {
-  const uuids = getFileList(val);
-  uuids.forEach(uuid => loadSafePreview(uuid, 'photo'));
-}, { deep: true, immediate: true });
+watch(() => form.value.fileWork, (val) => syncMultiPreview('work', val), { deep: true, immediate: true });
+watch(() => form.value.filePhoto, (val) => syncMultiPreview('photo', val), { deep: true, immediate: true });
 watch(() => form.value.filePayment, (uuid) => loadSafePreview(uuid, 'payment'));
-watch(() => form.value.fileInvoice, (uuid) => loadSafePreview(uuid, 'invoice'));
-watch(() => form.value.fileReceiptCode, (uuid) => loadSafePreview(uuid, 'receipt'));watch(() => form.value.filePayment, (uuid) => loadSafePreview(uuid, 'payment'));
 watch(() => form.value.fileInvoice, (uuid) => loadSafePreview(uuid, 'invoice'));
 watch(() => form.value.fileReceiptCode, (uuid) => loadSafePreview(uuid, 'receipt'));
 
@@ -1775,7 +1844,7 @@ function open(id) {
       }
     }
 
-    reIndexList(samAchievementParticipantList.value);
+    reIndexList(samAchievementParticipantList.value, 'participant');
     reIndexList(samAchievementAdvisorList.value);
 
     updateSnapshot();
@@ -1785,7 +1854,7 @@ function open(id) {
   initSortable();
 }
 function getForm() { return form.value; }
-defineExpose({ open, getForm, activeAttachmentTab });
+defineExpose({ open, getForm, activeAttachmentTab, submitForm });
 
 const sortableInstances = ref([]);
 const sortableTimeout = ref(null);
@@ -1837,7 +1906,7 @@ function initSortable() {
             samAchievementParticipantList.value = [];
             nextTick(() => {
               samAchievementParticipantList.value = list;
-              reIndexList(samAchievementParticipantList.value);
+              reIndexList(samAchievementParticipantList.value, 'participant');
             });
           },
         });
@@ -1937,7 +2006,7 @@ function loadDetail(id) {
       samAchievementParticipantList.value =
         d.samAchievementParticipantList || [];
       samAchievementAdvisorList.value = d.samAchievementAdvisorList || [];
-      reIndexList(samAchievementParticipantList.value);
+      reIndexList(samAchievementParticipantList.value, 'participant');
       reIndexList(samAchievementAdvisorList.value);
 
       if (form.value.isReimburse == null) form.value.isReimburse = 0;
@@ -1954,15 +2023,10 @@ function loadDetail(id) {
 
 function reset() {
   form.value = {
-    competitionId: null, achievementId: null, sessionId: null, category: "3", name: null, teamName: null,
-    level: null, grade: null, track: null, certificateNo: null, groupId: null, ownerDepId: null,
-    awardTime: null, fee: null, isReimburse: 0,
-    fileAward: null, fileNotice: null, fileWork: [], filePhoto: [], filePayment: null, fileInvoice: null, fileReceiptCode: null,
-    hasFileWork: 1, hasFilePhoto: 1
     competitionId: null,
     achievementId: null,
     sessionId: null,
-    category: null,
+    category: "3",
     name: null,
     teamName: null,
     level: null,
@@ -1976,10 +2040,13 @@ function reset() {
     isReimburse: 0,
     fileAward: null,
     fileNotice: null,
-    fileWork: null,
+    fileWork: [],
+    filePhoto: [],
     filePayment: null,
     fileInvoice: null,
     fileReceiptCode: null,
+    hasFileWork: 1,
+    hasFilePhoto: 1,
   };
   samAchievementParticipantList.value = [];
   samAchievementAdvisorList.value = [];
@@ -1987,22 +2054,7 @@ function reset() {
   
   Object.keys(uploadUnlocked).forEach(k => uploadUnlocked[k] = false);
   
- //区分单文件和多文件，防止多图的对象结构被破坏
-  Object.keys(previewUrls).forEach(key => {
-    if (typeof previewUrls[key] === 'string') {
-      if (previewUrls[key]) {
-        window.URL.revokeObjectURL(previewUrls[key]);
-        previewUrls[key] = "";
-      }
-    } else {
-      if (previewUrls[key]) {
-        Object.values(previewUrls[key]).forEach(url => {
-          if (url) window.URL.revokeObjectURL(url);
-        });
-        previewUrls[key] = {}; // 这里必须保持是对象 {}，绝不能变成 ""
-      }
-    }
-  });
+  Object.keys(previewUrls).forEach((key) => clearPreviewByType(key));
   if(outcomeRefPage.value) outcomeRefPage.value.resetFields();
   if(outcomeRefDialog.value) outcomeRefDialog.value.resetFields();
   updateSnapshot();
@@ -2010,21 +2062,6 @@ function reset() {
 
 function validatePDFUpload() {
   const f = form.value;
-  if (!f.fileAward) {
-    proxy.$modal.msgWarning("请上传【奖状(证书)】PDF文件！");
-    activeAttachmentTab.value = "award";
-    return false;
-  }
-  if (!f.fileNotice) {
-    proxy.$modal.msgWarning("请上传【比赛通知】PDF文件！");
-    activeAttachmentTab.value = "notice";
-    return false;
-  }
-  if (!f.fileWork) {
-    proxy.$modal.msgWarning("请上传【参赛作品】PDF文件！");
-    activeAttachmentTab.value = "work";
-    return false;
-  }
   const findLabel = (val) => {
     const item = attach_type.value.find(d => d.value === val);
     return item ? item.label : null;
@@ -2041,14 +2078,17 @@ function validatePDFUpload() {
   if (!f.fileAward) { proxy.$modal.msgWarning(`请上传【${awardLabel}】PDF文件！`); activeAttachmentTab.value = 'award'; return false; }
   if (!f.fileNotice) { proxy.$modal.msgWarning(`请上传【${noticeLabel}】PDF文件！`); activeAttachmentTab.value = 'notice'; return false; }
 
+  const workFiles = getFileList(f.fileWork);
+  const photoFiles = getFileList(f.filePhoto);
+
   if (f.hasFileWork === 1) {
-    if (!f.fileWork || f.fileWork.length < 5) {
-      proxy.$modal.msgWarning(`【${workLabel}】要求上传至少5份PDF文件！当前已上传 ${f.fileWork ? f.fileWork.length : 0} 份`);
+    if (workFiles.length < 5) {
+      proxy.$modal.msgWarning(`【${workLabel}】要求上传至少5份PDF文件！当前已上传 ${workFiles.length} 份`);
       activeAttachmentTab.value = 'work';
       return false;
     }
   } else {
-    if (!f.fileWork || f.fileWork.length < 1) {
+    if (workFiles.length < 1) {
       proxy.$modal.msgWarning(`请上传【${workLabel}】手写声明PDF文件！`);
       activeAttachmentTab.value = 'work';
       return false;
@@ -2056,13 +2096,13 @@ function validatePDFUpload() {
   }
 
   if (f.hasFilePhoto === 1) {
-    if (!f.filePhoto || f.filePhoto.length < 5) {
-      proxy.$modal.msgWarning(`【${photoLabel}】要求上传至少5份PDF文件！当前已上传 ${f.filePhoto ? f.filePhoto.length : 0} 份`);
+    if (photoFiles.length < 5) {
+      proxy.$modal.msgWarning(`【${photoLabel}】要求上传至少5份PDF文件！当前已上传 ${photoFiles.length} 份`);
       activeAttachmentTab.value = 'photo';
       return false;
     }
   } else {
-    if (!f.filePhoto || f.filePhoto.length < 1) {
+    if (photoFiles.length < 1) {
       proxy.$modal.msgWarning(`请上传【${photoLabel}】手写声明PDF文件！`);
       activeAttachmentTab.value = 'photo';
       return false;
@@ -2095,7 +2135,7 @@ function submitForm() {
     ? outcomeRefPage.value
     : outcomeRefDialog.value;
 
-  return new Promise((resolve, reject) => {
+  return new Promise((resolve) => {
     activeRef.validate((valid) => {
       if (!valid) {
         resolve(false);
@@ -2114,6 +2154,12 @@ function submitForm() {
         "fee",
       ]);
 
+      if (!form.value.ownerDepId) {
+        proxy.$modal.msgWarning("归属学院不能为空，请先确认第一负责人所属学院");
+        resolve(false);
+        return;
+      }
+
       let attachments = [];
       const pushFile = (type, path) => {
         if (!path) return;
@@ -2129,7 +2175,8 @@ function submitForm() {
             if (trimmed) attachments.push({ type: type, fileUuid: trimmed, fileType: 1 });
           });
         }
-      };      pushFile(1, form.value.fileAward);
+      };
+      pushFile(1, form.value.fileAward);
       pushFile(2, form.value.fileNotice);
       pushFile(3, form.value.fileWork);
       pushFile(8, form.value.filePhoto);
@@ -2161,18 +2208,23 @@ function submitForm() {
       const apiFn = isEdit ? props.updateFn : props.addFn;
 
       if (apiFn) {
-        apiFn(form.value).then(response => {
-          proxy.$modal.msgSuccess(isEdit ? "修改成功" : "新增成功");
-          // 提交成功清除草稿
-          clearDraft();
-          updateSnapshot(); 
-          if (!isPageMode.value) visible.value = false;
-          emit('ok');
-        });
+        apiFn(form.value)
+          .then(() => {
+            proxy.$modal.msgSuccess(isEdit ? "修改成功" : "新增成功");
+            clearDraft();
+            updateSnapshot();
+            if (!isPageMode.value) visible.value = false;
+            emit('ok');
+            resolve(true);
+          })
+          .catch(() => {
+            resolve(false);
+          });
       } else {
         proxy.$modal.msgError("未配置保存接口");
+        resolve(false);
       }
-    }
+    });
   });
 }
 
@@ -2262,11 +2314,14 @@ function reIndexList(list, type) {
   // 自动绑定逻辑
   if (type === 'participant' && list.length > 0) {
     const first = list[0];
-    if (first.school) {
-      form.value.ownerDepId = Number(first.school);
+    const deptId = resolveDeptIdBySchool(first.school);
+    if (deptId != null) {
+      form.value.ownerDepId = deptId;
     } else if (userStore.deptId) {
       // 兜底：如果第一负责人没学院信息，取当前登录人的部门
-      form.value.ownerDepId = userStore.deptId;
+      form.value.ownerDepId = Number(userStore.deptId);
+    } else {
+      form.value.ownerDepId = null;
     }
   }
 }
