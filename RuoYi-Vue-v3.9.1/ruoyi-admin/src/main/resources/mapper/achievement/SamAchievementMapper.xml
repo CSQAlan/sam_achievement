@@ -24,6 +24,7 @@
         <result property="isSupplement"    column="is_supplement"    />
         <result property="fee"    column="fee"    />
         <result property="reimbursementFee"    column="reimbursement_fee"    />
+        <result property="reimbursementStatus" column="reimbursement_status" />
         <result property="reimbursementRatio"    column="reimbursement_ratio"    />
         <result property="reimbursementItemId"    column="reimbursement_item_id"    />
         <result property="reimbursementDate"    column="reimbursement_date"    />
@@ -106,6 +107,7 @@
             a.is_supplement,
             a.fee,
             a.reimbursement_fee,
+            v.reimbursement_status,
             a.reimbursement_ratio,
             a.reimbursement_item_id,
             a.reimbursement_date,
@@ -129,6 +131,7 @@
         from sam_achievement a
                  left join sam_competition_session s on a.session_id = s.session_id
                  left join sam_competition c on s.competition_id = c.id
+                 left join sam_reimbursement_achievement_view v on a.achievement_id = v.achievement_id
     </sql>
 
     <select id="selectSamAchievementList" parameterType="SamAchievement" resultMap="SamAchievementSamAchievementParticipantResult">
