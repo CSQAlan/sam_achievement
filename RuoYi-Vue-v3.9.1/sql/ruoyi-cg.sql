@@ -621,6 +621,7 @@ CREATE TABLE `sam_competition_session`  (
   `update_time` datetime(0) NULL DEFAULT NULL COMMENT '更新时间',
   `remark` varchar(500) CHARACTER SET utf8mb4 COLLATE utf8mb4_0900_ai_ci NULL DEFAULT NULL COMMENT '备注',
   `del_flag` char(1) CHARACTER SET utf8mb4 COLLATE utf8mb4_0900_ai_ci NULL DEFAULT '0' COMMENT '删除标记（0=存在，2=删除）',
+  `uuid` varchar(64) CHARACTER SET utf8mb4 COLLATE utf8mb4_general_ci NULL DEFAULT NULL COMMENT '比赛通知文件UUID',
   PRIMARY KEY (`session_id`) USING BTREE,
   INDEX `idx_competition_id`(`competition_id`) USING BTREE,
   CONSTRAINT `fk_session_competition_id` FOREIGN KEY (`competition_id`) REFERENCES `sam_competition` (`id`) ON DELETE CASCADE ON UPDATE RESTRICT

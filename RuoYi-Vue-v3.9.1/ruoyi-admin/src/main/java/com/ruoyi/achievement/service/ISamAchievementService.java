@@ -81,4 +81,13 @@ public interface ISamAchievementService
      * @return 结果
      */
     public boolean checkCertificateNoUnique(SamAchievement samAchievement);
+
+    /**
+     * 根据比赛和届次查询已有的赛道列表
+     *
+     * @param competitionId 比赛ID
+     * @param sessionId 届次ID
+     * @return 赛道列表
+     */
+    public List<String> selectTrackList(Long competitionId, Long sessionId);
 }
