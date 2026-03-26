@@ -644,7 +644,10 @@
             <el-button @click="handleParticipantSearch"><el-icon><Search /></el-icon></el-button>
           </template>
         </el-input>
-        <div style="font-size: 12px; color: #909399; margin-top: 5px;">支持学号或姓名双向查找</div>
+        <div style="font-size: 12px; color: #909399; margin-top: 5px; display: flex; justify-content: space-between;">
+          <span>支持学号或姓名双向查找</span>
+          <el-link type="primary" style="font-size: 12px;" @click="isParticipantNew = true">没有找到？手动录入</el-link>
+        </div>
       </el-form-item>
       <el-form-item label="学号" prop="studentId">
         <el-input v-model="participantForm.studentId" placeholder="学号" :disabled="!isParticipantNew" />
@@ -729,6 +732,11 @@
       <el-table-column label="学号" prop="no" align="center" />
       <el-table-column label="姓名" prop="name" align="center" />
     </el-table>
+    <template #footer>
+      <div style="text-align: center;">
+        <el-button @click="studentSelectVisible = false; isParticipantNew = true">以上都不是，创建新学生</el-button>
+      </div>
+    </template>
   </el-dialog>
 
   <el-dialog title="选择老师" v-model="teacherSelectVisible" width="600px" append-to-body>
@@ -1116,9 +1124,12 @@ function handleParticipantSearch() {
       }
     });
 
-    if (uniqueStudents.length === 1) {
-      applyStudentInfo(uniqueStudents[0]);
-    } else if (uniqueStudents.length > 1) {
+    // 查找是否存在精确匹配项（学号或姓名完全一致）
+    const exactMatch = uniqueStudents.find(s => s.no === keyword || s.name === keyword);
+
+    if (exactMatch) {
+      applyStudentInfo(exactMatch);
+    } else if (uniqueStudents.length > 0) {
       studentOptions.value = uniqueStudents;
       studentSelectVisible.value = true;
     } else {
