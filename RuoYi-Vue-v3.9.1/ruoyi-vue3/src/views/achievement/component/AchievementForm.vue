@@ -137,6 +137,16 @@
                     </div>
                   </el-form-item>
 
+                  <el-row v-if="form.isReimburse === 1">
+                    <el-col :span="24">
+                      <el-form-item label="报名金额" prop="fee">
+                        <el-input v-model="form.fee" placeholder="请输入报名费金额" :disabled="readOnly">
+                          <template #append>元</template>
+                        </el-input>
+                      </el-form-item>
+                    </el-col>
+                  </el-row>
+
                   <el-divider content-position="center">参赛选手信息</el-divider>
                   <el-row :gutter="10" class="mb8" v-if="!readOnly">
                     <el-col :span="1.5"><el-button type="primary" :icon="Plus" @click="openAddParticipantDialog">添加学生</el-button></el-col>
@@ -423,6 +433,16 @@
                   如果报名者没有通过其他途径报销，请上传发票（PDF）和填写报名金额。注意：同一张发票只能报销一次
                 </div>
               </el-form-item>
+
+              <el-row v-if="form.isReimburse === 1">
+                <el-col :span="24">
+                  <el-form-item label="报名金额" prop="fee">
+                    <el-input v-model="form.fee" placeholder="请输入报名费金额" :disabled="readOnly">
+                      <template #append>元</template>
+                    </el-input>
+                  </el-form-item>
+                </el-col>
+              </el-row>
 
               <el-divider content-position="center">参赛选手信息</el-divider>
               <el-row :gutter="10" class="mb8" v-if="!readOnly">
@@ -816,7 +836,7 @@ function handleAdvisorCascaderChange(value) {
 }
 
 const data = reactive({
-  form: { competitionId: null, filePhoto: [], hasFileWork: 1, hasFilePhoto: 1 },
+  form: { competitionId: null, filePhoto: [], hasFileWork: 1, hasFilePhoto: 1, fee: null, reimbursementFee: null },
   formSnapshot: "",
   rules: {
     competitionId: [{ required: true, message: "比赛不能为空", trigger: "change" }],
@@ -827,7 +847,8 @@ const data = reactive({
     groupId: [{ required: true, message: "组别不能为空", trigger: "change" }],
     certificateNo: [{ required: true, message: "证书编号不能为空", trigger: "blur" }],
     awardTime: [{ required: true, message: "获奖时间不能为空", trigger: "blur" }],
-    fee: [{ pattern: /^[0-9]+(\.[0-9]{1,2})?$/, message: "请输入正确的金额" }]
+    fee: [{ pattern: /^[0-9]+(\.[0-9]{1,2})?$/, message: "请输入正确的金额" }],
+    reimbursementFee: [{ pattern: /^[0-9]+(\.[0-9]{1,2})?$/, message: "请输入正确的金额" }]
   }
 });
 const { form, formSnapshot, rules } = toRefs(data);
@@ -1762,7 +1783,7 @@ function reset() {
   form.value = {
     competitionId: null, achievementId: null, sessionId: null, category: "3", name: null, teamName: null,
     level: null, grade: null, track: null, certificateNo: null, groupId: null, ownerDepId: null,
-    awardTime: null, fee: null, isReimburse: 0,
+    awardTime: null, fee: null, reimbursementFee: null, isReimburse: 0,
     fileAward: null, fileNotice: null, fileWork: [], filePhoto: [], filePayment: null, fileInvoice: null, fileReceiptCode: null,
     hasFileWork: 1, hasFilePhoto: 1
   };
