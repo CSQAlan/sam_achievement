@@ -543,7 +543,7 @@
                         <!-- 【修改】：循环显示多个文件预览和操作行 -->
                         <template v-if="item.isMultiple && getFileList(form[item.prop]).length > 0">
   <div style="display: flex; flex-wrap: wrap; gap: 10px;">
-    <div v-for="(uuid, idx) in getFileList(form[item.prop])" :key="uuid"
+    <div v-for="(uuid) in getFileList(form[item.prop])" :key="uuid"
                                  :style="{
                                    marginBottom: '20px', 
                                    border: '1px dashed #ccc', 
@@ -694,7 +694,10 @@
             <el-button @click="handleAdvisorSearch"><el-icon><Search /></el-icon></el-button>
           </template>
         </el-input>
-        <div style="font-size: 12px; color: #909399; margin-top: 5px;">支持工号或姓名双向查找</div>
+        <div style="font-size: 12px; color: #909399; margin-top: 5px; display: flex; justify-content: space-between;">
+          <span>支持工号或姓名双向查找</span>
+          <el-link type="primary" style="font-size: 12px;" @click="isAdvisorNew = true">没有找到？手动录入</el-link>
+        </div>
       </el-form-item>
       <el-form-item label="工号" prop="teacherId">
         <el-input v-model="advisorForm.teacherId" placeholder="工号" :disabled="!isAdvisorNew" />
@@ -744,6 +747,11 @@
       <el-table-column label="工号" prop="no" align="center" />
       <el-table-column label="姓名" prop="teacherName" align="center" />
     </el-table>
+    <template #footer>
+      <div style="text-align: center;">
+        <el-button @click="teacherSelectVisible = false; isAdvisorNew = true">以上都不是，创建新老师</el-button>
+      </div>
+    </template>
   </el-dialog>
 </template>
 
