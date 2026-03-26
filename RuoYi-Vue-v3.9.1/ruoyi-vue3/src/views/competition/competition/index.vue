@@ -35,7 +35,7 @@
       </el-form-item>
       <el-form-item label="状态" prop="status">
         <el-select v-model="queryParams.status" placeholder="请选择状态" clearable>
-          <el-option v-for="dict in sys_competition_status" :key="dict.value" :label="dict.label" :value="dict.value" />
+          <el-option v-for="dict in competitionStatusOptions" :key="dict.value" :label="dict.label" :value="dict.value" />
         </el-select>
       </el-form-item>
       <el-form-item>
@@ -155,7 +155,7 @@
         </el-form-item>
         <el-form-item label="状态" prop="status">
           <el-radio-group v-model="form.status">
-            <el-radio v-for="dict in sys_competition_status" :key="dict.value" :label="dict.value">{{ dict.label
+            <el-radio v-for="dict in competitionStatusOptions" :key="dict.value" :label="dict.value">{{ dict.label
             }}</el-radio>
           </el-radio-group>
         </el-form-item>
@@ -209,10 +209,11 @@
 import { listCompetition, getCompetition, delCompetition, addCompetition, updateCompetition } from "@/api/competition/competition"
 import { listDept } from "@/api/system/dept"
 // 【新增】引入ref，已有可忽略
-import { ref } from 'vue'
+import { ref, computed } from 'vue'
 
 const { proxy } = getCurrentInstance()
 const { sys_competition_level, sys_competition_tag, sys_competition_status, sys_competition_del_flag, sys_competition_scope_type, sys_competition_category } = proxy.useDict('sys_competition_level', 'sys_competition_tag', 'sys_competition_status', 'sys_competition_del_flag', 'sys_competition_scope_type', 'sys_competition_category')
+const competitionStatusOptions = computed(() => (sys_competition_status.value || []).filter(d => String(d?.value) !== "2"))
 
 const competitionList = ref([])
 const competitionDeptRelList = ref([])

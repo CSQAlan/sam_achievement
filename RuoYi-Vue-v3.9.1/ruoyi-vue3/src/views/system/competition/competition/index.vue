@@ -33,7 +33,7 @@
       </el-form-item>
       <el-form-item label="状态" prop="status">
         <el-select v-model="queryParams.status" placeholder="请选择状态" clearable>
-          <el-option v-for="dict in sys_competition_status" :key="dict.value" :label="dict.label" :value="dict.value" />
+          <el-option v-for="dict in competitionStatusOptions" :key="dict.value" :label="dict.label" :value="dict.value" />
         </el-select>
       </el-form-item>
       <el-form-item>
@@ -151,12 +151,12 @@
             }}</el-radio>
           </el-radio-group>
         </el-form-item>
-        <el-form-item label="状态" prop="status">
-          <el-radio-group v-model="form.status">
-            <el-radio v-for="dict in sys_competition_status" :key="dict.value" :label="dict.value">{{ dict.label
-            }}</el-radio>
-          </el-radio-group>
-        </el-form-item>
+          <el-form-item label="状态" prop="status">
+            <el-radio-group v-model="form.status">
+              <el-radio v-for="dict in competitionStatusOptions" :key="dict.value" :label="dict.value">{{ dict.label
+              }}</el-radio>
+            </el-radio-group>
+          </el-form-item>
         <el-form-item label="赛事说明" prop="memo">
           <el-input v-model="form.memo" type="textarea" placeholder="请输入内容" />
         </el-form-item>
@@ -207,16 +207,21 @@
 import { listCompetition, getCompetition, delCompetition, addCompetition, updateCompetition } from "@/api/competition/competition"
 import { listDept } from "@/api/system/dept"
 // 【新增】引入ref，已有可忽略
-import { ref } from 'vue'
+import { ref, computed } from 'vue'
 
 const { proxy } = getCurrentInstance()
 const { sys_competition_level, sys_competition_tag, sys_competition_status, sys_competition_del_flag, sys_competition_scope_type, sys_competition_category } = proxy.useDict('sys_competition_level', 'sys_competition_tag', 'sys_competition_status', 'sys_competition_del_flag', 'sys_competition_scope_type', 'sys_competition_category')
+const competitionStatusOptions = computed(() => (sys_competition_status.value || []).filter(d => String(d?.value) !== "2"))
 
 const competitionList = ref([])
 const competitionDeptRelList = ref([])
 const deptList = ref([])
 // 【新增】学院键值对映射：{deptId: deptName}，快速通过id匹配名称
 const deptNameMap = ref({})
+// 【新增】部门信息映射：{deptId: dept}，用于找父节点
+const deptMap = ref({})
+// 【新增】是否有子节点：{deptId: true}，用于判断叶子节点
+const deptHasChildMap = ref({})
 // 【新增】赛事-学院关系列表：缓存所有赛事的关联学院数据，避免重复查询
 const competitionDeptAllList = ref([])
 
@@ -265,12 +270,19 @@ const { queryParams, form, rules } = toRefs(data)
 function getDeptList() {
   deptList.value = []
   deptNameMap.value = {} // 清空旧映射
+  deptMap.value = {}
+  deptHasChildMap.value = {}
   listDept({}).then(response => {
     console.log("部门接口返回完整数据：", response)
     deptList.value = response.rows || response.data || []
     // 【新增】构建deptId -> deptName的映射，快速匹配
     deptList.value.forEach(dept => {
-      deptNameMap.value[dept.deptId] = dept.deptName
+      const deptId = String(dept.deptId)
+      deptNameMap.value[deptId] = dept.deptName
+      deptMap.value[deptId] = dept
+      if (dept.parentId !== null && dept.parentId !== undefined && String(dept.parentId) !== '0') {
+        deptHasChildMap.value[String(dept.parentId)] = true
+      }
     })
     console.log("学院名映射：", deptNameMap.value)
     console.log("最终学院列表：", deptList.value)
@@ -278,6 +290,26 @@ function getDeptList() {
     console.error("获取学院列表失败：", error)
     proxy.$modal.msgError("获取学院列表失败，请检查接口权限或后台数据")
   })
+}
+
+function normalizeDeptId(value) {
+  if (value === null || value === undefined) return ''
+  const id = String(value).trim()
+  return id ? id : ''
+}
+
+// 归属学院（方案A）：如果当前部门是叶子节点（系/专业），学院取它的父节点；否则认为它本身就是学院
+function getCollegeDeptId(deptId) {
+  const currentId = normalizeDeptId(deptId)
+  if (!currentId) return ''
+
+  // 非叶子节点：直接当作学院
+  if (deptHasChildMap.value[currentId]) return currentId
+
+  // 叶子节点：取父节点作为学院
+  const parentId = deptMap.value[currentId]?.parentId
+  const parentKey = normalizeDeptId(parentId)
+  return parentKey || currentId
 }
 
 // 【新增】核心方法：根据赛事行数据，获取并拼接归属学院名
@@ -294,9 +326,13 @@ function getBelongDeptName(row) {
       relateDeptIds = row.deptIds
     }
   }
-  const deptNames = relateDeptIds
-    .filter(deptId => deptId && deptNameMap.value[deptId])
-    .map(deptId => deptNameMap.value[deptId])
+
+  // 叶子节点上提到学院节点，并去重
+  const collegeDeptIds = Array.from(new Set(relateDeptIds.map(getCollegeDeptId).filter(Boolean)))
+  const deptNames = collegeDeptIds
+    .filter(deptId => deptId && deptNameMap.value[String(deptId)])
+    .map(deptId => deptNameMap.value[String(deptId)])
+
   return deptNames.length > 0 ? deptNames.join('、') : '未配置'
 }
 
