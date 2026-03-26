@@ -113,20 +113,26 @@
     />
 
     <!-- 添加或修改教师档案对话框 -->
-    <el-dialog :title="title" v-model="open" width="500px" append-to-body>
-      <el-form ref="teacherRef" :model="form" :rules="rules" label-width="80px">
+    <el-dialog :title="title" v-model="open" width="700px" append-to-body>
+      <el-form ref="teacherRef" :model="form" :rules="rules" label-width="100px">
         <el-form-item label="教师姓名" prop="teacherName">
           <el-input v-model="form.teacherName" placeholder="请输入教师姓名" />
         </el-form-item>
         <el-form-item label="工号" prop="no">
           <el-input v-model="form.no" placeholder="请输入工号" />
         </el-form-item>
-        <el-form-item label="学院" prop="school">
-          <el-input v-model="form.school" placeholder="请输入学院" />
-        </el-form-item>
-        <el-form-item label="院系" prop="department">
-          <el-input v-model="form.department" placeholder="请输入院系" />
-        </el-form-item>
+<el-form-item label="所属机构" prop="school">
+  <el-cascader
+    v-model="deptCascaderValue"
+    :options="deptOptions"
+    :props="{ value: 'deptId', label: 'deptName', children: 'children' }"
+    placeholder="请选择学院/院系"
+    clearable
+    filterable
+    class="full-width-cascader"
+    @change="handleDeptCascaderChange"
+  />
+</el-form-item>
       </el-form>
       <template #footer>
         <div class="dialog-footer">
@@ -140,6 +146,8 @@
 
 <script setup name="Teacher">
 import { listTeacher, getTeacher, delTeacher, addTeacher, updateTeacher } from "@/api/achievement/teacher"
+import { listDept } from "@/api/system/dept"
+import { handleTree } from "@/utils/ruoyi"
 
 const { proxy } = getCurrentInstance()
 
@@ -152,6 +160,8 @@ const single = ref(true)
 const multiple = ref(true)
 const total = ref(0)
 const title = ref("")
+const deptOptions = ref([])
+const deptCascaderValue = ref([])
 
 const data = reactive({
   form: {},
@@ -175,6 +185,24 @@ const data = reactive({
 })
 
 const { queryParams, form, rules } = toRefs(data)
+
+/** 查询部门树结构 */
+function getDeptTree() {
+  listDept().then(response => {
+    deptOptions.value = handleTree(response.data, "deptId");
+  });
+}
+
+/** 部门级联选择器变化处理 */
+function handleDeptCascaderChange(value) {
+  if (value && value.length > 0) {
+    form.value.school = value[0] || '';
+    form.value.department = value[1] || '';
+  } else {
+    form.value.school = '';
+    form.value.department = '';
+  }
+}
 
 /** 查询教师档案列表 */
 function getList() {
@@ -201,6 +229,7 @@ function reset() {
     school: null,
     department: null
   }
+  deptCascaderValue.value = []
   proxy.resetForm("teacherRef")
 }
 
@@ -226,6 +255,7 @@ function handleSelectionChange(selection) {
 /** 新增按钮操作 */
 function handleAdd() {
   reset()
+  getDeptTree()
   open.value = true
   title.value = "添加教师档案"
 }
@@ -233,9 +263,16 @@ function handleAdd() {
 /** 修改按钮操作 */
 function handleUpdate(row) {
   reset()
+  getDeptTree()
   const _id = row.id || ids.value
   getTeacher(_id).then(response => {
     form.value = response.data
+    // 回填级联选择器
+    const values = [];
+    if (form.value.school) values.push(Number(form.value.school));
+    if (form.value.department) values.push(Number(form.value.department));
+    deptCascaderValue.value = values;
+
     open.value = true
     title.value = "修改教师档案"
   })
@@ -282,3 +319,42 @@ function handleExport() {
 
 getList()
 </script>
+<style scoped>
+.full-width-cascader {
+  width: 100%;
+}
+
+/* 级联选择器容器 */
+:deep(.el-cascader) {
+  width: 100%;
+}
+
+/* 输入框区域 */
+:deep(.el-cascader .el-input),
+:deep(.el-cascader .el-input__wrapper) {
+  height: auto !important;
+  min-height: 34px;
+}
+
+/* 标签容器 - 允许换行 */
+:deep(.el-cascader__tags) {
+  flex-wrap: wrap !important;
+  max-width: 100% !important;
+  margin: 0 !important;
+}
+
+/* 单个标签 - 允许换行 */
+:deep(.el-cascader__tag) {
+  white-space: normal !important;
+  word-break: break-all !important;
+  overflow: visible !important;
+  height: auto !important;
+  margin: 2px 0 !important;
+}
+
+/* 标签文本 */
+:deep(.el-cascader__tag-text) {
+  white-space: normal !important;
+  word-break: break-all !important;
+}
+</style>

@@ -1198,9 +1198,12 @@ function handleAdvisorSearch() {
       }
     });
 
-    if (uniqueTeachers.length === 1) {
-      applyTeacherInfo(uniqueTeachers[0]);
-    } else if (uniqueTeachers.length > 1) {
+    // 查找是否存在精确匹配项（工号或姓名完全一致）
+    const exactMatch = uniqueTeachers.find(t => t.no === keyword || t.teacherName === keyword);
+
+    if (exactMatch) {
+      applyTeacherInfo(exactMatch);
+    } else if (uniqueTeachers.length > 0) {
       teacherOptions.value = uniqueTeachers;
       teacherSelectVisible.value = true;
     } else {

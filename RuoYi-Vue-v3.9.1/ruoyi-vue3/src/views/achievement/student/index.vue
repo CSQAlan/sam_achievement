@@ -169,23 +169,26 @@
     />
 
     <!-- 添加或修改学生档案对话框 -->
-    <el-dialog :title="title" v-model="open" width="500px" append-to-body>
-      <el-form ref="studentRef" :model="form" :rules="rules" label-width="80px">
+    <el-dialog :title="title" v-model="open" width="700px" append-to-body>
+      <el-form ref="studentRef" :model="form" :rules="rules" label-width="100px">
         <el-form-item label="学生姓名" prop="name">
           <el-input v-model="form.name" placeholder="请输入学生姓名" />
         </el-form-item>
         <el-form-item label="学号" prop="no">
           <el-input v-model="form.no" placeholder="请输入学号" />
         </el-form-item>
-        <el-form-item label="学院" prop="school">
-          <el-input v-model="form.school" placeholder="请输入学院" />
-        </el-form-item>
-        <el-form-item label="院系" prop="department">
-          <el-input v-model="form.department" placeholder="请输入院系" />
-        </el-form-item>
-        <el-form-item label="专业" prop="major">
-          <el-input v-model="form.major" placeholder="请输入专业" />
-        </el-form-item>
+<el-form-item label="所属机构" prop="school">
+  <el-cascader
+    v-model="deptCascaderValue"
+    :options="deptOptions"
+    :props="{ value: 'deptId', label: 'deptName', children: 'children' }"
+    placeholder="请选择学院/院系/专业"
+    clearable
+    filterable
+    class="full-width-cascader"
+    @change="handleDeptCascaderChange"
+  />
+</el-form-item>
         <el-form-item label="班级" prop="className">
           <el-input v-model="form.className" placeholder="请输入班级" />
         </el-form-item>
@@ -211,6 +214,8 @@ import {
   addStudent,
   updateStudent,
 } from "@/api/achievement/student";
+import { listDept } from "@/api/system/dept";
+import { handleTree } from "@/utils/ruoyi";
 
 const { proxy } = getCurrentInstance();
 
@@ -223,6 +228,8 @@ const single = ref(true);
 const multiple = ref(true);
 const total = ref(0);
 const title = ref("");
+const deptOptions = ref([]);
+const deptCascaderValue = ref([]);
 
 const data = reactive({
   form: {},
@@ -244,6 +251,26 @@ const data = reactive({
 });
 
 const { queryParams, form, rules } = toRefs(data);
+
+/** 查询部门树结构 */
+function getDeptTree() {
+  listDept().then(response => {
+    deptOptions.value = handleTree(response.data, "deptId");
+  });
+}
+
+/** 部门级联选择器变化处理 */
+function handleDeptCascaderChange(value) {
+  if (value && value.length > 0) {
+    form.value.school = value[0] || '';
+    form.value.department = value[1] || '';
+    form.value.major = value[2] || '';
+  } else {
+    form.value.school = '';
+    form.value.department = '';
+    form.value.major = '';
+  }
+}
 
 /** 查询学生档案列表 */
 function getList() {
@@ -273,6 +300,7 @@ function reset() {
     className: null,
     classYear: null,
   };
+  deptCascaderValue.value = [];
   proxy.resetForm("studentRef");
 }
 
@@ -298,6 +326,7 @@ function handleSelectionChange(selection) {
 /** 新增按钮操作 */
 function handleAdd() {
   reset();
+  getDeptTree();
   open.value = true;
   title.value = "添加学生档案";
 }
@@ -305,9 +334,17 @@ function handleAdd() {
 /** 修改按钮操作 */
 function handleUpdate(row) {
   reset();
+  getDeptTree();
   const _studentId = row.studentId || ids.value;
   getStudent(_studentId).then((response) => {
     form.value = response.data;
+    // 回填级联选择器
+    const values = [];
+    if (form.value.school) values.push(Number(form.value.school));
+    if (form.value.department) values.push(Number(form.value.department));
+    if (form.value.major) values.push(Number(form.value.major));
+    deptCascaderValue.value = values;
+    
     open.value = true;
     title.value = "修改学生档案";
   });
@@ -362,3 +399,72 @@ function handleExport() {
 
 getList();
 </script>
+
+<style scoped>
+.full-width-cascader {
+  width: 100%;
+}
+
+/* 级联选择器容器 */
+:deep(.el-cascader) {
+  width: 100%;
+}
+
+/* 输入框区域 */
+:deep(.el-cascader .el-input) {
+  height: auto !important;
+  min-height: 34px;
+}
+
+:deep(.el-cascader .el-input__wrapper) {
+  height: auto !important;
+  padding: 4px 8px;
+}
+
+/* 标签容器 - 允许换行 */
+:deep(.el-cascader__tags) {
+  flex-wrap: wrap !important;
+  max-width: 100% !important;
+  margin: 0 !important;
+}
+
+/* 标签内部容器 */
+:deep(.el-cascader__tags-inner) {
+  display: flex !important;
+  flex-wrap: wrap !important;
+  gap: 4px;
+  width: 100%;
+}
+
+/* 单个标签 - 允许换行 */
+:deep(.el-cascader__tag) {
+  display: inline-flex !important;
+  max-width: 100% !important;
+  white-space: normal !important;
+  word-break: break-all !important;
+  overflow: visible !important;
+  text-overflow: clip !important;
+  margin: 2px 0 !important;
+  height: auto !important;
+  line-height: 1.5 !important;
+}
+
+/* 标签文本 */
+:deep(.el-cascader__tag-text) {
+  white-space: normal !important;
+  word-break: break-all !important;
+}
+
+/* 删除按钮 */
+:deep(.el-cascader__tag .el-tag__close) {
+  margin-left: 4px;
+}
+
+/* 输入框内容区域 */
+:deep(.el-cascader .el-input__inner) {
+  height: auto !important;
+  min-height: 24px;
+  white-space: normal !important;
+  line-height: 1.5 !important;
+}
+</style>
