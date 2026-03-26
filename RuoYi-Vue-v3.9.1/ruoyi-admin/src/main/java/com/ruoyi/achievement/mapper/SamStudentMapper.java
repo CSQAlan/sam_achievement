@@ -58,4 +58,12 @@ public interface SamStudentMapper
      * @return 结果
      */
     public int deleteSamStudentByStudentIds(Long[] studentIds);
+
+    /**
+     * 通过学号查询学生
+     *
+     * @param no 学号
+     * @return 学生
+     */
+    public SamStudent selectSamStudentByNo(String no);
 }

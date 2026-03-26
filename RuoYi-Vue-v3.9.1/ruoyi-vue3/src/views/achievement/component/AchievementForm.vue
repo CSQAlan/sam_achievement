@@ -524,7 +524,7 @@
                     </el-alert>
                       
                       <el-form-item label-width="0" :prop="item.prop">
-                        <!-- 【修改】：参赛作品/照片有图时直接显示上传，无需解锁 -->
+                        <!-- 参赛作品/照片有图时直接显示上传，无需解锁 -->
                         <file-upload 
                           v-if="!readOnly && (uploadUnlocked[item.name] || ((item.name === 'work' || item.name === 'photo') && form[item.name === 'work' ? 'hasFileWork' : 'hasFilePhoto'] === 1)) && (item.isMultiple || !form[item.prop])"
                           v-model="form[item.prop]" 
@@ -540,7 +540,7 @@
                            <div style="font-size: 12px; color: #E6A23C; margin-top: 5px">(点击后需先阅读示例)</div>
                         </div>
 
-                        <!-- 【修改】：循环显示多个文件预览和操作行 -->
+                        <!--循环显示多个文件预览和操作行 -->
                         <template v-if="item.isMultiple && getFileList(form[item.prop]).length > 0">
   <div style="display: flex; flex-wrap: wrap; gap: 10px;">
     <div v-for="(uuid) in getFileList(form[item.prop])" :key="uuid"
@@ -656,6 +656,12 @@
         <el-input v-model="participantForm.studentName" placeholder="姓名" :disabled="!isParticipantNew" />
       </el-form-item>
       
+      <el-form-item v-if="!isParticipantNew && participantForm.studentId" label="所属机构">
+        <div style="font-size: 13px; color: #606266; line-height: 1.4;">
+          {{ participantForm.school || '-' }} / {{ participantForm.department || '-' }} / {{ participantForm.major || '-' }}
+        </div>
+      </el-form-item>
+      
       <template v-if="isParticipantNew">
         <el-alert title="未匹配到该学号，请完善下方信息完成录入" type="warning" show-icon :closable="false" style="margin-bottom: 15px;" />
         <el-form-item label="所属机构" prop="school">
@@ -666,7 +672,7 @@
             placeholder="请选择学院/院系/专业"
             clearable
             filterable
-            style="width: 100%"
+            class="full-width-cascader"
             @change="handleParticipantCascaderChange"
           />
         </el-form-item>
@@ -706,6 +712,12 @@
         <el-input v-model="advisorForm.teacherName" placeholder="姓名" :disabled="!isAdvisorNew" />
       </el-form-item>
       
+      <el-form-item v-if="!isAdvisorNew && advisorForm.teacherId" label="所属机构">
+        <div style="font-size: 13px; color: #606266; line-height: 1.4;">
+          {{ advisorForm.school || '-' }} / {{ advisorForm.department || '-' }}
+        </div>
+      </el-form-item>
+      
       <template v-if="isAdvisorNew">
         <el-alert title="未匹配到该工号，请完善下方信息完成录入" type="warning" show-icon :closable="false" style="margin-bottom: 15px;" />
         <el-form-item label="所属机构" prop="school">
@@ -716,7 +728,7 @@
             placeholder="请选择学院/院系"
             clearable
             filterable
-            style="width: 100%"
+            class="full-width-cascader"
             @change="handleAdvisorCascaderChange"
           />
         </el-form-item>
@@ -732,8 +744,15 @@
 
   <el-dialog title="选择学生" v-model="studentSelectVisible" width="600px" append-to-body>
     <el-table :data="studentOptions" @row-click="selectStudent" border highlight-current-row>
-      <el-table-column label="学号" prop="no" align="center" />
-      <el-table-column label="姓名" prop="name" align="center" />
+      <el-table-column label="学号" prop="no" align="center" width="120" />
+      <el-table-column label="姓名" prop="name" align="center" width="100" />
+      <el-table-column label="所属机构" align="center">
+        <template #default="scope">
+          <div style="font-size: 12px; color: #606266;">
+            {{ scope.row.schoolName || scope.row.school }} / {{ scope.row.deptName || scope.row.department }} / {{ scope.row.majorName || scope.row.major }}
+          </div>
+        </template>
+      </el-table-column>
     </el-table>
     <template #footer>
       <div style="text-align: center;">
@@ -744,8 +763,15 @@
 
   <el-dialog title="选择老师" v-model="teacherSelectVisible" width="600px" append-to-body>
     <el-table :data="teacherOptions" @row-click="selectTeacher" border highlight-current-row>
-      <el-table-column label="工号" prop="no" align="center" />
-      <el-table-column label="姓名" prop="teacherName" align="center" />
+      <el-table-column label="工号" prop="no" align="center" width="120" />
+      <el-table-column label="姓名" prop="teacherName" align="center" width="100" />
+      <el-table-column label="所属机构" align="center">
+        <template #default="scope">
+          <div style="font-size: 12px; color: #606266;">
+            {{ scope.row.schoolName || scope.row.school }} / {{ scope.row.deptName || scope.row.department }}
+          </div>
+        </template>
+      </el-table-column>
     </el-table>
     <template #footer>
       <div style="text-align: center;">
