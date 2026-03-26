@@ -62,9 +62,6 @@ public class Session extends BaseEntity
     // ====================== 状态 ======================
     private String status;
     private String delFlag;
-    
-    /** 比赛通知文件UUID */
-    private String uuid;
 
     /** 新增：year年份和uuid（对应每一个届次的参赛通知附件uuid） */
     private String uuid;
@@ -107,9 +104,6 @@ public class Session extends BaseEntity
 
     public String getDelFlag() {return delFlag;}
     public void setDelFlag(String delFlag) {this.delFlag = delFlag;}
-
-    public String getUuid() {return uuid;}
-    public void setUuid(String uuid) {this.uuid = uuid;}
 
     // 导入专用字段getter/setter
     public String getCategoryImport() {return categoryImport;}
