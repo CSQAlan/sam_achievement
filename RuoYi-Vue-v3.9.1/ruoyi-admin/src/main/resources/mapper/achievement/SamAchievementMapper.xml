@@ -24,6 +24,7 @@
         <result property="isSupplement"    column="is_supplement"    />
         <result property="fee"    column="fee"    />
         <result property="reimbursementFee"    column="reimbursement_fee"    />
+        <result property="reimbursementStatus" column="reimbursement_status" />
         <result property="reimbursementRatio"    column="reimbursement_ratio"    />
         <result property="reimbursementItemId"    column="reimbursement_item_id"    />
         <result property="reimbursementDate"    column="reimbursement_date"    />
@@ -106,6 +107,7 @@
             a.is_supplement,
             a.fee,
             a.reimbursement_fee,
+            v.reimbursement_status,
             a.reimbursement_ratio,
             a.reimbursement_item_id,
             a.reimbursement_date,
@@ -129,6 +131,7 @@
         from sam_achievement a
                  left join sam_competition_session s on a.session_id = s.session_id
                  left join sam_competition c on s.competition_id = c.id
+                 left join sam_reimbursement_achievement_view v on a.achievement_id = v.achievement_id
     </sql>
 
     <select id="selectSamAchievementList" parameterType="SamAchievement" resultMap="SamAchievementSamAchievementParticipantResult">
@@ -146,6 +149,7 @@
             <if test="groupId != null "> and a.group_id = #{groupId}</if>
             <if test="awardTime != null "> and a.award_time = #{awardTime}</if>
         </where>
+        order by a.achievement_id desc
     </select>
 
     <select id="selectSamAchievementListByStudentId" parameterType="SamAchievement" resultMap="SamAchievementSamAchievementParticipantResult">
@@ -157,6 +161,7 @@
             <if test="name != null  and name != ''"> and a.name like concat('%', #{name}, '%')</if>
             <if test="reviewResult != null  and reviewResult != ''"> and a.review_result = #{reviewResult}</if>
         </where>
+        order by a.achievement_id desc
     </select>
 
     <select id="selectSamAchievementListByTeacherId" parameterType="SamAchievement" resultMap="SamAchievementSamAchievementParticipantResult">
@@ -168,6 +173,7 @@
             <if test="name != null  and name != ''"> and a.name like concat('%', #{name}, '%')</if>
             <if test="reviewResult != null  and reviewResult != ''"> and a.review_result = #{reviewResult}</if>
         </where>
+        order by a.achievement_id desc
     </select>
 
     <select id="selectSamAchievementListByUserId" parameterType="SamAchievement" resultMap="SamAchievementSamAchievementParticipantResult">
@@ -181,6 +187,7 @@
             <if test="name != null  and name != ''"> and a.name like concat('%', #{name}, '%')</if>
             <if test="reviewResult != null  and reviewResult != ''"> and a.review_result = #{reviewResult}</if>
         </where>
+        order by a.achievement_id desc
     </select>
 
     <select id="selectSamAchievementByAchievementId" parameterType="String" resultMap="SamAchievementSamAchievementParticipantResult">
@@ -206,6 +213,14 @@
         select attachment_id, achievement_id, file_uuid as fileUuid, type, file_type as fileType
         from sam_achievement_attachment
         where achievement_id = #{achievement_id}
+    </select>
+
+    <select id="selectTrackList" resultType="String">
+        select distinct a.track
+        from sam_achievement a
+        left join sam_competition_session s on a.session_id = s.session_id
+        where s.competition_id = #{competitionId} and a.session_id = #{sessionId}
+        and a.track is not null and a.track != ''
     </select>
 
     <select id="checkCertificateNoUnique" resultMap="SamAchievementResult">

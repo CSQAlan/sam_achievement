@@ -88,6 +88,15 @@ public interface SamAchievementMapper
     public SamAchievement checkCertificateNoUnique(@Param("certificateNo") String certificateNo, @Param("competitionId") String competitionId);
 
     /**
+     * 根据比赛和届次查询已有的赛道列表
+     *
+     * @param competitionId 比赛ID
+     * @param sessionId 届次ID
+     * @return 赛道列表
+     */
+    public List<String> selectTrackList(@Param("competitionId") Long competitionId, @Param("sessionId") Long sessionId);
+
+    /**
      * 批量删除参赛选手
      */
     public int deleteSamAchievementParticipantByParticipantIds(String[] achievementIds);

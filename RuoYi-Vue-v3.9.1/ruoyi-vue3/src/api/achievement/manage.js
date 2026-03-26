@@ -42,3 +42,39 @@ export function delManage(achievementId) {
     method: 'delete'
   })
 }
+
+// 根据比赛和届次查询已有的赛道
+export function listTracks(competitionId, sessionId) {
+  return request({
+    url: '/achievement/manage/listTracks',
+    method: 'get',
+    params: {
+      competitionId,
+      sessionId
+    }
+  })
+}
+
+export function listParticipatedAchievement(query) {
+  return request({
+    url: '/achievement/manage/list-participated',
+    method: 'get',
+    params: query
+  })
+}
+
+export function listGuidedAchievement(query) {
+  return request({
+    url: '/achievement/manage/list-guided',
+    method: 'get',
+    params: query
+  })
+}
+
+export function listResponsibleAchievement(query) {
+  return request({
+    url: '/achievement/manage/list-responsible',
+    method: 'get',
+    params: query
+  })
+}

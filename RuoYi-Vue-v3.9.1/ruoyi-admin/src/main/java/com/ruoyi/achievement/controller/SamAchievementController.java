@@ -148,6 +148,15 @@ public class SamAchievementController extends BaseController
     }
 
     /**
+     * 根据比赛和届次查询已有的赛道
+     */
+    @GetMapping("/listTracks")
+    public AjaxResult listTracks(Long competitionId, Long sessionId)
+    {
+        return success(samAchievementService.selectTrackList(competitionId, sessionId));
+    }
+
+    /**
      * 校验证书编号是否唯一
      */
     @GetMapping("/checkCertificateNoUnique")

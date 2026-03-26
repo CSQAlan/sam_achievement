@@ -4,6 +4,7 @@ import java.util.Calendar;
 import java.util.List;
 import java.util.ArrayList;
 import java.util.Map;
+import java.util.HashMap;
 import com.ruoyi.common.utils.DateUtils;
 import com.ruoyi.common.utils.StringUtils;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -345,17 +346,26 @@ public class SamAchievementServiceImpl implements ISamAchievementService
             List<Map<String, Object>> insertList = new ArrayList<>();
 
             for (Map<String, Object> attachment : attachments) {
-                String uuid = (String) attachment.get("fileUuid");
-                if (StringUtils.isNotEmpty(uuid)) {
-                    uuids.add(uuid);
+                String uuidStr = (String) attachment.get("fileUuid");
+                if (StringUtils.isNotEmpty(uuidStr)) {
+                    // 支持以逗号分隔的多个 UUID (主要用于作品附件等)
+                    String[] splitUuids = uuidStr.split(",");
+                    for (String uuid : splitUuids) {
+                        uuid = uuid.trim();
+                        if (StringUtils.isNotEmpty(uuid)) {
+                            uuids.add(uuid);
 
-                    // 补全附件表所需字段
-                    attachment.put("achievementId", achievementId);
-                    // 如果前端没传 fileType，这里给个默认值
-                    if (attachment.get("fileType") == null) {
-                        attachment.put("fileType", 1);
+                            // 构造新的附件记录
+                            Map<String, Object> newAttachment = new HashMap<>();
+                            newAttachment.put("achievementId", achievementId);
+                            newAttachment.put("fileUuid", uuid);
+                            newAttachment.put("type", attachment.get("type"));
+                            // 如果前端没传 fileType，这里给个默认值
+                            newAttachment.put("fileType", attachment.get("fileType") != null ? attachment.get("fileType") : 1);
+                            
+                            insertList.add(newAttachment);
+                        }
                     }
-                    insertList.add(attachment);
                 }
             }
 
@@ -542,5 +552,18 @@ public class SamAchievementServiceImpl implements ISamAchievementService
         samAchievementMapper.deleteSamAchievementAdvisorByAchievementId(achievementId);
         samAchievementMapper.deleteSamAchievementAttachmentByAchievementId(achievementId);
         return samAchievementMapper.deleteSamAchievementByAchievementId(achievementId);
+    }
+
+    /**
+     * 根据比赛和届次查询已有的赛道列表
+     *
+     * @param competitionId 比赛ID
+     * @param sessionId 届次ID
+     * @return 赛道列表
+     */
+    @Override
+    public List<String> selectTrackList(Long competitionId, Long sessionId)
+    {
+        return samAchievementMapper.selectTrackList(competitionId, sessionId);
     }
 }
