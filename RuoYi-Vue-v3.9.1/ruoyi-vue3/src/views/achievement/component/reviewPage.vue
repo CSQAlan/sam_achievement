@@ -74,27 +74,29 @@
             >
               <span class="audit-label">驳回原因</span>
               <div class="audit-reason-group">
-                <el-select
-                  v-model="rejectReason"
-                  multiple
-                  filterable
-                  clearable
-                  class="audit-reason-select"
-                  :placeholder="rejectReasonPlaceholder"
-                >
-                  <el-option
-                    v-for="opt in currentRejectReasonOptions"
-                    :key="opt.value"
-                    :label="opt.label"
-                    :value="opt.value"
-                  />
-                </el-select>
                 <el-input
                   v-model="rejectReasonCustom"
                   clearable
                   class="audit-reason-input"
                   :placeholder="rejectReasonCustomPlaceholder"
-                />
+                >
+                  <template #append>
+                    <el-dropdown trigger="click" @command="handleRejectReasonCommand">
+                      <span class="audit-reason-dropdown-link">常用原因</span>
+                      <template #dropdown>
+                        <el-dropdown-menu>
+                          <el-dropdown-item
+                            v-for="opt in currentRejectReasonOptions"
+                            :key="opt.value"
+                            :command="opt.value"
+                          >
+                            {{ opt.label }}
+                          </el-dropdown-item>
+                        </el-dropdown-menu>
+                      </template>
+                    </el-dropdown>
+                  </template>
+                </el-input>
               </div>
             </div>
           </div>
@@ -259,7 +261,6 @@ const nextStatusOptions = computed(() => {
 });
 
 const selectedAuditStatus = ref("");
-const rejectReason = ref([]);
 const rejectReasonCustom = ref("");
 
 function normalizeRejectReasonOptions(dictItems = []) {
@@ -295,32 +296,16 @@ function findRejectReasonOption(options = [], token) {
   );
 }
 
-function parseRejectReasonState(value, options = []) {
-  const selectedValues = [];
-  const customTexts = [];
-  splitRejectReasonText(value).forEach((item) => {
-    const matched = findRejectReasonOption(options, item);
-    if (matched) {
-      selectedValues.push(matched.value);
-    } else {
-      customTexts.push(item);
-    }
-  });
-  return {
-    selectedValues: Array.from(new Set(selectedValues)),
-    customText: Array.from(new Set(customTexts)).join(REJECT_REASON_SEPARATOR),
-  };
-}
-
-function formatRejectReasonText(values, customText = "") {
-  const manualTexts = splitRejectReasonText(customText);
+function formatRejectReasonDisplayText(value, options = []) {
   return Array.from(
-    new Set([
-      ...(Array.isArray(values) ? values : [])
-        .map((item) => normalizeLooseText(item))
-        .filter(Boolean),
-      ...manualTexts,
-    ])
+    new Set(
+      splitRejectReasonText(value)
+        .map((item) => {
+          const matched = findRejectReasonOption(options, item);
+          return matched ? matched.label : item;
+        })
+        .filter(Boolean)
+    )
   ).join(REJECT_REASON_SEPARATOR);
 }
 
@@ -640,11 +625,8 @@ const isSchoolReject = computed(
 const showRejectReason = computed(
   () => isCollegeReject.value || isSchoolReject.value
 );
-const rejectReasonPlaceholder = computed(() =>
-  isCollegeReject.value ? "请选择院级驳回原因" : "请选择校级驳回原因"
-);
 const rejectReasonCustomPlaceholder = computed(() =>
-  isCollegeReject.value ? "请输入其他院级驳回原因" : "请输入其他校级驳回原因"
+  isCollegeReject.value ? "请输入院级驳回原因" : "请输入校级驳回原因"
 );
 
 // ✅ 默认优先选“通过”
@@ -676,7 +658,6 @@ watch(
   () => selectedAuditStatus.value,
   () => {
     if (!showRejectReason.value) {
-      rejectReason.value = [];
       rejectReasonCustom.value = "";
     }
   }
@@ -698,14 +679,11 @@ function syncAuditFromForm() {
     }
 
     if (String(selectedAuditStatus.value) === "1") {
-      const parsedReason = parseRejectReasonState(
+      rejectReasonCustom.value = formatRejectReasonDisplayText(
         form.reviewReason,
         baseRejectReasonOptions.value
       );
-      rejectReason.value = parsedReason.selectedValues;
-      rejectReasonCustom.value = parsedReason.customText;
     } else {
-      rejectReason.value = [];
       rejectReasonCustom.value = "";
     }
   } else if (isSchoolSource.value) {
@@ -721,14 +699,11 @@ function syncAuditFromForm() {
     }
 
     if (String(selectedAuditStatus.value) === "0") {
-      const parsedReason = parseRejectReasonState(
+      rejectReasonCustom.value = formatRejectReasonDisplayText(
         form.schoolReviewReason || form.school_review_reason,
         baseRejectReasonOptions.value
       );
-      rejectReason.value = parsedReason.selectedValues;
-      rejectReasonCustom.value = parsedReason.customText;
     } else {
-      rejectReason.value = [];
       rejectReasonCustom.value = "";
     }
   }
@@ -742,6 +717,18 @@ watch(baseRejectReasonOptions, (options) => {
   auditInitialized.value = false;
   syncAuditFromForm();
 });
+
+function handleRejectReasonCommand(value) {
+  const selectedValue = normalizeLooseText(value);
+  if (!selectedValue) return;
+  const matched = findRejectReasonOption(currentRejectReasonOptions.value, selectedValue);
+  const nextText = normalizeLooseText(matched?.label || matched?.value || selectedValue);
+  if (!nextText) return;
+  const merged = Array.from(
+    new Set([...splitRejectReasonText(rejectReasonCustom.value), nextText])
+  );
+  rejectReasonCustom.value = merged.join(REJECT_REASON_SEPARATOR);
+}
 
 watch(
   () => {
@@ -897,7 +884,7 @@ async function submitAudit() {
   if (!next) return;
 
   const rejectReasonText = showRejectReason.value
-    ? formatRejectReasonText(rejectReason.value, rejectReasonCustom.value)
+    ? splitRejectReasonText(rejectReasonCustom.value).join(REJECT_REASON_SEPARATOR)
     : "";
 
   if (showRejectReason.value && !rejectReasonText) {
@@ -1155,8 +1142,6 @@ watch(
 }
 .audit-reason-group {
   display: flex;
-  flex-direction: column;
-  gap: 8px;
   width: 100%;
 }
 .audit-label {
@@ -1168,19 +1153,15 @@ watch(
 .audit-status-select {
   width: 210px;
 }
-.audit-reason-select {
-  width: 100%;
-  min-width: 260px;
-}
-.audit-reason-select :deep(.el-select__wrapper) {
-  box-shadow: 0 0 0 1px #d6e4ff inset;
-}
-
-.audit-reason-select :deep(.el-select__wrapper.is-focused) {
-  box-shadow: 0 0 0 1px #7ea8ff inset, 0 0 0 3px rgba(31, 111, 255, 0.12);
-}
 .audit-reason-input {
   width: 100%;
+}
+.audit-reason-dropdown-link {
+  display: inline-flex;
+  align-items: center;
+  cursor: pointer;
+  white-space: nowrap;
+  color: var(--el-text-color-regular);
 }
 .submit-btn {
   min-width: 108px;
