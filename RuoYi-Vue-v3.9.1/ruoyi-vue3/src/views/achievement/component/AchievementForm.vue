@@ -666,6 +666,7 @@
         <el-alert title="未匹配到该学号，请完善下方信息完成录入" type="warning" show-icon :closable="false" style="margin-bottom: 15px;" />
         <el-form-item label="所属机构" prop="school">
           <el-cascader
+            ref="participantCascader"
             v-model="participantDeptCascaderValue"
             :options="deptOptions"
             :props="{ value: 'deptId', label: 'deptName', children: 'children' }"
@@ -722,6 +723,7 @@
         <el-alert title="未匹配到该工号，请完善下方信息完成录入" type="warning" show-icon :closable="false" style="margin-bottom: 15px;" />
         <el-form-item label="所属机构" prop="school">
           <el-cascader
+            ref="advisorCascader"
             v-model="advisorDeptCascaderValue"
             :options="deptOptions"
             :props="{ value: 'deptId', label: 'deptName', children: 'children' }"
@@ -856,10 +858,15 @@ const participantDeptCascaderValue = ref([]);
 const advisorDeptCascaderValue = ref([]);
 
 function handleParticipantCascaderChange(value) {
-  if (value && value.length > 0) {
-    participantForm.value.school = value[0] || '';
-    participantForm.value.department = value[1] || '';
-    participantForm.value.major = value[2] || '';
+  if (value && value.length >= 4) {
+    const nodes = proxy.$refs.participantCascader.getCheckedNodes();
+    if (nodes && nodes.length > 0) {
+      const labels = nodes[0].pathLabels; 
+      // Level 1: 学校(Root), Level 2: 院, Level 3: 系, Level 4: 专业
+      participantForm.value.school = labels[1] || '';
+      participantForm.value.department = labels[2] || '';
+      participantForm.value.major = labels[3] || '';
+    }
   } else {
     participantForm.value.school = '';
     participantForm.value.department = '';
@@ -868,9 +875,14 @@ function handleParticipantCascaderChange(value) {
 }
 
 function handleAdvisorCascaderChange(value) {
-  if (value && value.length > 0) {
-    advisorForm.value.school = value[0] || '';
-    advisorForm.value.department = value[1] || '';
+  if (value && value.length >= 3) {
+    const nodes = proxy.$refs.advisorCascader.getCheckedNodes();
+    if (nodes && nodes.length > 0) {
+      const labels = nodes[0].pathLabels;
+      // Level 1: 学校(Root), Level 2: 院, Level 3: 系
+      advisorForm.value.school = labels[1] || '';
+      advisorForm.value.department = labels[2] || '';
+    }
   } else {
     advisorForm.value.school = '';
     advisorForm.value.department = '';
@@ -1158,11 +1170,11 @@ function handleParticipantSearch() {
       }
     });
 
-    // 查找是否存在精确匹配项（学号或姓名完全一致）
-    const exactMatch = uniqueStudents.find(s => s.no === keyword || s.name === keyword);
+    // 查找所有精确匹配项（学号或姓名完全一致）
+    const exactMatches = uniqueStudents.filter(s => s.no === keyword || s.name === keyword);
 
-    if (exactMatch) {
-      applyStudentInfo(exactMatch);
+    if (exactMatches.length === 1) {
+      applyStudentInfo(exactMatches[0]);
     } else if (uniqueStudents.length > 0) {
       studentOptions.value = uniqueStudents;
       studentSelectVisible.value = true;
@@ -1224,11 +1236,11 @@ function handleAdvisorSearch() {
       }
     });
 
-    // 查找是否存在精确匹配项（工号或姓名完全一致）
-    const exactMatch = uniqueTeachers.find(t => t.no === keyword || t.teacherName === keyword);
+    // 查找所有精确匹配项（工号或姓名完全一致）
+    const exactMatches = uniqueTeachers.filter(t => t.no === keyword || t.teacherName === keyword);
 
-    if (exactMatch) {
-      applyTeacherInfo(exactMatch);
+    if (exactMatches.length === 1) {
+      applyTeacherInfo(exactMatches[0]);
     } else if (uniqueTeachers.length > 0) {
       teacherOptions.value = uniqueTeachers;
       teacherSelectVisible.value = true;
@@ -1264,6 +1276,11 @@ function submitAddParticipant() {
   // 如果还在查询中，等待一小会或者直接拦截（通常 blur 会先于 click 触发并完成请求）
   if (searchingParticipant.value) {
     setTimeout(submitAddParticipant, 300);
+    return;
+  }
+
+  if (isParticipantNew.value && participantDeptCascaderValue.value.length < 4) {
+    proxy.$modal.msgError("请选择完整的所属机构（需选择到专业）");
     return;
   }
 
