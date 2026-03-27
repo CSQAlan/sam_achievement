@@ -180,8 +180,8 @@
         </el-row>
       </el-form>
 
-      <el-row :gutter="10" class="mb8">
-        <el-col :span="1.5">
+      <el-row class="mb8 toolbar-primary-row">
+        <div class="toolbar-left">
           <el-button
               v-if="showAdd"
               type="primary"
@@ -190,8 +190,6 @@
               @click="handleAdd"
               v-hasPermi="permAdd"
           >新增</el-button>
-        </el-col>
-        <el-col :span="1.5">
           <el-button
               v-if="showEdit && canUseEditAction"
               type="success"
@@ -201,8 +199,6 @@
               :loading="openingReviewPage && !single && canEditSelected"
               @click="handleUpdate"
           >修改</el-button>
-        </el-col>
-        <el-col :span="1.5">
           <el-button
               v-if="showDelete"
               type="danger"
@@ -212,8 +208,6 @@
               @click="handleDelete"
               v-hasPermi="permRemove"
           >删除</el-button>
-        </el-col>
-        <el-col :span="1.5">
           <el-button
               v-if="showExport"
               type="warning"
@@ -222,8 +216,6 @@
               @click="handleExport"
               v-hasPermi="permExport"
           >导出</el-button>
-        </el-col>
-        <el-col :span="1.5">
           <el-button
               v-if="showAttachmentExport"
               type="warning"
@@ -234,30 +226,32 @@
               @click="openExportAttachmentDialog"
               v-hasPermi="permExport"
           >导出附件</el-button>
-        </el-col>
-        <el-col v-if="canBatchReview" :span="2">
+        </div>
+      </el-row>
+
+      <el-row v-if="canBatchReview" class="mb8 batch-toolbar-row">
+        <div class="batch-toolbar-panel">
           <el-button
               type="warning"
               plain
+              class="toolbar-fixed-button"
               :loading="selectAllLoading"
               @click="handleSelectAllResults"
           >
             {{ allResultsSelected ? '取消全选' : '全选全部' }}
           </el-button>
-        </el-col>
 
-        <el-col v-if="canBatchReview && allResultsSelected" :span="3">
-          <el-tag type="warning">
-            已选全部 {{ allResultsCount }} 条
-          </el-tag>
-        </el-col>
+          <div v-if="allResultsSelected" class="toolbar-selection-slot">
+            <el-tag type="warning">
+              已选全部 {{ allResultsCount }} 条
+            </el-tag>
+          </div>
 
-        <el-col v-if="canBatchReview" :span="3">
           <el-select
               v-model="batchReviewStatus"
+              class="toolbar-status-select"
               placeholder="请选择批量状态"
               clearable
-              style="width: 100%;"
           >
             <el-option
                 v-for="dict in auditStatusBatchOptions"
@@ -266,13 +260,12 @@
                 :value="dict.value"
             />
           </el-select>
-        </el-col>
 
-        <el-col v-if="canBatchReview" :span="2">
           <el-button
               type="primary"
               plain
               icon="Edit"
+              class="toolbar-fixed-button"
               :loading="batchReviewLoading"
               :disabled="batchReviewLoading || multiple || batchReviewStatus === null || batchReviewStatus === undefined || batchReviewStatus === ''"
               @click="handleBatchReviewStatus"
@@ -280,33 +273,33 @@
           >
             批量审核
           </el-button>
-        </el-col>
 
-        <el-col v-if="showBatchRejectReason" :span="6">
-          <div class="batch-reason-group">
-            <el-select
-                v-model="batchRejectReason"
-                multiple
-                filterable
-                clearable
-                :placeholder="batchRejectReasonPlaceholder"
-                style="width: 100%;"
-            >
-              <el-option
-                  v-for="opt in batchRejectReasonOptions"
-                  :key="opt.value"
-                  :label="opt.label"
-                  :value="opt.value"
-              />
-            </el-select>
+          <div class="batch-reason-inline" :class="{ 'is-active': showBatchRejectReason }">
             <el-input
                 v-model="batchRejectReasonCustom"
+                class="batch-reason-input"
                 clearable
                 :placeholder="batchRejectReasonCustomPlaceholder"
-                style="margin-top: 8px;"
-            />
+            >
+              <template #append>
+                <el-dropdown trigger="click" @command="handleBatchRejectReasonCommand">
+                  <span class="batch-reason-dropdown-link">常用原因</span>
+                  <template #dropdown>
+                    <el-dropdown-menu>
+                      <el-dropdown-item
+                          v-for="opt in batchRejectReasonOptions"
+                          :key="opt.value"
+                          :command="opt.value"
+                      >
+                        {{ opt.label }}
+                      </el-dropdown-item>
+                    </el-dropdown-menu>
+                  </template>
+                </el-dropdown>
+              </template>
+            </el-input>
           </div>
-        </el-col>
+        </div>
       </el-row>
 
       <el-table ref="tableRef" v-loading="loading" :data="listData" @selection-change="handleSelectionChange">
@@ -601,7 +594,6 @@ const sessionOptions = ref([]);
 const competitionLoading = ref(false);
 const sessionLoading = ref(false);
 
-const batchRejectReason = ref([]);
 const batchRejectReasonCustom = ref('');
 const achievementFormRef = ref(null);
 const achievementDialogRef = ref(null);
@@ -615,8 +607,7 @@ const canEditSelected = computed(() => selectedRows.value.length === 1 && checkE
 const isCollegeBatchReject = computed(() => reviewSource.value.startsWith('college') && String(batchReviewStatus.value) === '1');
 const isSchoolBatchReject = computed(() => reviewSource.value.startsWith('school') && String(batchReviewStatus.value) === '0');
 const showBatchRejectReason = computed(() => isCollegeBatchReject.value || isSchoolBatchReject.value);
-const batchRejectReasonPlaceholder = computed(() => isCollegeBatchReject.value ? '请选择院级批量驳回原因' : '请选择校级批量驳回原因');
-const batchRejectReasonCustomPlaceholder = computed(() => isCollegeBatchReject.value ? '请输入其他院级批量驳回原因' : '请输入其他校级批量驳回原因');
+const batchRejectReasonCustomPlaceholder = computed(() => isCollegeBatchReject.value ? '请输入院级驳回原因' : '请输入校级驳回原因');
 const selectAllLoading = ref(false);
 const allResultsSelected = ref(false);
 const allResultsCount = ref(0);
@@ -701,6 +692,19 @@ function formatRejectReasonDisplayText(value, options = []) {
 }
 
 const batchRejectReasonOptions = computed(() => baseBatchRejectReasonOptions.value);
+
+function handleBatchRejectReasonCommand(value) {
+  const selectedValue = normalizeLooseText(value);
+  if (!selectedValue) return;
+  const matched = findRejectReasonOption(batchRejectReasonOptions.value, selectedValue);
+  const nextText = normalizeLooseText(matched?.label || matched?.value || selectedValue);
+  if (!nextText) return;
+  const merged = Array.from(new Set([
+    ...splitRejectReasonText(batchRejectReasonCustom.value),
+    nextText
+  ]));
+  batchRejectReasonCustom.value = merged.join(REJECT_REASON_SEPARATOR);
+}
 
 function hashString(input) {
   let hash = 0;
@@ -1386,7 +1390,7 @@ async function handleBatchReviewStatus() {
     proxy.$modal?.msgWarning?.('审核状态无效');
     return;
   }
-  const rejectReasonText = showBatchRejectReason.value ? formatRejectReasonText(batchRejectReason.value, batchRejectReasonCustom.value) : '';
+  const rejectReasonText = showBatchRejectReason.value ? splitRejectReasonText(batchRejectReasonCustom.value).join(REJECT_REASON_SEPARATOR) : '';
 
   if (showBatchRejectReason.value && !rejectReasonText) {
     proxy.$modal?.msgWarning?.(isCollegeBatchReject.value ? '请输入院级批量驳回原因' : '请输入校级批量驳回原因');
@@ -1409,7 +1413,6 @@ async function handleBatchReviewStatus() {
 
     applyBatchReviewResultToList(reviewStatus, rejectReasonText);
     batchReviewStatus.value = null;
-    batchRejectReason.value = [];
     batchRejectReasonCustom.value = '';
     clearSelectionState();
     try {
@@ -1431,7 +1434,6 @@ async function handleBatchReviewStatus() {
 
 watch(showBatchRejectReason, (visible) => {
   if (!visible) {
-    batchRejectReason.value = [];
     batchRejectReasonCustom.value = '';
   }
 });
@@ -1606,8 +1608,79 @@ export default {
   gap: 10px;
 }
 
-.batch-reason-group {
+.toolbar-primary-row {
+  display: flex;
+  align-items: center;
+}
+
+.toolbar-left {
+  display: flex;
+  align-items: center;
+  flex-wrap: nowrap;
+  gap: 10px;
+  flex: 0 0 auto;
+}
+
+.batch-toolbar-row {
+  display: flex;
+  align-items: center;
+}
+
+.batch-toolbar-panel {
   width: 100%;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 0;
+  overflow-x: auto;
+  overflow-y: hidden;
+}
+
+.toolbar-fixed-button {
+  flex: 0 0 auto;
+}
+
+.toolbar-selection-slot {
+  display: flex;
+  align-items: center;
+  flex: 0 0 auto;
+}
+
+.toolbar-status-select {
+  flex: 0 0 150px;
+  width: 150px;
+}
+
+.batch-reason-inline {
+  flex: 1 0 430px;
+  min-width: 430px;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  visibility: hidden;
+  pointer-events: none;
+}
+
+.batch-reason-inline.is-active {
+  visibility: visible;
+  pointer-events: auto;
+}
+
+.batch-reason-input {
+  flex: 1 1 auto;
+  min-width: 0;
+}
+
+.batch-reason-dropdown-link {
+  display: inline-flex;
+  align-items: center;
+  cursor: pointer;
+  white-space: nowrap;
+  color: var(--el-text-color-regular);
+}
+
+.batch-toolbar-panel :deep(.el-tag) {
+  white-space: nowrap;
 }
 
 .ellipsis-cell {
@@ -1616,6 +1689,14 @@ export default {
   overflow: hidden;
   white-space: nowrap;
   text-overflow: ellipsis;
+  color: var(--el-text-color-primary);
+  line-height: 1.6;
+  transition: color 0.2s ease;
+}
+
+.ellipsis-cell:hover {
+  color: var(--el-color-primary);
+  cursor: pointer;
 }
 
 </style>

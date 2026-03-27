@@ -1,4 +1,4 @@
-﻿import request from '@/utils/request'
+import request from '@/utils/request'
 import { parseStrEmpty } from "@/utils/ruoyi";
 
 // 查询用户列表
@@ -120,6 +120,7 @@ export function getProfileDeptTree() {
     })
 }
 
+/*
 // 用户密码修改
 export function updateUserPwd(oldPassword, newPassword) {
     const data = {
@@ -132,6 +133,7 @@ export function updateUserPwd(oldPassword, newPassword) {
         data: data
     })
 }
+*/
 
 // 用户头像上传
 export function uploadAvatar(data) {
