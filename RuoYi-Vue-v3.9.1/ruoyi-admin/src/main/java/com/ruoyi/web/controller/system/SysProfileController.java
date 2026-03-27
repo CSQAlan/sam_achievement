@@ -1,6 +1,6 @@
 package com.ruoyi.web.controller.system;
 
-import java.util.List;
+ import java.util.List;
 import java.util.Map;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.transaction.annotation.Transactional;
@@ -37,7 +37,7 @@ import com.ruoyi.system.service.ISysUserService;
 import com.ruoyi.web.service.ProfileCompletionService;
 
 /**
- * 个人信息业务处理
+ * 个人信息 业务处理
  *
  * @author ruoyi
  */
@@ -391,6 +391,7 @@ public class SysProfileController extends BaseController
                 }
                 AjaxResult ajax = AjaxResult.success();
                 ajax.put("imgUrl", avatar);
+                // 更新缓存用户头像
                 loginUser.getUser().setAvatar(avatar);
                 tokenService.setLoginUser(loginUser);
                 return ajax;
