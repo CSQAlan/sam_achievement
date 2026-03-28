@@ -668,8 +668,8 @@
           <el-cascader
             ref="participantCascader"
             v-model="participantDeptCascaderValue"
-            :options="deptOptions"
-            :props="{ value: 'deptId', label: 'deptName', children: 'children', checkStrictly: true }"
+            :options="studentDeptOptions"
+            :props="{ value: 'deptId', label: 'deptName', children: 'children' }"
             placeholder="请选择学院/院系/专业"
             clearable
             filterable
@@ -725,8 +725,8 @@
           <el-cascader
             ref="advisorCascader"
             v-model="advisorDeptCascaderValue"
-            :options="deptOptions"
-            :props="{ value: 'deptId', label: 'deptName', children: 'children', checkStrictly: true }"
+            :options="advisorDeptOptions"
+            :props="{ value: 'deptId', label: 'deptName', children: 'children' }"
             placeholder="请选择学院/院系"
             clearable
             filterable
@@ -828,6 +828,8 @@ const isPageMode = computed(() => props.pageMode);
 const visible = ref(false);
 const title = ref("");
 const deptOptions = ref([]);
+const studentDeptOptions = ref([]);
+const advisorDeptOptions = ref([]);
 const outcomeRefPage = ref(null);
 const outcomeRefDialog = ref(null);
 const activeAttachmentTab = ref('award');
@@ -858,15 +860,11 @@ const participantDeptCascaderValue = ref([]);
 const advisorDeptCascaderValue = ref([]);
 
 function handleParticipantCascaderChange(value) {
-  if (value && value.length >= 4) {
-    const nodes = proxy.$refs.participantCascader.getCheckedNodes();
-    if (nodes && nodes.length > 0) {
-      const labels = nodes[0].pathLabels; 
-      // Level 1: 学校(Root), Level 2: 院, Level 3: 系, Level 4: 专业
-      participantForm.value.school = labels[1] || '';
-      participantForm.value.department = labels[2] || '';
-      participantForm.value.major = labels[3] || '';
-    }
+  if (value && value.length >= 3) {
+    // Starting from Level 2: value[0] is school (College), value[1] is department (Dept), value[2] is major (Major)
+    participantForm.value.school = value[0] || '';
+    participantForm.value.department = value[1] || '';
+    participantForm.value.major = value[2] || '';
   } else {
     participantForm.value.school = '';
     participantForm.value.department = '';
@@ -875,14 +873,10 @@ function handleParticipantCascaderChange(value) {
 }
 
 function handleAdvisorCascaderChange(value) {
-  if (value && value.length >= 3) {
-    const nodes = proxy.$refs.advisorCascader.getCheckedNodes();
-    if (nodes && nodes.length > 0) {
-      const labels = nodes[0].pathLabels;
-      // Level 1: 学校(Root), Level 2: 院, Level 3: 系
-      advisorForm.value.school = labels[1] || '';
-      advisorForm.value.department = labels[2] || '';
-    }
+  if (value && value.length >= 2) {
+    // Starting from Level 2: value[0] is school (College), value[1] is department (Dept)
+    advisorForm.value.school = value[0] || '';
+    advisorForm.value.department = value[1] || '';
   } else {
     advisorForm.value.school = '';
     advisorForm.value.department = '';
@@ -1203,6 +1197,14 @@ function applyStudentInfo(student) {
   participantForm.value.major = student.className;
   participantForm.value.class_name = student.className;
   participantForm.value.class_year = student.classYear;
+  
+  // Re-populate cascader starting from Level 2 baseline
+  const values = [];
+  if (participantForm.value.school) values.push(Number(participantForm.value.school));
+  if (participantForm.value.department) values.push(Number(participantForm.value.department));
+  if (participantForm.value.major) values.push(Number(participantForm.value.major));
+  participantDeptCascaderValue.value = values;
+
   isParticipantNew.value = false;
   studentSelectVisible.value = false;
 }
@@ -1266,6 +1268,13 @@ function applyTeacherInfo(teacher) {
   // Shift organization levels: Skip teacher.school (Level 1), mapping Level 2 -> school, Level 3 -> department
   advisorForm.value.school = teacher.department;
   advisorForm.value.department = teacher.major;
+  
+  // Re-populate cascader starting from Level 2 baseline
+  const values = [];
+  if (advisorForm.value.school) values.push(Number(advisorForm.value.school));
+  if (advisorForm.value.department) values.push(Number(advisorForm.value.department));
+  advisorDeptCascaderValue.value = values;
+
   isAdvisorNew.value = false;
   teacherSelectVisible.value = false;
 }
@@ -1281,7 +1290,7 @@ function submitAddParticipant() {
     return;
   }
 
-  if (isParticipantNew.value && participantDeptCascaderValue.value.length < 4) {
+  if (isParticipantNew.value && participantDeptCascaderValue.value.length < 3) {
     proxy.$modal.msgError("请选择完整的所属机构（需选择到专业）");
     return;
   }
@@ -1326,7 +1335,7 @@ function submitAddAdvisor() {
     return;
   }
 
-  if (isAdvisorNew.value && advisorDeptCascaderValue.value.length < 3) {
+  if (isAdvisorNew.value && advisorDeptCascaderValue.value.length < 2) {
     proxy.$modal.msgError("请选择完整的所属机构（需选择到院系）");
     return;
   }
@@ -2077,7 +2086,33 @@ function handleCancel() {
 
 function getDeptTree() {
   listDept().then(response => {
-    deptOptions.value = handleTree(response.data, "deptId");
+    const fullTree = handleTree(response.data, "deptId");
+    deptOptions.value = fullTree;
+
+    // Skip Level 1 (Root/University) to start directly from Level 2 (College)
+    let processedTree = [];
+    if (fullTree && fullTree.length > 0 && fullTree[0].children) {
+      processedTree = fullTree[0].children;
+    } else {
+      processedTree = fullTree;
+    }
+
+    // Students see Level 2 to Level 4 (College -> Dept -> Major)
+    studentDeptOptions.value = JSON.parse(JSON.stringify(processedTree));
+
+    // Teachers see Level 2 to Level 3 only (College -> Dept)
+    const teacherTree = JSON.parse(JSON.stringify(processedTree));
+    teacherTree.forEach(college => {
+      if (college.children) {
+        college.children.forEach(dept => {
+          // Dept is Level 3, remove its Level 4 children (Majors)
+          if (dept.children) {
+            delete dept.children;
+          }
+        });
+      }
+    });
+    advisorDeptOptions.value = teacherTree;
   });
 }
 

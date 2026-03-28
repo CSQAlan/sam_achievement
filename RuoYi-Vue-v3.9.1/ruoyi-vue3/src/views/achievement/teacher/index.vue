@@ -134,7 +134,7 @@
   <el-cascader
     v-model="deptCascaderValue"
     :options="deptOptions"
-    :props="{ value: 'deptId', label: 'deptName', children: 'children', checkStrictly: true }"
+    :props="{ value: 'deptId', label: 'deptName', children: 'children' }"
     placeholder="请选择学院/院系"
     clearable
     filterable
