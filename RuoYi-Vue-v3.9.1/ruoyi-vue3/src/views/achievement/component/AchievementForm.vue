@@ -1928,8 +1928,11 @@ function open(id) {
     }
 
     updateSnapshot();
-    // 新增模式下检查草稿
-    checkDraft();
+    // 只有在弹窗模式下（非页面模式）才在 open 时检查草稿
+    // 因为页面模式下 onMounted 已经检查过了，避免重复弹窗
+    if (!isPageMode.value) {
+      checkDraft();
+    }
   }
   initSortable();
 }
