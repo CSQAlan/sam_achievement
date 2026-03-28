@@ -16,24 +16,30 @@ public class SamTeacher extends BaseEntity
     private static final long serialVersionUID = 1L;
 
     /** 教师id */
-    @Excel(name = "教师id")
+    @Excel(name = "教师id", type = Excel.Type.EXPORT)
     private Long id;
 
     /** 教师姓名 */
     @Excel(name = "教师姓名")
     private String teacherName;
 
-    /** $column.columnComment */
-    @Excel(name = "${comment}", readConverterExp = "$column.readConverterExp()")
+    /** 工号 */
+    @Excel(name = "工号")
     private String no;
+
+    /** 学院ID */
+    private String school;
+
+    /** 院系ID */
+    private String department;
 
     /** 学院 */
     @Excel(name = "学院")
-    private String school;
+    private String schoolName;
 
     /** 院系 */
     @Excel(name = "院系")
-    private String department;
+    private String departmentName;
 
     public void setId(Long id) 
     {
@@ -85,6 +91,22 @@ public class SamTeacher extends BaseEntity
         return department;
     }
 
+    public String getSchoolName() {
+        return schoolName;
+    }
+
+    public void setSchoolName(String schoolName) {
+        this.schoolName = schoolName;
+    }
+
+    public String getDepartmentName() {
+        return departmentName;
+    }
+
+    public void setDepartmentName(String departmentName) {
+        this.departmentName = departmentName;
+    }
+
     @Override
     public String toString() {
         return new ToStringBuilder(this,ToStringStyle.MULTI_LINE_STYLE)
@@ -93,6 +115,8 @@ public class SamTeacher extends BaseEntity
             .append("no", getNo())
             .append("school", getSchool())
             .append("department", getDepartment())
+            .append("schoolName", getSchoolName())
+            .append("departmentName", getDepartmentName())
             .toString();
     }
 }
