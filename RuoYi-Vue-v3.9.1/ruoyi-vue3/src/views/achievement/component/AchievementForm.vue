@@ -877,8 +877,8 @@ function handleEditParticipant(row, index) {
   isParticipantNew.value = true;
   const studentId = row.studentId || row.studentNo;
   participantForm.value = { 
-    id: row.id, 
-    studentId: studentId, 
+    studentId: studentId, // 业务学号
+    dbId: row.id || row.studentId, // 记录数据库主键
     studentName: row.studentName, 
     school: row.school, 
     department: row.department, 
@@ -891,6 +891,8 @@ function handleEditParticipant(row, index) {
     listStudent({ no: studentId }).then(res => {
       if (res.rows && res.rows.length > 0) {
         const s = res.rows[0];
+        // 关键：保存后端返回的真实主键 studentId
+        participantForm.value.dbId = s.studentId; 
         participantForm.value.school = s.school;
         participantForm.value.department = s.department;
         participantForm.value.major = s.major;
@@ -912,10 +914,9 @@ function handleEditAdvisor(row, index) {
   isAdvisorNew.value = true;
   const teacherId = row.teacherId || row.teacherNo;
   
-  // 初始化基础信息
   advisorForm.value = { 
-    id: row.id, 
     teacherId: teacherId, 
+    dbId: row.id || row.teacherId, // 记录数据库主键
     teacherName: row.teacherName, 
     school: row.school, 
     department: row.department 
@@ -925,21 +926,14 @@ function handleEditAdvisor(row, index) {
     listTeacher({ no: teacherId }).then(res => {
       if (res.rows && res.rows.length > 0) {
         const t = res.rows[0];
-        // 关键修复：根据若依教师表结构进行映射，并强制转换为 Number
-        const schoolId = t.school ? Number(t.school) : (t.department ? Number(t.department) : null);
-        const deptId = t.school ? (t.department ? Number(t.department) : (t.major ? Number(t.major) : null)) : (t.major ? Number(t.major) : null);
-        
-        advisorForm.value.school = schoolId;
-        advisorForm.value.department = deptId;
-        
+        // 关键修复：兼容获取后端返回的主键 ID
+        advisorForm.value.dbId = t.id || t.teacherId; 
+        advisorForm.value.school = t.school || t.department;
+        advisorForm.value.department = t.department || t.major;
         const values = [];
-        if (schoolId) values.push(schoolId);
-        if (deptId) values.push(deptId);
-        
-        // 赋值给级联选择器的绑定值
+        if (advisorForm.value.school) values.push(Number(advisorForm.value.school));
+        if (advisorForm.value.department) values.push(Number(advisorForm.value.department));
         advisorDeptCascaderValue.value = values;
-        
-        console.log("教师机构回显调试:", { teacherId, schoolId, deptId, path: values });
       }
     });
   }
@@ -1222,6 +1216,7 @@ const addParticipantRules = {
 };
 
 function openAddParticipantDialog() {
+  editingParticipantIndex.value = -1; // 关键修复：确保是新增模式
   participantForm.value = { studentId: '', studentName: '', school: '', department: '', major: '', class_name: '', class_year: '' };
   participantDeptCascaderValue.value = [];
   participantSearchKeyword.value = "";
@@ -1239,6 +1234,7 @@ const addAdvisorRules = {
 };
 
 function openAddAdvisorDialog() {
+  editingAdvisorIndex.value = -1; // 关键修复：确保是新增模式
   advisorForm.value = { teacherId: '', teacherName: '', school: '', department: '' };
   advisorSearchKeyword.value = "";
   isAdvisorNew.value = false;
@@ -1481,9 +1477,10 @@ function submitAddParticipant() {
       };
 
       if (isParticipantNew.value) {
+        // 构建提交给后台基础库的数据
         const studentData = {
-          studentId: participantForm.value.id, // 关键：带上主键 ID
-          no: participantForm.value.studentId,
+          studentId: participantForm.value.dbId, // 使用后端需要的字段名 studentId
+          no: participantForm.value.studentId, // 学号
           name: participantForm.value.studentName,
           school: participantForm.value.school,
           department: participantForm.value.department,
@@ -1494,9 +1491,15 @@ function submitAddParticipant() {
 
         const apiCall = editingParticipantIndex.value > -1 ? updateStudent(studentData) : addStudent(studentData);
         
-        apiCall.then(() => {
-          proxy.$modal.msgSuccess("学生信息保存成功");
-          finishAction();
+        apiCall.then(res => {
+          if (res.code === 200 || res.msg === '操作成功') {
+            proxy.$modal.msgSuccess("学生基础信息保存成功");
+            finishAction();
+          } else {
+            proxy.$modal.msgError(res.msg || "学生基础信息保存失败");
+          }
+        }).catch(err => {
+          console.error("保存学生失败:", err);
         });
       } else {
         finishAction();
@@ -1528,7 +1531,7 @@ function submitAddAdvisor() {
     if (valid) {
       const finishAction = () => {
         const itemData = {
-          id: advisorForm.value.id, // 保持 ID 传递
+          id: advisorForm.value.dbId, 
           teacherId: advisorForm.value.teacherId,
           teacherName: advisorForm.value.teacherName,
           school: advisorForm.value.school,
@@ -1556,7 +1559,7 @@ function submitAddAdvisor() {
 
       if (isAdvisorNew.value) {
         const teacherData = {
-          id: advisorForm.value.id, // 关键：带上主键 ID
+          id: advisorForm.value.dbId, // 关键修复：对应后端 sam_teacher 表的 id 字段
           no: advisorForm.value.teacherId,
           teacherName: advisorForm.value.teacherName,
           school: advisorForm.value.school,
