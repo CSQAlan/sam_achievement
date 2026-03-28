@@ -1211,6 +1211,15 @@ function handleParticipantSearch() {
 }
 
 function applyStudentInfo(student) {
+  // 本地列表查重 (只校验学号)
+  const isDuplicate = samAchievementParticipantList.value.some(
+    p => p.studentId === student.no
+  );
+  if (isDuplicate) {
+    proxy.$modal.msgError("该学号已在参赛选手列表中，请勿重复添加");
+    return;
+  }
+
   participantForm.value.studentId = student.no;
   participantForm.value.studentName = student.name;
   // Level 2 -> school, Level 3 -> department, Level 4 -> major
@@ -1286,6 +1295,15 @@ function handleAdvisorSearch() {
 }
 
 function applyTeacherInfo(teacher) {
+  // 本地列表查重
+  const isDuplicate = samAchievementAdvisorList.value.some(
+    a => a.teacherId === teacher.no || a.teacherName === teacher.teacherName
+  );
+  if (isDuplicate) {
+    proxy.$modal.msgError("该老师已在指导老师列表中，请勿重复添加");
+    return;
+  }
+
   advisorForm.value.teacherId = teacher.no;
   advisorForm.value.teacherName = teacher.teacherName;
   // Level 2 -> school, Level 3 -> department
