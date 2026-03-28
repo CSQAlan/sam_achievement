@@ -316,13 +316,20 @@ const { queryParams, form, rules } = toRefs(data);
 /** 查询部门树结构 */
 function getDeptTree() {
   listDept().then(response => {
-    deptOptions.value = handleTree(response.data, "deptId");
+    const tree = handleTree(response.data, "deptId");
+    // Skip Level 1 (Root/University) to start directly from Level 2 (College)
+    if (tree && tree.length > 0 && tree[0].children) {
+      deptOptions.value = tree[0].children;
+    } else {
+      deptOptions.value = tree;
+    }
   });
 }
 
 /** 部门级联选择器变化处理 */
 function handleDeptCascaderChange(value) {
-  if (value && value.length > 0) {
+  if (value && value.length >= 3) {
+    // Starting from Level 2: value[0] is school (College), value[1] is department (Dept), value[2] is major (Major)
     form.value.school = value[0] || '';
     form.value.department = value[1] || '';
     form.value.major = value[2] || '';
@@ -399,7 +406,7 @@ function handleUpdate(row) {
   const _studentId = row.studentId || ids.value;
   getStudent(_studentId).then((response) => {
     form.value = response.data;
-    // 回填级联选择器
+    // 回填级联选择器 (Now starting directly from Level 2: school, department, major)
     const values = [];
     if (form.value.school) values.push(Number(form.value.school));
     if (form.value.department) values.push(Number(form.value.department));
@@ -415,6 +422,10 @@ function handleUpdate(row) {
 function submitForm() {
   proxy.$refs["studentRef"].validate((valid) => {
     if (valid) {
+      if (!form.value.major) {
+        proxy.$modal.msgError("请选择完整的所属机构（需选择到专业）");
+        return;
+      }
       if (form.value.studentId != null) {
         updateStudent(form.value).then((response) => {
           proxy.$modal.msgSuccess("修改成功");
