@@ -148,43 +148,53 @@
                   </el-row>
 
                   <el-divider content-position="center">参赛选手信息</el-divider>
-                  <el-row :gutter="10" class="mb8" v-if="!readOnly">
+                  <el-row :gutter="10" class="mb8" v-if="canEditMemberList">
                     <el-col :span="1.5"><el-button type="primary" :icon="Plus" @click="openAddParticipantDialog">添加学生</el-button></el-col>
                     <el-col :span="1.5"><el-button type="danger" :icon="Delete" @click="handleDeleteParticipant">删除选中</el-button></el-col>
                   </el-row>
-                  <el-table ref="participantTable" :data="samAchievementParticipantList" border style="width: 100%; margin-bottom: 20px;" :row-class-name="tableRowClassName" @selection-change="handleParticipantSelectionChange">
-                    <el-table-column v-if="!readOnly" width="40" align="center">
-                      <template #default="scope">
-                        <el-icon v-if="!scope.row.isFixed" class="drag-handle" style="cursor: move"><Rank /></el-icon>
-                      </template>
-                    </el-table-column>
-                    <el-table-column v-if="!readOnly" type="selection" width="50" align="center" />
-                    <el-table-column label="学生学号" prop="studentId" align="center" />
-                    <el-table-column label="姓名" prop="studentName" align="center" />
-                    <el-table-column label="排序" prop="orderNo" width="100" align="center" />
-                    <el-table-column label="是否负责人" prop="manager" width="150" align="center">
-                      <template #default="scope">
-                        <el-tag :type="scope.row.manager == 1 ? 'success' : 'info'">{{ scope.row.manager == 1 ? '是' : '否' }}</el-tag>
-                      </template>
-                    </el-table-column>
-                  </el-table>
+                    <el-table ref="participantTable" :data="samAchievementParticipantList" border style="width: 100%; margin-bottom: 20px;" :row-class-name="tableRowClassName" @selection-change="handleParticipantSelectionChange">
+                      <el-table-column v-if="canEditMemberList" width="40" align="center">
+                        <template #default="scope">
+                          <el-icon v-if="!scope.row.isFixed" class="drag-handle" style="cursor: move"><Rank /></el-icon>
+                        </template>
+                      </el-table-column>
+                      <el-table-column v-if="canEditMemberList" type="selection" width="50" align="center" />
+                      <el-table-column label="学生学号" prop="studentId" align="center" />
+                      <el-table-column label="姓名" prop="studentName" align="center" />
+                      <el-table-column label="操作" align="center" width="100" v-if="canEditMemberList">
+                        <template #default="scope">
+                          <el-button v-if="!scope.row.isFixed" link type="primary" :icon="Edit" @click="handleEditParticipant(scope.row, scope.$index)">修改</el-button>
+                        </template>
+                      </el-table-column>
+                      <el-table-column label="排序" prop="orderNo" width="80" align="center" />
+                      <el-table-column label="是否负责人" prop="manager" width="150" align="center">
+                        <template #default="scope">
+                          <el-tag :type="scope.row.manager == 1 ? 'success' : 'info'">{{ scope.row.manager == 1 ? '是' : '否' }}</el-tag>
+                        </template>
+                      </el-table-column>
+                    </el-table>
 
-                  <el-divider content-position="center">指导老师信息</el-divider>
-                  <el-row :gutter="10" class="mb8" v-if="!readOnly">
-                    <el-col :span="1.5"><el-button type="primary" :icon="Plus" @click="openAddAdvisorDialog">添加老师</el-button></el-col>
-                    <el-col :span="1.5"><el-button type="danger" :icon="Delete" @click="handleDeleteAdvisor">删除选中</el-button></el-col>
-                  </el-row>
-                  <el-table ref="advisorTable" :data="samAchievementAdvisorList" border style="width: 100%;" :row-class-name="tableRowClassName" @selection-change="handleAdvisorSelectionChange">
-                   <el-table-column v-if="!readOnly" width="40" align="center">
-  <template #default="scope">
-    <el-icon v-if="scope.$index !== 0" class="drag-handle" style="cursor: move"><Rank /></el-icon>
-  </template>
-</el-table-column>
-                    <el-table-column v-if="!readOnly" type="selection" width="50" align="center" />
-                    <el-table-column label="教师工号" prop="teacherId" align="center" />
-                    <el-table-column label="姓名" prop="teacherName" align="center" />
-                    <el-table-column label="排序" prop="orderNo" width="100" align="center" />
-                  </el-table>
+                    <el-divider content-position="center">指导老师信息</el-divider>
+                    <el-row :gutter="10" class="mb8" v-if="canEditMemberList">
+                      <el-col :span="1.5"><el-button type="primary" :icon="Plus" @click="openAddAdvisorDialog">添加老师</el-button></el-col>
+                      <el-col :span="1.5"><el-button type="danger" :icon="Delete" @click="handleDeleteAdvisor">删除选中</el-button></el-col>
+                    </el-row>
+                    <el-table ref="advisorTable" :data="samAchievementAdvisorList" border style="width: 100%;" :row-class-name="tableRowClassName" @selection-change="handleAdvisorSelectionChange">
+                     <el-table-column v-if="canEditMemberList" width="40" align="center">
+                        <template #default="scope">
+                          <el-icon v-if="scope.$index !== 0" class="drag-handle" style="cursor: move"><Rank /></el-icon>
+                        </template>
+                      </el-table-column>
+                      <el-table-column v-if="canEditMemberList" type="selection" width="50" align="center" />
+                      <el-table-column label="教师工号" prop="teacherId" align="center" />
+                      <el-table-column label="姓名" prop="teacherName" align="center" />
+                      <el-table-column label="操作" align="center" width="100" v-if="canEditMemberList">
+                        <template #default="scope">
+                          <el-button v-if="!scope.row.isFixed" link type="primary" :icon="Edit" @click="handleEditAdvisor(scope.row, scope.$index)">修改</el-button>
+                        </template>
+                      </el-table-column>
+                      <el-table-column label="排序" prop="orderNo" width="80" align="center" />
+                    </el-table>
                 </el-col>
 
                 <el-col :span="12">
@@ -673,7 +683,7 @@
             placeholder="请选择学院/院系/专业"
             clearable
             filterable
-            class="full-width-cascader"
+            style="width: 100%"
             @change="handleParticipantCascaderChange"
           />
         </el-form-item>
@@ -730,7 +740,7 @@
             placeholder="请选择学院/院系"
             clearable
             filterable
-            class="full-width-cascader"
+            style="width: 100%"
             @change="handleAdvisorCascaderChange"
           />
         </el-form-item>
@@ -797,7 +807,7 @@ import {
   addStudent,
   updateStudent,
 } from "@/api/achievement/student";
-import { listTeacher, addTeacher } from "@/api/achievement/teacher";
+import { listTeacher, addTeacher, updateTeacher } from "@/api/achievement/teacher";
 import { listTracks } from "@/api/achievement/manage";
 import { listDept } from "@/api/system/dept";
 import { handleTree } from "@/utils/ruoyi";
@@ -858,6 +868,83 @@ const advisorSearchKeyword = ref("");
 
 const participantDeptCascaderValue = ref([]);
 const advisorDeptCascaderValue = ref([]);
+
+const editingParticipantIndex = ref(-1);
+const editingAdvisorIndex = ref(-1);
+
+function handleEditParticipant(row, index) {
+  editingParticipantIndex.value = index;
+  isParticipantNew.value = true;
+  const studentId = row.studentId || row.studentNo;
+  participantForm.value = { 
+    id: row.id, 
+    studentId: studentId, 
+    studentName: row.studentName, 
+    school: row.school, 
+    department: row.department, 
+    major: row.major, 
+    class_name: row.class_name || row.className, 
+    class_year: row.class_year || row.classYear 
+  };
+  
+  if (studentId) {
+    listStudent({ no: studentId }).then(res => {
+      if (res.rows && res.rows.length > 0) {
+        const s = res.rows[0];
+        participantForm.value.school = s.school;
+        participantForm.value.department = s.department;
+        participantForm.value.major = s.major;
+        participantForm.value.class_name = s.className || s.class_name;
+        participantForm.value.class_year = s.classYear || s.class_year;
+        const values = [];
+        if (s.school) values.push(Number(s.school));
+        if (s.department) values.push(Number(s.department));
+        if (s.major) values.push(Number(s.major));
+        participantDeptCascaderValue.value = values;
+      }
+    });
+  }
+  addParticipantVisible.value = true;
+}
+
+function handleEditAdvisor(row, index) {
+  editingAdvisorIndex.value = index;
+  isAdvisorNew.value = true;
+  const teacherId = row.teacherId || row.teacherNo;
+  
+  // 初始化基础信息
+  advisorForm.value = { 
+    id: row.id, 
+    teacherId: teacherId, 
+    teacherName: row.teacherName, 
+    school: row.school, 
+    department: row.department 
+  };
+  
+  if (teacherId) {
+    listTeacher({ no: teacherId }).then(res => {
+      if (res.rows && res.rows.length > 0) {
+        const t = res.rows[0];
+        // 关键修复：根据若依教师表结构进行映射，并强制转换为 Number
+        const schoolId = t.school ? Number(t.school) : (t.department ? Number(t.department) : null);
+        const deptId = t.school ? (t.department ? Number(t.department) : (t.major ? Number(t.major) : null)) : (t.major ? Number(t.major) : null);
+        
+        advisorForm.value.school = schoolId;
+        advisorForm.value.department = deptId;
+        
+        const values = [];
+        if (schoolId) values.push(schoolId);
+        if (deptId) values.push(deptId);
+        
+        // 赋值给级联选择器的绑定值
+        advisorDeptCascaderValue.value = values;
+        
+        console.log("教师机构回显调试:", { teacherId, schoolId, deptId, path: values });
+      }
+    });
+  }
+  addAdvisorVisible.value = true;
+}
 
 function handleParticipantCascaderChange(value) {
   if (value && value.length >= 3) {
@@ -1297,7 +1384,7 @@ function handleAdvisorSearch() {
 function applyTeacherInfo(teacher) {
   // 本地列表查重
   const isDuplicate = samAchievementAdvisorList.value.some(
-    a => a.teacherId === teacher.no || a.teacherName === teacher.teacherName
+    a => a.teacherId === teacher.no
   );
   if (isDuplicate) {
     proxy.$modal.msgError("该老师已在指导老师列表中，请勿重复添加");
@@ -1327,8 +1414,20 @@ function selectTeacher(row) {
   applyTeacherInfo(row);
 }
 
+// 判断是否允许编辑成员列表（只有负责人、创建者或正在新增时允许）
+const canEditMemberList = computed(() => {
+  if (props.readOnly) return false;
+  // 如果是新增模式（没有 achievementId），允许编辑
+  if (!form.value.achievementId) return true;
+  // 如果是修改模式，判断当前用户是否是创建者，或者是否在负责人名单中
+  const currentUserId = userStore.name;
+  const isCreator = form.value.createBy === currentUserId;
+  const isManager = samAchievementParticipantList.value.some(p => p.studentId === currentUserId && p.manager == 1);
+  return isCreator || isManager;
+});
+
 function submitAddParticipant() {
-  // 如果还在查询中，等待一小会或者直接拦截（通常 blur 会先于 click 触发并完成请求）
+  // 如果还在查询中，等待一小会或者直接拦截
   if (searchingParticipant.value) {
     setTimeout(submitAddParticipant, 300);
     return;
@@ -1339,22 +1438,51 @@ function submitAddParticipant() {
     return;
   }
 
+  const localDuplicate = samAchievementParticipantList.value.some((p, idx) => 
+    idx !== editingParticipantIndex.value && p.studentId === participantForm.value.studentId
+  );
+  if (localDuplicate) {
+    proxy.$modal.msgError("该学号已在列表中，请勿重复添加");
+    return;
+  }
+
   proxy.$refs.addParticipantRef.validate(valid => {
     if (valid) {
-      const pushToList = () => {
-        samAchievementParticipantList.value.push({
+      const finishAction = () => {
+        const itemData = {
+          id: participantForm.value.id, // 保持 ID 传递
           studentId: participantForm.value.studentId,
           studentName: participantForm.value.studentName,
           school: participantForm.value.school,
-          orderNo: samAchievementParticipantList.value.length + 1,
-          manager: samAchievementParticipantList.value.length === 0 ? 1 : 0
-        });
+          department: participantForm.value.department,
+          major: participantForm.value.major,
+          class_name: participantForm.value.class_name,
+          class_year: participantForm.value.class_year,
+          isNewLocal: true 
+        };
+
+        if (editingParticipantIndex.value > -1) {
+          const oldItem = samAchievementParticipantList.value[editingParticipantIndex.value];
+          samAchievementParticipantList.value[editingParticipantIndex.value] = { 
+            ...oldItem, 
+            ...itemData 
+          };
+          proxy.$modal.msgSuccess("修改选手信息成功");
+        } else {
+          samAchievementParticipantList.value.push({
+            ...itemData,
+            orderNo: samAchievementParticipantList.value.length + 1,
+            manager: samAchievementParticipantList.value.length === 0 ? 1 : 0
+          });
+        }
         reIndexList(samAchievementParticipantList.value, 'participant');
         addParticipantVisible.value = false;
+        editingParticipantIndex.value = -1;
       };
 
       if (isParticipantNew.value) {
-        addStudent({
+        const studentData = {
+          studentId: participantForm.value.id, // 关键：带上主键 ID
           no: participantForm.value.studentId,
           name: participantForm.value.studentName,
           school: participantForm.value.school,
@@ -1362,12 +1490,16 @@ function submitAddParticipant() {
           major: participantForm.value.major,
           className: participantForm.value.class_name,
           classYear: participantForm.value.class_year
-        }).then(() => {
-          proxy.$modal.msgSuccess("学生信息录入基础库成功");
-          pushToList();
+        };
+
+        const apiCall = editingParticipantIndex.value > -1 ? updateStudent(studentData) : addStudent(studentData);
+        
+        apiCall.then(() => {
+          proxy.$modal.msgSuccess("学生信息保存成功");
+          finishAction();
         });
       } else {
-        pushToList();
+        finishAction();
       }
     }
   });
@@ -1384,30 +1516,60 @@ function submitAddAdvisor() {
     return;
   }
 
+  const localDuplicate = samAchievementAdvisorList.value.some((a, idx) => 
+    idx !== editingAdvisorIndex.value && a.teacherId === advisorForm.value.teacherId
+  );
+  if (localDuplicate) {
+    proxy.$modal.msgError("该工号已在列表中，请勿重复添加");
+    return;
+  }
+
   proxy.$refs.addAdvisorRef.validate(valid => {
     if (valid) {
-      const pushToList = () => {
-        samAchievementAdvisorList.value.push({
+      const finishAction = () => {
+        const itemData = {
+          id: advisorForm.value.id, // 保持 ID 传递
           teacherId: advisorForm.value.teacherId,
           teacherName: advisorForm.value.teacherName,
-          orderNo: samAchievementAdvisorList.value.length + 1
-        });
+          school: advisorForm.value.school,
+          department: advisorForm.value.department,
+          isNewLocal: true
+        };
+
+        if (editingAdvisorIndex.value > -1) {
+          const oldItem = samAchievementAdvisorList.value[editingAdvisorIndex.value];
+          samAchievementAdvisorList.value[editingAdvisorIndex.value] = { 
+            ...oldItem, 
+            ...itemData 
+          };
+          proxy.$modal.msgSuccess("修改指导老师成功");
+        } else {
+          samAchievementAdvisorList.value.push({
+            ...itemData,
+            orderNo: samAchievementAdvisorList.value.length + 1
+          });
+        }
         reIndexList(samAchievementAdvisorList.value);
         addAdvisorVisible.value = false;
+        editingAdvisorIndex.value = -1;
       };
 
       if (isAdvisorNew.value) {
-        addTeacher({
+        const teacherData = {
+          id: advisorForm.value.id, // 关键：带上主键 ID
           no: advisorForm.value.teacherId,
           teacherName: advisorForm.value.teacherName,
           school: advisorForm.value.school,
           department: advisorForm.value.department
-        }).then(() => {
-          proxy.$modal.msgSuccess("教师信息录入基础库成功");
-          pushToList();
+        };
+        
+        const apiCall = editingAdvisorIndex.value > -1 ? updateTeacher(teacherData) : addTeacher(teacherData);
+        apiCall.then(() => {
+          proxy.$modal.msgSuccess("教师信息保存成功");
+          finishAction();
         });
       } else {
-        pushToList();
+        finishAction();
       }
     }
   });
@@ -2373,5 +2535,9 @@ function handleDownload(uuid) {
   background-color: #fff;
   width: 100%;
   box-sizing: border-box;
+}
+
+.full-width-cascader {
+  width: 100% !important;
 }
 </style>
