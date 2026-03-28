@@ -658,7 +658,7 @@
       
       <el-form-item v-if="!isParticipantNew && participantForm.studentId" label="所属机构">
         <div style="font-size: 13px; color: #606266; line-height: 1.4;">
-          {{ participantForm.school || '-' }} / {{ participantForm.department || '-' }} / {{ participantForm.major || '-' }}
+          {{ participantForm.department || '-' }} / {{ participantForm.major || '-' }} / {{ participantForm.class_name || '-' }}
         </div>
       </el-form-item>
       
@@ -669,7 +669,7 @@
             ref="participantCascader"
             v-model="participantDeptCascaderValue"
             :options="deptOptions"
-            :props="{ value: 'deptId', label: 'deptName', children: 'children' }"
+            :props="{ value: 'deptId', label: 'deptName', children: 'children', checkStrictly: true }"
             placeholder="请选择学院/院系/专业"
             clearable
             filterable
@@ -726,7 +726,7 @@
             ref="advisorCascader"
             v-model="advisorDeptCascaderValue"
             :options="deptOptions"
-            :props="{ value: 'deptId', label: 'deptName', children: 'children' }"
+            :props="{ value: 'deptId', label: 'deptName', children: 'children', checkStrictly: true }"
             placeholder="请选择学院/院系"
             clearable
             filterable
@@ -751,7 +751,7 @@
       <el-table-column label="所属机构" align="center">
         <template #default="scope">
           <div style="font-size: 12px; color: #606266;">
-            {{ scope.row.schoolName || scope.row.school }} / {{ scope.row.deptName || scope.row.department }} / {{ scope.row.majorName || scope.row.major }}
+            {{ scope.row.deptName || scope.row.department }} / {{ scope.row.majorName || scope.row.major }} / {{ scope.row.className || '-' }}
           </div>
         </template>
       </el-table-column>
@@ -770,7 +770,7 @@
       <el-table-column label="所属机构" align="center">
         <template #default="scope">
           <div style="font-size: 12px; color: #606266;">
-            {{ scope.row.schoolName || scope.row.school }} / {{ scope.row.deptName || scope.row.department }}
+            {{ scope.row.deptName || scope.row.department }} / {{ scope.row.majorName || scope.row.major }}
           </div>
         </template>
       </el-table-column>
@@ -1197,9 +1197,10 @@ function handleParticipantSearch() {
 function applyStudentInfo(student) {
   participantForm.value.studentId = student.no;
   participantForm.value.studentName = student.name;
-  participantForm.value.school = student.school;
-  participantForm.value.department = student.department;
-  participantForm.value.major = student.major;
+  // Shift organization levels: Skip student.school (Level 1), mapping Level 2 -> school, Level 3 -> department, Level 4 -> major
+  participantForm.value.school = student.department;
+  participantForm.value.department = student.major;
+  participantForm.value.major = student.className;
   participantForm.value.class_name = student.className;
   participantForm.value.class_year = student.classYear;
   isParticipantNew.value = false;
@@ -1262,8 +1263,9 @@ function handleAdvisorSearch() {
 function applyTeacherInfo(teacher) {
   advisorForm.value.teacherId = teacher.no;
   advisorForm.value.teacherName = teacher.teacherName;
-  advisorForm.value.school = teacher.school;
-  advisorForm.value.department = teacher.department;
+  // Shift organization levels: Skip teacher.school (Level 1), mapping Level 2 -> school, Level 3 -> department
+  advisorForm.value.school = teacher.department;
+  advisorForm.value.department = teacher.major;
   isAdvisorNew.value = false;
   teacherSelectVisible.value = false;
 }
@@ -1321,6 +1323,11 @@ function submitAddParticipant() {
 function submitAddAdvisor() {
   if (searchingAdvisor.value) {
     setTimeout(submitAddAdvisor, 300);
+    return;
+  }
+
+  if (isAdvisorNew.value && advisorDeptCascaderValue.value.length < 3) {
+    proxy.$modal.msgError("请选择完整的所属机构（需选择到院系）");
     return;
   }
 

@@ -134,7 +134,7 @@
   <el-cascader
     v-model="deptCascaderValue"
     :options="deptOptions"
-    :props="{ value: 'deptId', label: 'deptName', children: 'children' }"
+    :props="{ value: 'deptId', label: 'deptName', children: 'children', checkStrictly: true }"
     placeholder="请选择学院/院系"
     clearable
     filterable
@@ -249,13 +249,34 @@ const { queryParams, form, rules } = toRefs(data)
 /** 查询部门树结构 */
 function getDeptTree() {
   listDept().then(response => {
-    deptOptions.value = handleTree(response.data, "deptId");
+    const tree = handleTree(response.data, "deptId");
+    // Skip Level 1 (Root/University) to start directly from Level 2 (College)
+    let processedTree = [];
+    if (tree && tree.length > 0 && tree[0].children) {
+      processedTree = tree[0].children;
+    } else {
+      processedTree = tree;
+    }
+
+    // For teachers, truncate at Level 3 (Department). Remove Level 4 (Major) children.
+    processedTree.forEach(college => {
+      if (college.children) {
+        college.children.forEach(dept => {
+          // Dept is Level 3, its children are Level 4. Remove them.
+          if (dept.children) {
+            delete dept.children;
+          }
+        });
+      }
+    });
+    deptOptions.value = processedTree;
   });
 }
 
 /** 部门级联选择器变化处理 */
 function handleDeptCascaderChange(value) {
-  if (value && value.length > 0) {
+  if (value && value.length >= 2) {
+    // Starting from Level 2: value[0] is school (College), value[1] is department (Dept)
     form.value.school = value[0] || '';
     form.value.department = value[1] || '';
   } else {
@@ -342,6 +363,10 @@ function handleUpdate(row) {
 function submitForm() {
   proxy.$refs["teacherRef"].validate(valid => {
     if (valid) {
+      if (!form.value.department) {
+        proxy.$modal.msgError("请选择完整的所属机构（需选择到院系）");
+        return;
+      }
       if (form.value.id != null) {
         updateTeacher(form.value).then(response => {
           proxy.$modal.msgSuccess("修改成功")
