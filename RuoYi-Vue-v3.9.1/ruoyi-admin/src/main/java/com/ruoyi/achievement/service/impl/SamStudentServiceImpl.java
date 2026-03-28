@@ -125,41 +125,40 @@ public class SamStudentServiceImpl implements ISamStudentService
         StringBuilder successMsg = new StringBuilder();
         StringBuilder failureMsg = new StringBuilder();
 
-        // 预先获取所有部门，方便查找
-        com.ruoyi.common.core.domain.entity.SysDept queryDept = new com.ruoyi.common.core.domain.entity.SysDept();
-        List<com.ruoyi.common.core.domain.entity.SysDept> allDepts = sysDeptMapper.selectDeptList(queryDept);
-
         for (SamStudent student : studentList)
         {
             try
             {
-                // 根据名称查找学院、院系和专业ID
-                if (StringUtils.isNotEmpty(student.getSchoolName())) {
-                    for (com.ruoyi.common.core.domain.entity.SysDept d : allDepts) {
-                        if (d.getDeptName().equals(student.getSchoolName())) {
-                            student.setSchool(d.getDeptId().toString());
-                            break;
-                        }
-                    }
-                }
-                if (StringUtils.isNotEmpty(student.getDepartmentName())) {
-                    for (com.ruoyi.common.core.domain.entity.SysDept d : allDepts) {
-                        if (d.getDeptName().equals(student.getDepartmentName())) {
-                            student.setDepartment(d.getDeptId().toString());
-                            break;
-                        }
-                    }
-                }
-                if (StringUtils.isNotEmpty(student.getMajorName())) {
-                    for (com.ruoyi.common.core.domain.entity.SysDept d : allDepts) {
-                        if (d.getDeptName().equals(student.getMajorName())) {
-                            student.setMajor(d.getDeptId().toString());
-                            break;
-                        }
-                    }
+                // 1. 验证学号是否为空
+                if (StringUtils.isEmpty(student.getNo())) {
+                    throw new Exception("学号不能为空");
                 }
 
-                // 验证是否存在这个学生
+                // 2. 严谨的层级机构匹配逻辑 (根节点 ID 默认为 100)
+                Long rootId = 100L; 
+                
+                // 匹配学院
+                com.ruoyi.common.core.domain.entity.SysDept schoolDept = sysDeptMapper.checkDeptNameUnique(student.getSchoolName(), rootId);
+                if (schoolDept == null) {
+                    throw new Exception("找不到名为 [" + student.getSchoolName() + "] 的学院，请检查名称是否正确");
+                }
+                student.setSchool(schoolDept.getDeptId().toString());
+
+                // 匹配院系 (在学院下找)
+                com.ruoyi.common.core.domain.entity.SysDept deptDept = sysDeptMapper.checkDeptNameUnique(student.getDepartmentName(), schoolDept.getDeptId());
+                if (deptDept == null) {
+                    throw new Exception("在 " + student.getSchoolName() + " 下找不到名为 [" + student.getDepartmentName() + "] 的院系");
+                }
+                student.setDepartment(deptDept.getDeptId().toString());
+
+                // 匹配专业 (在院系下找)
+                com.ruoyi.common.core.domain.entity.SysDept majorDept = sysDeptMapper.checkDeptNameUnique(student.getMajorName(), deptDept.getDeptId());
+                if (majorDept == null) {
+                    throw new Exception("在 " + student.getDepartmentName() + " 下找不到名为 [" + student.getMajorName() + "] 的专业");
+                }
+                student.setMajor(majorDept.getDeptId().toString());
+
+                // 3. 验证业务主键 (学号) 是否已存在
                 SamStudent s = samStudentMapper.selectSamStudentByNo(student.getNo());
                 if (StringUtils.isNull(s))
                 {
@@ -167,7 +166,6 @@ public class SamStudentServiceImpl implements ISamStudentService
                     student.setCreateBy(operName);
                     this.insertSamStudent(student);
                     successNum++;
-                    successMsg.append("<br/>" + successNum + "、学号 " + student.getNo() + " 导入成功");
                 }
                 else if (isUpdateSupport)
                 {
@@ -176,7 +174,6 @@ public class SamStudentServiceImpl implements ISamStudentService
                     student.setStudentId(s.getStudentId());
                     this.updateSamStudent(student);
                     successNum++;
-                    successMsg.append("<br/>" + successNum + "、学号 " + student.getNo() + " 更新成功");
                 }
                 else
                 {
@@ -187,19 +184,20 @@ public class SamStudentServiceImpl implements ISamStudentService
             catch (Exception e)
             {
                 failureNum++;
-                String msg = "<br/>" + failureNum + "、学号 " + student.getNo() + " 导入失败：";
+                String msg = "<br/>" + failureNum + "、学号 " + (student.getNo() != null ? student.getNo() : "未知") + " 导入失败：";
                 failureMsg.append(msg + e.getMessage());
                 log.error(msg, e);
             }
         }
+        
         if (failureNum > 0)
         {
-            failureMsg.insert(0, "很抱歉，导入失败！共 " + failureNum + " 条数据格式不正确，错误如下：");
+            failureMsg.insert(0, "很抱歉，导入过程中出现错误！共失败 " + failureNum + " 条数据，成功 " + successNum + " 条，错误明细如下：");
             throw new ServiceException(failureMsg.toString());
         }
         else
         {
-            successMsg.insert(0, "恭喜您，数据已全部导入成功！共 " + successNum + " 条，数据如下：");
+            successMsg.insert(0, "恭喜您，数据已全部导入成功！共计 " + successNum + " 条记录。");
         }
         return successMsg.toString();
     }
