@@ -658,7 +658,7 @@
       
       <el-form-item v-if="!isParticipantNew && participantForm.studentId" label="所属机构">
         <div style="font-size: 13px; color: #606266; line-height: 1.4;">
-          {{ participantForm.department || '-' }} / {{ participantForm.major || '-' }} / {{ participantForm.class_name || '-' }}
+          {{ getDeptName(participantForm.school) }} / {{ getDeptName(participantForm.department) }} / {{ getDeptName(participantForm.major) }}
         </div>
       </el-form-item>
       
@@ -715,7 +715,7 @@
       
       <el-form-item v-if="!isAdvisorNew && advisorForm.teacherId" label="所属机构">
         <div style="font-size: 13px; color: #606266; line-height: 1.4;">
-          {{ advisorForm.school || '-' }} / {{ advisorForm.department || '-' }}
+         {{ getDeptName(advisorForm.school) }}
         </div>
       </el-form-item>
       
@@ -751,7 +751,7 @@
       <el-table-column label="所属机构" align="center">
         <template #default="scope">
           <div style="font-size: 12px; color: #606266;">
-            {{ scope.row.deptName || scope.row.department }} / {{ scope.row.majorName || scope.row.major }} / {{ scope.row.className || '-' }}
+            {{ getDeptName(scope.row.school) }} / {{ getDeptName(scope.row.department) }} / {{ getDeptName(scope.row.major) }}
           </div>
         </template>
       </el-table-column>
@@ -770,7 +770,7 @@
       <el-table-column label="所属机构" align="center">
         <template #default="scope">
           <div style="font-size: 12px; color: #606266;">
-            {{ scope.row.deptName || scope.row.department }} / {{ scope.row.majorName || scope.row.major }}
+            {{ getDeptName(scope.row.school) }} / {{ getDeptName(scope.row.department) }}
           </div>
         </template>
       </el-table-column>
@@ -865,10 +865,22 @@ function handleParticipantCascaderChange(value) {
     participantForm.value.school = value[0] || '';
     participantForm.value.department = value[1] || '';
     participantForm.value.major = value[2] || '';
+
+    // Capture labels for display
+    const nodes = proxy.$refs.participantCascader.getCheckedNodes();
+    if (nodes && nodes.length > 0) {
+      const labels = nodes[0].pathLabels; // pathLabels corresponds to the values in 'value'
+      participantForm.value.schoolName = labels[0] || '-';
+      participantForm.value.deptName = labels[1] || '-';
+      participantForm.value.majorName = labels[2] || '-';
+    }
   } else {
     participantForm.value.school = '';
     participantForm.value.department = '';
     participantForm.value.major = '';
+    participantForm.value.schoolName = '';
+    participantForm.value.deptName = '';
+    participantForm.value.majorName = '';
   }
 }
 
@@ -877,9 +889,19 @@ function handleAdvisorCascaderChange(value) {
     // Starting from Level 2: value[0] is school (College), value[1] is department (Dept)
     advisorForm.value.school = value[0] || '';
     advisorForm.value.department = value[1] || '';
+
+    // Capture labels for display
+    const nodes = proxy.$refs.advisorCascader.getCheckedNodes();
+    if (nodes && nodes.length > 0) {
+      const labels = nodes[0].pathLabels;
+      advisorForm.value.schoolName = labels[0] || '-';
+      advisorForm.value.deptName = labels[1] || '-';
+    }
   } else {
     advisorForm.value.school = '';
     advisorForm.value.department = '';
+    advisorForm.value.schoolName = '';
+    advisorForm.value.deptName = '';
   }
 }
 
@@ -1191,15 +1213,16 @@ function handleParticipantSearch() {
 function applyStudentInfo(student) {
   participantForm.value.studentId = student.no;
   participantForm.value.studentName = student.name;
-  // Shift organization levels: Skip student.school (Level 1), mapping Level 2 -> school, Level 3 -> department, Level 4 -> major
-  participantForm.value.school = student.department;
-  participantForm.value.department = student.major;
-  participantForm.value.major = student.className;
-  participantForm.value.class_name = student.className;
-  participantForm.value.class_year = student.classYear;
-  
-  // Re-populate cascader starting from Level 2 baseline
+  // Level 2 -> school, Level 3 -> department, Level 4 -> major
+  participantForm.value.school = student.school;
+  participantForm.value.department = student.department;
+  participantForm.value.major = student.major;
+
+  // Re-populate cascader starting from Root (Level 1)
   const values = [];
+  if (deptOptions.value && deptOptions.value.length > 0) {
+    values.push(deptOptions.value[0].deptId); // Prepend Root ID
+  }
   if (participantForm.value.school) values.push(Number(participantForm.value.school));
   if (participantForm.value.department) values.push(Number(participantForm.value.department));
   if (participantForm.value.major) values.push(Number(participantForm.value.major));
@@ -1265,12 +1288,15 @@ function handleAdvisorSearch() {
 function applyTeacherInfo(teacher) {
   advisorForm.value.teacherId = teacher.no;
   advisorForm.value.teacherName = teacher.teacherName;
-  // Shift organization levels: Skip teacher.school (Level 1), mapping Level 2 -> school, Level 3 -> department
+  // Level 2 -> school, Level 3 -> department
   advisorForm.value.school = teacher.department;
   advisorForm.value.department = teacher.major;
-  
-  // Re-populate cascader starting from Level 2 baseline
+
+  // Re-populate cascader starting from Root (Level 1)
   const values = [];
+  if (deptOptions.value && deptOptions.value.length > 0) {
+    values.push(deptOptions.value[0].deptId); // Prepend Root ID
+  }
   if (advisorForm.value.school) values.push(Number(advisorForm.value.school));
   if (advisorForm.value.department) values.push(Number(advisorForm.value.department));
   advisorDeptCascaderValue.value = values;
@@ -2082,6 +2108,24 @@ function handleCancel() {
   } else {
     doExit();
   }
+}
+
+function getDeptName(deptId) {
+  if (!deptId) return "-";
+  const id = Number(deptId);
+  if (isNaN(id)) return deptId; // 如果本来就是文字则直接返回
+
+  const findName = (nodes) => {
+    for (const node of nodes) {
+      if (node.deptId == id) return node.deptName;
+      if (node.children) {
+        const name = findName(node.children);
+        if (name) return name;
+      }
+    }
+    return null;
+  };
+  return findName(deptOptions.value) || deptId;
 }
 
 function getDeptTree() {
