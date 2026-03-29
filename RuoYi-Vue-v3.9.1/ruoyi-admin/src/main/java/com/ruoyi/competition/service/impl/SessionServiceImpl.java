@@ -17,6 +17,8 @@ import com.ruoyi.common.exception.ServiceException;
 import com.ruoyi.common.utils.DateUtils;
 import com.ruoyi.common.utils.SecurityUtils;
 import com.ruoyi.common.utils.StringUtils;
+import com.ruoyi.common.annotation.BizAudit;
+import com.ruoyi.common.enums.BizAuditOpType;
 import com.ruoyi.competition.domain.Competition;
 import com.ruoyi.competition.service.ICompetitionService;
 import com.ruoyi.competition.mapper.SessionMapper;
@@ -114,6 +116,7 @@ public class SessionServiceImpl implements ISessionService {
 
     @Transactional(rollbackFor = Exception.class)
     @Override
+    @BizAudit(bizType = "session", bizName = "新增届次", opType = BizAuditOpType.ADD, handler = "sessionBizAuditHandler", async = false)
     public int insertSession(Session session) {
         // year：默认当前年
         session.setYear(resolveYear(session.getYear()));
@@ -145,6 +148,7 @@ public class SessionServiceImpl implements ISessionService {
 
     @Transactional(rollbackFor = Exception.class)
     @Override
+    @BizAudit(bizType = "session", bizName = "修改届次", opType = BizAuditOpType.UPDATE, handler = "sessionBizAuditHandler", async = false)
     public int updateSession(Session session) {
         if (session.getId() == null) {
             throw new ServiceException("修改届次必须传入主键ID！");
@@ -170,6 +174,7 @@ public class SessionServiceImpl implements ISessionService {
     // ========== 修复删除逻辑：按顺序删成果表→标签表→届次表 ==========
     @Transactional(rollbackFor = Exception.class)
     @Override
+    @BizAudit(bizType = "session", bizName = "批量删除届次", opType = BizAuditOpType.DELETE, handler = "sessionBizAuditHandler", async = false)
     public int deleteSessionByIds(Long[] ids) {
         // 1. 删成果表
         sessionMapper.deleteAchievementBySessionIds(ids);
@@ -181,6 +186,7 @@ public class SessionServiceImpl implements ISessionService {
 
     @Transactional(rollbackFor = Exception.class)
     @Override
+    @BizAudit(bizType = "session", bizName = "删除届次", opType = BizAuditOpType.DELETE, handler = "sessionBizAuditHandler", async = false)
     public int deleteSessionById(Long id) {
         // 1. 删成果表
         sessionMapper.deleteAchievementBySessionId(id);
@@ -192,6 +198,7 @@ public class SessionServiceImpl implements ISessionService {
 
     @Transactional(rollbackFor = Exception.class)
     @Override
+    @BizAudit(bizType = "session", bizName = "批量修改状态", opType = BizAuditOpType.UPDATE, handler = "sessionBizAuditHandler", async = false)
     public int updateSessionStatusByIds(Long[] ids, String status)
     {
         if (ids == null || ids.length == 0)
@@ -207,6 +214,7 @@ public class SessionServiceImpl implements ISessionService {
 
     @Transactional(rollbackFor = Exception.class)
     @Override
+    @BizAudit(bizType = "session", bizName = "批量复制模版", opType = BizAuditOpType.IMPORT, handler = "sessionBizAuditHandler", async = false)
     public int batchCopyFromTemplates(List<Session> items)
     {
         if (CollectionUtils.isEmpty(items))
@@ -316,6 +324,8 @@ public class SessionServiceImpl implements ISessionService {
                 throw new ServiceException("第" + rowNo + "行：新增失败，请稍后重试");
             }
             syncTagsToSubTable(newSession.getId(), newSession.getTags(), operName);
+            // 核心修改：将数据库新生成的真实 ID 反向回写到被 AOP 拦截的方法参数对象中
+            item.setId(newSession.getId());
             insertCount++;
         }
 
@@ -375,6 +385,7 @@ public class SessionServiceImpl implements ISessionService {
     // ========== 修复导入逻辑：加事务+校验comp是否为null ==========
     @Transactional(rollbackFor = Exception.class) // 核心：新增事务注解
     @Override
+    @BizAudit(bizType = "session", bizName = "导入届次", opType = BizAuditOpType.IMPORT, handler = "sessionBizAuditHandler", async = false)
     public String importSession(List<Session> sessionList, boolean updateSupport) {
         if (CollectionUtils.isEmpty(sessionList)) {
             throw new ServiceException("导入数据不能为空，请检查Excel文件是否有数据！");
@@ -414,6 +425,7 @@ public class SessionServiceImpl implements ISessionService {
     // ========== 核心方法：processSingleSession 修复null校验 ==========
     // ========== 核心方法：processSingleSession 修复null校验 + 调整字典转码顺序 ==========
     @Transactional(rollbackFor = Exception.class)
+
     private void processSingleSession(Session session, boolean updateSupport, String operName) {
         // ========== 步骤0：先处理字典转码（核心调整：移到创建赛事之前） ==========
         String categoryCode = session.getCategory();

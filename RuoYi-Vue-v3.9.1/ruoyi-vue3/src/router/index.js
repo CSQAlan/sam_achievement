@@ -146,6 +146,20 @@ export const dynamicRoutes = [
     ]
   },
   {
+    path: '/monitor/biz-audit',
+    component: Layout,
+    hidden: true,
+    permissions: ['monitor:bizaudit:query'],
+    children: [
+      {
+        path: 'detail/:id(\\d+)',
+        component: () => import('@/views/monitor/bizAudit/detail'),
+        name: 'BizAuditDetail',
+        meta: { title: '业务审计详情', activeMenu: '/monitor/biz-audit' }
+      }
+    ]
+  },
+  {
     path: '/tool/gen-edit',
     component: Layout,
     hidden: true,
