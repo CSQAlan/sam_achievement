@@ -181,6 +181,7 @@
             <if test="groupId != null "> and a.group_id = #{groupId}</if>
             <if test="awardTime != null "> and a.award_time = #{awardTime}</if>
         </where>
+        order by a.achievement_id desc
     </select>
 
     <select id="selectSamAchievementListByStudentId" parameterType="SamAchievement" resultMap="SamAchievementListResult">
@@ -192,6 +193,7 @@
             <if test="name != null  and name != ''"> and a.name like concat('%', #{name}, '%')</if>
             <if test="reviewResult != null  and reviewResult != ''"> and a.review_result = #{reviewResult}</if>
         </where>
+        order by a.achievement_id desc
     </select>
 
     <select id="selectSamAchievementListByResponsibleStudentId" parameterType="SamAchievement" resultMap="SamAchievementListResult">
@@ -214,6 +216,7 @@
             <if test="name != null  and name != ''"> and a.name like concat('%', #{name}, '%')</if>
             <if test="reviewResult != null  and reviewResult != ''"> and a.review_result = #{reviewResult}</if>
         </where>
+        order by a.achievement_id desc
     </select>
 
     <select id="selectSamAchievementListByUserId" parameterType="SamAchievement" resultMap="SamAchievementSamAchievementParticipantResult">
@@ -227,6 +230,7 @@
             <if test="name != null  and name != ''"> and a.name like concat('%', #{name}, '%')</if>
             <if test="reviewResult != null  and reviewResult != ''"> and a.review_result = #{reviewResult}</if>
         </where>
+        order by a.achievement_id desc
     </select>
 
     <select id="selectSamAchievementByAchievementId" parameterType="String" resultMap="SamAchievementSamAchievementParticipantResult">

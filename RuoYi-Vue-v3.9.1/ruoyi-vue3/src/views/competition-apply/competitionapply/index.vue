@@ -1,30 +1,12 @@
 <template>
   <div class="app-container">
-    <el-form :model="queryParams" ref="queryRef" :inline="true" v-show="showSearch" label-width="68px">
-      <el-form-item label="申请编号" prop="applyNo">
-        <el-input
-          v-model="queryParams.applyNo"
-          placeholder="请输入申请编号"
-          clearable
-          @keyup.enter="handleQuery"
-        />
-      </el-form-item>
-      <el-form-item label="申请人用户ID" prop="applicantUserId">
-        <el-input
-          v-model="queryParams.applicantUserId"
-          placeholder="请输入申请人用户ID"
-          clearable
-          @keyup.enter="handleQuery"
-        />
-      </el-form-item>
-      <el-form-item label="申请人学院" prop="applicantDepId">
-        <el-input
-          v-model="queryParams.applicantDepId"
-          placeholder="请输入申请人学院"
-          clearable
-          @keyup.enter="handleQuery"
-        />
-      </el-form-item>
+    <el-form
+      ref="queryRef"
+      :model="queryParams"
+      :inline="true"
+      label-width="90px"
+      v-show="showSearch"
+    >
       <el-form-item label="赛事名称" prop="name">
         <el-input
           v-model="queryParams.name"
@@ -34,7 +16,11 @@
         />
       </el-form-item>
       <el-form-item label="赛事类别" prop="category">
-        <el-select v-model="queryParams.category" placeholder="请选择赛事类别" clearable>
+        <el-select
+          v-model="queryParams.category"
+          placeholder="请选择赛事类别"
+          clearable
+        >
           <el-option
             v-for="dict in sys_competition_category"
             :key="dict.value"
@@ -44,7 +30,11 @@
         </el-select>
       </el-form-item>
       <el-form-item label="赛事级别" prop="level">
-        <el-select v-model="queryParams.level" placeholder="请选择赛事级别" clearable>
+        <el-select
+          v-model="queryParams.level"
+          placeholder="请选择赛事级别"
+          clearable
+        >
           <el-option
             v-for="dict in sys_competition_level"
             :key="dict.value"
@@ -54,7 +44,11 @@
         </el-select>
       </el-form-item>
       <el-form-item label="适用范围" prop="scopeType">
-        <el-select v-model="queryParams.scopeType" placeholder="请选择适用范围" clearable>
+        <el-select
+          v-model="queryParams.scopeType"
+          placeholder="请选择适用范围"
+          clearable
+        >
           <el-option
             v-for="dict in sys_competition_scope_type"
             :key="dict.value"
@@ -64,7 +58,11 @@
         </el-select>
       </el-form-item>
       <el-form-item label="审核状态" prop="status">
-        <el-select v-model="queryParams.status" placeholder="请选择审核状态" clearable>
+        <el-select
+          v-model="queryParams.status"
+          placeholder="请选择审核状态"
+          clearable
+        >
           <el-option
             v-for="dict in sys_shenhe_status"
             :key="dict.value"
@@ -74,7 +72,9 @@
         </el-select>
       </el-form-item>
       <el-form-item>
-        <el-button type="primary" icon="Search" @click="handleQuery">搜索</el-button>
+        <el-button type="primary" icon="Search" @click="handleQuery"
+          >搜索</el-button
+        >
         <el-button icon="Refresh" @click="resetQuery">重置</el-button>
       </el-form-item>
     </el-form>
@@ -87,27 +87,33 @@
           icon="Plus"
           @click="handleAdd"
           v-hasPermi="['competition-apply:competitionapply:add']"
-        >新增</el-button>
+        >
+          新增
+        </el-button>
       </el-col>
       <el-col :span="1.5">
         <el-button
           type="success"
           plain
           icon="Edit"
-          :disabled="single"
-          @click="handleUpdate"
+          :disabled="single || !canEditSelection"
+          @click="handleUpdate()"
           v-hasPermi="['competition-apply:competitionapply:edit']"
-        >修改</el-button>
+        >
+          修改
+        </el-button>
       </el-col>
       <el-col :span="1.5">
         <el-button
           type="danger"
           plain
           icon="Delete"
-          :disabled="multiple"
-          @click="handleDelete"
+          :disabled="multiple || !canDeleteSelection"
+          @click="handleDelete()"
           v-hasPermi="['competition-apply:competitionapply:remove']"
-        >删除</el-button>
+        >
+          删除
+        </el-button>
       </el-col>
       <el-col :span="1.5">
         <el-button
@@ -116,193 +122,327 @@
           icon="Download"
           @click="handleExport"
           v-hasPermi="['competition-apply:competitionapply:export']"
-        >导出</el-button>
+        >
+          导出
+        </el-button>
       </el-col>
-      <right-toolbar v-model:showSearch="showSearch" @queryTable="getList"></right-toolbar>
+      <right-toolbar v-model:showSearch="showSearch" @queryTable="getList" />
     </el-row>
 
-    <el-table v-loading="loading" :data="competitionapplyList" @selection-change="handleSelectionChange">
+    <el-table
+      v-loading="loading"
+      :data="competitionapplyList"
+      @selection-change="handleSelectionChange"
+    >
       <el-table-column type="selection" width="55" align="center" />
-      <el-table-column label="申请主键" align="center" prop="id" />
-      <el-table-column label="申请编号" align="center" prop="applyNo" />
-      <el-table-column label="申请人用户ID" align="center" prop="applicantUserId" />
-      <el-table-column label="申请人学院" align="center" prop="applicantDepId" />
+      <el-table-column label="申请人学号" align="center" prop="userName" />
+      <el-table-column label="申请人学院" align="center" prop="deptName" />
       <el-table-column label="赛事名称" align="center" prop="name" />
+      <el-table-column label="年份" align="center" prop="year" width="100" />
+      <el-table-column label="届次" align="center" prop="session" width="120" />
       <el-table-column label="赛事类别" align="center" prop="category">
         <template #default="scope">
-          <dict-tag :options="sys_competition_category" :value="scope.row.category"/>
+          <dict-tag
+            :options="sys_competition_category"
+            :value="scope.row.category"
+          />
         </template>
       </el-table-column>
       <el-table-column label="盖章单位" align="center" prop="organizations" />
       <el-table-column label="赛事级别" align="center" prop="level">
         <template #default="scope">
-          <dict-tag :options="sys_competition_level" :value="scope.row.level"/>
+          <dict-tag :options="sys_competition_level" :value="scope.row.level" />
         </template>
       </el-table-column>
       <el-table-column label="适用范围" align="center" prop="scopeType">
         <template #default="scope">
-          <dict-tag :options="sys_competition_scope_type" :value="scope.row.scopeType"/>
+          <dict-tag
+            :options="sys_competition_scope_type"
+            :value="scope.row.scopeType"
+          />
         </template>
       </el-table-column>
       <el-table-column label="审核状态" align="center" prop="status">
         <template #default="scope">
-          <dict-tag :options="sys_shenhe_status" :value="scope.row.status"/>
+          <dict-tag :options="sys_shenhe_status" :value="scope.row.status" />
         </template>
       </el-table-column>
-      <el-table-column label="标签" align="center" prop="tags">
+      <el-table-column label="标签" width="150" align="center" prop="tags">
         <template #default="scope">
-          <dict-tag :options="sys_competition_tag" :value="scope.row.tags ? scope.row.tags.split(',') : []"/>
+          <dict-tag
+            :options="sys_competition_tag"
+            :value="scope.row.tags ? String(scope.row.tags).split(',') : []"
+          />
         </template>
       </el-table-column>
-      <el-table-column label="赛事说明" align="center" prop="memo" />
-      <el-table-column label="操作" align="center" class-name="small-padding fixed-width">
+      <el-table-column
+        label="赛事说明"
+        align="center"
+        prop="memo"
+        show-overflow-tooltip
+      />
+      <el-table-column
+        label="操作"
+        align="center"
+        class-name="small-padding fixed-width"
+      >
         <template #default="scope">
-          <el-button link type="primary" icon="Edit" @click="handleUpdate(scope.row)" v-hasPermi="['competition-apply:competitionapply:edit']">修改</el-button>
-          <el-button link type="primary" icon="Delete" @click="handleDelete(scope.row)" v-hasPermi="['competition-apply:competitionapply:remove']">删除</el-button>
+          <el-button
+            v-if="String(scope.row.status) !== '1'"
+            link
+            type="primary"
+            icon="Edit"
+            @click="handleUpdate(scope.row)"
+            v-hasPermi="['competition-apply:competitionapply:edit']"
+          >
+            修改
+          </el-button>
+          <el-button
+            v-if="String(scope.row.status) !== '1'"
+            link
+            type="primary"
+            icon="Delete"
+            @click="handleDelete(scope.row)"
+            v-hasPermi="['competition-apply:competitionapply:remove']"
+          >
+            删除
+          </el-button>
+          <span v-else class="text-muted">已通过</span>
         </template>
       </el-table-column>
     </el-table>
-    
+
     <pagination
-      v-show="total>0"
+      v-show="total > 0"
       :total="total"
       v-model:page="queryParams.pageNum"
       v-model:limit="queryParams.pageSize"
       @pagination="getList"
     />
 
-    <!-- 添加或修改赛事申请对话框 -->
-    <el-dialog :title="title" v-model="open" width="500px" append-to-body>
-      <el-form ref="competitionapplyRef" :model="form" :rules="rules" label-width="80px">
-        <el-form-item label="申请编号" prop="applyNo">
-          <el-input v-model="form.applyNo" placeholder="请输入申请编号" />
-        </el-form-item>
-        <el-form-item label="申请人用户ID" prop="applicantUserId">
-          <el-input v-model="form.applicantUserId" placeholder="请输入申请人用户ID" />
-        </el-form-item>
-        <el-form-item label="申请人学院" prop="applicantDepId">
-          <el-input v-model="form.applicantDepId" placeholder="请输入申请人学院" />
-        </el-form-item>
-        <el-form-item label="赛事名称" prop="name">
-          <el-input v-model="form.name" placeholder="请输入赛事名称" />
-        </el-form-item>
-        <el-form-item label="赛事类别" prop="category">
-          <el-radio-group v-model="form.category">
-            <el-radio
-              v-for="dict in sys_competition_category"
-              :key="dict.value"
-              :label="dict.value"
-            >{{dict.label}}</el-radio>
-          </el-radio-group>
-        </el-form-item>
-        <el-form-item label="盖章单位" prop="organizations">
-          <el-input v-model="form.organizations" placeholder="请输入盖章单位" />
-        </el-form-item>
-        <el-form-item label="赛事级别" prop="level">
-          <el-radio-group v-model="form.level">
-            <el-radio
-              v-for="dict in sys_competition_level"
-              :key="dict.value"
-              :label="dict.value"
-            >{{dict.label}}</el-radio>
-          </el-radio-group>
-        </el-form-item>
-        <el-form-item label="适用范围" prop="scopeType">
-          <el-radio-group v-model="form.scopeType">
-            <el-radio
-              v-for="dict in sys_competition_scope_type"
-              :key="dict.value"
-              :label="dict.value"
-            >{{dict.label}}</el-radio>
-          </el-radio-group>
-        </el-form-item>
-        <el-form-item label="审核状态" prop="status">
-          <el-radio-group v-model="form.status">
-            <el-radio
-              v-for="dict in sys_shenhe_status"
-              :key="dict.value"
-              :label="dict.value"
-            >{{dict.label}}</el-radio>
-          </el-radio-group>
-        </el-form-item>
-        <el-form-item label="标签" prop="tags">
-          <el-checkbox-group v-model="form.tags">
-            <el-checkbox
-              v-for="dict in sys_competition_tag"
-              :key="dict.value"
-              :label="dict.value">
-              {{dict.label}}
-            </el-checkbox>
-          </el-checkbox-group>
-        </el-form-item>
-        <el-form-item label="赛事说明" prop="memo">
-          <el-input v-model="form.memo" type="textarea" placeholder="请输入内容" />
-        </el-form-item>
-        <el-form-item label="备注" prop="remark">
-          <el-input v-model="form.remark" placeholder="请输入备注" />
-        </el-form-item>
-        <el-divider content-position="center">赛事申请附件信息</el-divider>
-        <el-row :gutter="10" class="mb8">
-          <el-col :span="1.5">
-            <el-button type="primary" icon="Plus" @click="handleAddCompetitionApplyAttachment">添加</el-button>
-          </el-col>
-          <el-col :span="1.5">
-            <el-button type="danger" icon="Delete" @click="handleDeleteCompetitionApplyAttachment">删除</el-button>
-          </el-col>
-        </el-row>
-        <el-table :data="competitionApplyAttachmentList" :row-class-name="rowCompetitionApplyAttachmentIndex" @selection-change="handleCompetitionApplyAttachmentSelectionChange" ref="competitionApplyAttachment">
-          <el-table-column type="selection" width="50" align="center" />
-          <el-table-column label="序号" align="center" prop="index" width="50"/>
-          <el-table-column label="附件类型" prop="type" width="150">
-            <template #default="scope">
-              <el-select v-model="scope.row.type" placeholder="请选择附件类型">
-                <el-option label="请选择字典生成" value="" />
-              </el-select>
-            </template>
-          </el-table-column>
-          <el-table-column label="文件类型" prop="fileType" width="150">
-            <template #default="scope">
-              <el-select v-model="scope.row.fileType" placeholder="请选择文件类型">
-                <el-option label="请选择字典生成" value="" />
-              </el-select>
-            </template>
-          </el-table-column>
-          <el-table-column label="原始文件名" prop="originName" width="150">
-            <template #default="scope">
-              <el-input v-model="scope.row.originName" placeholder="请输入原始文件名" />
-            </template>
-          </el-table-column>
-          <el-table-column label="存储文件名" prop="storeName" width="150">
-            <template #default="scope">
-              <el-input v-model="scope.row.storeName" placeholder="请输入存储文件名" />
-            </template>
-          </el-table-column>
-          <el-table-column label="文件大小" prop="fileSize" width="150">
-            <template #default="scope">
-              <el-input v-model="scope.row.fileSize" placeholder="请输入文件大小" />
-            </template>
-          </el-table-column>
-          <el-table-column label="上传人" prop="uploadBy" width="150">
-            <template #default="scope">
-              <el-input v-model="scope.row.uploadBy" placeholder="请输入上传人" />
-            </template>
-          </el-table-column>
-          <el-table-column label="上传时间" prop="uploadTime" width="240">
-            <template #default="scope">
-              <el-date-picker clearable
-                v-model="scope.row.uploadTime"
-                type="date"
-                value-format="YYYY-MM-DD"
-                placeholder="请选择上传时间">
-              </el-date-picker>
-            </template>
-          </el-table-column>
-        </el-table>
-      </el-form>
+    <el-dialog :title="title" v-model="open" width="1200px" append-to-body>
+      <el-row :gutter="20">
+        <el-col :span="11">
+          <el-form
+            ref="competitionapplyRef"
+            :model="form"
+            :rules="rules"
+            label-width="100px"
+          >
+            <el-form-item label="赛事名称" prop="name">
+              <el-input v-model="form.name" placeholder="请输入赛事名称" />
+            </el-form-item>
+            <el-form-item label="年份" prop="year">
+              <el-input-number
+                v-model="form.year"
+                :min="2000"
+                :max="2100"
+                controls-position="right"
+                placeholder="请输入年份"
+                style="width: 180px"
+              />
+            </el-form-item>
+            <el-form-item label="届次" prop="session">
+              <el-input v-model="form.session" placeholder="例如：2025、十二届" />
+            </el-form-item>
+            <el-form-item label="赛事类别" prop="category">
+              <el-radio-group v-model="form.category">
+                <el-radio
+                  v-for="dict in sys_competition_category"
+                  :key="dict.value"
+                  :label="dict.value"
+                >
+                  {{ dict.label }}
+                </el-radio>
+              </el-radio-group>
+            </el-form-item>
+            <el-form-item label="盖章单位" prop="organizations">
+              <el-input
+                v-model="form.organizations"
+                placeholder="请输入盖章单位"
+              />
+            </el-form-item>
+            <el-form-item label="赛事级别" prop="level">
+              <el-radio-group v-model="form.level">
+                <el-radio
+                  v-for="dict in sys_competition_level"
+                  :key="dict.value"
+                  :label="dict.value"
+                >
+                  {{ dict.label }}
+                </el-radio>
+              </el-radio-group>
+            </el-form-item>
+            <el-form-item label="标签" prop="tags">
+              <el-checkbox-group v-model="form.tags">
+                <el-checkbox
+                  v-for="dict in sys_competition_tag"
+                  :key="dict.value"
+                  :label="dict.value"
+                >
+                  {{ dict.label }}
+                </el-checkbox>
+              </el-checkbox-group>
+            </el-form-item>
+            <el-form-item label="赛事说明" prop="memo">
+              <el-input
+                v-model="form.memo"
+                type="textarea"
+                :rows="6"
+                placeholder="请输入赛事说明"
+              />
+            </el-form-item>
+          </el-form>
+        </el-col>
+
+        <el-col :span="12">
+          <div class="attach-card">
+            <el-divider content-position="left">
+              {{ hasRouteUuid ? "上传附件" : "附件管理" }}
+            </el-divider>
+
+            <div v-if="hasRouteUuid" class="upload-pane-content">
+              <el-alert
+                type="info"
+                :closable="false"
+                class="mb10"
+                title="检测到 URL 中存在 uuid，右侧显示 PDF 预览。"
+              />
+              <div v-if="routePreviewUrl" class="preview-box">
+                <iframe
+                  :src="routePreviewUrl"
+                  width="100%"
+                  height="500px"
+                  frameborder="0"
+                />
+              </div>
+              <div v-else class="empty-preview-box">参考成果预览加载中...</div>
+              <div class="custom-file-row">
+                <div class="file-name">
+                  <el-icon class="mr5"><Document /></el-icon>
+                  <span>{{ routeUuid }}</span>
+                </div>
+                <div class="file-action">
+                  <el-button
+                    link
+                    type="primary"
+                    :icon="View"
+                    @click="handleOpenDetail(routeUuid)"
+                  >
+                    详情
+                  </el-button>
+                  <el-button
+                    link
+                    type="primary"
+                    :icon="Download"
+                    @click="handleDownloadAttachment(routeUuid, '')"
+                  >
+                    下载
+                  </el-button>
+                </div>
+              </div>
+            </div>
+
+            <el-tabs
+              v-else
+              tab-position="left"
+              v-model="activeAttachmentTab"
+              style="height: 100%; min-height: 600px"
+            >
+              <el-tab-pane
+                v-for="item in visibleAttachments"
+                :key="item.name"
+                :name="item.name"
+                :label="item.label"
+              >
+                <div class="upload-pane-content">
+                  <el-alert
+                    v-if="!form[item.prop]"
+                    type="info"
+                    :closable="false"
+                    class="mb10"
+                  >
+                    <template #title>{{ item.alert }}</template>
+                  </el-alert>
+
+                  <el-form-item
+                    v-if="!form[item.prop]"
+                    label-width="0"
+                    :prop="item.prop"
+                  >
+                    <upload-file
+                      :key="`upload-${item.name}`"
+                      v-model="form[item.prop]"
+                      :limit="1"
+                      :fileSize="50"
+                      :fileType="['pdf']"
+                      class="hide-file-list"
+                      @update:modelValue="
+                        (val) => handleAttachmentModelChange(val, item)
+                      "
+                    />
+                  </el-form-item>
+
+                  <div v-if="previewUrls[item.name]" class="preview-box">
+                    <iframe
+                      :src="previewUrls[item.name]"
+                      width="100%"
+                      height="500px"
+                      frameborder="0"
+                    />
+                  </div>
+
+                  <div v-if="form[item.prop]" class="custom-file-row">
+                    <div class="file-name">
+                      <el-icon class="mr5"><Document /></el-icon>
+                      <span>{{
+                        attachmentNames[item.name] ||
+                        getFileName(form[item.prop])
+                      }}</span>
+                    </div>
+                    <div class="file-action">
+                      <el-button
+                        link
+                        type="primary"
+                        :icon="View"
+                        @click="handleOpenDetail(form[item.prop])"
+                      >
+                        详情
+                      </el-button>
+                      <el-button
+                        link
+                        type="primary"
+                        :icon="Download"
+                        @click="
+                          handleDownloadAttachment(
+                            form[item.prop],
+                            attachmentNames[item.name]
+                          )
+                        "
+                      >
+                        下载
+                      </el-button>
+                      <el-button
+                        link
+                        type="danger"
+                        :icon="Delete"
+                        @click="handleDeleteAttachment(item)"
+                      >
+                        删除
+                      </el-button>
+                    </div>
+                  </div>
+                </div>
+              </el-tab-pane>
+            </el-tabs>
+          </div>
+        </el-col>
+      </el-row>
+
       <template #footer>
         <div class="dialog-footer">
-          <el-button type="primary" @click="submitForm">确 定</el-button>
-          <el-button @click="cancel">取 消</el-button>
+          <el-button type="primary" @click="submitForm">确定</el-button>
+          <el-button @click="cancel">取消</el-button>
         </div>
       </template>
     </el-dialog>
@@ -310,102 +450,164 @@
 </template>
 
 <script setup name="Competitionapply">
-import { listCompetitionapply, getCompetitionapply, delCompetitionapply, addCompetitionapply, updateCompetitionapply } from "@/api/competition-apply/competitionapply"
+import {
+  computed,
+  getCurrentInstance,
+  onBeforeUnmount,
+  reactive,
+  ref,
+  watch,
+} from "vue";
+import { useRoute } from "vue-router";
+import { Delete, Document, Download, View } from "@element-plus/icons-vue";
+import request, { download } from "@/utils/request";
+import UploadFile from "@/components/FileUpload";
+import {
+  addCompetitionapply,
+  delCompetitionapply,
+  getCompetitionapply,
+  listCompetitionapply,
+  updateCompetitionapply,
+} from "@/api/competition-apply/competitionapply";
+import useUserStore from "@/store/modules/user";
 
-const { proxy } = getCurrentInstance()
-const { sys_competition_tag, sys_competition_del_flag, sys_shenhe_status, sys_competition_scope_type, sys_competition_category, sys_competition_level } = proxy.useDict('sys_competition_tag', 'sys_competition_del_flag', 'sys_shenhe_status', 'sys_competition_scope_type', 'sys_competition_category', 'sys_competition_level')
+const { proxy } = getCurrentInstance();
+const route = useRoute();
+const userStore = useUserStore();
 
-const competitionapplyList = ref([])
-const competitionApplyAttachmentList = ref([])
-const open = ref(false)
-const loading = ref(true)
-const showSearch = ref(true)
-const ids = ref([])
-const checkedCompetitionApplyAttachment = ref([])
-const single = ref(true)
-const multiple = ref(true)
-const total = ref(0)
-const title = ref("")
+const {
+  sys_competition_tag,
+  sys_shenhe_status,
+  sys_competition_scope_type,
+  sys_competition_category,
+  sys_competition_level,
+  attach_type,
+} = proxy.useDict(
+  "sys_competition_tag",
+  "sys_shenhe_status",
+  "sys_competition_scope_type",
+  "sys_competition_category",
+  "sys_competition_level",
+  "attach_type"
+);
 
-const data = reactive({
-  form: {},
-  queryParams: {
-    pageNum: 1,
-    pageSize: 10,
-    applyNo: null,
-    applicantUserId: null,
-    applicantDepId: null,
-    name: null,
-    category: null,
-    level: null,
-    scopeType: null,
-    status: null,
-    memo: null,
+const showSearch = ref(true);
+const loading = ref(false);
+const competitionapplyList = ref([]);
+const ids = ref([]);
+const selectedRows = ref([]);
+const single = ref(true);
+const multiple = ref(true);
+const total = ref(0);
+const open = ref(false);
+const title = ref("");
+const canEditSelection = ref(false);
+const canDeleteSelection = ref(false);
+const activeAttachmentTab = ref("certificate");
+const routePreviewUrl = ref("");
+
+const queryParams = ref({
+  pageNum: 1,
+  pageSize: 10,
+  name: null,
+  category: null,
+  level: null,
+  scopeType: null,
+  status: null,
+  memo: null,
+});
+
+const rules = {
+  name: [{ required: true, message: "赛事名称不能为空", trigger: "blur" }],
+  year: [{ required: true, message: "年份不能为空", trigger: "change" }],
+  session: [{ required: true, message: "届次不能为空", trigger: "blur" }],
+  category: [
+    { required: true, message: "赛事类别不能为空", trigger: "change" },
+  ],
+  organizations: [
+    { required: true, message: "盖章单位不能为空", trigger: "blur" },
+  ],
+  level: [{ required: true, message: "赛事级别不能为空", trigger: "change" }],
+};
+
+const previewUrls = reactive({
+  certificate: "",
+  category: "",
+  notice: "",
+});
+
+const attachmentNames = reactive({
+  certificate: "",
+  category: "",
+  notice: "",
+});
+
+const attachmentFieldMap = {
+  certificate: "certificateFile",
+  category: "categoryFile",
+  notice: "noticeFile",
+};
+
+const defaultAttachmentConfig = [
+  {
+    name: "certificate",
+    dictValue: "1",
+    fallbackLabel: "奖状",
+    alert: "请上传奖状 PDF 文件",
   },
-  rules: {
-    applyNo: [
-      { required: true, message: "申请编号不能为空", trigger: "blur" }
-    ],
-    applicantUserId: [
-      { required: true, message: "申请人用户ID不能为空", trigger: "blur" }
-    ],
-    applicantDepId: [
-      { required: true, message: "申请人学院不能为空", trigger: "blur" }
-    ],
-    name: [
-      { required: true, message: "赛事名称不能为空", trigger: "blur" }
-    ],
-    category: [
-      { required: true, message: "赛事类别不能为空", trigger: "change" }
-    ],
-    organizations: [
-      { required: true, message: "盖章单位不能为空", trigger: "blur" }
-    ],
-    level: [
-      { required: true, message: "赛事级别不能为空", trigger: "change" }
-    ],
-    scopeType: [
-      { required: true, message: "适用范围不能为空", trigger: "change" }
-    ],
-    status: [
-      { required: true, message: "审核状态不能为空", trigger: "change" }
-    ],
-  }
-})
+  {
+    name: "category",
+    // 竞赛目录：按字典约定为 7
+    dictValue: "7",
+    fallbackLabel: "竞赛目录",
+    alert: "请上传竞赛目录 PDF 文件",
+  },
+  {
+    name: "notice",
+    dictValue: "2",
+    fallbackLabel: "通知文件",
+    alert: "请上传通知文件 PDF 文件",
+  },
+];
 
-const { queryParams, form, rules } = toRefs(data)
-
-/** 查询赛事申请列表 */
-function getList() {
-  loading.value = true
-  listCompetitionapply(queryParams.value).then(response => {
-    competitionapplyList.value = response.rows
-    total.value = response.total
-    loading.value = false
+const visibleAttachments = computed(() =>
+  defaultAttachmentConfig.map((item) => {
+    const dictItem = (attach_type.value || []).find(
+      (dict) => String(dict.value) === item.dictValue
+    );
+    return {
+      ...item,
+      prop: attachmentFieldMap[item.name],
+      label: dictItem?.label || item.fallbackLabel,
+    };
   })
-}
+);
 
-// 取消按钮
-function cancel() {
-  open.value = false
-  reset()
-}
+const routeUuid = computed(() => normalizeUuid(route.query.uuid));
+const hasRouteUuid = computed(() => Boolean(routeUuid.value));
 
-// 表单重置
-function reset() {
-  form.value = {
+const form = ref(createDefaultForm());
+
+function createDefaultForm() {
+  return {
     id: null,
-    applyNo: null,
-    applicantUserId: null,
-    applicantDepId: null,
+    applicantUserId: userStore.id,
+    applicantDepId: userStore.deptId || "",
     name: null,
+    year: new Date().getFullYear(),
+    session: null,
     category: null,
     organizations: null,
     level: null,
-    scopeType: null,
-    status: null,
+    scopeType: "0",
+    status: "0",
     tags: [],
     memo: null,
+    certificateFile: null,
+    categoryFile: null,
+    noticeFile: null,
+    competitionApplyAttachmentList: [],
+    attachmentUrls: "",
     auditBy: null,
     auditTime: null,
     auditRemark: null,
@@ -415,130 +617,457 @@ function reset() {
     updateBy: null,
     updateTime: null,
     remark: null,
-    delFlag: null
+    delFlag: null,
+  };
+}
+
+function normalizeUuid(value) {
+  if (Array.isArray(value)) {
+    return normalizeUuid(value[0]);
   }
-  competitionApplyAttachmentList.value = []
-  proxy.resetForm("competitionapplyRef")
+  if (value === null || value === undefined) {
+    return "";
+  }
+  const normalized = String(value).trim();
+  if (!normalized) {
+    return "";
+  }
+  return normalized.includes(",")
+    ? normalized.split(",")[0].trim()
+    : normalized;
 }
 
-/** 搜索按钮操作 */
-function handleQuery() {
-  queryParams.value.pageNum = 1
-  getList()
+function getFileName(value) {
+  const normalized = normalizeUuid(value);
+  if (!normalized) {
+    return "";
+  }
+  return normalized.split("/").pop();
 }
 
-/** 重置按钮操作 */
-function resetQuery() {
-  proxy.resetForm("queryRef")
-  handleQuery()
+function revokePreview(key) {
+  if (previewUrls[key]) {
+    window.URL.revokeObjectURL(previewUrls[key]);
+    previewUrls[key] = "";
+  }
 }
 
-// 多选框选中数据
-function handleSelectionChange(selection) {
-  ids.value = selection.map(item => item.id)
-  single.value = selection.length != 1
-  multiple.value = !selection.length
+function revokeRoutePreview() {
+  if (routePreviewUrl.value) {
+    window.URL.revokeObjectURL(routePreviewUrl.value);
+    routePreviewUrl.value = "";
+  }
 }
 
-/** 新增按钮操作 */
-function handleAdd() {
-  reset()
-  open.value = true
-  title.value = "添加赛事申请"
+function resetAttachmentState() {
+  Object.keys(previewUrls).forEach((key) => revokePreview(key));
+  Object.keys(attachmentNames).forEach((key) => {
+    attachmentNames[key] = "";
+  });
 }
 
-/** 修改按钮操作 */
-function handleUpdate(row) {
-  reset()
-  const _id = row.id || ids.value
-  getCompetitionapply(_id).then(response => {
-    form.value = response.data
-    form.value.tags = form.value.tags.split(",")
-    competitionApplyAttachmentList.value = response.data.competitionApplyAttachmentList
-    open.value = true
-    title.value = "修改赛事申请"
-  })
+async function fetchPdfObjectUrl(uuid) {
+  const blob = await request({
+    url: "/attachment/download",
+    method: "get",
+    params: { resource: uuid },
+    responseType: "blob",
+  });
+  const blobData = blob?.data || blob;
+  return window.URL.createObjectURL(
+    new Blob([blobData], { type: "application/pdf" })
+  );
 }
 
-/** 提交按钮 */
-function submitForm() {
-  proxy.$refs["competitionapplyRef"].validate(valid => {
-    if (valid) {
-      form.value.tags = form.value.tags.join(",")
-      form.value.competitionApplyAttachmentList = competitionApplyAttachmentList.value
-      if (form.value.id != null) {
-        updateCompetitionapply(form.value).then(response => {
-          proxy.$modal.msgSuccess("修改成功")
-          open.value = false
-          getList()
-        })
-      } else {
-        addCompetitionapply(form.value).then(response => {
-          proxy.$modal.msgSuccess("新增成功")
-          open.value = false
-          getList()
-        })
-      }
+async function loadAttachmentPreview(uuid, attachmentName) {
+  revokePreview(attachmentName);
+  const normalizedUuid = normalizeUuid(uuid);
+  if (!normalizedUuid) {
+    return;
+  }
+  try {
+    previewUrls[attachmentName] = await fetchPdfObjectUrl(normalizedUuid);
+  } catch (error) {
+    console.error("附件预览加载失败", error);
+    previewUrls[attachmentName] = "";
+  }
+}
+
+async function loadRoutePdfPreview(uuid) {
+  revokeRoutePreview();
+  const normalizedUuid = normalizeUuid(uuid);
+  if (!normalizedUuid) {
+    return;
+  }
+  try {
+    routePreviewUrl.value = await fetchPdfObjectUrl(normalizedUuid);
+  } catch (error) {
+    console.error("参考成果预览加载失败", error);
+    routePreviewUrl.value = "";
+  }
+}
+
+function handleAttachmentModelChange(value, item) {
+  const uuid = normalizeUuid(value);
+  form.value[item.prop] = uuid || null;
+  attachmentNames[item.name] = getFileName(uuid);
+  loadAttachmentPreview(uuid, item.name);
+}
+
+async function handleOpenDetail(uuid) {
+  const normalizedUuid = normalizeUuid(uuid);
+  if (!normalizedUuid) {
+    proxy.$modal.msgError("文件标识无效");
+    return;
+  }
+  proxy.$modal.loading("正在准备文件...");
+  const previewWindow = window.open("about:blank", "_blank");
+  try {
+    const pdfUrl = await fetchPdfObjectUrl(normalizedUuid);
+    proxy.$modal.closeLoading();
+    if (previewWindow) {
+      previewWindow.location.href = pdfUrl;
+    } else {
+      window.URL.revokeObjectURL(pdfUrl);
+      proxy.$modal.msgWarning("浏览器拦截了弹窗，请允许弹窗后重试");
     }
-  })
-}
-
-/** 删除按钮操作 */
-function handleDelete(row) {
-  const _ids = row.id || ids.value
-  proxy.$modal.confirm('是否确认删除赛事申请编号为"' + _ids + '"的数据项？').then(function() {
-    return delCompetitionapply(_ids)
-  }).then(() => {
-    getList()
-    proxy.$modal.msgSuccess("删除成功")
-  }).catch(() => {})
-}
-
-/** 赛事申请附件序号 */
-function rowCompetitionApplyAttachmentIndex({ row, rowIndex }) {
-  row.index = rowIndex + 1
-}
-
-/** 赛事申请附件添加按钮操作 */
-function handleAddCompetitionApplyAttachment() {
-  let obj = {}
-  obj.type = ""
-  obj.fileType = ""
-  obj.originName = ""
-  obj.storeName = ""
-  obj.filePath = ""
-  obj.fileUrl = ""
-  obj.fileSize = ""
-  obj.uploadBy = ""
-  obj.uploadTime = ""
-  obj.remark = ""
-  competitionApplyAttachmentList.value.push(obj)
-}
-
-/** 赛事申请附件删除按钮操作 */
-function handleDeleteCompetitionApplyAttachment() {
-  if (checkedCompetitionApplyAttachment.value.length == 0) {
-    proxy.$modal.msgError("请先选择要删除的赛事申请附件数据")
-  } else {
-    const competitionApplyAttachments = competitionApplyAttachmentList.value
-    const checkedCompetitionApplyAttachments = checkedCompetitionApplyAttachment.value
-    competitionApplyAttachmentList.value = competitionApplyAttachments.filter(function(item) {
-      return checkedCompetitionApplyAttachments.indexOf(item.index) == -1
-    })
+  } catch (error) {
+    proxy.$modal.closeLoading();
+    if (previewWindow) {
+      previewWindow.close();
+    }
+    proxy.$modal.msgError("文件获取失败，请稍后重试");
   }
 }
 
-/** 复选框选中数据 */
-function handleCompetitionApplyAttachmentSelectionChange(selection) {
-  checkedCompetitionApplyAttachment.value = selection.map(item => item.index)
+async function handleDownloadAttachment(uuid, fileName) {
+  const normalizedUuid = normalizeUuid(uuid);
+  if (!normalizedUuid) {
+    proxy.$modal.msgError("文件标识无效");
+    return;
+  }
+  proxy.$modal.loading("正在下载文件，请稍候...");
+  try {
+    const blob = await request({
+      url: "/attachment/download",
+      method: "get",
+      params: { resource: normalizedUuid },
+      responseType: "blob",
+    });
+    proxy.$modal.closeLoading();
+    const blobData = blob?.data || blob;
+    const blobUrl = window.URL.createObjectURL(
+      new Blob([blobData], { type: "application/pdf" })
+    );
+    const a = document.createElement("a");
+    a.style.display = "none";
+    a.href = blobUrl;
+    a.download = fileName || `${normalizedUuid}.pdf`;
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    window.URL.revokeObjectURL(blobUrl);
+  } catch (error) {
+    proxy.$modal.closeLoading();
+    console.error("下载附件失败", error);
+    proxy.$modal.msgError("下载失败，请稍后重试");
+  }
 }
 
-/** 导出按钮操作 */
+function handleDeleteAttachment(item) {
+  proxy.$modal
+    .confirm("是否确认删除该附件？")
+    .then(() => {
+      form.value[item.prop] = null;
+      attachmentNames[item.name] = "";
+      revokePreview(item.name);
+      proxy.$modal.msgSuccess("附件已删除");
+    })
+    .catch(() => {});
+}
+
+function resolveAttachmentItem(type) {
+  const normalizedType = String(type ?? "");
+  return visibleAttachments.value.find(
+    (item) => item.dictValue === normalizedType || item.name === normalizedType
+  );
+}
+
+function fillAttachmentData(list = []) {
+  resetAttachmentState();
+  list.forEach((attachment) => {
+    const item = resolveAttachmentItem(
+      attachment.attachmentType || attachment.type
+    );
+    if (!item) {
+      return;
+    }
+    const uuid = normalizeUuid(
+      // 后端子表只存 uuid；这里兼容其它字段名
+      attachment.uuid ||
+        attachment.fileUuid ||
+        attachment.file_uuid ||
+        attachment.path ||
+        attachment.url
+    );
+    if (!uuid) {
+      return;
+    }
+    form.value[item.prop] = uuid;
+    attachmentNames[item.name] = attachment.documentName || getFileName(uuid);
+    loadAttachmentPreview(uuid, item.name);
+  });
+}
+
+function buildAttachmentList() {
+  return visibleAttachments.value
+    .map((item) => {
+      const uuid = normalizeUuid(form.value[item.prop]);
+      if (!uuid) {
+        return null;
+      }
+      return {
+        id: null,
+        competitionApplyId: form.value.id,
+        // 子表只存 uuid，真实路径由后端通过 uuid 反查
+        uuid,
+        documentName: attachmentNames[item.name] || getFileName(uuid),
+        attachmentType: item.dictValue,
+        delFlag: "0",
+      };
+    })
+    .filter(Boolean);
+}
+
+function getList() {
+  loading.value = true;
+  listCompetitionapply(queryParams.value)
+    .then((response) => {
+      competitionapplyList.value = response.rows || [];
+      total.value = response.total || 0;
+    })
+    .finally(() => {
+      loading.value = false;
+    });
+}
+
+function reset() {
+  proxy.resetForm("competitionapplyRef");
+  form.value = createDefaultForm();
+  activeAttachmentTab.value = "certificate";
+  resetAttachmentState();
+}
+
+function cancel() {
+  open.value = false;
+  reset();
+}
+
+function handleQuery() {
+  queryParams.value.pageNum = 1;
+  getList();
+}
+
+function resetQuery() {
+  proxy.resetForm("queryRef");
+  handleQuery();
+}
+
+function handleSelectionChange(selection) {
+  selectedRows.value = selection || [];
+  ids.value = selection.map((item) => item.id);
+  single.value = selection.length !== 1;
+  multiple.value = selection.length === 0;
+
+  // 已通过(1)的申请：不允许修改/删除
+  canEditSelection.value =
+    selection.length === 1 && String(selection[0]?.status) !== "1";
+  canDeleteSelection.value =
+    selection.length > 0 &&
+    selection.every((row) => String(row?.status) !== "1");
+}
+
+function handleAdd() {
+  reset();
+  open.value = true;
+  title.value = "添加赛事申请";
+}
+
+function handleUpdate(row) {
+  const id = row?.id || ids.value[0];
+  if (!id) {
+    return;
+  }
+  const status = row?.status ?? selectedRows.value?.[0]?.status;
+  if (String(status) === "1") {
+    proxy.$modal.msgWarning("已审核通过，不能再修改");
+    return;
+  }
+  reset();
+  getCompetitionapply(id).then((response) => {
+    const data = { ...createDefaultForm(), ...(response.data || {}) };
+    data.tags = data.tags ? String(data.tags).split(",") : [];
+    data.certificateFile = null;
+    data.categoryFile = null;
+    data.noticeFile = null;
+    form.value = data;
+    fillAttachmentData(response.data?.competitionApplyAttachmentList || []);
+    open.value = true;
+    title.value = "修改赛事申请";
+  });
+}
+
+function submitForm() {
+  proxy.$refs.competitionapplyRef.validate((valid) => {
+    if (!valid) {
+      return;
+    }
+    const submitData = {
+      ...form.value,
+      tags: Array.isArray(form.value.tags)
+        ? form.value.tags.join(",")
+        : form.value.tags || "",
+      competitionApplyAttachmentList: buildAttachmentList(),
+    };
+    const requestFn = submitData.id
+      ? updateCompetitionapply
+      : addCompetitionapply;
+    requestFn(submitData).then(() => {
+      proxy.$modal.msgSuccess(submitData.id ? "修改成功" : "新增成功");
+      open.value = false;
+      getList();
+    });
+  });
+}
+
+function handleDelete(row) {
+  const targetIds = row?.id || ids.value;
+  if (!targetIds || (Array.isArray(targetIds) && targetIds.length === 0)) {
+    return;
+  }
+  proxy.$modal
+    .confirm("是否确认删除该赛事申请？删除后相关附件也会一并删除。")
+    .then(() => delCompetitionapply(targetIds))
+    .then(() => {
+      getList();
+      proxy.$modal.msgSuccess("删除成功");
+    });
+}
+
 function handleExport() {
-  proxy.download('competition-apply/competitionapply/export', {
-    ...queryParams.value
-  }, `competitionapply_${new Date().getTime()}.xlsx`)
+  download(
+    "competition-apply/competitionapply/export",
+    queryParams.value,
+    `competitionapply_${new Date().getTime()}.xlsx`
+  );
 }
 
-getList()
+watch(
+  () => routeUuid.value,
+  (uuid) => {
+    loadRoutePdfPreview(uuid);
+  },
+  { immediate: true }
+);
+
+onBeforeUnmount(() => {
+  resetAttachmentState();
+  revokeRoutePreview();
+});
+
+getList();
 </script>
+
+<style scoped>
+.attach-card {
+  height: 100%;
+  min-height: 600px;
+  padding: 16px;
+  border: 1px solid #e5e7eb;
+  border-radius: 8px;
+  background: #f9fafb;
+}
+
+.upload-pane-content {
+  padding: 16px 8px;
+}
+
+.preview-box,
+.empty-preview-box {
+  margin-bottom: 16px;
+  border: 1px solid #dcdfe6;
+  border-radius: 4px;
+  overflow: hidden;
+  background: #f5f7fa;
+}
+
+.empty-preview-box {
+  height: 500px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: #606266;
+}
+
+.custom-file-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  padding: 12px 16px;
+  border: 1px solid #dcdfe6;
+  border-radius: 4px;
+  background: #f5f7fa;
+}
+
+.text-muted {
+  color: var(--el-text-color-secondary);
+}
+
+.file-name {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  align-items: center;
+}
+
+.file-name span {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  color: #1f2937;
+}
+
+.file-action {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.mb10 {
+  margin-bottom: 10px;
+}
+
+.mr5 {
+  margin-right: 5px;
+}
+
+:deep(.el-dialog__body) {
+  max-height: 80vh;
+  overflow-y: auto;
+  padding: 20px;
+}
+
+:deep(.hide-file-list .upload-file-list),
+:deep(.hide-file-list .el-upload-list) {
+  display: none;
+}
+
+:deep(.el-tabs--left) {
+  display: flex;
+}
+
+:deep(.el-tabs__nav-wrap) {
+  border-right: 1px solid #e5e7eb;
+}
+</style>

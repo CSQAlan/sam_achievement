@@ -58,4 +58,14 @@ public interface ISamStudentService
      * @return 结果
      */
     public int deleteSamStudentByStudentId(Long studentId);
+
+    /**
+     * 导入学生数据
+     *
+     * @param studentList 学生数据列表
+     * @param isUpdateSupport 是否更新支持，如果已存在，则进行更新数据
+     * @param operName 操作用户
+     * @return 结果
+     */
+    public String importStudent(List<SamStudent> studentList, Boolean isUpdateSupport, String operName);
 }
