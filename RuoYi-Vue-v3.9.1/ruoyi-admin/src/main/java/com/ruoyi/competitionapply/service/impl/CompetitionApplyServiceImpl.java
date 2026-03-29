@@ -17,6 +17,8 @@ import com.ruoyi.common.utils.DateUtils;
 import com.ruoyi.common.utils.SecurityUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
+import com.ruoyi.common.annotation.BizAudit;
+import com.ruoyi.common.enums.BizAuditOpType;
 import com.ruoyi.common.utils.StringUtils;
 import org.springframework.transaction.annotation.Transactional;
 import com.ruoyi.competition.domain.Competition;
@@ -368,6 +370,7 @@ public class CompetitionApplyServiceImpl implements ICompetitionApplyService
      */
     @Transactional
     @Override
+    @BizAudit(bizType = "competition_apply", bizName = "新增申请", opType = BizAuditOpType.ADD, handler = "competitionApplyBizAuditHandler", async = false)
     public int insertCompetitionApply(CompetitionApply competitionApply) {
         // 1. 自动填充用户/默认值（原有逻辑保留）
         SysUser currentUser = SecurityUtils.getLoginUser().getUser();
@@ -428,6 +431,7 @@ public class CompetitionApplyServiceImpl implements ICompetitionApplyService
      */
     @Transactional
     @Override
+    @BizAudit(bizType = "competition_apply", bizName = "修改申请", opType = BizAuditOpType.UPDATE, handler = "competitionApplyBizAuditHandler", async = false)
     public int updateCompetitionApply(CompetitionApply competitionApply)
     {
         // 1) 先查原记录：用于权限与状态判断
@@ -512,6 +516,7 @@ public class CompetitionApplyServiceImpl implements ICompetitionApplyService
      */
     @Transactional
     @Override
+    @BizAudit(bizType = "competition_apply", bizName = "批量删除申请", opType = BizAuditOpType.DELETE, handler = "competitionApplyBizAuditHandler", async = false)
     public int deleteCompetitionApplyByIds(Long[] ids)
     {
         // 仅允许删除自己的申请，且已通过的申请不允许删除
@@ -550,6 +555,7 @@ public class CompetitionApplyServiceImpl implements ICompetitionApplyService
      */
     @Transactional
     @Override
+    @BizAudit(bizType = "competition_apply", bizName = "删除申请", opType = BizAuditOpType.DELETE, handler = "competitionApplyBizAuditHandler", async = false)
     public int deleteCompetitionApplyById(Long id)
     {
         SysUser currentUser = SecurityUtils.getLoginUser().getUser();
@@ -613,6 +619,7 @@ public class CompetitionApplyServiceImpl implements ICompetitionApplyService
      */
     @Transactional
     @Override
+    @BizAudit(bizType = "competition_apply", bizName = "审核申请", opType = BizAuditOpType.UPDATE, handler = "competitionApplyBizAuditHandler", async = false)
     public int reviewCompetitionApply(Long id, String status, String auditRemark)
     {
         // 1) 参数校验：只允许 1(通过) 或 2(驳回)

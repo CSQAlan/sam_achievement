@@ -2,14 +2,14 @@
   <div class="reset">
     <el-form ref="resetRef" :model="resetForm" :rules="resetRules" class="reset-form">
       <h3 class="title">重置密码</h3>
-      
+
       <el-form-item prop="username">
         <el-input
-          v-model="resetForm.username"
-          type="text"
-          size="large"
-          auto-complete="off"
-          placeholder="请输入账号"
+            v-model="resetForm.username"
+            type="text"
+            size="large"
+            auto-complete="off"
+            placeholder="请输入账号"
         >
           <template #prefix><svg-icon icon-class="user" class="el-input__icon input-icon" /></template>
         </el-input>
@@ -17,37 +17,37 @@
 
       <el-form-item prop="password" v-show="resetForm.resetType != 'wechat'">
         <el-input
-          v-model="resetForm.password"
-          type="password"
-          size="large" 
-          auto-complete="off"
-          placeholder="密码"
-        
+            v-model="resetForm.password"
+            type="password"
+            size="large"
+            auto-complete="off"
+            placeholder="密码"
+
         >
           <template #prefix><svg-icon icon-class="password" class="el-input__icon input-icon" /></template>
         </el-input>
       </el-form-item>
       <el-form-item prop="confirmPassword" v-show="resetForm.resetType != 'wechat'">
         <el-input
-          v-model="resetForm.confirmPassword"
-          type="password"
-          size="large" 
-          auto-complete="off"
-          placeholder="确认密码"
-         
+            v-model="resetForm.confirmPassword"
+            type="password"
+            size="large"
+            auto-complete="off"
+            placeholder="确认密码"
+
         >
           <template #prefix><svg-icon icon-class="password" class="el-input__icon input-icon" /></template>
         </el-input>
       </el-form-item>
-      
+
       <!-- 邮箱重置 -->
       <el-form-item prop="email" v-show="resetForm.resetType === 'email'">
         <el-input
-          v-model="resetForm.email"
-          type="text"
-          size="large"
-          auto-complete="off"
-          placeholder="请输入QQ邮箱"
+            v-model="resetForm.email"
+            type="text"
+            size="large"
+            auto-complete="off"
+            placeholder="请输入QQ邮箱"
         >
           <template #prefix><svg-icon icon-class="email" class="el-input__icon input-icon" /></template>
         </el-input>
@@ -55,15 +55,15 @@
 
 
 
-      
+
       <!-- 手机重置 -->
       <el-form-item prop="phoneNumber"  v-show="resetForm.resetType === 'phone'">
         <el-input
-          v-model="resetForm.phoneNumber"
-          type="text"
-          size="large"
-          auto-complete="off"
-          placeholder="请输入手机号"
+            v-model="resetForm.phoneNumber"
+            type="text"
+            size="large"
+            auto-complete="off"
+            placeholder="请输入手机号"
         >
           <template #prefix><svg-icon icon-class="phone" class="el-input__icon input-icon" /></template>
         </el-input>
@@ -73,12 +73,12 @@
       <el-form-item prop="code" v-show="resetForm.resetType != 'wechat'">
         <div style="display: flex; justify-content: space-between; align-items: center;">
           <el-input
-            v-model="resetForm.code"
-            type="text"
-            size="large"
-            auto-complete="off"
-            placeholder="请输入验证码"
-            style="flex: 1; margin-right: 40px;" 
+              v-model="resetForm.code"
+              type="text"
+              size="large"
+              auto-complete="off"
+              placeholder="请输入验证码"
+              style="flex: 1; margin-right: 40px;"
           />
           <el-button @click="getCode" type="primary" size="large" :disabled="isGetCodeDisabled">
             <!--如果有倒计时（countDown > 0），显示秒数；否则显示原始文字 -->
@@ -86,7 +86,7 @@
           </el-button>
         </div>
       </el-form-item>
-    
+
       <el-form-item prop="resetType">
         <el-radio-group v-model="resetForm.resetType" @change="handleResetTypeChange">
           <el-radio label="email">QQ邮箱</el-radio>
@@ -94,7 +94,7 @@
           <el-radio label="wechat">微信重置</el-radio>
         </el-radio-group>
       </el-form-item>
-      
+
       <!-- 微信二维码展示 -->
       <div v-show="resetForm.resetType === 'wechat'" class="wechat-qrcode-section">
         <div class="qrcode-placeholder">
@@ -105,20 +105,20 @@
           <!-- 实际的二维码 -->
           <div class="qrcode-image" v-loading="qrCodeLoading">
             <vue-qr
-              :text="qrCodeUrl"
-              :size="200"
-              class="qrcode-img"
-              v-if="qrCodeUrl && !qrCodeLoading"
+                :text="qrCodeUrl"
+                :size="200"
+                class="qrcode-img"
+                v-if="qrCodeUrl && !qrCodeLoading"
             ></vue-qr>
             <div class="qrcode-placeholder-box" v-else-if="!qrCodeUrl && !qrCodeLoading">
               <p>请获取二维码</p>
             </div>
           </div>
-          <el-button 
-            type="primary" 
-            @click="getWechatQRCode"
-            :loading="qrCodeLoading"
-            v-if="(!qrCodeUrl || resetForm.resetType === 'wechat') && resetForm.resetType === 'wechat'"
+          <el-button
+              type="primary"
+              @click="getWechatQRCode"
+              :loading="qrCodeLoading"
+              v-if="(!qrCodeUrl || resetForm.resetType === 'wechat') && resetForm.resetType === 'wechat'"
           >
             {{ qrCodeUrl ? '刷新二维码' : '获取二维码' }}
           </el-button>
@@ -127,13 +127,13 @@
 
       <el-form-item style="width:100%;">
         <el-button
-          :loading="loading"
-          size="large"
-          type="primary"
-          style="width:100%;"
-          @click.prevent="handleReset"
-          v-show="resetForm.resetType !== 'wechat'"
-          :disabled="isResetBtnDisabled || loading"
+            :loading="loading"
+            size="large"
+            type="primary"
+            style="width:100%;"
+            @click.prevent="handleReset"
+            v-show="resetForm.resetType !== 'wechat'"
+            :disabled="isResetBtnDisabled || loading"
         >
           <span v-if="!loading">发送重置请求</span>
           <span v-else>发送中...</span>
@@ -184,34 +184,34 @@ const resetRules = computed(() => {
     username: [{ required: true, trigger: ["blur", "change"], message: "请输入您的账号" }],
 
     // 邮箱：仅当选择 email 方式时才校验
-    email: type === 'email' 
-      ? [
+    email: type === 'email'
+        ? [
           { required: true, trigger: ["blur", "change"], message: "请输入邮箱地址" },
           { type: "email", trigger: ["blur", "change"], message: "请输入正确的邮箱地址" }
-        ] 
-      : [], // 非 email 方式时，不校验
+        ]
+        : [], // 非 email 方式时，不校验
 
     // 手机号：仅当选择 phone 方式时才校验
-    phoneNumber: type === 'phone' 
-      ? [
+    phoneNumber: type === 'phone'
+        ? [
           { required: true, trigger: ["blur", "change"], message: "请输入手机号" },
           { pattern: /^1[3-9]\d{9}$/, message: "请输入正确的手机号格式", trigger: ["blur", "change"] }
-        ] 
-      : [], // 非 phone 方式时，不校验
+        ]
+        : [], // 非 phone 方式时，不校验
 
     // 验证码：仅当选择 email/phone 方式时才校验（微信不需要验证码）
-    code: type !== 'wechat' 
-      ? [{ required: true, trigger: ["blur", "change"], message: "请输入验证码" }] 
-      : [],
+    code: type !== 'wechat'
+        ? [{ required: true, trigger: ["blur", "change"], message: "请输入验证码" }]
+        : [],
 
     // 密码和确认密码：仅当选择 email/phone 方式时才校验（微信可能不需要密码输入）
-    password: type !== 'wechat' 
-      ? [{ required: true, trigger: ["blur", "change"], message: "请输入新密码" }] 
-      : [],
-    confirmPassword: type !== 'wechat' 
-      ? [
+    password: type !== 'wechat'
+        ? [{ required: true, trigger: ["blur", "change"], message: "请输入新密码" }]
+        : [],
+    confirmPassword: type !== 'wechat'
+        ? [
           { required: true, trigger: ["blur", "change"], message: "请确认新密码" },
-          { 
+          {
             validator: (rule, value, callback) => {
               if (value !== resetForm.value.password) {
                 callback(new Error("两次输入的密码不一致"));
@@ -221,8 +221,8 @@ const resetRules = computed(() => {
             },
             trigger: ["blur", "change"]
           }
-        ] 
-      : []
+        ]
+        : []
   };
 });
 
@@ -238,14 +238,14 @@ const isGetCodeDisabled = computed(() => {
 
   // 如果正在倒计时（countDown > 0），直接禁用
   if (countDown.value > 0) return true;
-  
+
   // 验证逻辑：先判断用户名是否为空（去空格避免纯空格的无效输入）
   if (!username.trim()) return true;
-  
+
   // 按重置类型判断对应字段是否为空
   if (resetType === 'email' && !email.trim()) return true;
   if (resetType === 'phone' && !phoneNumber.trim()) return true;
-  
+
   // 所有条件都满足时，按钮可点击（返回 false 表示不禁用）
   return false;
 });
@@ -274,15 +274,15 @@ const isResetBtnDisabled = computed(() => {
 function handleResetTypeChange(value) {
   // 清空表单验证
   proxy.$refs.resetRef.clearValidate()
-  
-  
+
+
 }
 
 //获取二维码
 function getWechatQRCode(){
   console.log("用户账号：", resetForm.value.username)
 
-  getConfirQrcode(resetForm.value.username).then(response => { 
+  getConfirQrcode(resetForm.value.username).then(response => {
     if(response.code == 200 && response.data){
       qrCodeUrl.value = response.data.qrcode
       qrCodeLoading.value = false
@@ -302,16 +302,16 @@ function getCode(){
       email: resetForm.value.email
     }
     sendCodeApi(params)
-     .then(res =>{
-      if(res.code == 200){
-        proxy.$modal.msgSuccess(res.msg )
-        // 启动 60 秒倒计时
-        startCountDown();
-      } else {
-        proxy.$modal.msgError(res.msg)
-      }
+        .then(res =>{
+          if(res.code == 200){
+            proxy.$modal.msgSuccess(res.msg )
+            // 启动 60 秒倒计时
+            startCountDown();
+          } else {
+            proxy.$modal.msgError(res.msg)
+          }
 
-     })
+        })
   }
   if(resetForm.value.resetType === 'phone'){
     console.log("获取验证码")
@@ -321,15 +321,15 @@ function getCode(){
       phone: resetForm.value.phoneNumber
     }
     sendCodePhoneApi(params)
-     .then(res =>{
-      if(res.code == 200){
-        proxy.$modal.msgSuccess(res.msg )
-        // 启动 60 秒倒计时
-        startCountDown();
-      }else {
-        proxy.$modal.msgError(res.msg)
-      }
-     })
+        .then(res =>{
+          if(res.code == 200){
+            proxy.$modal.msgSuccess(res.msg )
+            // 启动 60 秒倒计时
+            startCountDown();
+          }else {
+            proxy.$modal.msgError(res.msg)
+          }
+        })
   }
 }
 
@@ -358,7 +358,7 @@ function handleReset() {
     console.log("准备开始验证");
     if (valid) {
       console.log("开始验证");
-      
+
       loading.value = true;
 
       // 1. 准备验证码验证参数（包含账号、对应联系方式、验证码）
@@ -366,9 +366,9 @@ function handleReset() {
         username: resetForm.value.username,
         code: resetForm.value.code,
         // 补充：传邮箱/手机号（与验证码归属匹配，后端可能需要二次校验）
-        ...(resetForm.value.resetType === 'email' 
-          ? { email: resetForm.value.email } 
-          : { phoneNumber: resetForm.value.phoneNumber })
+        ...(resetForm.value.resetType === 'email'
+            ? { email: resetForm.value.email }
+            : { phoneNumber: resetForm.value.phoneNumber })
       };
 
       // 2. 选择对应的验证码验证接口
@@ -416,7 +416,7 @@ function handleReset() {
               getWechatQRCode();
             }
           });
-        // 3.2 验证码错误：提示并关闭加载
+          // 3.2 验证码错误：提示并关闭加载
         } else {
           loading.value = false;
           proxy.$modal.msgError(verifyRes.msg || "验证码错误或已过期，请重新输入");
@@ -469,28 +469,28 @@ function handleReset() {
 .wechat-qrcode-section {
   text-align: center;
   margin-bottom: 20px;
-  
+
   .qrcode-description {
     margin-bottom: 15px;
-    
+
     p {
       margin: 5px 0;
       color: #666;
     }
   }
-  
+
   .qrcode-image {
     display: flex;
     justify-content: center;
     align-items: center;
     min-height: 200px;
-    
+
     .qrcode-img {
       max-width: 100%;
       height: auto;
     }
   }
-  
+
   .qrcode-placeholder-box {
     border: 1px dashed #ddd;
     border-radius: 8px;
@@ -502,13 +502,13 @@ function handleReset() {
     flex-direction: column;
     justify-content: center;
     align-items: center;
-    
+
     .qrcode-icon {
       font-size: 48px;
       color: #1aad19;
       margin-bottom: 10px;
     }
-    
+
     p {
       color: #999;
       margin: 0;

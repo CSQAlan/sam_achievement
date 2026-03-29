@@ -24,6 +24,14 @@ public interface reviewedMapper
     public reviewed selectreviewedByAchievementId(String achievementId);
 
     /**
+     * 按成果ID批量查询成果审核信息
+     *
+     * @param achievementIds 成果ID集合
+     * @return 成果审核集合
+     */
+    public List<reviewed> selectreviewedByAchievementIds(@Param("achievementIds") String[] achievementIds);
+
+    /**
      * 查询成果审核列表
      *
      * @param reviewed 成果审核
@@ -95,7 +103,7 @@ public interface reviewedMapper
      * @param reviewStatus 状态值
      * @return 结果
      */
-    public int batchUpdateCollegeReviewStatus(@Param("achievementIds") String[] achievementIds, @Param("reviewStatus") Long reviewStatus);
+    public int batchUpdateCollegeReviewStatus(@Param("achievementIds") String[] achievementIds, @Param("reviewStatus") Long reviewStatus, @Param("rejectReason") String rejectReason, @Param("auditBy") String auditBy);
 
     /**
      * 批量更新校级审核状态
@@ -104,5 +112,5 @@ public interface reviewedMapper
      * @param reviewStatus 状态值
      * @return 结果
      */
-    public int batchUpdateSchoolReviewStatus(@Param("achievementIds") String[] achievementIds, @Param("reviewStatus") Long reviewStatus);
+    public int batchUpdateSchoolReviewStatus(@Param("achievementIds") String[] achievementIds, @Param("reviewStatus") Long reviewStatus, @Param("rejectReason") String rejectReason, @Param("auditBy") String auditBy);
 }
