@@ -547,34 +547,6 @@ const {
 } = proxy.useDict('achievement_category', 'group_type', 'award_rank', 'award_level_type')
 
 
-onMounted(() => {
-  const competitionId = route.query.competitionId
-  const competitionName = route.query.competitionName
-  
-  if (competitionId) {
-    // 根据竞赛ID加载成果
-    loadByCompetitionId(competitionId)
-    // 设置页面标题
-    title.value = `${competitionName} - 成果列表`
-  } else {
-    getList()
-  }
-})
-
-const loadByCompetitionId = (competitionId) => {
-  loading.value = true
-  listReimbursement({ 
-    competitionId: competitionId,
-    pageNum: queryParams.value.pageNum,
-    pageSize: queryParams.value.pageSize
-  }).then(response => {
-    ReimbursementList.value = response.rows
-    total.value = response.total
-    loading.value = false
-  })
-}
-
-
 // 页面加载时执行
 onMounted(() => {
   // 获取URL参数

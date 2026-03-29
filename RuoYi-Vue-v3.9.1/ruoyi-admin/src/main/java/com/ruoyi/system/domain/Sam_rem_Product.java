@@ -462,16 +462,6 @@ public class Sam_rem_Product extends BaseEntity
         this.samReimbursementItemsList = samReimbursementItemsList;
     }
 
-    /** 竞赛ID（用于查询，不是数据库字段） */
-    private Long competitionId;
-    
-    public Long getCompetitionId() {
-        return competitionId;
-    }
-    
-    public void setCompetitionId(Long competitionId) {
-        this.competitionId = competitionId;
-    }
 
     @Override
     public String toString() {
