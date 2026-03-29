@@ -2,6 +2,7 @@ package com.ruoyi.competition.mapper;
 
 import java.util.List;
 import com.ruoyi.competition.domain.Session;
+import org.apache.ibatis.annotations.Mapper;
 import org.apache.ibatis.annotations.Param;
 import com.ruoyi.competition.domain.Tag;
 
@@ -11,6 +12,7 @@ import com.ruoyi.competition.domain.Tag;
  * @author ruoyi
  * @date 2026-02-01
  */
+@Mapper
 public interface SessionMapper
 {
     /**

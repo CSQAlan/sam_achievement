@@ -13,8 +13,12 @@ import com.ruoyi.common.utils.ip.IpUtils;
 import com.ruoyi.common.utils.spring.SpringUtils;
 import com.ruoyi.system.domain.SysLogininfor;
 import com.ruoyi.system.domain.SysOperLog;
+import com.ruoyi.system.domain.BizAuditLog;
+import com.ruoyi.system.domain.BizAuditLogDetail;
 import com.ruoyi.system.service.ISysLogininforService;
 import com.ruoyi.system.service.ISysOperLogService;
+import com.ruoyi.system.service.IBizAuditLogService;
+import java.util.List;
 
 /**
  * 异步工厂（产生任务用）
@@ -96,6 +100,22 @@ public class AsyncFactory
                 // 远程查询操作地点
                 operLog.setOperLocation(AddressUtils.getRealAddressByIP(operLog.getOperIp()));
                 SpringUtils.getBean(ISysOperLogService.class).insertOperlog(operLog);
+            }
+        };
+    }
+
+    /**
+     * 高级业务审计日志记录
+     */
+    public static TimerTask recordBizAudit(final BizAuditLog auditLog, final List<BizAuditLogDetail> details)
+    {
+        return new TimerTask()
+        {
+            @Override
+            public void run()
+            {
+                auditLog.setOperLocation(AddressUtils.getRealAddressByIP(auditLog.getOperIp()));
+                SpringUtils.getBean(IBizAuditLogService.class).insertBizAuditLog(auditLog, details);
             }
         };
     }

@@ -45,6 +45,12 @@ public class reviewed extends BaseEntity
     @Excel(name = "团队名称")
     private String teamName;
 
+    /** 列表展示用：参赛选手（姓名+学号） */
+    private String contestant;
+
+    /** 列表展示用：指导老师（姓名+工号） */
+    private String instructor;
+
     /** 获奖级别 */
     @Excel(name = "获奖级别")
     private String level;
@@ -213,6 +219,26 @@ public class reviewed extends BaseEntity
     public String getTeamName() 
     {
         return teamName;
+    }
+
+    public void setContestant(String contestant)
+    {
+        this.contestant = contestant;
+    }
+
+    public String getContestant()
+    {
+        return contestant;
+    }
+
+    public void setInstructor(String instructor)
+    {
+        this.instructor = instructor;
+    }
+
+    public String getInstructor()
+    {
+        return instructor;
     }
 
     public void setLevel(String level) 
@@ -535,6 +561,8 @@ public class reviewed extends BaseEntity
             .append("category", getCategory())
             .append("name", getName())
             .append("teamName", getTeamName())
+            .append("contestant", getContestant())
+            .append("instructor", getInstructor())
             .append("level", getLevel())
             .append("grade", getGrade())
             .append("track", getTrack())

@@ -4,6 +4,7 @@
 .gradle
 /build/
 !gradle/wrapper/gradle-wrapper.jar
+node_modules/
 
 target/
 !.mvn/wrapper/maven-wrapper.jar
@@ -24,6 +25,7 @@ target/
 *.iws
 *.iml
 *.ipr
+.m2/
 
 ### JRebel ###
 rebel.xml
@@ -39,8 +41,35 @@ nbdist/
 ######################################################################
 # Others
 *.log
+*.out
+*.err
+*.pid
+*.pid.lock
 *.xml.versionsBackup
 *.swp
+.runtime-logs/
+logs/
+
+######################################################################
+# Backend common generated / packaged files
+*.jar
+*.war
+*.ear
+
+######################################################################
+# SQL files
+*.sql
+sql/
+
+######################################################################
+# Compressed archives
+*.zip
+*.tar
+*.tar.gz
+*.tgz
+*.gz
+*.7z
+*.rar
 
 !*/build/*.java
 !*/build/*.html

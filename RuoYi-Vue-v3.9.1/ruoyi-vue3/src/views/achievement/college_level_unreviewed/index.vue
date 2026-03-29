@@ -1,10 +1,5 @@
 <template>
-  <div class="flow-filter-wrapper">
-    <div class="flow-filter-bar">
-      <el-select v-model="flowValue" placeholder="流程筛选" style="width: 220px;" @change="handleFlowChange">
-        <el-option v-for="opt in flowOptions" :key="opt.value" :label="opt.label" :value="opt.value" />
-      </el-select>
-    </div>
+  <div>
     <ManageIndex
       :list-fn="listCollege_level_unreviewed"
       :get-fn="getCollege_level_unreviewed"
@@ -35,14 +30,7 @@ import {
 const { college_audit_status } = useDict('college_audit_status');
 
 const route = useRoute();
-const router = useRouter();
 
-const flowOptions = [
-  { label: '院级未审核', value: 'CollegeLevelUnreviewed' },
-  { label: '院级已审核', value: 'CollegeLevelReviewed' },
-  { label: '校级未审核', value: 'SchoolLevelUnreviewed' },
-  { label: '校级已审核', value: 'SchoolLevelReviewed' }
-];
 
 const flowValue = ref(route.name || 'CollegeLevelUnreviewed');
 
@@ -53,10 +41,7 @@ watch(
   }
 );
 
-function handleFlowChange(val) {
-  if (!val || val === route.name) return;
-  router.push({ name: val });
-}
+
 </script>
 
 <script>
@@ -64,3 +49,16 @@ export default {
   name: 'CollegeLevelUnreviewed'
 }
 </script>
+
+<style scoped>
+
+
+
+@media (max-width: 992px) {
+  .flow-filter-bar {
+    flex-wrap: wrap;
+  }
+
+
+}
+</style>

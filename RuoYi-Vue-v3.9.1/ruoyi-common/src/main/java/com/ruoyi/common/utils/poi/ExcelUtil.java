@@ -580,6 +580,17 @@ public class ExcelUtil<T>
         exportExcel(response);
     }
 
+    public void exportExcel(OutputStream outputStream, List<T> list, String sheetName)
+    {
+        exportExcel(outputStream, list, sheetName, StringUtils.EMPTY);
+    }
+
+    public void exportExcel(OutputStream outputStream, List<T> list, String sheetName, String title)
+    {
+        this.init(list, sheetName, title, Type.EXPORT);
+        exportExcel(outputStream);
+    }
+
     /**
      * 对list数据源将其里面的数据导入到excel表单
      * 
@@ -657,6 +668,24 @@ public class ExcelUtil<T>
      * 
      * @return 结果
      */
+    public void exportExcel(OutputStream outputStream)
+    {
+        try
+        {
+            writeSheet();
+            wb.write(outputStream);
+        }
+        catch (Exception e)
+        {
+            log.error("导出Excel异常{}", e.getMessage());
+            throw new UtilException("导出Excel失败，请联系网站管理员！");
+        }
+        finally
+        {
+            IOUtils.closeQuietly(wb);
+        }
+    }
+
     public AjaxResult exportExcel()
     {
         OutputStream out = null;
