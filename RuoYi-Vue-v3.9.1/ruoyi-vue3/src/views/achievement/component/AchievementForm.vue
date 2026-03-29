@@ -820,7 +820,19 @@ import { getCurrentInstance, ref, reactive, toRefs, computed, onMounted, onUnmou
 import { useRoute, onBeforeRouteLeave } from "vue-router";
 import Sortable from "sortablejs";
 import useUserStore from "@/store/modules/user";
-import { Plus, Delete, Document, Download, View, UploadFilled, Rank, InfoFilled } from "@element-plus/icons-vue";
+import {
+  Plus,
+  Delete,
+  Document,
+  Download,
+  View,
+  UploadFilled,
+  Rank,
+  InfoFilled,
+  Edit,
+  Search,
+  CircleCheck,
+} from "@element-plus/icons-vue";
 import{
   listStudent,
   getStudent,
@@ -829,8 +841,7 @@ import{
   updateStudent,
 } from "@/api/achievement/student";
 import { listTracks } from "@/api/achievement/manage";
-import { listStudent, addStudent } from "@/api/achievement/student";
-import { listTeacher, addTeacher } from "@/api/achievement/teacher";
+import { listTeacher, addTeacher, updateTeacher } from "@/api/achievement/teacher";
 import { listDept } from "@/api/system/dept";
 import { handleTree, blobValidate } from "@/utils/ruoyi";
 import request from "@/utils/request";
@@ -1312,19 +1323,6 @@ function findDeptPathByIds(nodes = [], ids = [], path = []) {
   return [];
 }
 
-function handleParticipantCascaderChange(value = []) {
-  const path = findDeptPathByIds(deptOptions.value, value);
-  participantForm.value.school = path[0]?.deptName || "";
-  participantForm.value.department = path[1]?.deptName || "";
-  participantForm.value.major = path[2]?.deptName || "";
-}
-
-function handleAdvisorCascaderChange(value = []) {
-  const path = findDeptPathByIds(deptOptions.value, value);
-  advisorForm.value.school = path[0]?.deptName || "";
-  advisorForm.value.department = path[1]?.deptName || "";
-}
-
 // 弹窗控制与提交逻辑
 
 const addParticipantVisible = ref(false);
@@ -1347,10 +1345,6 @@ function openAddParticipantDialog() {
 
 const addAdvisorVisible = ref(false);
 const isAdvisorNew = ref(false);
-const advisorSearchKeyword = ref("");
-const advisorDeptCascaderValue = ref([]);
-const teacherOptions = ref([]);
-const teacherSelectVisible = ref(false);
 const advisorForm = ref({ teacherId: '', teacherName: '', school: '', department: '' });
 const addAdvisorRules = {
   teacherId: [{ required: true, message: "工号不能为空", trigger: "blur" }],
@@ -1571,26 +1565,16 @@ function submitAddParticipant() {
         "class_name",
         "class_year",
       ]);
-      const pushToList = () => {
-        samAchievementParticipantList.value.push({
+      const finishAction = () => {
+        const itemData = {
+          id: participantForm.value.id, // 保持 ID 传递
           studentId: trimIfString(participantForm.value.studentId),
           studentName: trimIfString(participantForm.value.studentName),
           school: trimIfString(participantForm.value.school),
           department: trimIfString(participantForm.value.department),
           major: trimIfString(participantForm.value.major),
-          orderNo: samAchievementParticipantList.value.length + 1,
-          manager: samAchievementParticipantList.value.length === 0 ? 1 : 0,
-        });
-      const finishAction = () => {
-        const itemData = {
-          id: participantForm.value.id, // 保持 ID 传递
-          studentId: participantForm.value.studentId,
-          studentName: participantForm.value.studentName,
-          school: participantForm.value.school,
-          department: participantForm.value.department,
-          major: participantForm.value.major,
-          class_name: participantForm.value.class_name,
-          class_year: participantForm.value.class_year,
+          class_name: trimIfString(participantForm.value.class_name),
+          class_year: trimIfString(participantForm.value.class_year),
           isNewLocal: true
         };
 
@@ -1744,13 +1728,29 @@ const uploadUnlocked = reactive({
   award: false, notice: false, work: false, photo: false, payment: false, invoice: false, receipt: false
 });
 
+const previewUrls = reactive({
+  award: "",
+  notice: "",
+  work: {},
+  photo: {},
+  payment: "",
+  invoice: "",
+  receipt: "",
+});
+
+function revokePreviewUrl(url) {
+  if (url) {
+    window.URL.revokeObjectURL(url);
+  }
+}
+
 const exampleMap = {
   'award': '/image/扫描文件.pdf',   
   'notice': '/image/tongzhi.pdf',   
   'payment': '/image/jilu.pdf',     
   'invoice': '/image/fapiao.pdf',   
-  'work': '//image/zuopingzhaopian.pdf',
-  'photo': 'image/caisaizhaopian.pdf',
+  'work': '/image/zuopingzhaopian.pdf',
+  'photo': '/image/cansaizhaopian.pdf',
 };
 
 function handlePreUpload(type) {
@@ -1824,12 +1824,6 @@ async function getBlobErrorMessage(blob, fallback = "文件获取失败，请稍
   }
 }
 
-async function ensurePdfBlob(blob, fallback = "文件获取失败，请稍后重试") {
-  const blobData = blob?.data || blob;
-  if (!blobData) {
-    throw new Error(fallback);
-  }
-
 // 生成安全的本地预览流
 function loadSafePreview(uuid, type, index = null) {
   if (!uuid) return;
@@ -1895,17 +1889,9 @@ function syncMultiPreview(type, value) {
 
 watch(() => form.value.fileAward, (uuid) => loadSafePreview(uuid, 'award'));
 watch(() => form.value.fileNotice, (uuid) => loadSafePreview(uuid, 'notice'));
-watch(() => form.value.fileWork, (val) => {
-  const uuids = getFileList(val);
-  uuids.forEach(uuid => loadSafePreview(uuid, 'work'));
-}, { deep: true, immediate: true });
-watch(() => form.value.filePhoto, (val) => {
-  const uuids = getFileList(val);
-  uuids.forEach(uuid => loadSafePreview(uuid, 'photo'));
-}, { deep: true, immediate: true });
+watch(() => form.value.fileWork, (val) => syncMultiPreview('work', val), { deep: true, immediate: true });
+watch(() => form.value.filePhoto, (val) => syncMultiPreview('photo', val), { deep: true, immediate: true });
 watch(() => form.value.filePayment, (uuid) => loadSafePreview(uuid, 'payment'));
-watch(() => form.value.fileInvoice, (uuid) => loadSafePreview(uuid, 'invoice'));
-watch(() => form.value.fileReceiptCode, (uuid) => loadSafePreview(uuid, 'receipt'));watch(() => form.value.filePayment, (uuid) => loadSafePreview(uuid, 'payment'));
 watch(() => form.value.fileInvoice, (uuid) => loadSafePreview(uuid, 'invoice'));
 watch(() => form.value.fileReceiptCode, (uuid) => loadSafePreview(uuid, 'receipt'));
 
@@ -2434,7 +2420,8 @@ function submitForm() {
             if (trimmed) attachments.push({ type: type, fileUuid: trimmed, fileType: 1 });
           });
         }
-      };      pushFile(1, form.value.fileAward);
+      };
+      pushFile(1, form.value.fileAward);
       pushFile(2, form.value.fileNotice);
       pushFile(3, form.value.fileWork);
       pushFile(8, form.value.filePhoto);
@@ -2473,11 +2460,15 @@ function submitForm() {
           updateSnapshot();
           if (!isPageMode.value) visible.value = false;
           emit('ok');
+          resolve(true);
+        }).catch(() => {
+          resolve(false);
         });
       } else {
         proxy.$modal.msgError("未配置保存接口");
+        resolve(false);
       }
-    }
+    });
   });
 }
 
