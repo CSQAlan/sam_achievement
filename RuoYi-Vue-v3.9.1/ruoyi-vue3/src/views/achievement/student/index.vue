@@ -167,7 +167,9 @@
 </template>
 
 <script setup name="Student">
-import { listStudent, getStudent, delStudent, addStudent, updateStudent } from "@/api/student/student"
+//注释掉相关代码进行测试
+// import { listStudent, getStudent, delStudent, addStudent, updateStudent } from "@/api/student/student"
+import { listStudent, getStudent, delStudent, addStudent, updateStudent } from "@/api/achievement/student"
 
 const { proxy } = getCurrentInstance()
 

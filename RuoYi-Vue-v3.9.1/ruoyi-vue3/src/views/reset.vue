@@ -159,7 +159,7 @@ import { verifyCodePhoneApi } from "@/api/jsgl/sms";
 
 
 // 引入vue-qr组件
-import vueQr from 'vue-qr/src/packages/vue-qr.vue'
+import vueQr from 'vue-qr'
 import { set } from 'nprogress';
 
 const router = useRouter()

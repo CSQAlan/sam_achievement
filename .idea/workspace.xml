@@ -6,13 +6,13 @@
   <component name="ChangeListManager">
     <list default="true" id="b204d056-52b8-4d02-915a-97d1bc9b8c13" name="Changes" comment="">
       <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/RuoYi-Vue-v3.9.1/ruoyi-admin/src/main/java/com/ruoyi/system/domain/SamReimbursementRatio.java" beforeDir="false" afterPath="$PROJECT_DIR$/RuoYi-Vue-v3.9.1/ruoyi-admin/src/main/java/com/ruoyi/system/domain/SamReimbursementRatio.java" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/RuoYi-Vue-v3.9.1/ruoyi-admin/src/main/resources/application.yml" beforeDir="false" afterPath="$PROJECT_DIR$/RuoYi-Vue-v3.9.1/ruoyi-admin/src/main/resources/application.yml" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/RuoYi-Vue-v3.9.1/ruoyi-admin/src/main/resources/application-druid.yml" beforeDir="false" afterPath="$PROJECT_DIR$/RuoYi-Vue-v3.9.1/ruoyi-admin/src/main/resources/application-druid.yml" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/RuoYi-Vue-v3.9.1/ruoyi-vue3/package-lock.json" beforeDir="false" afterPath="$PROJECT_DIR$/RuoYi-Vue-v3.9.1/ruoyi-vue3/package-lock.json" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/RuoYi-Vue-v3.9.1/ruoyi-vue3/package.json" beforeDir="false" afterPath="$PROJECT_DIR$/RuoYi-Vue-v3.9.1/ruoyi-vue3/package.json" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/RuoYi-Vue-v3.9.1/ruoyi-vue3/src/router/index.js" beforeDir="false" afterPath="$PROJECT_DIR$/RuoYi-Vue-v3.9.1/ruoyi-vue3/src/router/index.js" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/RuoYi-Vue-v3.9.1/ruoyi-vue3/src/views/system/SamQualityDevelopmentForm/index.vue" beforeDir="false" afterPath="$PROJECT_DIR$/RuoYi-Vue-v3.9.1/ruoyi-vue3/src/views/system/SamQualityDevelopmentForm/index.vue" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/RuoYi-Vue-v3.9.1/ruoyi-vue3/src/views/achievement/student/index.vue" beforeDir="false" afterPath="$PROJECT_DIR$/RuoYi-Vue-v3.9.1/ruoyi-vue3/src/views/achievement/student/index.vue" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/RuoYi-Vue-v3.9.1/ruoyi-vue3/src/views/reset.vue" beforeDir="false" afterPath="$PROJECT_DIR$/RuoYi-Vue-v3.9.1/ruoyi-vue3/src/views/reset.vue" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/RuoYi-Vue-v3.9.1/ruoyi-vue3/src/views/system/SamReimbursementItems/index.vue" beforeDir="false" afterPath="$PROJECT_DIR$/RuoYi-Vue-v3.9.1/ruoyi-vue3/src/views/system/SamReimbursementItems/index.vue" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/RuoYi-Vue-v3.9.1/ruoyi-vue3/src/views/system/SamReimbursementRatio/index.vue" beforeDir="false" afterPath="$PROJECT_DIR$/RuoYi-Vue-v3.9.1/ruoyi-vue3/src/views/system/SamReimbursementRatio/index.vue" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/RuoYi-Vue-v3.9.1/sql/ruoyi-cg.sql" beforeDir="false" afterPath="$PROJECT_DIR$/RuoYi-Vue-v3.9.1/sql/ruoyi-cg.sql" afterDir="false" />
     </list>
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
@@ -30,24 +30,25 @@
     <option name="hideEmptyMiddlePackages" value="true" />
     <option name="showLibraryContents" value="true" />
   </component>
-  <component name="PropertiesComponent"><![CDATA[{
-  "keyToString": {
-    "ModuleVcsDetector.initialDetectionPerformed": "true",
-    "RunOnceActivity.ShowReadmeOnStart": "true",
-    "RunOnceActivity.TerminalTabsStorage.copyFrom.TerminalArrangementManager": "true",
-    "RunOnceActivity.git.unshallow": "true",
-    "git-widget-placeholder": "luo",
-    "ignore.virus.scanning.warn.message": "true",
-    "last_opened_file_path": "D:/各种作业/ruo",
-    "node.js.detected.package.eslint": "true",
-    "node.js.detected.package.tslint": "true",
-    "node.js.selected.package.eslint": "(autodetect)",
-    "node.js.selected.package.tslint": "(autodetect)",
-    "nodejs_package_manager_path": "npm",
-    "settings.editor.selected.configurable": "project.propCompiler",
-    "vue.rearranger.settings.migration": "true"
+  <component name="PropertiesComponent">{
+  &quot;keyToString&quot;: {
+    &quot;ModuleVcsDetector.initialDetectionPerformed&quot;: &quot;true&quot;,
+    &quot;RunOnceActivity.ShowReadmeOnStart&quot;: &quot;true&quot;,
+    &quot;RunOnceActivity.TerminalTabsStorage.copyFrom.TerminalArrangementManager&quot;: &quot;true&quot;,
+    &quot;RunOnceActivity.git.unshallow&quot;: &quot;true&quot;,
+    &quot;git-widget-placeholder&quot;: &quot;luo&quot;,
+    &quot;ignore.virus.scanning.warn.message&quot;: &quot;true&quot;,
+    &quot;last_opened_file_path&quot;: &quot;D:/各种作业/ruo&quot;,
+    &quot;node.js.detected.package.eslint&quot;: &quot;true&quot;,
+    &quot;node.js.detected.package.tslint&quot;: &quot;true&quot;,
+    &quot;node.js.selected.package.eslint&quot;: &quot;(autodetect)&quot;,
+    &quot;node.js.selected.package.tslint&quot;: &quot;(autodetect)&quot;,
+    &quot;nodejs_package_manager_path&quot;: &quot;npm&quot;,
+    &quot;settings.editor.selected.configurable&quot;: &quot;project.propCompiler&quot;,
+    &quot;ts.external.directory.path&quot;: &quot;D:\\Program Files\\JetBrains\\IntelliJ IDEA 2025.1.7\\plugins\\javascript-plugin\\jsLanguageServicesImpl\\external&quot;,
+    &quot;vue.rearranger.settings.migration&quot;: &quot;true&quot;
   }
-}]]></component>
+}</component>
   <component name="SharedIndexes">
     <attachedChunks>
       <set>
@@ -67,10 +68,25 @@
       <workItem from="1768898036967" duration="649000" />
       <workItem from="1772271476240" duration="3659000" />
       <workItem from="1773572156646" duration="15566000" />
+      <workItem from="1773650482340" duration="4480000" />
+      <workItem from="1773669115667" duration="8433000" />
+      <workItem from="1774252311680" duration="12590000" />
+      <workItem from="1774680542906" duration="170000" />
     </task>
     <servers />
   </component>
   <component name="TypeScriptGeneratedFilesManager">
     <option name="version" value="3" />
+  </component>
+  <component name="XDebuggerManager">
+    <breakpoint-manager>
+      <breakpoints>
+        <line-breakpoint enabled="true" type="javascript">
+          <url>file://$PROJECT_DIR$/RuoYi-Vue-v3.9.1/ruoyi-vue3/src/views/reset.vue</url>
+          <line>121</line>
+          <option name="timeStamp" value="1" />
+        </line-breakpoint>
+      </breakpoints>
+    </breakpoint-manager>
   </component>
 </project>
