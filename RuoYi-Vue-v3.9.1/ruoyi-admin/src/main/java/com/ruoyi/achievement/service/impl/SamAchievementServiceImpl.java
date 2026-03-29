@@ -4,6 +4,7 @@ import java.util.Calendar;
 import java.util.List;
 import java.util.ArrayList;
 import java.util.Map;
+import java.util.HashMap;
 import com.ruoyi.common.utils.DateUtils;
 import com.ruoyi.common.utils.StringUtils;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -19,6 +20,7 @@ import com.ruoyi.achievement.service.ISamAchievementService;
 import com.ruoyi.achievement.service.ISamStudentService;
 import com.ruoyi.achievement.service.ISamTeacherService;
 import com.ruoyi.achievement.mapper.FileUuidMapper;
+import com.ruoyi.common.constant.UserConstants;
 import com.ruoyi.common.exception.ServiceException;
 
 /**
@@ -86,6 +88,16 @@ public class SamAchievementServiceImpl implements ISamAchievementService
         return samAchievementMapper.selectSamAchievementListByTeacherId(samAchievement);
     }
 
+    @Override
+    public List<SamAchievement> selectSamAchievementListByUserId(SamAchievement samAchievement)
+    {
+        // 验证用户ID
+        if (samAchievement.getParams() == null || StringUtils.isEmpty((String) samAchievement.getParams().get("userId"))) {
+            throw new ServiceException("用户ID不能为空");
+        }
+        return samAchievementMapper.selectSamAchievementListByUserId(samAchievement);
+    }
+
     /**
      * 新增成果录入
      * 
@@ -109,9 +121,30 @@ public class SamAchievementServiceImpl implements ISamAchievementService
             samAchievement.setYear((long) cal.get(Calendar.YEAR));
         }
 
+        // 4. 设置所属学院 (选取参赛选手第一个负责人的所属学院)
+        if (samAchievement.getSamAchievementParticipantList() != null) {
+            for (SamAchievementParticipant participant : samAchievement.getSamAchievementParticipantList()) {
+                if ("1".equals(participant.getManager())) {
+                    // 如果前端传了学院信息，直接使用
+                    if (StringUtils.isNotEmpty(participant.getSchool())) {
+                        samAchievement.setOwnerDepId(participant.getSchool());
+                    } else if (StringUtils.isNotEmpty(participant.getStudentId())) {
+                        // 如果前端没传，根据学号查档案
+                        SamStudent query = new SamStudent();
+                        query.setNo(participant.getStudentId());
+                        List<SamStudent> students = samStudentService.selectSamStudentList(query);
+                        if (students != null && !students.isEmpty() && StringUtils.isNotEmpty(students.get(0).getSchool())) {
+                            samAchievement.setOwnerDepId(students.get(0).getSchool());
+                        }
+                    }
+                    break;
+                }
+            }
+        }
+
         samAchievement.setCreateTime(DateUtils.getNowDate());
 
-        // 4. 插入主表
+        // 5. 插入主表
         int rows = samAchievementMapper.insertSamAchievement(samAchievement);
 
         // 5. 处理参赛选手 (包含自动补录学生档案)
@@ -249,6 +282,11 @@ public class SamAchievementServiceImpl implements ISamAchievementService
             throw new ServiceException("证书编号不能为空");
         }
 
+        // 校验证书编号唯一性
+        if (!checkCertificateNoUnique(samAchievement)) {
+            throw new ServiceException("证书编号'" + samAchievement.getCertificateNo() + "'已存在");
+        }
+
         // 验证参赛选手列表
         List<SamAchievementParticipant> participants = samAchievement.getSamAchievementParticipantList();
         if (participants == null || participants.isEmpty()) {
@@ -279,6 +317,22 @@ public class SamAchievementServiceImpl implements ISamAchievementService
     }
 
     /**
+     * 校验证书编号是否唯一
+     *
+     * @param samAchievement 成果信息
+     * @return 结果
+     */
+    @Override
+    public boolean checkCertificateNoUnique(SamAchievement samAchievement) {
+        String achievementId = StringUtils.isEmpty(samAchievement.getAchievementId()) ? "-1" : samAchievement.getAchievementId();
+        SamAchievement info = samAchievementMapper.checkCertificateNoUnique(samAchievement.getCertificateNo(), samAchievement.getCompetitionId());
+        if (StringUtils.isNotNull(info) && !info.getAchievementId().equals(achievementId)) {
+            return UserConstants.NOT_UNIQUE;
+        }
+        return UserConstants.UNIQUE;
+    }
+
+    /**
      * 附件处理逻辑：
      * 1. 将关联的 UUID 在 sys_file_uuid 表中标记为正式 (is_temp = 0)
      * 2. 将附件关联关系存入 sam_achievement_attachment 表
@@ -292,17 +346,26 @@ public class SamAchievementServiceImpl implements ISamAchievementService
             List<Map<String, Object>> insertList = new ArrayList<>();
 
             for (Map<String, Object> attachment : attachments) {
-                String uuid = (String) attachment.get("fileUuid");
-                if (StringUtils.isNotEmpty(uuid)) {
-                    uuids.add(uuid);
+                String uuidStr = (String) attachment.get("fileUuid");
+                if (StringUtils.isNotEmpty(uuidStr)) {
+                    // 支持以逗号分隔的多个 UUID (主要用于作品附件等)
+                    String[] splitUuids = uuidStr.split(",");
+                    for (String uuid : splitUuids) {
+                        uuid = uuid.trim();
+                        if (StringUtils.isNotEmpty(uuid)) {
+                            uuids.add(uuid);
 
-                    // 补全附件表所需字段
-                    attachment.put("achievementId", achievementId);
-                    // 如果前端没传 fileType，这里给个默认值
-                    if (attachment.get("fileType") == null) {
-                        attachment.put("fileType", 1);
+                            // 构造新的附件记录
+                            Map<String, Object> newAttachment = new HashMap<>();
+                            newAttachment.put("achievementId", achievementId);
+                            newAttachment.put("fileUuid", uuid);
+                            newAttachment.put("type", attachment.get("type"));
+                            // 如果前端没传 fileType，这里给个默认值
+                            newAttachment.put("fileType", attachment.get("fileType") != null ? attachment.get("fileType") : 1);
+                            
+                            insertList.add(newAttachment);
+                        }
                     }
-                    insertList.add(attachment);
                 }
             }
 
@@ -341,6 +404,7 @@ public class SamAchievementServiceImpl implements ISamAchievementService
 
                 // 3. 补全基础字段
                 participant.setCreateBy(samAchievement.getCreateBy());
+                participant.setUpdateBy(samAchievement.getCreateBy());
                 participant.setCreateTime(DateUtils.getNowDate());
                 participant.setUpdateTime(DateUtils.getNowDate());
                 participant.setDelFlag(0L);
@@ -378,7 +442,10 @@ public class SamAchievementServiceImpl implements ISamAchievementService
                 advisor.setAchievementId(achievementId);
                 advisor.setAdvisorId(null);
                 advisor.setCreateBy(samAchievement.getCreateBy());
+                advisor.setUpdateBy(samAchievement.getCreateBy());
                 advisor.setCreateTime(DateUtils.getNowDate());
+                advisor.setUpdateTime(DateUtils.getNowDate());
+                advisor.setDelFlag(0L);
 
                 // 核心兼容：如果前端传的是 teacherId 而非 teacherNo，进行补位
                 if (StringUtils.isEmpty(advisor.getTeacherNo()) && StringUtils.isNotEmpty(advisor.getTeacherId())) {
@@ -485,5 +552,18 @@ public class SamAchievementServiceImpl implements ISamAchievementService
         samAchievementMapper.deleteSamAchievementAdvisorByAchievementId(achievementId);
         samAchievementMapper.deleteSamAchievementAttachmentByAchievementId(achievementId);
         return samAchievementMapper.deleteSamAchievementByAchievementId(achievementId);
+    }
+
+    /**
+     * 根据比赛和届次查询已有的赛道列表
+     *
+     * @param competitionId 比赛ID
+     * @param sessionId 届次ID
+     * @return 赛道列表
+     */
+    @Override
+    public List<String> selectTrackList(Long competitionId, Long sessionId)
+    {
+        return samAchievementMapper.selectTrackList(competitionId, sessionId);
     }
 }

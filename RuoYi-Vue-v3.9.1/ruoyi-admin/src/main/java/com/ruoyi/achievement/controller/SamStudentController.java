@@ -12,6 +12,7 @@ import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.multipart.MultipartFile;
 import com.ruoyi.common.annotation.Log;
 import com.ruoyi.common.core.controller.BaseController;
 import com.ruoyi.common.core.domain.AjaxResult;
@@ -37,7 +38,7 @@ public class SamStudentController extends BaseController
     /**
      * 查询学生档案列表
      */
-    @PreAuthorize("@ss.hasPermi('student:student:list')")
+    @PreAuthorize("@ss.hasAnyPermi('student:student:list,achievement:manage:list,achievement:manage:participated:list,achievement:manage:guided:list')")
     @GetMapping("/list")
     public TableDataInfo list(SamStudent samStudent)
     {
@@ -59,10 +60,29 @@ public class SamStudentController extends BaseController
         util.exportExcel(response, list, "学生档案数据");
     }
 
+    @Log(title = "学生管理", businessType = BusinessType.IMPORT)
+    @PreAuthorize("@ss.hasPermi('student:student:import')")
+    @PostMapping("/importData")
+    public AjaxResult importData(MultipartFile file, boolean updateSupport) throws Exception
+    {
+        ExcelUtil<SamStudent> util = new ExcelUtil<SamStudent>(SamStudent.class);
+        List<SamStudent> studentList = util.importExcel(file.getInputStream());
+        String operName = getUsername();
+        String message = samStudentService.importStudent(studentList, updateSupport, operName);
+        return success(message);
+    }
+
+    @PostMapping("/importTemplate")
+    public void importTemplate(HttpServletResponse response)
+    {
+        ExcelUtil<SamStudent> util = new ExcelUtil<SamStudent>(SamStudent.class);
+        util.importTemplateExcel(response, "学生数据");
+    }
+
     /**
      * 获取学生档案详细信息
      */
-    @PreAuthorize("@ss.hasPermi('student:student:query')")
+    @PreAuthorize("@ss.hasAnyPermi('student:student:query,achievement:manage:list,achievement:manage:participated:list,achievement:manage:guided:list')")
     @GetMapping(value = "/{studentId}")
     public AjaxResult getInfo(@PathVariable("studentId") Long studentId)
     {
@@ -72,7 +92,7 @@ public class SamStudentController extends BaseController
     /**
      * 新增学生档案
      */
-    @PreAuthorize("@ss.hasPermi('student:student:add')")
+    @PreAuthorize("@ss.hasAnyPermi('student:student:add,achievement:manage:list,achievement:manage:participated:list,achievement:manage:guided:list')")
     @Log(title = "学生档案", businessType = BusinessType.INSERT)
     @PostMapping
     public AjaxResult add(@RequestBody SamStudent samStudent)
