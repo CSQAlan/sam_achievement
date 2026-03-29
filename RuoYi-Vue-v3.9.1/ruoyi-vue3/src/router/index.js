@@ -182,7 +182,23 @@ export const dynamicRoutes = [
   name: 'ReimbursementAchievement',
   hidden: true,
   meta: { title: '关联成果', icon: 'list' }
+},
+
+{
+  path: '/reimbursement',
+  component: Layout,
+  hidden: false,
+  children: [
+    {
+      path: '/reimbursement/Reimbursement',
+      name: 'Reimbursement',
+      component: () => import('@/views/system/Reimbursement/index'),
+      meta: { title: '报销项目详情', icon: 'list', noCache: false }
+    }
+  ]
 }
+
+
 ]
 
 const router = createRouter({
