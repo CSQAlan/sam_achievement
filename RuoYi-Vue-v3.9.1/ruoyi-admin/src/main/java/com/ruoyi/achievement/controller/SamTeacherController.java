@@ -12,6 +12,7 @@ import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.multipart.MultipartFile;
 import com.ruoyi.common.annotation.Log;
 import com.ruoyi.common.core.controller.BaseController;
 import com.ruoyi.common.core.domain.AjaxResult;
@@ -68,6 +69,25 @@ public class SamTeacherController extends BaseController
         List<SamTeacher> list = samTeacherService.selectSamTeacherList(samTeacher);
         ExcelUtil<SamTeacher> util = new ExcelUtil<SamTeacher>(SamTeacher.class);
         util.exportExcel(response, list, "教师档案数据");
+    }
+
+    @Log(title = "教师管理", businessType = BusinessType.IMPORT)
+    @PreAuthorize("@ss.hasPermi('achievement:teacher:import')")
+    @PostMapping("/importData")
+    public AjaxResult importData(MultipartFile file, boolean updateSupport) throws Exception
+    {
+        ExcelUtil<SamTeacher> util = new ExcelUtil<SamTeacher>(SamTeacher.class);
+        List<SamTeacher> teacherList = util.importExcel(file.getInputStream());
+        String operName = getUsername();
+        String message = samTeacherService.importTeacher(teacherList, updateSupport, operName);
+        return success(message);
+    }
+
+    @PostMapping("/importTemplate")
+    public void importTemplate(HttpServletResponse response)
+    {
+        ExcelUtil<SamTeacher> util = new ExcelUtil<SamTeacher>(SamTeacher.class);
+        util.importTemplateExcel(response, "教师数据");
     }
 
     /**

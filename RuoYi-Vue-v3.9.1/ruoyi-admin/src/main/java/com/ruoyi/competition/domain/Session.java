@@ -1,4 +1,4 @@
-package com.ruoyi.session.domain;
+package com.ruoyi.competition.domain;
 
 import org.apache.commons.lang3.builder.ToStringBuilder;
 import org.apache.commons.lang3.builder.ToStringStyle;
@@ -62,10 +62,18 @@ public class Session extends BaseEntity
     // ====================== 状态 ======================
     private String status;
     private String delFlag;
-    
-    /** 比赛通知文件UUID */
+
+    /** 新增：year年份和uuid（对应每一个届次的参赛通知附件uuid） */
     private String uuid;
 
+    /** 年份：允许为空；新增时后端默认当前年 */
+    private Integer year;
+
+    /**
+     * 复制模板用：模板届次ID（不入库）
+     * 前端“复制模板”新增时传入，用于后端校验必须重新上传通知（uuid不能复用模板uuid）。
+     */
+    private Long templateSessionId;
     // ====================== getter/setter 完整实现 ======================
     public Long getId() {return id;}
     public void setId(Long id) {this.id = id;}
@@ -97,9 +105,6 @@ public class Session extends BaseEntity
     public String getDelFlag() {return delFlag;}
     public void setDelFlag(String delFlag) {this.delFlag = delFlag;}
 
-    public String getUuid() {return uuid;}
-    public void setUuid(String uuid) {this.uuid = uuid;}
-
     // 导入专用字段getter/setter
     public String getCategoryImport() {return categoryImport;}
     public void setCategoryImport(String categoryImport) {this.categoryImport = categoryImport;}
@@ -127,5 +132,31 @@ public class Session extends BaseEntity
                 .append("tagsList", getTagsList())
                 .append("delFlag", getDelFlag())
                 .toString();
+    }
+
+    public String getUuid() {
+        return uuid;
+    }
+
+    public void setUuid(String uuid) {
+        this.uuid = uuid;
+    }
+
+    public Integer getYear() {
+        return year;
+    }
+
+    public void setYear(Integer year) {
+        this.year = year;
+    }
+
+    public Long getTemplateSessionId()
+    {
+        return templateSessionId;
+    }
+
+    public void setTemplateSessionId(Long templateSessionId)
+    {
+        this.templateSessionId = templateSessionId;
     }
 }

@@ -1,7 +1,7 @@
-package com.ruoyi.session.service;
+package com.ruoyi.competition.service;
 
 import java.util.List;
-import com.ruoyi.session.domain.Session;
+import com.ruoyi.competition.domain.Session;
 
 /**
  * 赛事届次Service接口
@@ -58,6 +58,23 @@ public interface ISessionService
      * @return 结果（1=成功，0=失败）
      */
     public int deleteSessionById(Long id);
+
+    /**
+     * 批量更新届次状态（用于预录批量启用）
+     *
+     * @param ids 届次ID集合
+     * @param status 状态（0停用/1启用/2预录）
+     * @return 结果
+     */
+    public int updateSessionStatusByIds(Long[] ids, String status);
+
+    /**
+     * 批量复制届次模板（勾选多条模板记录；每条必须重新上传参赛通知PDF，生成预录状态）
+     *
+     * @param items 待复制条目（至少包含templateSessionId/year/session/uuid）
+     * @return 新增条数
+     */
+    public int batchCopyFromTemplates(List<Session> items);
 
     /**
      * 批量导入赛事届次数据

@@ -1,23 +1,28 @@
-package com.ruoyi.session.service.impl;
+package com.ruoyi.competition.service.impl;
 
 import java.util.ArrayList;
 import java.util.Collections;
+import java.util.HashSet;
 import java.util.List;
+import java.util.Set;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.util.CollectionUtils;
+import com.ruoyi.achievement.domain.FileUuid;
+import com.ruoyi.achievement.mapper.FileUuidMapper;
 import com.ruoyi.common.exception.ServiceException;
 import com.ruoyi.common.utils.DateUtils;
 import com.ruoyi.common.utils.SecurityUtils;
+import com.ruoyi.common.utils.StringUtils;
 import com.ruoyi.competition.domain.Competition;
 import com.ruoyi.competition.service.ICompetitionService;
-import com.ruoyi.session.mapper.SessionMapper;
-import com.ruoyi.session.domain.Session;
-import com.ruoyi.session.service.ISessionService;
-import com.ruoyi.session.domain.Tag;
+import com.ruoyi.competition.mapper.SessionMapper;
+import com.ruoyi.competition.domain.Session;
+import com.ruoyi.competition.service.ISessionService;
+import com.ruoyi.competition.domain.Tag;
 import com.ruoyi.common.core.domain.entity.SysDictData;
 import com.ruoyi.system.service.ISysDictDataService;
 
@@ -40,6 +45,55 @@ public class SessionServiceImpl implements ISessionService {
     @Autowired
     private ISysDictDataService sysDictDataService;
 
+    @Autowired
+    private FileUuidMapper fileUuidMapper;
+
+    private int resolveYear(Integer year) {
+        if (year != null && year > 0) {
+            return year;
+        }
+        return java.time.LocalDate.now().getYear();
+    }
+
+    private void validateAndFinalizeNoticeUuid(String uuid) {
+        if (StringUtils.isBlank(uuid)) {
+            throw new ServiceException("参赛通知附件不能为空，请上传PDF通知文件");
+        }
+        FileUuid fileRecord = fileUuidMapper.selectFileUuidById(uuid);
+        if (fileRecord == null || StringUtils.isBlank(fileRecord.getOriginName())) {
+            throw new ServiceException("参赛通知附件无效，请重新上传");
+        }
+        String originName = fileRecord.getOriginName().trim().toLowerCase();
+        if (!originName.endsWith(".pdf")) {
+            throw new ServiceException("参赛通知仅支持PDF文件，请重新上传");
+        }
+        fileUuidMapper.updateFileUuidStatus(new String[] { uuid }, 0);
+    }
+
+    private void syncTagsToSubTable(Long sessionId, String tagsCode, String operName) {
+        sessionMapper.deleteTagBySessionId(sessionId);
+        if (StringUtils.isBlank(tagsCode)) {
+            return;
+        }
+        String[] tagArray = tagsCode.split(",");
+        List<Tag> tagList = new ArrayList<>();
+        for (String tagValue : tagArray) {
+            if (StringUtils.isBlank(tagValue)) {
+                continue;
+            }
+            Tag tag = new Tag();
+            tag.setCompetitionSessionId(sessionId);
+            tag.setTagName(tagValue.trim());
+            tag.setCreateBy(operName);
+            tag.setCreateTime(DateUtils.getNowDate());
+            tag.setDelFlag("0");
+            tagList.add(tag);
+        }
+        if (!tagList.isEmpty()) {
+            sessionMapper.batchInsertTag(tagList);
+        }
+    }
+
     // ========== 原有方法：完整保留 ==========
     @Override
     public Session selectSessionById(Long id) {
@@ -61,8 +115,32 @@ public class SessionServiceImpl implements ISessionService {
     @Transactional(rollbackFor = Exception.class)
     @Override
     public int insertSession(Session session) {
+        // year：默认当前年
+        session.setYear(resolveYear(session.getYear()));
+        // uuid：必填且必须为PDF
+        validateAndFinalizeNoticeUuid(session.getUuid());
+
+        // 复制模板：默认预录(2)，并强制重新上传通知（uuid不能复用模板uuid）
+        if (session.getTemplateSessionId() != null)
+        {
+            Session template = sessionMapper.selectSessionById(session.getTemplateSessionId());
+            if (template == null)
+            {
+                throw new ServiceException("模板届次不存在，请刷新后重试");
+            }
+            if (StringUtils.isNotBlank(template.getUuid()) && StringUtils.equals(template.getUuid(), session.getUuid()))
+            {
+                throw new ServiceException("复制模板必须重新上传参赛通知（不能复用模板通知）");
+            }
+            session.setStatus("2");
+        }
+
         session.setCreateTime(DateUtils.getNowDate());
-        return sessionMapper.insertSession(session);
+        int result = sessionMapper.insertSession(session);
+        if (result > 0 && session.getId() != null) {
+            syncTagsToSubTable(session.getId(), session.getTags(), SecurityUtils.getUsername());
+        }
+        return result;
     }
 
     @Transactional(rollbackFor = Exception.class)
@@ -71,6 +149,11 @@ public class SessionServiceImpl implements ISessionService {
         if (session.getId() == null) {
             throw new ServiceException("修改届次必须传入主键ID！");
         }
+        // year：为空则默认当前年（避免被更新成null）
+        session.setYear(resolveYear(session.getYear()));
+        // uuid：必填且必须为PDF
+        validateAndFinalizeNoticeUuid(session.getUuid());
+
         session.setUpdateTime(DateUtils.getNowDate());
         int updateCount = sessionMapper.updateSession(session);
         // 关键：校验是否真的更新了记录
@@ -78,32 +161,8 @@ public class SessionServiceImpl implements ISessionService {
             throw new ServiceException("届次记录不存在或已被删除，无法修改！");
         }
 
-        // ========== 新增：同步更新标签子表 ==========
-        Long sessionId = session.getId();
-        String tagsCode = session.getTags(); // 拿到修改后的标签编码
-
-        // 1. 先删除该届次下所有旧标签
-        sessionMapper.deleteTagBySessionId(sessionId);
-
-        // 2. 插入新标签（和导入逻辑保持一致）
-        if (tagsCode != null && !tagsCode.trim().isEmpty()) {
-            String[] tagArray = tagsCode.split(",");
-            List<Tag> tagList = new ArrayList<>();
-            String operName = SecurityUtils.getUsername(); // 获取当前操作人
-            for (String tagValue : tagArray) {
-                if (tagValue.trim().isEmpty()) continue;
-                Tag tag = new Tag();
-                tag.setCompetitionSessionId(sessionId);
-                tag.setTagName(tagValue.trim());
-                tag.setCreateBy(operName);
-                tag.setCreateTime(DateUtils.getNowDate());
-                tag.setDelFlag("0");
-                tagList.add(tag);
-            }
-            if (!tagList.isEmpty()) {
-                sessionMapper.batchInsertTag(tagList);
-            }
-        }
+        // 同步更新标签子表
+        syncTagsToSubTable(session.getId(), session.getTags(), SecurityUtils.getUsername());
 
         return updateCount;
     }
@@ -129,6 +188,138 @@ public class SessionServiceImpl implements ISessionService {
         sessionMapper.deleteTagBySessionId(id);
         // 3. 删届次表
         return sessionMapper.deleteSessionById(id);
+    }
+
+    @Transactional(rollbackFor = Exception.class)
+    @Override
+    public int updateSessionStatusByIds(Long[] ids, String status)
+    {
+        if (ids == null || ids.length == 0)
+        {
+            throw new ServiceException("请选择要更新的届次");
+        }
+        if (!"0".equals(status) && !"1".equals(status) && !"2".equals(status))
+        {
+            throw new ServiceException("状态不合法");
+        }
+        return sessionMapper.updateSessionStatusByIds(ids, status, SecurityUtils.getUsername());
+    }
+
+    @Transactional(rollbackFor = Exception.class)
+    @Override
+    public int batchCopyFromTemplates(List<Session> items)
+    {
+        if (CollectionUtils.isEmpty(items))
+        {
+            throw new ServiceException("请至少添加一条待复制记录");
+        }
+        if (items.size() > 50)
+        {
+            throw new ServiceException("单次批量复制最多支持50条");
+        }
+
+        String operName = SecurityUtils.getUsername();
+
+        // 请求内去重：同一赛事下届次文本不允许重复；uuid不允许重复
+        Set<String> uniqSessionKeySet = new HashSet<>();
+        Set<String> uuidSet = new HashSet<>();
+
+        int insertCount = 0;
+        for (int i = 0; i < items.size(); i++)
+        {
+            Session item = items.get(i);
+            int rowNo = i + 1;
+
+            Long templateSessionId = item == null ? null : item.getTemplateSessionId();
+            String sessionText = item == null ? null : item.getSession();
+            String uuid = item == null ? null : item.getUuid();
+
+            if (templateSessionId == null)
+            {
+                throw new ServiceException("第" + rowNo + "行：模板届次ID不能为空");
+            }
+            if (StringUtils.isBlank(sessionText))
+            {
+                throw new ServiceException("第" + rowNo + "行：届次不能为空");
+            }
+            if (StringUtils.isBlank(uuid))
+            {
+                throw new ServiceException("第" + rowNo + "行：参赛通知附件不能为空（仅PDF）");
+            }
+
+            Session template = sessionMapper.selectSessionById(templateSessionId);
+            if (template == null)
+            {
+                throw new ServiceException("第" + rowNo + "行：模板届次不存在，请刷新后重试");
+            }
+            if (template.getCompetitionId() == null)
+            {
+                throw new ServiceException("第" + rowNo + "行：模板届次缺少赛事主键，无法复制");
+            }
+
+            String normalizedSession = sessionText.trim();
+            String normalizedUuid = uuid.trim();
+
+            // 同一赛事下届次不可重复（请求内）
+            String uniqKey = template.getCompetitionId() + "@" + normalizedSession;
+            if (!uniqSessionKeySet.add(uniqKey))
+            {
+                throw new ServiceException("第" + rowNo + "行：同一赛事下届次重复（" + normalizedSession + "）");
+            }
+            if (!uuidSet.add(normalizedUuid))
+            {
+                throw new ServiceException("第" + rowNo + "行：参赛通知附件重复，请分别上传不同通知文件");
+            }
+
+            // DB重复校验：同一赛事下届次不能重复
+            Session query = new Session();
+            query.setCompetitionId(template.getCompetitionId());
+            query.setSession(normalizedSession);
+            List<Session> existList = sessionMapper.selectSessionList(query);
+            if (!CollectionUtils.isEmpty(existList))
+            {
+                throw new ServiceException("第" + rowNo + "行：届次已存在（" + normalizedSession + "）");
+            }
+
+            // 强制重新上传通知：不能复用模板uuid
+            if (StringUtils.isNotBlank(template.getUuid()) && StringUtils.equals(template.getUuid(), normalizedUuid))
+            {
+                throw new ServiceException("第" + rowNo + "行：必须重新上传参赛通知（不能复用模板通知）");
+            }
+
+            // year：默认当前年；uuid：必填且必须是PDF（同时会把is_temp置0）
+            Session newSession = new Session();
+            newSession.setTemplateSessionId(templateSessionId);
+            newSession.setYear(resolveYear(item.getYear()));
+            newSession.setSession(normalizedSession);
+            newSession.setUuid(normalizedUuid);
+
+            // 复制模板字段（不允许前端篡改模板信息）
+            newSession.setCompetitionId(template.getCompetitionId());
+            newSession.setCategory(template.getCategory());
+            newSession.setOrganizations(template.getOrganizations());
+            newSession.setLevel(template.getLevel());
+            newSession.setTags(template.getTags());
+
+            validateAndFinalizeNoticeUuid(newSession.getUuid());
+
+            newSession.setStatus("2");
+            newSession.setDelFlag("0");
+            newSession.setCreateBy(operName);
+            newSession.setUpdateBy(operName);
+            newSession.setCreateTime(DateUtils.getNowDate());
+            newSession.setUpdateTime(DateUtils.getNowDate());
+
+            int result = sessionMapper.insertSession(newSession);
+            if (result <= 0 || newSession.getId() == null)
+            {
+                throw new ServiceException("第" + rowNo + "行：新增失败，请稍后重试");
+            }
+            syncTagsToSubTable(newSession.getId(), newSession.getTags(), operName);
+            insertCount++;
+        }
+
+        return insertCount;
     }
 
     // ========== 工具方法：convertTextToDictCode 保留 ==========
@@ -222,8 +413,9 @@ public class SessionServiceImpl implements ISessionService {
 
     // ========== 核心方法：processSingleSession 修复null校验 ==========
     // ========== 核心方法：processSingleSession 修复null校验 + 调整字典转码顺序 ==========
+
     @Transactional(rollbackFor = Exception.class)
-    private void processSingleSession(Session session, boolean updateSupport, String operName) {
+    public void processSingleSession(Session session, boolean updateSupport, String operName) {
         // ========== 步骤0：先处理字典转码（核心调整：移到创建赛事之前） ==========
         String categoryCode = session.getCategory();
         String levelCode = session.getLevel();

@@ -60,4 +60,12 @@ public interface SamTeacherMapper
      * @return 结果
      */
     public int deleteSamTeacherByIds(Long[] ids);
+
+    /**
+     * 通过工号查询教师
+     * 
+     * @param no 工号
+     * @return 教师
+     */
+    public SamTeacher selectSamTeacherByNo(String no);
 }

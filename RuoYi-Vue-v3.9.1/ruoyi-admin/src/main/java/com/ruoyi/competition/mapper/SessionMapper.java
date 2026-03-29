@@ -1,8 +1,10 @@
-package com.ruoyi.session.mapper;
+package com.ruoyi.competition.mapper;
 
 import java.util.List;
-import com.ruoyi.session.domain.Session;
-import com.ruoyi.session.domain.Tag;
+import com.ruoyi.competition.domain.Session;
+import org.apache.ibatis.annotations.Mapper;
+import org.apache.ibatis.annotations.Param;
+import com.ruoyi.competition.domain.Tag;
 
 /**
  * 赛事届次Mapper接口
@@ -10,6 +12,7 @@ import com.ruoyi.session.domain.Tag;
  * @author ruoyi
  * @date 2026-02-01
  */
+@Mapper
 public interface SessionMapper
 {
     /**
@@ -43,6 +46,16 @@ public interface SessionMapper
      * @return 结果
      */
     public int updateSession(Session session);
+
+    /**
+     * 批量更新届次状态（用于预录批量启用）
+     *
+     * @param ids 届次ID集合
+     * @param status 状态（0停用/1启用/2预录）
+     * @param updateBy 更新人
+     * @return 结果
+     */
+    public int updateSessionStatusByIds(@Param("ids") Long[] ids, @Param("status") String status, @Param("updateBy") String updateBy);
 
     /**
      * 删除赛事届次
