@@ -16,28 +16,37 @@ public class SamStudent extends BaseEntity
     private static final long serialVersionUID = 1L;
 
     /** 学生id */
-    @Excel(name = "学生id")
+    @Excel(name = "学生id", type = Excel.Type.EXPORT)
     private Long studentId;
 
     /** 学生姓名 */
     @Excel(name = "学生姓名")
     private String name;
 
-    /** $column.columnComment */
-    @Excel(name = "${comment}", readConverterExp = "$column.readConverterExp()")
+    /** 学号 */
+    @Excel(name = "学号")
     private String no;
+
+    /** 学院ID */
+    private String school;
+
+    /** 院系ID */
+    private String department;
+
+    /** 专业ID */
+    private String major;
 
     /** 学院 */
     @Excel(name = "学院")
-    private String school;
+    private String schoolName;
 
     /** 院系 */
     @Excel(name = "院系")
-    private String department;
+    private String departmentName;
 
     /** 专业 */
     @Excel(name = "专业")
-    private String major;
+    private String majorName;
 
     /** 班级 */
     @Excel(name = "班级")
@@ -107,6 +116,30 @@ public class SamStudent extends BaseEntity
         return major;
     }
 
+    public String getSchoolName() {
+        return schoolName;
+    }
+
+    public void setSchoolName(String schoolName) {
+        this.schoolName = schoolName;
+    }
+
+    public String getDepartmentName() {
+        return departmentName;
+    }
+
+    public void setDepartmentName(String departmentName) {
+        this.departmentName = departmentName;
+    }
+
+    public String getMajorName() {
+        return majorName;
+    }
+
+    public void setMajorName(String majorName) {
+        this.majorName = majorName;
+    }
+
     public void setClassName(String className) 
     {
         this.className = className;
@@ -136,6 +169,9 @@ public class SamStudent extends BaseEntity
             .append("school", getSchool())
             .append("department", getDepartment())
             .append("major", getMajor())
+            .append("schoolName", getSchoolName())
+            .append("departmentName", getDepartmentName())
+            .append("majorName", getMajorName())
             .append("className", getClassName())
             .append("classYear", getClassYear())
             .toString();

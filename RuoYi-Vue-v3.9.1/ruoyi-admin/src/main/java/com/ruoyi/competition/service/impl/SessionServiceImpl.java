@@ -413,8 +413,9 @@ public class SessionServiceImpl implements ISessionService {
 
     // ========== 核心方法：processSingleSession 修复null校验 ==========
     // ========== 核心方法：processSingleSession 修复null校验 + 调整字典转码顺序 ==========
+
     @Transactional(rollbackFor = Exception.class)
-    private void processSingleSession(Session session, boolean updateSupport, String operName) {
+    public void processSingleSession(Session session, boolean updateSupport, String operName) {
         // ========== 步骤0：先处理字典转码（核心调整：移到创建赛事之前） ==========
         String categoryCode = session.getCategory();
         String levelCode = session.getLevel();

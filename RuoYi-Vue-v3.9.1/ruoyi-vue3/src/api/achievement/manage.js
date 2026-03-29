@@ -1,6 +1,5 @@
 import request from '@/utils/request'
 
-// 查询成果录入列表
 export function listManage(query) {
   return request({
     url: '/achievement/manage/list',
@@ -9,15 +8,14 @@ export function listManage(query) {
   })
 }
 
-// 查询成果录入详细
-export function getManage(achievementId) {
+export function getManage(achievementId, params = {}) {
   return request({
     url: '/achievement/manage/' + achievementId,
-    method: 'get'
+    method: 'get',
+    params: params
   })
 }
 
-// 新增成果录入
 export function addManage(data) {
   return request({
     url: '/achievement/manage',
@@ -26,7 +24,6 @@ export function addManage(data) {
   })
 }
 
-// 修改成果录入
 export function updateManage(data) {
   return request({
     url: '/achievement/manage',
@@ -40,5 +37,51 @@ export function delManage(achievementId) {
   return request({
     url: '/achievement/manage/' + achievementId,
     method: 'delete'
+  })
+}
+
+// 根据比赛和届次查询已有的赛道
+export function listTracks(competitionId, sessionId) {
+  return request({
+    url: '/achievement/manage/listTracks',
+    method: 'get',
+    params: {
+      competitionId,
+      sessionId
+    }
+  })
+}
+
+export function listParticipatedAchievement(query) {
+  return request({
+    url: '/achievement/manage/list-participated',
+    method: 'get',
+    params: query
+  })
+}
+
+export function listGuidedAchievement(query) {
+  return request({
+    url: '/achievement/manage/list-guided',
+    method: 'get',
+    params: query
+  })
+}
+
+export function listResponsibleAchievement(query) {
+  return request({
+    url: '/achievement/manage/list-responsible',
+    method: 'get',
+    params: query
+  })
+}
+
+export function exportAttachmentZip(data) {
+  return request({
+    url: '/achievement/manage/exportAttachmentZip',
+    method: 'post',
+    data: data,
+    responseType: 'blob',
+    timeout: 600000
   })
 }

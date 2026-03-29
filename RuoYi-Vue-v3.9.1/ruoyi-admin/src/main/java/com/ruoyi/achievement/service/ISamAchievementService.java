@@ -2,6 +2,9 @@ package com.ruoyi.achievement.service;
 
 import java.util.List;
 import com.ruoyi.achievement.domain.SamAchievement;
+import com.ruoyi.achievement.domain.ExportAttachmentZipReq;
+import javax.servlet.http.HttpServletResponse;
+import java.io.IOException;
 
 /**
  * 成果录入Service接口
@@ -19,6 +22,8 @@ public interface ISamAchievementService
      */
     public SamAchievement selectSamAchievementByAchievementId(String achievementId);
 
+    public SamAchievement selectSamAchievementForSelf(String achievementId, String selfEditScene);
+
     /**
      * 查询成果录入列表
      * 
@@ -31,6 +36,11 @@ public interface ISamAchievementService
      * 查询我参与的成果列表（学生端-非负责人）
      */
     public List<SamAchievement> selectSamAchievementListByStudentId(SamAchievement samAchievement);
+    /**
+     * 查询我负责的成果列表（学生负责人）
+     */
+    public List<SamAchievement> selectSamAchievementListByResponsibleStudentId(SamAchievement samAchievement);
+
 
     /**
      * 查询我指导的成果列表（教师端）
@@ -81,4 +91,18 @@ public interface ISamAchievementService
      * @return 结果
      */
     public boolean checkCertificateNoUnique(SamAchievement samAchievement);
+
+    /**
+     * 根据比赛和届次查询已有的赛道列表
+     *
+     * @param competitionId 比赛ID
+     * @param sessionId 届次ID
+     * @return 赛道列表
+     */
+    public List<String> selectTrackList(Long competitionId, Long sessionId);
+
+    /**
+     * 批量导出成果附件压缩包
+     */
+    public void exportAttachmentZip(ExportAttachmentZipReq req, HttpServletResponse response) throws IOException;
 }

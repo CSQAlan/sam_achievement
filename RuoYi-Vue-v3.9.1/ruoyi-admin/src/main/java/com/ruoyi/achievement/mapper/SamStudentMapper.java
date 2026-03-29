@@ -1,6 +1,7 @@
 package com.ruoyi.achievement.mapper;
 
 import java.util.List;
+import org.apache.ibatis.annotations.Mapper;
 import com.ruoyi.achievement.domain.SamStudent;
 
 /**
@@ -9,6 +10,7 @@ import com.ruoyi.achievement.domain.SamStudent;
  * @author 王璨
  * @date 2026-02-03
  */
+@Mapper
 public interface SamStudentMapper 
 {
     /**
@@ -58,4 +60,12 @@ public interface SamStudentMapper
      * @return 结果
      */
     public int deleteSamStudentByStudentIds(Long[] studentIds);
+
+    /**
+     * 通过学号查询学生
+     *
+     * @param no 学号
+     * @return 学生
+     */
+    public SamStudent selectSamStudentByNo(String no);
 }

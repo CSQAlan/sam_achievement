@@ -1,18 +1,30 @@
 <template>
   <div v-if="isPageMode" class="app-container outcome-page">
-    <div class="page-card">
+    <div class="page-card" v-loading="detailLoading">
       <div class="page-header">
         <div class="header-left">
-          <div class="page-title">{{ title }}</div>
-        </div>
-        <div class="page-actions" v-if="!readOnly">
-          <el-button v-if="showSubmit" type="primary" @click="submitForm">{{ submitTextComputed }}</el-button>
-          <el-button @click="handleCancel">{{ cancelText }}</el-button>
+          <div class="page-title">
+            {{
+              isPageMode
+                ? `${title}${
+                    displayAchievementId
+                      ? ` - 成果编号: ${displayAchievementId}`
+                      : ""
+                  }`
+                : title
+            }}
+          </div>
         </div>
       </div>
       <el-divider style="margin: 10px 0 20px 0"></el-divider>
       <div class="outcome-body">
-        <el-form ref="outcomeRefPage" :model="form" :rules="rules" label-width="110px" :disabled="readOnly">
+        <el-form
+          ref="outcomeRefPage"
+          :model="form"
+          :rules="rules"
+          label-width="110px"
+          :disabled="readOnly"
+        >
           <div class="common-form-content">
              <template v-for="(_, slot) in $slots">
                 <slot :name="slot"></slot>
@@ -21,12 +33,12 @@
                 <el-col :span="12">
                   <el-row>
                     <el-col :span="24">
-                      <el-form-item label="比赛" prop="competitionId">
-                        <el-select 
-                          v-model="form.competitionId" 
-                          placeholder="请选择赛事" 
-                          filterable 
-                          clearable 
+                      <el-form-item label="参加比赛" prop="competitionId">
+                        <el-select
+                          v-model="form.competitionId"
+                          placeholder="第一步：请选择您参加的赛事"
+                          filterable
+                          clearable
                           style="width: 100%"
                           @change="handleCompetitionChange"
                         >
@@ -37,13 +49,27 @@
                         </div>
                       </el-form-item>
                     </el-col>
-                  </el-row>
-                  <el-row>
+
                     <el-col :span="24">
-                      <el-form-item label="届次" prop="sessionId">
+                      <el-form-item label="获奖时间" prop="awardTime">
+                        <el-date-picker clearable v-model="form.awardTime" type="date" value-format="YYYY-MM-DD" placeholder="第二步：请按照证书上的日期选择" style="width: 100%" />
+                        <div style="color: #909399; font-size: 12px; margin-top: 5px; line-height: 1.2;">获奖时间为奖状上日期为准，若只有年月，请填写当月最后一天。</div>
+                      </el-form-item>
+                    </el-col>
+
+                    <el-col :span="24">
+                      <el-form-item label="获奖级别" prop="level">
+                        <el-select v-model="form.level" placeholder="第三步：请选择获奖级别（国家级/省级等）" style="width: 100%">
+                          <el-option v-for="dict in award_level_type" :key="dict.value" :label="dict.label" :value="dict.value" />
+                        </el-select>
+                      </el-form-item>
+                    </el-col>
+
+                    <el-col :span="24">
+                      <el-form-item label="比赛届次" prop="sessionId">
                         <el-select 
                           v-model="form.sessionId" 
-                          placeholder="请选择赛事" 
+                          placeholder="系统将根据前三步自动匹配，也可手动修改" 
                           filterable 
                           clearable 
                           style="width: 100%"
@@ -51,122 +77,136 @@
                         >
                           <el-option v-for="item in sessionOptions" :key="item.id" :label="item.session" :value="item.id" />
                         </el-select>
+                        <div v-if="form.sessionId" style="color: #67C23A; font-size: 12px; margin-top: 5px;">
+                          <el-icon style="vertical-align: middle;"><CircleCheck /></el-icon> 已根据时间与级别自动锁定届次
+                        </div>
                       </el-form-item>
                     </el-col>
-                  </el-row>
-                  <el-row>
+
                     <el-col :span="24">
-                      <el-form-item label="作品名称" prop="name">
-                        <el-input v-model="form.name" placeholder="请输入作品名称(选填)" />
-                      </el-form-item>
-                    </el-col>
-                  </el-row>
-                  <el-row>
-                    <el-col :span="12">
-                      <el-form-item label="获奖级别" prop="level">
-                        <el-select v-model="form.level" placeholder="请选择">
-                          <el-option v-for="dict in award_level_type" :key="dict.value" :label="dict.label" :value="dict.value" />
-                        </el-select>
-                      </el-form-item>
-                    </el-col>
-                    <el-col :span="12">
                       <el-form-item label="奖项等级" prop="grade">
-                        <el-select v-model="form.grade" placeholder="请选择" style="width: 100%">
+                        <el-select v-model="form.grade" placeholder="请选择奖项等级（一等奖/二等奖等）" style="width: 100%">
                           <el-option v-for="dict in award_rank" :key="dict.value" :label="dict.label" :value="dict.value" />
                         </el-select>
                         <div style="color: #909399; font-size: 12px; margin-top: 5px; line-height: 1.2;">如果比赛或者表彰没有区分等级，请选择一等奖。</div>
                       </el-form-item>
                     </el-col>
-                  </el-row>
-                  <el-row>
-                    <el-col :span="12">
-                      <el-form-item label="赛道" prop="track">
-                        <el-input v-model="form.track" placeholder="请输入赛道" />
-                        <div style="color: #909399; font-size: 12px; margin-top: 5px; line-height: 1.2;">例如蓝桥杯有c++，java数学竞赛有数学类与非数A等</div>
+
+                    <el-col :span="24">
+                      <el-form-item label="参赛赛道" prop="track">
+                        <el-autocomplete
+                          v-model="form.track"
+                          :fetch-suggestions="queryTrackSearch"
+                          clearable
+                          placeholder="请输入或选择赛道（如：Java组、数学类等）"
+                          style="width: 100%"
+                        />
                       </el-form-item>
                     </el-col>
-                    <el-col :span="12">
-                      <el-form-item label="组别" prop="groupId">
-                        <el-select v-model="form.groupId" placeholder="请选择组别" style="width: 100%">
+
+                    <el-col :span="24">
+                      <el-form-item label="证书编号" prop="certificateNo">
+                        <el-input v-model="form.certificateNo" placeholder="请输入证书上的编号" />
+                      </el-form-item>
+                    </el-col>
+
+                    <el-col :span="24">
+                      <el-form-item label="参赛组别" prop="groupId">
+                        <el-select v-model="form.groupId" placeholder="请选择参赛组别" style="width: 100%">
                           <el-option v-for="dict in group_type" :key="dict.value" :label="dict.label" :value="dict.value" />
                         </el-select>
                       </el-form-item>
                     </el-col>
-                  </el-row>
-                  <el-row>
-                    <el-col :span="12">
-                      <el-form-item label="证书编号" prop="certificateNo">
-                        <el-input v-model="form.certificateNo" placeholder="请输入证书编号" />
-                      </el-form-item>
-                    </el-col>
-                    <el-col :span="12">
-                      <el-form-item label="获奖时间" prop="awardTime">
-                        <el-date-picker clearable v-model="form.awardTime" type="date" value-format="YYYY-MM-DD" placeholder="选择日期" style="width: 100%" />
-                        <div style="color: #909399; font-size: 12px; margin-top: 5px; line-height: 1.2;">获奖时间为奖状上日期为准，若只有年月，请填写当月最后一天。</div>
-                      </el-form-item>
-                    </el-col>
-                  </el-row>
-                  <el-row>
-                    <el-col :span="12">
+
+                    <el-col :span="24">
                       <el-form-item label="团队名称" prop="teamName">
-                        <el-input v-model="form.teamName" placeholder="请输入团队名称(选填)" />
+                        <el-input v-model="form.teamName" placeholder="请输入团队名称（个人参赛可不填）" />
                       </el-form-item>
                     </el-col>
-                    <el-col :span="12" v-if="form.isReimburse === 1">
-                      <el-form-item label="报名费" prop="fee">
-                        <el-input v-model="form.fee" placeholder="请输入金额"><template #append>元</template></el-input>
+
+                    <el-col :span="24">
+                      <el-form-item label="作品名称" prop="name">
+                        <el-input v-model="form.name" placeholder="请输入获奖作品名称" />
                       </el-form-item>
                     </el-col>
                   </el-row>
                   <el-divider content-position="left"><i class="el-icon-money"></i> 报销申请</el-divider>
                   <el-form-item label="是否申请报销" prop="isReimburse">
-                    <el-radio-group v-model="form.isReimburse">
-                      <el-radio :label="1">是 (需要上传凭证)</el-radio>
-                      <el-radio :label="0">否</el-radio>
-                    </el-radio-group>
+                    <div style="display: flex; align-items: center; justify-content: flex-start; width: 100%;">
+                      <el-radio-group v-model="form.isReimburse">
+                        <el-radio :label="1">是 (需要上传凭证)</el-radio>
+                        <el-radio :label="0">否</el-radio>
+                      </el-radio-group>
+                      <div v-if="form.isReimburse === 1 && form.reimbursementStatus !== undefined && form.reimbursementStatus !== null" style="margin-left: 15px; display: flex; align-items: center;">
+                        <span style="font-size: 12px; color: #909399; margin-right: 8px;">报销状态:</span>
+                        <div style="transform: scale(1.5); transform-origin: left center;">
+                          <dict-tag :options="reimbursement_status" :value="form.reimbursementStatus" />
+                        </div>
+                      </div>
+                    </div>
                     <div style="color: #F56C6C; font-size: 12px; margin-top: 5px; line-height: 1.2; font-weight: bold;">
                       如果报名者没有通过其他途径报销，请上传发票（PDF）和填写报名金额。注意：同一张发票只能报销一次
                     </div>
                   </el-form-item>
 
+                  <el-row v-if="form.isReimburse === 1">
+                    <el-col :span="24">
+                      <el-form-item label="报名金额" prop="fee">
+                        <el-input v-model="form.fee" placeholder="请输入报名费金额" :disabled="readOnly">
+                          <template #append>元</template>
+                        </el-input>
+                      </el-form-item>
+                    </el-col>
+                  </el-row>
+
                   <el-divider content-position="center">参赛选手信息</el-divider>
-                  <el-row :gutter="10" class="mb8" v-if="!readOnly">
+                  <el-row :gutter="10" class="mb8" v-if="canEditMemberList">
                     <el-col :span="1.5"><el-button type="primary" :icon="Plus" @click="openAddParticipantDialog">添加学生</el-button></el-col>
                     <el-col :span="1.5"><el-button type="danger" :icon="Delete" @click="handleDeleteParticipant">删除选中</el-button></el-col>
                   </el-row>
-                  <el-table ref="participantTable" :data="samAchievementParticipantList" border style="width: 100%; margin-bottom: 20px;" :row-class-name="tableRowClassName">
-                    <el-table-column v-if="!readOnly" width="40" align="center">
-                      <template #default="scope">
-                        <el-icon v-if="!scope.row.isFixed" class="drag-handle" style="cursor: move"><Rank /></el-icon>
-                      </template>
-                    </el-table-column>
-                    <el-table-column v-if="!readOnly" type="selection" width="50" align="center" />
-                    <el-table-column label="学生学号" prop="studentId" align="center" />
-                    <el-table-column label="姓名" prop="studentName" align="center" />
-                    <el-table-column label="排序" prop="orderNo" width="100" align="center" />
-                    <el-table-column label="是否负责人" prop="manager" width="150" align="center">
-                      <template #default="scope">
-                        <el-tag :type="scope.row.manager == 1 ? 'success' : 'info'">{{ scope.row.manager == 1 ? '是' : '否' }}</el-tag>
-                      </template>
-                    </el-table-column>
-                  </el-table>
+                    <el-table ref="participantTable" :data="samAchievementParticipantList" border style="width: 100%; margin-bottom: 20px;" :row-class-name="tableRowClassName" @selection-change="handleParticipantSelectionChange">
+                      <el-table-column v-if="canEditMemberList" width="40" align="center">
+                        <template #default="scope">
+                          <el-icon v-if="!scope.row.isFixed" class="drag-handle" style="cursor: move"><Rank /></el-icon>
+                        </template>
+                      </el-table-column>
+                      <el-table-column v-if="canEditMemberList" type="selection" width="50" align="center" />
+                      <el-table-column label="学生学号" prop="studentId" align="center" />
+                      <el-table-column label="姓名" prop="studentName" align="center" />
+                      <el-table-column label="操作" align="center" width="100" v-if="canEditMemberList">
+                        <template #default="scope">
+                          <el-button v-if="!scope.row.isFixed" link type="primary" :icon="Edit" @click="handleEditParticipant(scope.row, scope.$index)">修改</el-button>
+                        </template>
+                      </el-table-column>
+                      <el-table-column label="排序" prop="orderNo" width="80" align="center" />
+                      <el-table-column label="是否负责人" prop="manager" width="150" align="center">
+                        <template #default="scope">
+                          <el-tag :type="scope.row.manager == 1 ? 'success' : 'info'">{{ scope.row.manager == 1 ? '是' : '否' }}</el-tag>
+                        </template>
+                      </el-table-column>
+                    </el-table>
 
-                  <el-divider content-position="center">指导老师信息</el-divider>
-                  <el-row :gutter="10" class="mb8" v-if="!readOnly">
-                    <el-col :span="1.5"><el-button type="primary" :icon="Plus" @click="openAddAdvisorDialog">添加老师</el-button></el-col>
-                    <el-col :span="1.5"><el-button type="danger" :icon="Delete" @click="handleDeleteAdvisor">删除选中</el-button></el-col>
-                  </el-row>
-                  <el-table ref="advisorTable" :data="samAchievementAdvisorList" border style="width: 100%;" :row-class-name="tableRowClassName">
-                   <el-table-column v-if="!readOnly" width="40" align="center">
-  <template #default="scope">
-    <el-icon v-if="scope.$index !== 0" class="drag-handle" style="cursor: move"><Rank /></el-icon>
-  </template>
-</el-table-column>
-                    <el-table-column v-if="!readOnly" type="selection" width="50" align="center" />
-                    <el-table-column label="教师工号" prop="teacherId" align="center" />
-                    <el-table-column label="姓名" prop="teacherName" align="center" />
-                    <el-table-column label="排序" prop="orderNo" width="100" align="center" />
-                  </el-table>
+                    <el-divider content-position="center">指导老师信息</el-divider>
+                    <el-row :gutter="10" class="mb8" v-if="canEditMemberList">
+                      <el-col :span="1.5"><el-button type="primary" :icon="Plus" @click="openAddAdvisorDialog">添加老师</el-button></el-col>
+                      <el-col :span="1.5"><el-button type="danger" :icon="Delete" @click="handleDeleteAdvisor">删除选中</el-button></el-col>
+                    </el-row>
+                    <el-table ref="advisorTable" :data="samAchievementAdvisorList" border style="width: 100%;" :row-class-name="tableRowClassName" @selection-change="handleAdvisorSelectionChange">
+                     <el-table-column v-if="canEditMemberList" width="40" align="center">
+                        <template #default="scope">
+                          <el-icon v-if="scope.$index !== 0" class="drag-handle" style="cursor: move"><Rank /></el-icon>
+                        </template>
+                      </el-table-column>
+                      <el-table-column v-if="canEditMemberList" type="selection" width="50" align="center" />
+                      <el-table-column label="教师工号" prop="teacherId" align="center" />
+                      <el-table-column label="姓名" prop="teacherName" align="center" />
+                      <el-table-column label="操作" align="center" width="100" v-if="canEditMemberList">
+                        <template #default="scope">
+                          <el-button v-if="!scope.row.isFixed" link type="primary" :icon="Edit" @click="handleEditAdvisor(scope.row, scope.$index)">修改</el-button>
+                        </template>
+                      </el-table-column>
+                      <el-table-column label="排序" prop="orderNo" width="80" align="center" />
+                    </el-table>
                 </el-col>
 
                 <el-col :span="12">
@@ -175,34 +215,100 @@
                     <el-tabs tab-position="left" style="height: 100%; min-height: 700px;" v-model="activeAttachmentTab">
                       <el-tab-pane v-for="item in visibleAttachments" :key="item.name" :label="item.label" :name="item.name">
                         <div class="upload-pane-content">
-                          <el-alert v-if="!form[item.prop]" :type="item.type || 'info'" :closable="false" class="mb10">
+                          <!-- 【修改】：参赛作品与比赛照片的特殊处理 -->
+                          <template v-if="item.name === 'work' || item.name === 'photo'">
+                            <div style="margin-bottom: 15px; background: #fff; padding: 15px; border-radius: 8px; border: 1px solid #ebeef5;">
+                              <div style="font-weight: bold; margin-bottom: 10px; color: #303133;">
+                                {{ item.name === 'work' ? '是否有作品照片' : '是否有比赛照片' }}
+                              </div>
+                              <el-radio-group v-model="form[item.name === 'work' ? 'hasFileWork' : 'hasFilePhoto']" @change="(val) => handleHasFileChange(item.name, val)">
+                                <el-radio :label="1">有 (需上传至少5张PDF)</el-radio>
+                                <el-radio :label="0">无 (需上传手写声明PDF)</el-radio>
+                              </el-radio-group>
+                              
+                              <div v-if="form[item.name === 'work' ? 'hasFileWork' : 'hasFilePhoto'] === 0" style="margin-top: 10px; padding: 10px; background: #fdf6ec; border-radius: 4px; border: 1px solid #faecd8;">
+                                <el-icon style="vertical-align: middle; color: #e6a23c; margin-right: 5px;"><InfoFilled /></el-icon>
+                                <span style="font-size: 13px; color: #e6a23c;">
+                                  请在纸上手写声明（包含作品名称/比赛名称、作者姓名、日期、声明无误等信息），拍照并转成PDF上传。
+                                </span>
+                              </div>
+                            </div>
+                          </template>
+
+                          <!-- 【修改】：根据是否为多图上传显示不同的提示 -->
+                          <el-alert v-if="!item.isMultiple && !form[item.prop]" :type="item.type || 'info'" :closable="false" class="mb10">
                             <template #title>
                               {{ item.alert }} 
                               <el-button link type="primary" style="margin-left: 10px" @click="handlePreUpload(item.name)">查看上传示例</el-button>
                             </template>
                           </el-alert>
+                          <el-alert v-if="item.isMultiple && (!form[item.prop] || (form[item.name === 'work' ? 'hasFileWork' : 'hasFilePhoto'] === 1 ? form[item.prop].length < 5 : form[item.prop].length < 1))" type="warning" :closable="false" class="mb10">
+                            <template #title>
+                              {{ item.alert }} (当前已上传: {{ form[item.prop] ? form[item.prop].length : 0 }} 张)
+                              <el-button v-if="!((item.name === 'work' || item.name === 'photo') && form[item.name === 'work' ? 'hasFileWork' : 'hasFilePhoto'] === 1)" link type="primary" style="margin-left: 10px" @click="handlePreUpload(item.name)">查看上传示例</el-button>
+                            </template>
+                          </el-alert>
                           
                           <el-form-item label-width="0" :prop="item.prop">
+                            <!-- 【修改】：参赛作品/照片有图时直接显示上传，无需解锁 -->
                             <file-upload 
-                              v-if="!readOnly && !form[item.prop] && uploadUnlocked[item.name]"
-                              v-model="form[item.prop]" :limit="1" :fileSize="10" :fileType="['pdf']" class="hide-file-list" :upload-url="uploadUrl" 
+                              v-if="!readOnly && (uploadUnlocked[item.name] || ((item.name === 'work' || item.name === 'photo') && form[item.name === 'work' ? 'hasFileWork' : 'hasFilePhoto'] === 1)) && (item.isMultiple || !form[item.prop])"
+                              v-model="form[item.prop]" 
+                              :limit="item.limit || 1" 
+                              :fileSize="10" 
+                              :fileType="item.fileType || ['pdf']" 
+                              class="hide-file-list" 
+                              :upload-url="uploadUrl" 
                             />
-                            <div v-if="!readOnly && !form[item.prop] && !uploadUnlocked[item.name]" class="fake-upload-box" @click="handlePreUpload(item.name)">
+                            
+                            <div v-if="!readOnly && !form[item.prop] && !uploadUnlocked[item.name] && !((item.name === 'work' || item.name === 'photo') && form[item.name === 'work' ? 'hasFileWork' : 'hasFilePhoto'] === 1)" class="fake-upload-box" @click="handlePreUpload(item.name)">
                                <el-icon :size="30" color="#C0C4CC"><UploadFilled /></el-icon>
                                <div style="color: #606266; margin-top: 10px">点击上传文件</div>
                                <div style="font-size: 12px; color: #E6A23C; margin-top: 5px">(点击后需先阅读示例)</div>
                             </div>
-                            <div v-if="previewUrls[item.name]" class="preview-box">
-                              <iframe :src="previewUrls[item.name]" width="100%" height="650px" frameborder="0"></iframe>
-                            </div>
-                            <div v-if="form[item.prop]" class="custom-file-row">
-                              <div class="file-name"><el-icon class="mr5"><Document /></el-icon><span>{{ getFileName(form[item.prop]) }}</span></div>
-                              <div class="file-action">
-                                <el-button link type="primary" :disabled="false" :icon="View" @click="handleOpenDetail(form[item.prop])">详情</el-button>
-                                <el-button link type="primary" :disabled="false" :icon="Download" @click="handleDownload(form[item.prop])">下载</el-button>
-                                <el-button v-if="!readOnly" link type="danger" :icon="Delete" @click="form[item.prop] = null">删除</el-button>
+
+                            <!-- 循环显示多个文件预览和操作行 -->
+                           <template v-if="item.isMultiple && getFileList(form[item.prop]).length > 0">
+  <div style="display: flex; flex-wrap: wrap; gap: 10px;">
+    <div v-for="(uuid) in getFileList(form[item.prop])" :key="uuid"
+                                     :style="{
+                                       marginBottom: '20px', 
+                                       border: '1px dashed #ccc', 
+                                       padding: '10px',
+                                      width: ((item.name === 'work' && form.hasFileWork === 1) || (item.name === 'photo' && form.hasFilePhoto === 1)) ? 'calc(50% - 5px)' : '100%',
+                                       boxSizing: 'border-box'
+                                     }">
+                                 <div v-if="previewUrls[item.name] && previewUrls[item.name][uuid]" class="preview-box">
+                               <iframe :src="previewUrls[item.name][uuid]" width="100%"
+                                            :height="((item.name === 'work' && form.hasFileWork === 1) || (item.name === 'photo' && form.hasFilePhoto === 1)) ? '200px' : '650px'" 
+                                            frameborder="0"></iframe>
+                                  </div>
+                                  <div class="custom-file-row" style="flex-direction: column; align-items: flex-start;">
+                                    <div class="file-name" style="font-size: 12px;"><el-icon class="mr5"><Document /></el-icon><span>{{ getFileName(uuid) }}</span></div>
+                                    <div class="file-action" style="justify-content: flex-start; gap: 5px;">
+                                      <el-button link type="primary" :icon="View" @click="handleOpenDetail(uuid)" style="font-size: 12px; padding: 0;">详情</el-button>
+                                      <el-button link type="primary" :icon="Download" @click="handleDownload(uuid)" style="font-size: 12px; padding: 0;">下载</el-button>
+                                      <el-button v-if="!readOnly" link type="danger" :icon="Delete" @click="handleRemoveFile(item.prop, uuid)" style="font-size: 12px; padding: 0;">删除</el-button>
+                                    </div>
+                                  </div>
+                                </div>
                               </div>
-                            </div>
+                            </template>
+                            
+                            <!-- 单个文件预览 -->
+                            <template v-else-if="!item.isMultiple && form[item.prop]">
+                                <div v-if="previewUrls[item.name]" class="preview-box">
+                                  <iframe :src="previewUrls[item.name]" width="100%" height="650px" frameborder="0"></iframe>
+                                </div>
+                                <div class="custom-file-row">
+                                  <div class="file-name"><el-icon class="mr5"><Document /></el-icon><span>{{ getFileName(form[item.prop]) }}</span></div>
+                                  <div class="file-action">
+                                    <el-button link type="primary" :icon="View" @click="handleOpenDetail(form[item.prop])">详情</el-button>
+                                    <el-button link type="primary" :icon="Download" @click="handleDownload(form[item.prop])">下载</el-button>
+                                    <el-button v-if="!readOnly" link type="danger" :icon="Delete" @click="form[item.prop] = null">删除</el-button>
+                                  </div>
+                                </div>
+                            </template>
                           </el-form-item>
                         </div>
                       </el-tab-pane>
@@ -214,6 +320,7 @@
         </el-form>
       </div>
     </div>
+
   </div>
 
   <el-dialog
@@ -233,10 +340,10 @@
             <el-col :span="12">
               <el-row>
                 <el-col :span="24">
-                 <el-form-item label="比赛" prop="competitionId">
+                  <el-form-item label="参加比赛" prop="competitionId">
                     <el-select 
                       v-model="form.competitionId" 
-                      placeholder="请选择赛事" 
+                      placeholder="第一步：请选择您参加的赛事" 
                       filterable 
                       clearable 
                       style="width: 100%"
@@ -249,13 +356,27 @@
                     </div>
                   </el-form-item>
                 </el-col>
-              </el-row>
-              <el-row>
+
                 <el-col :span="24">
-                  <el-form-item label="届次" prop="sessionId">
+                  <el-form-item label="获奖时间" prop="awardTime">
+                    <el-date-picker clearable v-model="form.awardTime" type="date" value-format="YYYY-MM-DD" placeholder="第二步：请按照证书上的日期选择" style="width: 100%" />
+                    <div style="color: #909399; font-size: 12px; margin-top: 5px; line-height: 1.2;">获奖时间为奖状上日期为准，若只有年月，请填写当月最后一天。</div>
+                  </el-form-item>
+                </el-col>
+
+                <el-col :span="24">
+                  <el-form-item label="获奖级别" prop="level">
+                    <el-select v-model="form.level" placeholder="第三步：请选择获奖级别（国家级/省级等）" style="width: 100%">
+                      <el-option v-for="dict in award_level_type" :key="dict.value" :label="dict.label" :value="dict.value" />
+                    </el-select>
+                  </el-form-item>
+                </el-col>
+
+                <el-col :span="24">
+                  <el-form-item label="比赛届次" prop="sessionId">
                     <el-select 
                       v-model="form.sessionId" 
-                      placeholder="请先选择赛事" 
+                      placeholder="系统将根据前三步自动匹配，也可手动修改" 
                       filterable 
                       clearable 
                       style="width: 100%"
@@ -263,90 +384,94 @@
                     >
                       <el-option v-for="item in sessionOptions" :key="item.id" :label="item.session" :value="item.id" />
                     </el-select>
+                    <div v-if="form.sessionId" style="color: #67C23A; font-size: 12px; margin-top: 5px;">
+                      <el-icon style="vertical-align: middle;"><CircleCheck /></el-icon> 已根据时间与级别自动锁定届次
+                    </div>
                   </el-form-item>
                 </el-col>
-              </el-row>
-              <el-row>
+
                 <el-col :span="24">
-                  <el-form-item label="作品名称" prop="name">
-                    <el-input v-model="form.name" placeholder="请输入作品名称(选填)" />
-                  </el-form-item>
-                </el-col>
-              </el-row>
-              <el-row>
-                <el-col :span="12">
-                  <el-form-item label="获奖级别" prop="level">
-                    <el-select v-model="form.level" placeholder="请选择">
-                      <el-option v-for="dict in award_level_type" :key="dict.value" :label="dict.label" :value="dict.value" />
-                    </el-select>
-                  </el-form-item>
-                </el-col>
-                <el-col :span="12">
                   <el-form-item label="奖项等级" prop="grade">
-                    <el-select v-model="form.grade" placeholder="请选择" style="width: 100%">
+                    <el-select v-model="form.grade" placeholder="请选择奖项等级（一等奖/二等奖等）" style="width: 100%">
                       <el-option v-for="dict in award_rank" :key="dict.value" :label="dict.label" :value="dict.value" />
                     </el-select>
                     <div style="color: #909399; font-size: 12px; margin-top: 5px; line-height: 1.2;">如果比赛或者表彰没有区分等级，请选择一等奖。</div>
                   </el-form-item>
                 </el-col>
-              </el-row>
-              <el-row>
-                <el-col :span="12">
-                  <el-form-item label="赛道" prop="track">
-                    <el-input v-model="form.track" placeholder="请输入赛道" />
-                    <div style="color: #909399; font-size: 12px; margin-top: 5px; line-height: 1.2;">例如蓝桥杯有c++，java数学竞赛有数学类与非数A等</div>
+
+                <el-col :span="24">
+                  <el-form-item label="参赛赛道" prop="track">
+                    <el-autocomplete
+                      v-model="form.track"
+                      :fetch-suggestions="queryTrackSearch"
+                      clearable
+                      placeholder="请输入或选择赛道（如：Java组、数学类等）"
+                      style="width: 100%"
+                    />
                   </el-form-item>
                 </el-col>
-                <el-col :span="12">
-                  <el-form-item label="组别" prop="groupId">
-                    <el-select v-model="form.groupId" placeholder="请选择组别" style="width: 100%">
+
+                <el-col :span="24">
+                  <el-form-item label="证书编号" prop="certificateNo">
+                    <el-input v-model="form.certificateNo" placeholder="请输入证书上的编号" />
+                  </el-form-item>
+                </el-col>
+
+                <el-col :span="24">
+                  <el-form-item label="参赛组别" prop="groupId">
+                    <el-select v-model="form.groupId" placeholder="请选择参赛组别" style="width: 100%">
                       <el-option v-for="dict in group_type" :key="dict.value" :label="dict.label" :value="dict.value" />
                     </el-select>
                   </el-form-item>
                 </el-col>
-              </el-row>
-              <el-row>
-                <el-col :span="12">
-                  <el-form-item label="证书编号" prop="certificateNo">
-                    <el-input v-model="form.certificateNo" placeholder="请输入证书编号" />
-                  </el-form-item>
-                </el-col>
-                <el-col :span="12">
-                  <el-form-item label="获奖时间" prop="awardTime">
-                    <el-date-picker clearable v-model="form.awardTime" type="date" value-format="YYYY-MM-DD" placeholder="选择日期" style="width: 100%" />
-                    <div style="color: #909399; font-size: 12px; margin-top: 5px; line-height: 1.2;">获奖时间为奖状上日期为准，若只有年月，请填写当月最后一天。</div>
-                  </el-form-item>
-                </el-col>
-              </el-row>
-              <el-row>
-                <el-col :span="12">
+
+                <el-col :span="24">
                   <el-form-item label="团队名称" prop="teamName">
-                    <el-input v-model="form.teamName" placeholder="请输入团队名称(选填)" />
+                    <el-input v-model="form.teamName" placeholder="请输入团队名称（个人参赛可不填）" />
                   </el-form-item>
                 </el-col>
-                <el-col :span="12" v-if="form.isReimburse === 1">
-                  <el-form-item label="报名费" prop="fee">
-                    <el-input v-model="form.fee" placeholder="请输入金额"><template #append>元</template></el-input>
+
+                <el-col :span="24">
+                  <el-form-item label="作品名称" prop="name">
+                    <el-input v-model="form.name" placeholder="请输入获奖作品名称" />
                   </el-form-item>
                 </el-col>
               </el-row>
               <el-divider content-position="left"><i class="el-icon-money"></i> 报销申请</el-divider>
               <el-form-item label="是否申请报销" prop="isReimburse">
-                <el-radio-group v-model="form.isReimburse">
-                  <el-radio :label="1">是 (需要上传凭证)</el-radio>
-                  <el-radio :label="0">否</el-radio>
-                </el-radio-group>
+                <div style="display: flex; align-items: center; justify-content: flex-start; width: 100%;">
+                  <el-radio-group v-model="form.isReimburse">
+                    <el-radio :label="1">是 (需要上传凭证)</el-radio>
+                    <el-radio :label="0">否</el-radio>
+                  </el-radio-group>
+                  <div v-if="form.isReimburse === 1 && form.reimbursementStatus !== undefined && form.reimbursementStatus !== null" style="margin-left: 15px; display: flex; align-items: center;">
+                    <span style="font-size: 12px; color: #909399; margin-right: 8px;">报销状态:</span>
+                    <div style="transform: scale(1.5); transform-origin: left center;">
+                      <dict-tag :options="reimbursement_status" :value="form.reimbursementStatus" />
+                    </div>
+                  </div>
+                </div>
                 <div style="color: #F56C6C; font-size: 12px;font-weight: bold;">
                   如果报名者没有通过其他途径报销，请上传发票（PDF）和填写报名金额。注意：同一张发票只能报销一次
                 </div>
               </el-form-item>
+
+              <el-row v-if="form.isReimburse === 1">
+                <el-col :span="24">
+                  <el-form-item label="报名金额" prop="fee">
+                    <el-input v-model="form.fee" placeholder="请输入报名费金额" :disabled="readOnly">
+                      <template #append>元</template>
+                    </el-input>
+                  </el-form-item>
+                </el-col>
+              </el-row>
 
               <el-divider content-position="center">参赛选手信息</el-divider>
               <el-row :gutter="10" class="mb8" v-if="!readOnly">
                 <el-col :span="1.5"><el-button type="primary" :icon="Plus" @click="openAddParticipantDialog">添加学生</el-button></el-col>
                 <el-col :span="1.5"><el-button type="danger" :icon="Delete" @click="handleDeleteParticipant">删除选中</el-button></el-col>
               </el-row>
-              <el-table ref="participantTableDialog" :data="samAchievementParticipantList" border style="width: 100%; margin-bottom: 20px;" :row-class-name="tableRowClassName">
+              <el-table ref="participantTableDialog" :data="samAchievementParticipantList" border style="width: 100%; margin-bottom: 20px;" :row-class-name="tableRowClassName" @selection-change="handleParticipantSelectionChange">
                 <el-table-column v-if="!readOnly" width="40" align="center">
                   <template #default="scope">
                     <el-icon v-if="scope.row.manager !== 1" class="drag-handle" style="cursor: move"><Rank /></el-icon>
@@ -368,7 +493,7 @@
                 <el-col :span="1.5"><el-button type="primary" :icon="Plus" @click="openAddAdvisorDialog">添加老师</el-button></el-col>
                 <el-col :span="1.5"><el-button type="danger" :icon="Delete" @click="handleDeleteAdvisor">删除选中</el-button></el-col>
               </el-row>
-              <el-table ref="advisorTableDialog" :data="samAchievementAdvisorList" border style="width: 100%;" :row-class-name="tableRowClassName">
+              <el-table ref="advisorTableDialog" :data="samAchievementAdvisorList" border style="width: 100%;" :row-class-name="tableRowClassName" @selection-change="handleAdvisorSelectionChange">
              <el-table-column v-if="!readOnly" width="40" align="center">
   <template #default="scope">
     <el-icon v-if="scope.$index !== 0" class="drag-handle" style="cursor: move"><Rank /></el-icon>
@@ -387,34 +512,98 @@
                 <el-tabs tab-position="left" style="height: 100%; min-height: 700px;" v-model="activeAttachmentTab">
                   <el-tab-pane v-for="item in visibleAttachments" :key="item.name" :label="item.label" :name="item.name">
                     <div class="upload-pane-content">
-                      <el-alert v-if="!form[item.prop]" :type="item.type || 'info'" :closable="false" class="mb10">
-                        <template #title>
-                          {{ item.alert }} 
-                          <el-button link type="primary" style="margin-left: 10px" @click="handlePreUpload(item.name)">查看上传示例</el-button>
-                        </template>
-                      </el-alert>
+                    <!-- 【修改】：参赛作品与比赛照片的特殊处理 -->
+                    <template v-if="item.name === 'work' || item.name === 'photo'">
+                      <div style="margin-bottom: 15px; background: #fff; padding: 15px; border-radius: 8px; border: 1px solid #ebeef5;">
+                        <div style="font-weight: bold; margin-bottom: 10px; color: #303133;">
+                          {{ item.name === 'work' ? '是否有作品照片' : '是否有比赛照片' }}
+                        </div>
+                        <el-radio-group v-model="form[item.name === 'work' ? 'hasFileWork' : 'hasFilePhoto']" @change="(val) => handleHasFileChange(item.name, val)">
+                          <el-radio :label="1">有 (需上传至少5张PDF)</el-radio>
+                          <el-radio :label="0">无 (需上传手写声明PDF)</el-radio>
+                        </el-radio-group>
+                        
+                        <div v-if="form[item.name === 'work' ? 'hasFileWork' : 'hasFilePhoto'] === 0" style="margin-top: 10px; padding: 10px; background: #fdf6ec; border-radius: 4px; border: 1px solid #faecd8;">
+                          <el-icon style="vertical-align: middle; color: #e6a23c; margin-right: 5px;"><InfoFilled /></el-icon>
+                          <span style="font-size: 13px; color: #e6a23c;">
+                            请在纸上手写声明（包含作品名称/比赛名称、作者姓名、日期、声明无误等信息），拍照并转成PDF上传。
+                          </span>
+                        </div>
+                      </div>
+                    </template>
+
+                    <el-alert v-if="!item.isMultiple && !form[item.prop]" :type="item.type || 'info'" :closable="false" class="mb10">
+                      <template #title>
+                        {{ item.alert }} 
+                        <el-button link type="primary" style="margin-left: 10px" @click="handlePreUpload(item.name)">查看上传示例</el-button>
+                      </template>
+                    </el-alert>
+                    <el-alert v-if="item.isMultiple && (!form[item.prop] || (form[item.name === 'work' ? 'hasFileWork' : 'hasFilePhoto'] === 1 ? form[item.prop].length < 5 : form[item.prop].length < 1))" type="warning" :closable="false" class="mb10">
+                      <template #title>
+                        {{ item.alert }} (当前已上传: {{ form[item.prop] ? form[item.prop].length : 0 }} 张)
+                        <el-button v-if="!((item.name === 'work' || item.name === 'photo') && form[item.name === 'work' ? 'hasFileWork' : 'hasFilePhoto'] === 1)" link type="primary" style="margin-left: 10px" @click="handlePreUpload(item.name)">查看上传示例</el-button>
+                      </template>
+                    </el-alert>
                       
                       <el-form-item label-width="0" :prop="item.prop">
+                        <!-- 参赛作品/照片有图时直接显示上传，无需解锁 -->
                         <file-upload 
-                          v-if="!readOnly && !form[item.prop] && uploadUnlocked[item.name]"
-                          v-model="form[item.prop]" :limit="1" :fileSize="10" :fileType="['pdf']" class="hide-file-list" :upload-url="uploadUrl" 
+                          v-if="!readOnly && (uploadUnlocked[item.name] || ((item.name === 'work' || item.name === 'photo') && form[item.name === 'work' ? 'hasFileWork' : 'hasFilePhoto'] === 1)) && (item.isMultiple || !form[item.prop])"
+                          v-model="form[item.prop]" 
+                          :limit="item.limit || 1" 
+                          :fileSize="10" 
+                          :fileType="item.fileType || ['pdf']" 
+                          class="hide-file-list" 
+                          :upload-url="uploadUrl" 
                         />
-                        <div v-if="!readOnly && !form[item.prop] && !uploadUnlocked[item.name]" class="fake-upload-box" @click="handlePreUpload(item.name)">
+                        <div v-if="!readOnly && !form[item.prop] && !uploadUnlocked[item.name] && !((item.name === 'work' || item.name === 'photo') && form[item.name === 'work' ? 'hasFileWork' : 'hasFilePhoto'] === 1)" class="fake-upload-box" @click="handlePreUpload(item.name)">
                            <el-icon :size="30" color="#C0C4CC"><UploadFilled /></el-icon>
                            <div style="color: #606266; margin-top: 10px">点击上传文件</div>
                            <div style="font-size: 12px; color: #E6A23C; margin-top: 5px">(点击后需先阅读示例)</div>
                         </div>
-                        <div v-if="previewUrls[item.name]" class="preview-box">
-                          <iframe :src="previewUrls[item.name]" width="100%" height="650px" frameborder="0"></iframe>
-                        </div>
-                        <div v-if="form[item.prop]" class="custom-file-row">
-                          <div class="file-name"><el-icon class="mr5"><Document /></el-icon><span>{{ getFileName(form[item.prop]) }}</span></div>
-                          <div class="file-action">
-                            <el-button link type="primary" :disabled="false" :icon="View" @click="handleOpenDetail(form[item.prop])">详情</el-button>
-                            <el-button link type="primary" :disabled="false" :icon="Download" @click="handleDownload(form[item.prop])">下载</el-button>
-                            <el-button v-if="!readOnly" link type="danger" :icon="Delete" @click="form[item.prop] = null">删除</el-button>
+
+                        <!--循环显示多个文件预览和操作行 -->
+                        <template v-if="item.isMultiple && getFileList(form[item.prop]).length > 0">
+  <div style="display: flex; flex-wrap: wrap; gap: 10px;">
+    <div v-for="(uuid) in getFileList(form[item.prop])" :key="uuid"
+                                 :style="{
+                                   marginBottom: '20px', 
+                                   border: '1px dashed #ccc', 
+                                   padding: '10px',
+                                  width: ((item.name === 'work' && form.hasFileWork === 1) || (item.name === 'photo' && form.hasFilePhoto === 1)) ? 'calc(50% - 5px)' : '100%',
+                                   boxSizing: 'border-box'
+                                 }">
+                              <div v-if="previewUrls[item.name] && previewUrls[item.name][uuid]" class="preview-box">
+                              <iframe :src="previewUrls[item.name][uuid]" width="100%"
+                                        :height="((item.name === 'work' && form.hasFileWork === 1) || (item.name === 'photo' && form.hasFilePhoto === 1)) ? '200px' : '650px'" 
+                                        frameborder="0"></iframe>
+                              </div>
+                              <div class="custom-file-row" style="flex-direction: column; align-items: flex-start;">
+                                <div class="file-name" style="font-size: 12px;"><el-icon class="mr5"><Document /></el-icon><span>{{ getFileName(uuid) }}</span></div>
+                                <div class="file-action" style="justify-content: flex-start; gap: 5px;">
+                                  <el-button link type="primary" :icon="View" @click="handleOpenDetail(uuid)" style="font-size: 12px; padding: 0;">详情</el-button>
+                                  <el-button link type="primary" :icon="Download" @click="handleDownload(uuid)" style="font-size: 12px; padding: 0;">下载</el-button>
+                                  <el-button v-if="!readOnly" link type="danger" :icon="Delete" @click="handleRemoveFile(item.prop, uuid)" style="font-size: 12px; padding: 0;">删除</el-button>
+                                </div>
+                              </div>
+                            </div>
                           </div>
-                        </div>
+                        </template>
+
+                        <!-- 单个文件预览 -->
+                        <template v-else-if="!item.isMultiple && form[item.prop]">
+                            <div v-if="previewUrls[item.name]" class="preview-box">
+                              <iframe :src="previewUrls[item.name]" width="100%" height="650px" frameborder="0"></iframe>
+                            </div>
+                            <div v-if="form[item.prop]" class="custom-file-row">
+                              <div class="file-name"><el-icon class="mr5"><Document /></el-icon><span>{{ getFileName(form[item.prop]) }}</span></div>
+                              <div class="file-action">
+                                <el-button link type="primary" :icon="View" @click="handleOpenDetail(form[item.prop])">详情</el-button>
+                                <el-button link type="primary" :icon="Download" @click="handleDownload(form[item.prop])">下载</el-button>
+                                <el-button v-if="!readOnly" link type="danger" :icon="Delete" @click="form[item.prop] = null">删除</el-button>
+                              </div>
+                            </div>
+                        </template>
                       </el-form-item>
                     </div>
                   </el-tab-pane>
@@ -477,7 +666,10 @@
             <el-button @click="handleParticipantSearch"><el-icon><Search /></el-icon></el-button>
           </template>
         </el-input>
-        <div style="font-size: 12px; color: #909399; margin-top: 5px;">支持学号或姓名双向查找</div>
+        <div style="font-size: 12px; color: #909399; margin-top: 5px; display: flex; justify-content: space-between;">
+          <span>支持学号或姓名双向查找</span>
+          <el-link type="primary" style="font-size: 12px;" @click="isParticipantNew = true">没有找到？手动录入</el-link>
+        </div>
       </el-form-item>
       <el-form-item label="学号" prop="studentId">
         <el-input v-model="participantForm.studentId" placeholder="学号" :disabled="!isParticipantNew" />
@@ -486,12 +678,19 @@
         <el-input v-model="participantForm.studentName" placeholder="姓名" :disabled="!isParticipantNew" />
       </el-form-item>
       
+      <el-form-item v-if="!isParticipantNew && participantForm.studentId" label="所属机构">
+        <div style="font-size: 13px; color: #606266; line-height: 1.4;">
+          {{ getDeptName(participantForm.school) }} / {{ getDeptName(participantForm.department) }} / {{ getDeptName(participantForm.major) }}
+        </div>
+      </el-form-item>
+
       <template v-if="isParticipantNew">
         <el-alert title="未匹配到该学号，请完善下方信息完成录入" type="warning" show-icon :closable="false" style="margin-bottom: 15px;" />
         <el-form-item label="所属机构" prop="school">
           <el-cascader
+            ref="participantCascader"
             v-model="participantDeptCascaderValue"
-            :options="deptOptions"
+            :options="studentDeptOptions"
             :props="{ value: 'deptId', label: 'deptName', children: 'children' }"
             placeholder="请选择学院/院系/专业"
             clearable
@@ -524,7 +723,10 @@
             <el-button @click="handleAdvisorSearch"><el-icon><Search /></el-icon></el-button>
           </template>
         </el-input>
-        <div style="font-size: 12px; color: #909399; margin-top: 5px;">支持工号或姓名双向查找</div>
+        <div style="font-size: 12px; color: #909399; margin-top: 5px; display: flex; justify-content: space-between;">
+          <span>支持工号或姓名双向查找</span>
+          <el-link type="primary" style="font-size: 12px;" @click="isAdvisorNew = true">没有找到？手动录入</el-link>
+        </div>
       </el-form-item>
       <el-form-item label="工号" prop="teacherId">
         <el-input v-model="advisorForm.teacherId" placeholder="工号" :disabled="!isAdvisorNew" />
@@ -533,12 +735,19 @@
         <el-input v-model="advisorForm.teacherName" placeholder="姓名" :disabled="!isAdvisorNew" />
       </el-form-item>
       
+      <el-form-item v-if="!isAdvisorNew && advisorForm.teacherId" label="所属机构">
+        <div style="font-size: 13px; color: #606266; line-height: 1.4;">
+         {{ getDeptName(advisorForm.school) }}
+        </div>
+      </el-form-item>
+
       <template v-if="isAdvisorNew">
         <el-alert title="未匹配到该工号，请完善下方信息完成录入" type="warning" show-icon :closable="false" style="margin-bottom: 15px;" />
         <el-form-item label="所属机构" prop="school">
           <el-cascader
+            ref="advisorCascader"
             v-model="advisorDeptCascaderValue"
-            :options="deptOptions"
+            :options="advisorDeptOptions"
             :props="{ value: 'deptId', label: 'deptName', children: 'children' }"
             placeholder="请选择学院/院系"
             clearable
@@ -559,32 +768,63 @@
 
   <el-dialog title="选择学生" v-model="studentSelectVisible" width="600px" append-to-body>
     <el-table :data="studentOptions" @row-click="selectStudent" border highlight-current-row>
-      <el-table-column label="学号" prop="no" align="center" />
-      <el-table-column label="姓名" prop="name" align="center" />
+      <el-table-column label="学号" prop="no" align="center" width="120" />
+      <el-table-column label="姓名" prop="name" align="center" width="100" />
+      <el-table-column label="所属机构" align="center">
+        <template #default="scope">
+          <div style="font-size: 12px; color: #606266;">
+            {{ getDeptName(scope.row.school) }} / {{ getDeptName(scope.row.department) }} / {{ getDeptName(scope.row.major) }}
+          </div>
+        </template>
+      </el-table-column>
     </el-table>
+    <template #footer>
+      <div style="text-align: center;">
+        <el-button @click="studentSelectVisible = false; isParticipantNew = true">以上都不是，创建新学生</el-button>
+      </div>
+    </template>
   </el-dialog>
 
   <el-dialog title="选择老师" v-model="teacherSelectVisible" width="600px" append-to-body>
     <el-table :data="teacherOptions" @row-click="selectTeacher" border highlight-current-row>
-      <el-table-column label="工号" prop="no" align="center" />
-      <el-table-column label="姓名" prop="teacherName" align="center" />
+      <el-table-column label="工号" prop="no" align="center" width="120" />
+      <el-table-column label="姓名" prop="teacherName" align="center" width="100" />
+      <el-table-column label="所属机构" align="center">
+        <template #default="scope">
+          <div style="font-size: 12px; color: #606266;">
+            {{ getDeptName(scope.row.school) }} / {{ getDeptName(scope.row.department) }}
+          </div>
+        </template>
+      </el-table-column>
     </el-table>
+    <template #footer>
+      <div style="text-align: center;">
+        <el-button @click="teacherSelectVisible = false; isAdvisorNew = true">以上都不是，创建新老师</el-button>
+      </div>
+    </template>
   </el-dialog>
 </template>
 
 <script setup name="AchievementForm">
-import { getCurrentInstance, ref, reactive, toRefs, computed, onMounted, watch, nextTick } from "vue";
+import { getCurrentInstance, ref, reactive, toRefs, computed, onMounted, onUnmounted, watch, nextTick } from "vue";
 import { useRoute } from "vue-router";
 import { onBeforeRouteLeave } from "vue-router";
 import Sortable from "sortablejs";
 import useUserStore from "@/store/modules/user";
-import { Plus, Delete, Document, Download, View, UploadFilled, Rank } from "@element-plus/icons-vue";
-import { listStudent, addStudent } from "@/api/achievement/student";
-import { listTeacher, addTeacher } from "@/api/achievement/teacher";
+import { Plus, Delete, Document, Download, View, UploadFilled, Rank, InfoFilled, Edit, Search, CircleCheck } from "@element-plus/icons-vue";
+import {
+  listStudent,
+  getStudent,
+  delStudent,
+  addStudent,
+  updateStudent,
+} from "@/api/achievement/student";
+import { listTeacher, addTeacher, updateTeacher } from "@/api/achievement/teacher";
+import { listTracks } from "@/api/achievement/manage";
 import { listDept } from "@/api/system/dept";
-import { handleTree } from "@/utils/ruoyi";
-import request from '@/utils/request';
-import FileUpload from '@/components/FileUpload';
+import { handleTree, blobValidate } from "@/utils/ruoyi";
+import request from "@/utils/request";
+import FileUpload from "@/components/FileUpload";
 
 const { proxy } = getCurrentInstance();
 const route = useRoute();
@@ -605,11 +845,28 @@ const props = defineProps({
   sourceMode: { type: String, default: "" },
 });
 
-const { achievement_category, group_type, award_rank, award_level_type, attach_type } = proxy.useDict('achievement_category', 'group_type', 'award_rank', 'award_level_type', 'attach_type');
+const {
+  achievement_category,
+  group_type,
+  award_rank,
+  award_level_type,
+  attach_type,
+  reimbursement_status,
+} =
+  proxy.useDict(
+    "achievement_category",
+    "group_type",
+    "award_rank",
+    "award_level_type",
+    "attach_type",
+    "reimbursement_status"
+  );
 const isPageMode = computed(() => props.pageMode);
 const visible = ref(false);
 const title = ref("");
 const deptOptions = ref([]);
+const studentDeptOptions = ref([]);
+const advisorDeptOptions = ref([]);
 const outcomeRefPage = ref(null);
 const outcomeRefDialog = ref(null);
 const activeAttachmentTab = ref('award');
@@ -627,6 +884,8 @@ const checkedParticipant = ref([]);
 const checkedAdvisor = ref([]);
 const competitionOptions = ref([]);
 const sessionOptions = ref([]);
+const detailLoading = ref(false);
+const pendingAchievementId = ref("");
 
 const studentSelectVisible = ref(false);
 const studentOptions = ref([]);
@@ -639,30 +898,125 @@ const advisorSearchKeyword = ref("");
 const participantDeptCascaderValue = ref([]);
 const advisorDeptCascaderValue = ref([]);
 
+const editingParticipantIndex = ref(-1);
+const editingAdvisorIndex = ref(-1);
+
+function handleEditParticipant(row, index) {
+  editingParticipantIndex.value = index;
+  isParticipantNew.value = true;
+  const studentId = row.studentId || row.studentNo;
+  participantForm.value = {
+    studentId: studentId, // 业务学号
+    dbId: row.id || row.studentId, // 记录数据库主键
+    studentName: row.studentName,
+    school: row.school,
+    department: row.department,
+    major: row.major,
+    class_name: row.class_name || row.className,
+    class_year: row.class_year || row.classYear
+  };
+
+  if (studentId) {
+    listStudent({ no: studentId }).then(res => {
+      if (res.rows && res.rows.length > 0) {
+        const s = res.rows[0];
+        // 关键：保存后端返回的真实主键 studentId
+        participantForm.value.dbId = s.studentId;
+        participantForm.value.school = s.school;
+        participantForm.value.department = s.department;
+        participantForm.value.major = s.major;
+        participantForm.value.class_name = s.className || s.class_name;
+        participantForm.value.class_year = s.classYear || s.class_year;
+        const values = [];
+        if (s.school) values.push(Number(s.school));
+        if (s.department) values.push(Number(s.department));
+        if (s.major) values.push(Number(s.major));
+        participantDeptCascaderValue.value = values;
+      }
+    });
+  }
+  addParticipantVisible.value = true;
+}
+
+function handleEditAdvisor(row, index) {
+  editingAdvisorIndex.value = index;
+  isAdvisorNew.value = true;
+  const teacherId = row.teacherId || row.teacherNo;
+
+  advisorForm.value = {
+    teacherId: teacherId,
+    dbId: row.id || row.teacherId, // 记录数据库主键
+    teacherName: row.teacherName,
+    school: row.school,
+    department: row.department
+  };
+
+  if (teacherId) {
+    listTeacher({ no: teacherId }).then(res => {
+      if (res.rows && res.rows.length > 0) {
+        const t = res.rows[0];
+        // 关键修复：兼容获取后端返回的主键 ID
+        advisorForm.value.dbId = t.id || t.teacherId;
+        advisorForm.value.school = t.school || t.department;
+        advisorForm.value.department = t.department || t.major;
+        const values = [];
+        if (advisorForm.value.school) values.push(Number(advisorForm.value.school));
+        if (advisorForm.value.department) values.push(Number(advisorForm.value.department));
+        advisorDeptCascaderValue.value = values;
+      }
+    });
+  }
+  addAdvisorVisible.value = true;
+}
+
 function handleParticipantCascaderChange(value) {
-  if (value && value.length > 0) {
+  if (value && value.length >= 3) {
+    // Starting from Level 2: value[0] is school (College), value[1] is department (Dept), value[2] is major (Major)
     participantForm.value.school = value[0] || '';
     participantForm.value.department = value[1] || '';
     participantForm.value.major = value[2] || '';
+
+    // Capture labels for display
+    const nodes = proxy.$refs.participantCascader.getCheckedNodes();
+    if (nodes && nodes.length > 0) {
+      const labels = nodes[0].pathLabels; // pathLabels corresponds to the values in 'value'
+      participantForm.value.schoolName = labels[0] || '-';
+      participantForm.value.deptName = labels[1] || '-';
+      participantForm.value.majorName = labels[2] || '-';
+    }
   } else {
     participantForm.value.school = '';
     participantForm.value.department = '';
     participantForm.value.major = '';
+    participantForm.value.schoolName = '';
+    participantForm.value.deptName = '';
+    participantForm.value.majorName = '';
   }
 }
 
 function handleAdvisorCascaderChange(value) {
-  if (value && value.length > 0) {
+  if (value && value.length >= 2) {
+    // Starting from Level 2: value[0] is school (College), value[1] is department (Dept)
     advisorForm.value.school = value[0] || '';
     advisorForm.value.department = value[1] || '';
+
+    // Capture labels for display
+    const nodes = proxy.$refs.advisorCascader.getCheckedNodes();
+    if (nodes && nodes.length > 0) {
+      const labels = nodes[0].pathLabels;
+      advisorForm.value.schoolName = labels[0] || '-';
+      advisorForm.value.deptName = labels[1] || '-';
+    }
   } else {
     advisorForm.value.school = '';
     advisorForm.value.department = '';
+    advisorForm.value.schoolName = '';
+    advisorForm.value.deptName = '';
   }
 }
 
 const data = reactive({
-  form: { competitionId: null },
+  form: { competitionId: null, filePhoto: [], hasFileWork: 1, hasFilePhoto: 1 },
   formSnapshot: "",
   rules: {
     competitionId: [{ required: true, message: "比赛不能为空", trigger: "change" }],
@@ -673,10 +1027,84 @@ const data = reactive({
     groupId: [{ required: true, message: "组别不能为空", trigger: "change" }],
     certificateNo: [{ required: true, message: "证书编号不能为空", trigger: "blur" }],
     awardTime: [{ required: true, message: "获奖时间不能为空", trigger: "blur" }],
-    fee: [{ pattern: /^[0-9]+(\.[0-9]{1,2})?$/, message: "请输入正确的金额" }]
+    fee: [{ pattern: /^[0-9]+(\.[0-9]{1,2})?$/, message: "请输入正确的金额" }],
+    reimbursementFee: [{ pattern: /^[0-9]+(\.[0-9]{1,2})?$/, message: "请输入正确的金额" }]
   }
 });
 const { form, formSnapshot, rules } = toRefs(data);
+
+const displayAchievementId = computed(() => {
+  const formId = form.value?.achievementId;
+  if (formId !== null && formId !== undefined && String(formId).trim() !== "") {
+    return String(formId);
+  }
+  if (
+    pendingAchievementId.value !== null &&
+    pendingAchievementId.value !== undefined &&
+    String(pendingAchievementId.value).trim() !== ""
+  ) {
+    return String(pendingAchievementId.value);
+  }
+  const routeId =
+    route.query.id || route.query.achievementId || route.params.id;
+  if (
+    routeId !== null &&
+    routeId !== undefined &&
+    String(routeId).trim() !== ""
+  ) {
+    return String(routeId);
+  }
+  return "";
+});
+
+function trimIfString(value) {
+  return typeof value === "string" ? value.trim() : value;
+}
+
+function trimStringFields(target, fields = []) {
+  if (!target || !Array.isArray(fields)) return;
+  fields.forEach((field) => {
+    if (Object.prototype.hasOwnProperty.call(target, field)) {
+      target[field] = trimIfString(target[field]);
+    }
+  });
+}
+
+const trackSuggestions = ref([]);
+const queryTrackSearch = async (queryString, cb) => {
+  if (!form.value.competitionId || !form.value.sessionId) {
+    cb([]);
+    return;
+  }
+  
+  if (trackSuggestions.value.length === 0) {
+    try {
+      const res = await listTracks(form.value.competitionId, form.value.sessionId);
+      if (res.data) {
+        trackSuggestions.value = res.data.map(t => ({ value: t }));
+      }
+    } catch (e) {
+      console.error("获取赛道建议失败", e);
+    }
+  }
+
+  const results = queryString
+    ? trackSuggestions.value.filter(t => t.value.toLowerCase().includes(queryString.toLowerCase()))
+    : trackSuggestions.value;
+  
+  cb(results);
+};
+
+watch(() => [form.value.competitionId, form.value.sessionId], ([compId, sessionId]) => {
+  trackSuggestions.value = [];
+  // 当比赛和届次都选择后，尝试从届次信息中提取比赛通知 UUID 并回显
+  if (compId && sessionId && sessionOptions.value.length > 0) {
+    const session = sessionOptions.value.find(s => s.id === sessionId);
+    if (session && session.uuid) {
+      form.value.fileNotice = session.uuid;
+    }
+  }
+});
 
 const validateCertificateNo = (rule, value, callback) => {
   if (!value) {
@@ -803,6 +1231,7 @@ const submitTextComputed = computed(() => {
 // 学生与老师的级联选择逻辑 (查找与动态过滤)
 function findDeptNode(tree, targetVal) {
   if (!tree || targetVal == null || targetVal === '') return null;
+  const normalizedTarget = String(targetVal);
   for (let i = 0; i < tree.length; i++) {
     const node = tree[i];
     if (node.deptId === targetVal || node.deptName === targetVal) return node;
@@ -812,6 +1241,13 @@ function findDeptNode(tree, targetVal) {
     }
   }
   return null;
+}
+
+function resolveDeptIdBySchool(schoolValue) {
+  const node = findDeptNode(deptOptions.value, schoolValue);
+  if (!node || node.deptId == null || node.deptId === '') return null;
+  const deptId = Number(node.deptId);
+  return Number.isNaN(deptId) ? null : deptId;
 }
 
 const participantDepartmentOptions = computed(() => {
@@ -842,6 +1278,18 @@ function handleAdvisorSchoolChange() {
   advisorForm.value.department = '';
 }
 
+function findDeptPathByIds(nodes = [], ids = [], path = []) {
+  if (!Array.isArray(ids) || !ids.length) return [];
+  for (const node of nodes || []) {
+    const currentPath = [...path, node];
+    if (node.deptId === ids[0]) {
+      if (ids.length === 1) return currentPath;
+      return findDeptPathByIds(node.children || [], ids.slice(1), currentPath);
+    }
+  }
+  return [];
+}
+
 // 弹窗控制与提交逻辑
 
 const addParticipantVisible = ref(false);
@@ -854,6 +1302,7 @@ const addParticipantRules = {
 };
 
 function openAddParticipantDialog() {
+  editingParticipantIndex.value = -1; // 关键修复：确保是新增模式
   participantForm.value = { studentId: '', studentName: '', school: '', department: '', major: '', class_name: '', class_year: '' };
   participantDeptCascaderValue.value = [];
   participantSearchKeyword.value = "";
@@ -871,6 +1320,7 @@ const addAdvisorRules = {
 };
 
 function openAddAdvisorDialog() {
+  editingAdvisorIndex.value = -1; // 关键修复：确保是新增模式
   advisorForm.value = { teacherId: '', teacherName: '', school: '', department: '' };
   advisorSearchKeyword.value = "";
   isAdvisorNew.value = false;
@@ -905,9 +1355,12 @@ function handleParticipantSearch() {
       }
     });
 
-    if (uniqueStudents.length === 1) {
-      applyStudentInfo(uniqueStudents[0]);
-    } else if (uniqueStudents.length > 1) {
+    // 查找所有精确匹配项（学号或姓名完全一致）
+    const exactMatches = uniqueStudents.filter(s => s.no === keyword || s.name === keyword);
+
+    if (exactMatches.length === 1) {
+      applyStudentInfo(exactMatches[0]);
+    } else if (uniqueStudents.length > 0) {
       studentOptions.value = uniqueStudents;
       studentSelectVisible.value = true;
     } else {
@@ -927,13 +1380,32 @@ function handleParticipantSearch() {
 }
 
 function applyStudentInfo(student) {
+  // 本地列表查重 (只校验学号)
+  const isDuplicate = samAchievementParticipantList.value.some(
+    p => p.studentId === student.no
+  );
+  if (isDuplicate) {
+    proxy.$modal.msgError("该学号已在参赛选手列表中，请勿重复添加");
+    return;
+  }
+
   participantForm.value.studentId = student.no;
   participantForm.value.studentName = student.name;
+  // Level 2 -> school, Level 3 -> department, Level 4 -> major
   participantForm.value.school = student.school;
   participantForm.value.department = student.department;
   participantForm.value.major = student.major;
-  participantForm.value.class_name = student.className;
-  participantForm.value.class_year = student.classYear;
+
+  // Re-populate cascader starting from Root (Level 1)
+  const values = [];
+  if (deptOptions.value && deptOptions.value.length > 0) {
+    values.push(deptOptions.value[0].deptId); // Prepend Root ID
+  }
+  if (participantForm.value.school) values.push(Number(participantForm.value.school));
+  if (participantForm.value.department) values.push(Number(participantForm.value.department));
+  if (participantForm.value.major) values.push(Number(participantForm.value.major));
+  participantDeptCascaderValue.value = values;
+
   isParticipantNew.value = false;
   studentSelectVisible.value = false;
 }
@@ -968,9 +1440,12 @@ function handleAdvisorSearch() {
       }
     });
 
-    if (uniqueTeachers.length === 1) {
-      applyTeacherInfo(uniqueTeachers[0]);
-    } else if (uniqueTeachers.length > 1) {
+    // 查找所有精确匹配项（工号或姓名完全一致）
+    const exactMatches = uniqueTeachers.filter(t => t.no === keyword || t.teacherName === keyword);
+
+    if (exactMatches.length === 1) {
+      applyTeacherInfo(exactMatches[0]);
+    } else if (uniqueTeachers.length > 0) {
       teacherOptions.value = uniqueTeachers;
       teacherSelectVisible.value = true;
     } else {
@@ -989,10 +1464,30 @@ function handleAdvisorSearch() {
 }
 
 function applyTeacherInfo(teacher) {
+  // 本地列表查重
+  const isDuplicate = samAchievementAdvisorList.value.some(
+    a => a.teacherId === teacher.no
+  );
+  if (isDuplicate) {
+    proxy.$modal.msgError("该老师已在指导老师列表中，请勿重复添加");
+    return;
+  }
+
   advisorForm.value.teacherId = teacher.no;
   advisorForm.value.teacherName = teacher.teacherName;
-  advisorForm.value.school = teacher.school;
-  advisorForm.value.department = teacher.department;
+  // Level 2 -> school, Level 3 -> department
+  advisorForm.value.school = teacher.department;
+  advisorForm.value.department = teacher.major;
+
+  // Re-populate cascader starting from Root (Level 1)
+  const values = [];
+  if (deptOptions.value && deptOptions.value.length > 0) {
+    values.push(deptOptions.value[0].deptId); // Prepend Root ID
+  }
+  if (advisorForm.value.school) values.push(Number(advisorForm.value.school));
+  if (advisorForm.value.department) values.push(Number(advisorForm.value.department));
+  advisorDeptCascaderValue.value = values;
+
   isAdvisorNew.value = false;
   teacherSelectVisible.value = false;
 }
@@ -1001,6 +1496,18 @@ function selectTeacher(row) {
   applyTeacherInfo(row);
 }
 
+// 判断是否允许编辑成员列表（只有负责人、创建者或正在新增时允许）
+const canEditMemberList = computed(() => {
+  if (props.readOnly) return false;
+  // 如果是新增模式（没有 achievementId），允许编辑
+  if (!form.value.achievementId) return true;
+  // 如果是修改模式，判断当前用户是否是创建者，或者是否在负责人名单中
+  const currentUserId = userStore.name;
+  const isCreator = form.value.createBy === currentUserId;
+  const isManager = samAchievementParticipantList.value.some(p => p.studentId === currentUserId && p.manager == 1);
+  return isCreator || isManager;
+});
+
 function submitAddParticipant() {
   // 如果还在查询中，等待一小会或者直接拦截（通常 blur 会先于 click 触发并完成请求）
   if (searchingParticipant.value) {
@@ -1008,35 +1515,80 @@ function submitAddParticipant() {
     return;
   }
 
+  if (isParticipantNew.value && participantDeptCascaderValue.value.length < 3) {
+    proxy.$modal.msgError("请选择完整的所属机构（需选择到专业）");
+    return;
+  }
+
+  const localDuplicate = samAchievementParticipantList.value.some((p, idx) =>
+    idx !== editingParticipantIndex.value && p.studentId === participantForm.value.studentId
+  );
+  if (localDuplicate) {
+    proxy.$modal.msgError("该学号已在列表中，请勿重复添加");
+    return;
+  }
+
   proxy.$refs.addParticipantRef.validate(valid => {
     if (valid) {
-      const pushToList = () => {
-        samAchievementParticipantList.value.push({
+      const finishAction = () => {
+        const itemData = {
+          id: participantForm.value.id, // 保持 ID 传递
           studentId: participantForm.value.studentId,
           studentName: participantForm.value.studentName,
           school: participantForm.value.school,
-          orderNo: samAchievementParticipantList.value.length + 1,
-          manager: samAchievementParticipantList.value.length === 0 ? 1 : 0
-        });
+          department: participantForm.value.department,
+          major: participantForm.value.major,
+          class_name: participantForm.value.class_name,
+          class_year: participantForm.value.class_year,
+          isNewLocal: true
+        };
+
+        if (editingParticipantIndex.value > -1) {
+          const oldItem = samAchievementParticipantList.value[editingParticipantIndex.value];
+          samAchievementParticipantList.value[editingParticipantIndex.value] = {
+            ...oldItem,
+            ...itemData
+          };
+          proxy.$modal.msgSuccess("修改选手信息成功");
+        } else {
+          samAchievementParticipantList.value.push({
+            ...itemData,
+            orderNo: samAchievementParticipantList.value.length + 1,
+            manager: samAchievementParticipantList.value.length === 0 ? 1 : 0
+          });
+        }
         reIndexList(samAchievementParticipantList.value, 'participant');
         addParticipantVisible.value = false;
+        editingParticipantIndex.value = -1;
       };
 
       if (isParticipantNew.value) {
-        addStudent({
-          no: participantForm.value.studentId,
+        // 构建提交给后台基础库的数据
+        const studentData = {
+          studentId: participantForm.value.dbId, // 使用后端需要的字段名 studentId
+          no: participantForm.value.studentId, // 学号
           name: participantForm.value.studentName,
           school: participantForm.value.school,
           department: participantForm.value.department,
           major: participantForm.value.major,
           className: participantForm.value.class_name,
           classYear: participantForm.value.class_year
-        }).then(() => {
-          proxy.$modal.msgSuccess("学生信息录入基础库成功");
-          pushToList();
+        };
+
+        const apiCall = editingParticipantIndex.value > -1 ? updateStudent(studentData) : addStudent(studentData);
+
+        apiCall.then(res => {
+          if (res.code === 200 || res.msg === '操作成功') {
+            proxy.$modal.msgSuccess("学生基础信息保存成功");
+            finishAction();
+          } else {
+            proxy.$modal.msgError(res.msg || "学生基础信息保存失败");
+          }
+        }).catch(err => {
+          console.error("保存学生失败:", err);
         });
       } else {
-        pushToList();
+        finishAction();
       }
     }
   });
@@ -1048,30 +1600,65 @@ function submitAddAdvisor() {
     return;
   }
 
+  if (isAdvisorNew.value && advisorDeptCascaderValue.value.length < 2) {
+    proxy.$modal.msgError("请选择完整的所属机构（需选择到院系）");
+    return;
+  }
+
+  const localDuplicate = samAchievementAdvisorList.value.some((a, idx) =>
+    idx !== editingAdvisorIndex.value && a.teacherId === advisorForm.value.teacherId
+  );
+  if (localDuplicate) {
+    proxy.$modal.msgError("该工号已在列表中，请勿重复添加");
+    return;
+  }
+
   proxy.$refs.addAdvisorRef.validate(valid => {
     if (valid) {
-      const pushToList = () => {
-        samAchievementAdvisorList.value.push({
+      const finishAction = () => {
+        const itemData = {
+          id: advisorForm.value.dbId,
           teacherId: advisorForm.value.teacherId,
           teacherName: advisorForm.value.teacherName,
-          orderNo: samAchievementAdvisorList.value.length + 1
-        });
+          school: advisorForm.value.school,
+          department: advisorForm.value.department,
+          isNewLocal: true
+        };
+
+        if (editingAdvisorIndex.value > -1) {
+          const oldItem = samAchievementAdvisorList.value[editingAdvisorIndex.value];
+          samAchievementAdvisorList.value[editingAdvisorIndex.value] = {
+            ...oldItem,
+            ...itemData
+          };
+          proxy.$modal.msgSuccess("修改指导老师成功");
+        } else {
+          samAchievementAdvisorList.value.push({
+            ...itemData,
+            orderNo: samAchievementAdvisorList.value.length + 1
+          });
+        }
         reIndexList(samAchievementAdvisorList.value);
         addAdvisorVisible.value = false;
+        editingAdvisorIndex.value = -1;
       };
 
       if (isAdvisorNew.value) {
-        addTeacher({
+        const teacherData = {
+          id: advisorForm.value.dbId, // 关键修复：对应后端 sam_teacher 表的 id 字段
           no: advisorForm.value.teacherId,
           teacherName: advisorForm.value.teacherName,
           school: advisorForm.value.school,
           department: advisorForm.value.department
-        }).then(() => {
-          proxy.$modal.msgSuccess("教师信息录入基础库成功");
-          pushToList();
+        };
+
+        const apiCall = editingAdvisorIndex.value > -1 ? updateTeacher(teacherData) : addTeacher(teacherData);
+        apiCall.then(() => {
+          proxy.$modal.msgSuccess("教师信息保存成功");
+          finishAction();
         });
       } else {
-        pushToList();
+        finishAction();
       }
     }
   });
@@ -1083,7 +1670,7 @@ function handleDeleteParticipant() {
     return proxy.$modal.msgError("默认填写的负责人无法删除");
   }
   samAchievementParticipantList.value = samAchievementParticipantList.value.filter(item => !checkedParticipant.value.includes(item));
-  reIndexList(samAchievementParticipantList.value);
+  reIndexList(samAchievementParticipantList.value, 'participant');
 }
 function handleParticipantSelectionChange(sel) { checkedParticipant.value = sel; }
 
@@ -1103,7 +1690,7 @@ const currentExampleUrl = ref("");
 const currentUploadType = ref(""); 
 
 const uploadUnlocked = reactive({
-  award: false, notice: false, work: false, payment: false, invoice: false, receipt: false
+  award: false, notice: false, work: false, photo: false, payment: false, invoice: false, receipt: false
 });
 
 const exampleMap = {
@@ -1111,13 +1698,15 @@ const exampleMap = {
   'notice': '/image/tongzhi.pdf',   
   'payment': '/image/jilu.pdf',     
   'invoice': '/image/fapiao.pdf',   
+  'work': '//image/zuopingzhaopian.pdf',
+  'photo': 'image/caisaizhaopian.pdf',
 };
 
 function handlePreUpload(type) {
   currentUploadType.value = type;
   const fileName = exampleMap[type];
   if (fileName) {
-    currentExampleUrl.value = fileName; 
+    currentExampleUrl.value = fileName;
     exampleVisible.value = true;
   } else {
     uploadUnlocked[type] = true;
@@ -1127,7 +1716,7 @@ function handlePreUpload(type) {
 
 function confirmExampleKnown() {
   if (currentUploadType.value) {
-    uploadUnlocked[currentUploadType.value] = true; 
+    uploadUnlocked[currentUploadType.value] = true;
     exampleVisible.value = false;
     proxy.$modal.msgSuccess("已解锁，请点击按钮选择文件上传");
   }
@@ -1142,12 +1731,29 @@ const attachmentConfig = computed(() => {
   };
 
   return [
-    { label: findDictLabel('1') || '获奖证书', name: 'award', prop: 'fileAward', alert: `请上传${findDictLabel('1') || '获奖证书'}` },
-    { label: findDictLabel('2') || '比赛通知', name: 'notice', prop: 'fileNotice', alert: `请上传${findDictLabel('2') || '比赛通知'}` },
-    { label: findDictLabel('3') || '参赛作品', name: 'work', prop: 'fileWork', alert: `请上传${findDictLabel('3') || '参赛作品'}` },
-    { label: findDictLabel('4') || '支付记录', name: 'payment', prop: 'filePayment', alert: `请上传${findDictLabel('4') || '支付记录'}`, type: 'warning', condition: (f) => f.isReimburse === 1 },
-    { label: findDictLabel('5') || '正规发票', name: 'invoice', prop: 'fileInvoice', alert: `请上传${findDictLabel('5') || '正规发票'}`, type: 'warning', condition: (f) => f.isReimburse === 1 },
-    { label: findDictLabel('6') || '收款码', name: 'receipt', prop: 'fileReceiptCode', alert: `请上传${findDictLabel('6') || '收款码'}`, type: 'warning', condition: (f) => f.isReimburse === 1 },
+    { label: findDictLabel('1') || '获奖证书', name: 'award', prop: 'fileAward', alert: `请上传${findDictLabel('1') || '获奖证书'} (PDF)`, fileType: ['pdf'], limit: 1 },
+    { label: findDictLabel('2') || '比赛通知', name: 'notice', prop: 'fileNotice', alert: `请上传${findDictLabel('2') || '比赛通知'} (PDF)`, fileType: ['pdf'], limit: 1 },
+    {
+      label: findDictLabel('3') || '参赛作品',
+      name: 'work',
+      prop: 'fileWork',
+      alert: form.value.hasFileWork === 1 ? `请上传${findDictLabel('3') || '参赛作品'} (PDF，5份及以上)` : `请上传手写声明 (PDF，1份)`,
+      fileType: ['pdf'],
+      limit: form.value.hasFileWork === 1 ? 10 : 1,
+      isMultiple: true
+    },
+    {
+      label: findDictLabel('8') || '比赛照片',
+      name: 'photo',
+      prop: 'filePhoto',
+      alert: form.value.hasFilePhoto === 1 ? `请上传${findDictLabel('8') || '比赛照片'} (PDF，5份及以上)` : `请上传手写声明 (PDF，1份)`,
+      fileType: ['pdf'],
+      limit: form.value.hasFilePhoto === 1 ? 10 : 1,
+      isMultiple: true
+    },
+    { label: findDictLabel('4') || '支付记录', name: 'payment', prop: 'filePayment', alert: `请上传${findDictLabel('4') || '支付记录'} (PDF)`, type: 'warning', condition: (f) => f.isReimburse === 1, fileType: ['pdf'], limit: 1 },
+    { label: findDictLabel('5') || '正规发票', name: 'invoice', prop: 'fileInvoice', alert: `请上传${findDictLabel('5') || '正规发票'} (PDF)`, type: 'warning', condition: (f) => f.isReimburse === 1, fileType: ['pdf'], limit: 1 },
+    { label: findDictLabel('6') || '收款码', name: 'receipt', prop: 'fileReceiptCode', alert: `请上传${findDictLabel('6') || '收款码'} (PDF)`, type: 'warning', condition: (f) => f.isReimburse === 1, fileType: ['pdf'], limit: 1 },
   ];
 });
 const visibleAttachments = computed(() => {
@@ -1157,37 +1763,16 @@ const visibleAttachments = computed(() => {
   });
 });
 
-const previewUrls = reactive({ award: "", notice: "", work: "", payment: "", invoice: "", receipt: "" });
+const previewUrls = reactive({ award: "", notice: "", work: {}, photo: {}, payment: "", invoice: "", receipt: "" });
 
-function loadSafePreview(uuid, type) {
-  if (!uuid) {
-    if (previewUrls[type]) window.URL.revokeObjectURL(previewUrls[type]);
-    previewUrls[type] = "";
-    return;
-  }
-  request({
-    url: '/attachment/download',
-    method: 'get',
-    params: { resource: uuid },
-    responseType: 'blob'
-  }).then(blob => {
-    if (previewUrls[type]) window.URL.revokeObjectURL(previewUrls[type]);
-    
-    // 【关键修复】：兼容若依拦截器，确保拿到的是纯净的二进制数据
-    const blobData = blob.data || blob; 
-    const blobWithMime = new Blob([blobData], { type: 'application/pdf' });
-    previewUrls[type] = window.URL.createObjectURL(blobWithMime);
-  }).catch(err => {
-    console.error("预览加载失败", err);
-    previewUrls[type] = "";
-  });
-}
-function handleOpenDetail(uuid) {
+// 生成安全的本地预览流
+function loadSafePreview(uuid, type, index = null) {
   if (!uuid) return;
-  proxy.$modal.loading("正在准备文件...");
 
-  // 【关键修复】：在发请求前先同步打开一个空白页，成功绕过浏览器拦截
-  const newWin = window.open('about:blank', '_blank');
+  // 多图如果已有预览，跳过
+  if (type === 'work' || type === 'photo') {
+    if (previewUrls[type][uuid]) return;
+  }
 
   request({
     url: '/attachment/download',
@@ -1195,69 +1780,87 @@ function handleOpenDetail(uuid) {
     params: { resource: uuid },
     responseType: 'blob'
   }).then(blob => {
-    proxy.$modal.closeLoading();
-    
     const blobData = blob.data || blob;
-    const blobWithMime = new Blob([blobData], { type: 'application/pdf' });
-    const blobUrl = window.URL.createObjectURL(blobWithMime);
+    let fileName = getFileName(uuid) || '';
+    
+    // 态识别文件类型，防止把图片强行当成 PDF 导致白屏
+    let mimeType = 'application/pdf'; // 默认当做 PDF
+    if (fileName.match(/\.(jpg|jpeg|png|gif)$/i) || (blobData.type && blobData.type.startsWith('image/'))) {
+      mimeType = blobData.type || 'image/jpeg';
+    }
+    
+    const blobWithMime = new Blob([blobData], { type: mimeType });
+    const url = window.URL.createObjectURL(blobWithMime);
 
-    // 将刚才的空白页重定向到生成的 PDF 链接
-    if (newWin) {
-      newWin.location.href = blobUrl;
+    if (type === 'work' || type === 'photo') {
+      previewUrls[type][uuid] = url;
     } else {
-      proxy.$modal.msgWarning("详情弹窗被浏览器拦截，请在地址栏允许弹窗后重试");
+      if (previewUrls[type]) window.URL.revokeObjectURL(previewUrls[type]);
+      previewUrls[type] = url;
     }
   }).catch(err => {
-    proxy.$modal.closeLoading();
-    if (newWin) newWin.close();
-    proxy.$modal.msgError("文件获取失败，请稍后重试");
+    console.error(`预览加载失败 [${type}]: ${uuid}`, err);
   });
 }
-function handleDownload(uuid) {
-  if (!uuid) return;
-  
-  proxy.$modal.loading("正在下载文件，请稍候...");
 
-  request({
-    url: '/attachment/download',
-    method: 'get',
-    params: { resource: uuid },
-    responseType: 'blob' // 告诉 axios 我们要接收的是二进制数据流
-  }).then(blob => {
-    proxy.$modal.closeLoading();
-    
-    // 兼容若依拦截器，提取纯净数据
-    const blobData = blob.data || blob;
-    // 强制指定为 PDF 类型
-    const blobWithMime = new Blob([blobData], { type: 'application/pdf' }); 
-    const blobUrl = window.URL.createObjectURL(blobWithMime);
-    
-    // 创建一个隐藏的 a 标签来触发浏览器原生下载
-    const a = document.createElement('a');
-    a.style.display = 'none';
-    a.href = blobUrl;
-    a.download = '成果附件_' + uuid + '.pdf'; // 设置下载后的默认文件名
-    
-    document.body.appendChild(a);
-    a.click(); // 模拟点击下载
-    
-    // 下载完毕后清理 DOM 和内存中的 URL
-    document.body.removeChild(a);
-    window.URL.revokeObjectURL(blobUrl);
-    
-  }).catch(err => {
-    proxy.$modal.closeLoading();
-    console.error("下载异常", err);
-    proxy.$modal.msgError("下载失败，请稍后重试");
+/** 获取多文件列表数组 (兼容字符串和数组) */
+function getFileList(val) {
+  if (!val) return [];
+  if (Array.isArray(val)) return val;
+  return val.split(',').filter(s => s !== "");
+}
+
+function syncMultiPreview(type, value) {
+  const uuids = getFileList(value);
+  const currentMap = previewUrls[type];
+
+  Object.keys(currentMap).forEach((uuid) => {
+    if (!uuids.includes(uuid)) {
+      revokePreviewUrl(currentMap[uuid]);
+      delete currentMap[uuid];
+    }
+  });
+
+  uuids.forEach((uuid) => {
+    if (!currentMap[uuid]) {
+      loadSafePreview(uuid, type);
+    }
   });
 }
+
+function revokePreviewUrl(url) {
+  if (url) {
+    window.URL.revokeObjectURL(url);
+  }
+}
+
 watch(() => form.value.fileAward, (uuid) => loadSafePreview(uuid, 'award'));
 watch(() => form.value.fileNotice, (uuid) => loadSafePreview(uuid, 'notice'));
-watch(() => form.value.fileWork, (uuid) => loadSafePreview(uuid, 'work'));
+watch(() => form.value.fileWork, (val) => {
+  const uuids = getFileList(val);
+  uuids.forEach(uuid => loadSafePreview(uuid, 'work'));
+}, { deep: true, immediate: true });
+watch(() => form.value.filePhoto, (val) => {
+  const uuids = getFileList(val);
+  uuids.forEach(uuid => loadSafePreview(uuid, 'photo'));
+}, { deep: true, immediate: true });
 watch(() => form.value.filePayment, (uuid) => loadSafePreview(uuid, 'payment'));
 watch(() => form.value.fileInvoice, (uuid) => loadSafePreview(uuid, 'invoice'));
 watch(() => form.value.fileReceiptCode, (uuid) => loadSafePreview(uuid, 'receipt'));
 
+function handleHasFileChange(type, val) {
+  const prop = type === 'work' ? 'fileWork' : 'filePhoto';
+  form.value[prop] = [];
+
+  if (val === 0) {
+    // 复用示例弹出逻辑：展示 PDF 内容并要求用户确认后解锁
+    currentUploadType.value = type;
+    currentExampleUrl.value = type === 'work' ? '/image/zuopingzhaopian.pdf' : '/image/cansaizhaopian.pdf'; 
+    exampleVisible.value = true;
+    // 重置解锁状态，直到用户在弹出层点击“确认”
+    uploadUnlocked[type] = false;
+  }
+}
 // =========================================================
 // 赛事与届次联动逻辑
 // =========================================================
@@ -1288,10 +1891,48 @@ function getSessionList(competitionId) {
   request({
     url: '/session/session/list',
     method: 'get',
-    params: { competitionId: competitionId, pageNum: 1, pageSize: 100 } 
+    params: { competitionId: competitionId, pageNum: 1, pageSize: 100 }
   }).then(response => {
     sessionOptions.value = response.rows || [];
+    // 列表加载完成后，尝试自动匹配一次
+    autoMatchSession();
   });
+}
+
+/**
+ * 自动匹配届次逻辑
+ * 根据：赛事(competitionId) + 获奖级别(level) + 获奖时间(awardTime) 智能推断
+ */
+function autoMatchSession() {
+  const { competitionId, level, awardTime } = form.value;
+  
+  // 核心条件不全，或候选项还没加载好，则跳过
+  if (!competitionId || !level || !awardTime || !sessionOptions.value.length) {
+    return;
+  }
+
+  // 1. 解析时间
+  const date = new Date(awardTime);
+  const year = date.getFullYear();
+  const month = date.getMonth() + 1; // getMonth 是 0-11
+
+  // 2. 设定搜索年份窗口 (解决跨年问题)
+  // 1-4月获奖，可能属于去年或当年的比赛；5-12月获奖，基本属于当年比赛
+  const targetYears = month <= 4 ? [year.toString(), (year - 1).toString()] : [year.toString()];
+
+  // 3. 在候选列表中筛选
+  const matched = sessionOptions.value.filter(item => {
+    // A. 级别必须一致 (注意类型转换或弱等于)
+    const isLevelMatch = item.level == level;
+    // B. 年份匹配：session 字段通常包含年份文字，如 "2025" 或 "2025第十八届"
+    const isYearMatch = targetYears.some(y => item.session && item.session.includes(y));
+    return isLevelMatch && isYearMatch;
+  });
+
+  // 4. 自动赋值：只有当推断结果唯一时才自动勾选，避免歧义
+  if (matched.length === 1) {
+    form.value.sessionId = matched[0].id;
+  }
 }
 
 function handleCompetitionChange(val) {
@@ -1302,8 +1943,14 @@ function handleCompetitionChange(val) {
   }
 }
 
+// 监听级别和时间的变化，实时触发匹配逻辑
+watch(() => [form.value.level, form.value.awardTime], () => {
+  autoMatchSession();
+});
+
 function open(id) {
   if (!isPageMode.value) visible.value = true;
+  pendingAchievementId.value = id ? String(id) : "";
   reset();
   getDeptTree();
   getCompetitionList();
@@ -1311,9 +1958,12 @@ function open(id) {
   activeAttachmentTab.value = 'award';
   if (id) {
     title.value = props.titleEdit;
+    detailLoading.value = true;
     loadDetail(id);
   } else {
     title.value = props.titleAdd;
+    detailLoading.value = false;
+    pendingAchievementId.value = "";
     // 【核心修改】：根据 sourceMode 进行默认填充
     if (props.sourceMode === 'guided') {
       // 教师端：我指导的成果，默认填入当前教师为第一指导老师
@@ -1389,14 +2039,33 @@ function open(id) {
       }
     }
 
+    reIndexList(samAchievementParticipantList.value, 'participant');
+    reIndexList(samAchievementAdvisorList.value);
+
     updateSnapshot();
-    // 新增模式下检查草稿
-    checkDraft();
+    // 只有在弹窗模式下（非页面模式）才在 open 时检查草稿
+    // 因为页面模式下 onMounted 已经检查过了，避免重复弹窗
+    if (!isPageMode.value) {
+      checkDraft();
+    }
   }
   initSortable();
 }
 function getForm() { return form.value; }
-defineExpose({ open, getForm, activeAttachmentTab });
+defineExpose({ open, getForm, activeAttachmentTab, submitForm });
+
+const sortableInstances = ref([]);
+const sortableTimeout = ref(null);
+
+onUnmounted(() => {
+  if (sortableTimeout.value) {
+    clearTimeout(sortableTimeout.value);
+  }
+  sortableInstances.value.forEach(instance => {
+    instance.destroy();
+  });
+  sortableInstances.value = [];
+});
 
 onMounted(() => {
   if (isPageMode.value) {
@@ -1413,95 +2082,99 @@ onMounted(() => {
 });
 
 function initSortable() {
-  setTimeout(() => {
-    const pTable = participantTable.value || participantTableDialog.value;
-    if (pTable) {
-      const el = pTable.$el.querySelector('.el-table__body-wrapper tbody') || pTable.$el.querySelector('tbody');
-      if (el) {
-        Sortable.create(el, {
-          handle: '.drag-handle',
-          filter: '.fixed-row', // 禁止拖动带 fixed-row 类的行
-          onMove: (evt) => {
-            // 禁止拖动到带 fixed-row 类的行上方（即禁止覆盖索引为0的位置）
-            return evt.related.className.indexOf('fixed-row') === -1;
-          },
-          onEnd: ({ newIndex, oldIndex }) => {
-            if (newIndex === oldIndex) return;
-            const list = [...samAchievementParticipantList.value];
-            const currRow = list.splice(oldIndex, 1)[0];
-            list.splice(newIndex, 0, currRow);
-            samAchievementParticipantList.value = [];
-            nextTick(() => {
-              samAchievementParticipantList.value = list;
-              reIndexList(samAchievementParticipantList.value);
-            });
-          }
-        });
-      }
-    }
+  if (sortableTimeout.value) clearTimeout(sortableTimeout.value);
+  
+  sortableTimeout.value = setTimeout(() => {
+    // 清除旧实例
+    sortableInstances.value.forEach(instance => instance.destroy());
+    sortableInstances.value = [];
 
-    const aTable = advisorTable.value || advisorTableDialog.value;
-    if (aTable) {
-      const el = aTable.$el.querySelector('.el-table__body-wrapper tbody') || aTable.$el.querySelector('tbody');
-      if (el) {
-        Sortable.create(el, {
-          handle: '.drag-handle',
-          filter: '.fixed-row', // 禁止拖动带 fixed-row 类的行
-          onMove: (evt) => {
-            // 禁止拖动到带 fixed-row 类的行上方
-            return evt.related.className.indexOf('fixed-row') === -1;
-          },
-          onEnd: ({ newIndex, oldIndex }) => {
-            if (newIndex === oldIndex) return;
-            const list = [...samAchievementAdvisorList.value];
-            const currRow = list.splice(oldIndex, 1)[0];
-            list.splice(newIndex, 0, currRow);
-            samAchievementAdvisorList.value = [];
-            nextTick(() => {
-              samAchievementAdvisorList.value = list;
-              reIndexList(samAchievementAdvisorList.value);
-            });
-          }
-        });
+    const tables = [
+      { ref: participantTable.value || participantTableDialog.value, list: samAchievementParticipantList },
+      { ref: advisorTable.value || advisorTableDialog.value, list: samAchievementAdvisorList }
+    ];
+
+    tables.forEach(({ ref: tableRef, list }) => {
+      if (tableRef && tableRef.$el) {
+        const el = tableRef.$el.querySelector('.el-table__body-wrapper tbody') || tableRef.$el.querySelector('tbody');
+        if (el) {
+          const instance = Sortable.create(el, {
+            handle: '.drag-handle',
+            filter: '.fixed-row',
+            onMove: (evt) => {
+              return evt.related.className.indexOf('fixed-row') === -1;
+            },
+            onEnd: ({ newIndex, oldIndex }) => {
+              if (newIndex === oldIndex) return;
+              const newList = [...list.value];
+              const currRow = newList.splice(oldIndex, 1)[0];
+              newList.splice(newIndex, 0, currRow);
+              list.value = [];
+              nextTick(() => {
+                list.value = newList;
+                reIndexList(list.value);
+              });
+            }
+          });
+          sortableInstances.value.push(instance);
+        }
       }
-    }
+    });
   }, 500);
 }
 
 // === 【核心修复】：增强的数据回显逻辑 ===
 function loadDetail(id) {
-  if (!props.getFn) return;
-  props.getFn(id).then(response => {
-    const d = response.data;
-    
-    if (d.category != null) d.category = String(d.category);
-    if (d.level != null) d.level = String(d.level);
-    if (d.grade != null) d.grade = String(d.grade);
-    if (d.groupId != null) d.groupId = String(d.groupId);
+  if (!props.getFn) {
+    detailLoading.value = false;
+    return;
+  }
+  pendingAchievementId.value = id ? String(id) : pendingAchievementId.value;
+  detailLoading.value = true;
+  props
+    .getFn(id)
+    .then((response) => {
+      const d = response.data;
 
-    if (d.competitionId != null) d.competitionId = Number(d.competitionId);
-    if (d.sessionId != null) d.sessionId = Number(d.sessionId);
-    if (d.ownerDepId != null) d.ownerDepId = Number(d.ownerDepId);
+      if (d.category != null) d.category = String(d.category);
+      if (d.level != null) d.level = String(d.level);
+      if (d.grade != null) d.grade = String(d.grade);
+      if (d.groupId != null) d.groupId = String(d.groupId);
+
+      if (d.competitionId != null) d.competitionId = Number(d.competitionId);
+      if (d.sessionId != null) d.sessionId = Number(d.sessionId);
+      if (d.ownerDepId != null) d.ownerDepId = Number(d.ownerDepId);
 
     // 预先占位，确保 Vue 的模板监听能够完美挂载并触发渲染
     d.fileAward = null;
     d.fileNotice = null;
-    d.fileWork = null;
+    d.fileWork = [];
+    d.filePhoto = [];
     d.filePayment = null;
     d.fileInvoice = null;
     d.fileReceiptCode = null;
 
+    // 初始化 hasFile 状态
+    d.hasFileWork = 1;
+    d.hasFilePhoto = 1;
+
     if (d.samAchievementAttachmentList) {
+       let workCount = 0;
+       let photoCount = 0;
        d.samAchievementAttachmentList.forEach(item => {
           const typeStr = String(item.type);
           const uuid = item.fileUuid || item.file_uuid; // 兼容不同数据库下划线配置
           if (typeStr === '1') d.fileAward = uuid;
           if (typeStr === '2') d.fileNotice = uuid;
-          if (typeStr === '3') d.fileWork = uuid;
+          if (typeStr === '3') { d.fileWork.push(uuid); workCount++; }
+          if (typeStr === '8') { d.filePhoto.push(uuid); photoCount++; }
           if (typeStr === '4') d.filePayment = uuid;
           if (typeStr === '5') d.fileInvoice = uuid;
           if (typeStr === '6') d.fileReceiptCode = uuid;
        });
+       // 如果只有一份，认为是声明
+       if (workCount === 1) d.hasFileWork = 0;
+       if (photoCount === 1) d.hasFilePhoto = 0;
     }
 
     form.value = d; // 一次性赋值给响应式对象
@@ -1518,6 +2191,12 @@ function loadDetail(id) {
     if (form.value.isReimburse == null) form.value.isReimburse = 0;
     
     updateSnapshot();
+    })
+    .catch((error) => {
+      console.error("加载成果详情失败", error);
+    })
+    .finally(() => {
+      detailLoading.value = false;
   });
 }
 
@@ -1525,8 +2204,9 @@ function reset() {
   form.value = {
     competitionId: null, achievementId: null, sessionId: null, category: "3", name: null, teamName: null,
     level: null, grade: null, track: null, certificateNo: null, groupId: null, ownerDepId: null,
-    awardTime: null, fee: null, isReimburse: 0,
-    fileAward: null, fileNotice: null, fileWork: null, filePayment: null, fileInvoice: null, fileReceiptCode: null
+    awardTime: null, fee: null, reimbursementFee: null, isReimburse: 0,
+    fileAward: null, fileNotice: null, fileWork: [], filePhoto: [], filePayment: null, fileInvoice: null, fileReceiptCode: null,
+    hasFileWork: 1, hasFilePhoto: 1
   };
   samAchievementParticipantList.value = [];
   samAchievementAdvisorList.value = [];
@@ -1534,10 +2214,20 @@ function reset() {
   
   Object.keys(uploadUnlocked).forEach(k => uploadUnlocked[k] = false);
   
+ //区分单文件和多文件，防止多图的对象结构被破坏
   Object.keys(previewUrls).forEach(key => {
-    if (previewUrls[key]) {
-      window.URL.revokeObjectURL(previewUrls[key]);
-      previewUrls[key] = "";
+    if (typeof previewUrls[key] === 'string') {
+      if (previewUrls[key]) {
+        window.URL.revokeObjectURL(previewUrls[key]);
+        previewUrls[key] = "";
+      }
+    } else {
+      if (previewUrls[key]) {
+        Object.values(previewUrls[key]).forEach(url => {
+          if (url) window.URL.revokeObjectURL(url);
+        });
+        previewUrls[key] = {}; // 这里必须保持是对象 {}，绝不能变成 ""
+      }
     }
   });
   if(outcomeRefPage.value) outcomeRefPage.value.resetFields();
@@ -1555,13 +2245,44 @@ function validatePDFUpload() {
   const awardLabel = findLabel('1') || '获奖证书';
   const noticeLabel = findLabel('2') || '比赛通知';
   const workLabel = findLabel('3') || '参赛作品';
+  const photoLabel = findLabel('8') || '比赛照片';
   const paymentLabel = findLabel('4') || '支付记录';
   const invoiceLabel = findLabel('5') || '正规发票';
   const receiptLabel = findLabel('6') || '收款码';
 
   if (!f.fileAward) { proxy.$modal.msgWarning(`请上传【${awardLabel}】PDF文件！`); activeAttachmentTab.value = 'award'; return false; }
   if (!f.fileNotice) { proxy.$modal.msgWarning(`请上传【${noticeLabel}】PDF文件！`); activeAttachmentTab.value = 'notice'; return false; }
-  if (!f.fileWork) { proxy.$modal.msgWarning(`请上传【${workLabel}】PDF文件！`); activeAttachmentTab.value = 'work'; return false; }
+
+  const workFiles = getFileList(f.fileWork);
+  const photoFiles = getFileList(f.filePhoto);
+
+  if (f.hasFileWork === 1) {
+    if (workFiles.length < 5) {
+      proxy.$modal.msgWarning(`【${workLabel}】要求上传至少5份PDF文件！当前已上传 ${workFiles.length} 份`);
+      activeAttachmentTab.value = 'work';
+      return false;
+    }
+  } else {
+    if (workFiles.length < 1) {
+      proxy.$modal.msgWarning(`请上传【${workLabel}】手写声明PDF文件！`);
+      activeAttachmentTab.value = 'work';
+      return false;
+    }
+  }
+
+  if (f.hasFilePhoto === 1) {
+    if (photoFiles.length < 5) {
+      proxy.$modal.msgWarning(`【${photoLabel}】要求上传至少5份PDF文件！当前已上传 ${photoFiles.length} 份`);
+      activeAttachmentTab.value = 'photo';
+      return false;
+    }
+  } else {
+    if (photoFiles.length < 1) {
+      proxy.$modal.msgWarning(`请上传【${photoLabel}】手写声明PDF文件！`);
+      activeAttachmentTab.value = 'photo';
+      return false;
+    }
+  }
 
   if (f.isReimburse === 1) {
     if (!f.filePayment) { proxy.$modal.msgWarning(`申请报销必须上传【${paymentLabel}】PDF文件！`); activeAttachmentTab.value = 'payment'; return false; }
@@ -1572,20 +2293,55 @@ function validatePDFUpload() {
 }
 
 function submitForm() {
-  if (props.readOnly) return;
-  const activeRef = isPageMode.value ? outcomeRefPage.value : outcomeRefDialog.value;
-  
-  activeRef.validate(valid => {
-    if (valid) {
-      if (!validatePDFUpload()) return;
+  if (props.readOnly) return Promise.resolve(false);
+  const activeRef = isPageMode.value
+    ? outcomeRefPage.value
+    : outcomeRefDialog.value;
+
+  return new Promise((resolve) => {
+    activeRef.validate((valid) => {
+      if (!valid) {
+        resolve(false);
+        return;
+      }
+      if (!validatePDFUpload()) {
+        resolve(false);
+        return;
+      }
+
+      trimStringFields(form.value, [
+        "name",
+        "track",
+        "certificateNo",
+        "teamName",
+        "fee",
+      ]);
+
+      if (!form.value.ownerDepId) {
+        proxy.$modal.msgWarning("归属学院不能为空，请先确认第一负责人所属学院");
+        resolve(false);
+        return;
+      }
 
       let attachments = [];
-      const pushFile = (type, path) => { 
-        if (path) { attachments.push({ type: type, fileUuid: path, fileType: 1 }); } 
-      };
-      pushFile(1, form.value.fileAward);
+      const pushFile = (type, path) => {
+        if (!path) return;
+        if (Array.isArray(path)) {
+          path.forEach(p => {
+            if (p) attachments.push({ type: type, fileUuid: p, fileType: 1 });
+          });
+        } else {
+          // 兼容可能存在的逗号分隔字符串 (处理某些组件返回拼接字符串的情况)
+          const uuids = String(path).split(',');
+          uuids.forEach(u => {
+            const trimmed = u.trim();
+            if (trimmed) attachments.push({ type: type, fileUuid: trimmed, fileType: 1 });
+          });
+        }
+      };      pushFile(1, form.value.fileAward);
       pushFile(2, form.value.fileNotice);
       pushFile(3, form.value.fileWork);
+      pushFile(8, form.value.filePhoto);
       pushFile(4, form.value.filePayment);
       pushFile(5, form.value.fileInvoice);
       pushFile(6, form.value.fileReceiptCode);
@@ -1615,12 +2371,33 @@ function submitForm() {
           updateSnapshot(); 
           if (!isPageMode.value) visible.value = false;
           emit('ok');
+          resolve(true);
+        }).catch(() => {
+          resolve(false);
         });
       } else {
         proxy.$modal.msgError("未配置保存接口");
+        resolve(false);
       }
-    }
+    });
   });
+}
+
+//兼容若依上传后变成字符串的删除逻辑
+function handleRemoveFile(prop, uuid) {
+  if (!form.value[prop]) return;
+
+  if (Array.isArray(form.value[prop])) {
+    // 如果是数组，直接过滤掉当前 uuid
+    form.value[prop] = form.value[prop].filter(id => id !== uuid);
+  } else if (typeof form.value[prop] === 'string') {
+    // 如果是若依拼接的字符串，先拆成数组，过滤后再拼回去
+    let arr = form.value[prop].split(',').filter(id => id && id !== uuid);
+    // 如果删完还有剩余，保留字符串；如果全删光了，设为 null 触发必填校验
+    form.value[prop] = arr.length > 0 ? arr.join(',') : null;
+  } else {
+    form.value[prop] = null;
+  }
 }
 
 function handleBeforeClose(done) {
@@ -1677,9 +2454,53 @@ function handleCancel() {
   }
 }
 
+function getDeptName(deptId) {
+  if (!deptId) return "-";
+  const id = Number(deptId);
+  if (isNaN(id)) return deptId; // 如果本来就是文字则直接返回
+
+  const findName = (nodes) => {
+    for (const node of nodes) {
+      if (node.deptId == id) return node.deptName;
+      if (node.children) {
+        const name = findName(node.children);
+        if (name) return name;
+      }
+    }
+    return null;
+  };
+  return findName(deptOptions.value) || deptId;
+}
+
 function getDeptTree() {
   listDept().then(response => {
-    deptOptions.value = handleTree(response.data, "deptId");
+    const fullTree = handleTree(response.data, "deptId");
+    deptOptions.value = fullTree;
+
+    // Skip Level 1 (Root/University) to start directly from Level 2 (College)
+    let processedTree = [];
+    if (fullTree && fullTree.length > 0 && fullTree[0].children) {
+      processedTree = fullTree[0].children;
+    } else {
+      processedTree = fullTree;
+    }
+
+    // Students see Level 2 to Level 4 (College -> Dept -> Major)
+    studentDeptOptions.value = JSON.parse(JSON.stringify(processedTree));
+
+    // Teachers see Level 2 to Level 3 only (College -> Dept)
+    const teacherTree = JSON.parse(JSON.stringify(processedTree));
+    teacherTree.forEach(college => {
+      if (college.children) {
+        college.children.forEach(dept => {
+          // Dept is Level 3, remove its Level 4 children (Majors)
+          if (dept.children) {
+            delete dept.children;
+          }
+        });
+      }
+    });
+    advisorDeptOptions.value = teacherTree;
   });
 }
 
@@ -1735,22 +2556,90 @@ onBeforeRouteLeave((to, from, next) => {
 });
 
 function goToCompetitionApply() {
-  proxy.$router.push('/views/competition-apply/index');
+  proxy.$router.push('/competitions/competitionapply');
+}
+// 查看详情（在新标签页打开文件）
+function handleOpenDetail(uuid) {
+  if (!uuid) return proxy.$modal.msgError("文件不存在");
+  
+  // 使用 request 请求，自动携带 token
+  request({
+    url: '/attachment/download',
+    method: 'get',
+    params: { resource: uuid },
+    responseType: 'blob'
+  }).then(blob => {
+    const blobData = blob.data || blob;
+    const blobWithMime = new Blob([blobData], { type: 'application/pdf' });
+    const url = window.URL.createObjectURL(blobWithMime);
+    window.open(url, '_blank');
+  }).catch(() => {
+    proxy.$modal.msgError("文件获取失败，请重试");
+  });
+}
+
+// 下载文件
+// 下载文件
+function handleDownload(uuid) {
+  if (!uuid) return proxy.$modal.msgError("文件不存在");
+  
+  request({
+    url: '/attachment/download',
+    method: 'get',
+    params: { resource: uuid },
+    responseType: 'blob'
+  }).then(blob => {
+    const blobData = blob.data || blob;
+    let fileName = getFileName(uuid) || '下载文件';
+
+    // 【核心修复】：如果文件名没有小数点（没有后缀），强行加上 .pdf
+    if (!fileName.includes('.')) {
+      fileName += '.pdf';
+    }
+
+    // 推断正确的 MIME 类型
+    let mimeType = blobData.type;
+    if (!mimeType || mimeType === 'application/octet-stream') {
+      mimeType = fileName.toLowerCase().endsWith('.pdf') ? 'application/pdf' : 'image/jpeg';
+    }
+
+    const url = window.URL.createObjectURL(new Blob([blobData], { type: mimeType }));
+    const a = document.createElement('a');
+    a.style.display = 'none';
+    a.href = url;
+    a.download = fileName;
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    window.URL.revokeObjectURL(url); // 释放内存
+  }).catch(() => {
+    proxy.$modal.msgError("文件下载失败，请重试");
+  });
 }
 </script>
 
 <style scoped>
 .outcome-page .page-header {
-  display: flex; align-items: center; justify-content: space-between; margin-bottom: 14px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 14px;
 }
-.outcome-page .page-title { font-size: 18px; font-weight: 600; }
-.outcome-page .page-actions { display: flex; align-items: center; gap: 10px; }
-.dialog-footer-wrapper { 
-  display: flex; 
-  justify-content: space-between; 
-  align-items: center; 
+.outcome-page .page-title {
+  font-size: 18px;
+  font-weight: 600;
+}
+.outcome-page .page-actions {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+.dialog-footer-wrapper {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
   position: relative;
-  z-index: 999; 
+  z-index: 999;
 }
 .footer-right {
   position: relative;
@@ -1760,13 +2649,29 @@ function goToCompetitionApply() {
   position: relative;
   z-index: 99;
 }
-.attach-card { background: #f8f8f9; padding: 10px; border-radius: 4px; border: 1px solid #d9d9d9; height: 100%; }
-.upload-pane-content { padding: 5px 10px; }
-.mb10 { margin-bottom: 15px; }
-.mr5 { margin-right: 5px; }
-:deep(.el-tabs__content) { height: 100%; }
+.attach-card {
+  background: #f8f8f9;
+  padding: 10px;
+  border-radius: 4px;
+  border: 1px solid #d9d9d9;
+  height: 100%;
+}
+.upload-pane-content {
+  padding: 5px 10px;
+}
+.mb10 {
+  margin-bottom: 15px;
+}
+.mr5 {
+  margin-right: 5px;
+}
+:deep(.el-tabs__content) {
+  height: 100%;
+}
 
-.hide-file-list :deep(.el-upload-list) { display: none !important; }
+.hide-file-list :deep(.el-upload-list) {
+  display: none !important;
+}
 
 .fake-upload-box {
   width: 100%;
@@ -1778,10 +2683,10 @@ function goToCompetitionApply() {
   text-align: center;
   padding: 30px 0;
   background-color: #fff;
-  transition: border-color .3s;
+  transition: border-color 0.3s;
 }
 .fake-upload-box:hover {
-  border-color: #409EFF;
+  border-color: #409eff;
 }
 
 .custom-file-row {
@@ -1792,17 +2697,17 @@ function goToCompetitionApply() {
   font-size: 13px;
   color: #606266;
   border: 1px solid #e4e7ed;
-  display: block; 
+  display: block;
 }
 
 .file-name {
-  display: flex; 
-  align-items: center; 
+  display: flex;
+  align-items: center;
   width: 100%;
   margin-bottom: 8px;
   font-weight: 500;
-  white-space: nowrap; 
-  overflow: hidden; 
+  white-space: nowrap;
+  overflow: hidden;
   text-overflow: ellipsis;
 }
 
@@ -1814,11 +2719,16 @@ function goToCompetitionApply() {
 }
 
 .preview-box {
-  margin-top: 5px; line-height: 1.2;
+  margin-top: 5px;
+  line-height: 1.2;
   border: 1px solid #ddd;
   padding: 2px;
   background-color: #fff;
   width: 100%;
   box-sizing: border-box;
+}
+
+.full-width-cascader {
+  width: 100% !important;
 }
 </style>

@@ -12,14 +12,20 @@ import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.multipart.MultipartFile;
 import com.ruoyi.common.annotation.Log;
 import com.ruoyi.common.core.controller.BaseController;
 import com.ruoyi.common.core.domain.AjaxResult;
+import com.ruoyi.common.core.domain.model.LoginUser;
 import com.ruoyi.common.enums.BusinessType;
+import com.ruoyi.common.utils.SecurityUtils;
+import com.ruoyi.common.utils.StringUtils;
 import com.ruoyi.achievement.domain.SamTeacher;
 import com.ruoyi.achievement.service.ISamTeacherService;
 import com.ruoyi.common.utils.poi.ExcelUtil;
 import com.ruoyi.common.core.page.TableDataInfo;
+import com.ruoyi.framework.web.service.TokenService;
+import com.ruoyi.web.service.ProfileCompletionService;
 
 /**
  * 教师档案Controller
@@ -33,6 +39,12 @@ public class SamTeacherController extends BaseController
 {
     @Autowired
     private ISamTeacherService samTeacherService;
+
+    @Autowired
+    private ProfileCompletionService profileCompletionService;
+
+    @Autowired
+    private TokenService tokenService;
 
     /**
      * 查询教师档案列表
@@ -59,6 +71,25 @@ public class SamTeacherController extends BaseController
         util.exportExcel(response, list, "教师档案数据");
     }
 
+    @Log(title = "教师管理", businessType = BusinessType.IMPORT)
+    @PreAuthorize("@ss.hasPermi('achievement:teacher:import')")
+    @PostMapping("/importData")
+    public AjaxResult importData(MultipartFile file, boolean updateSupport) throws Exception
+    {
+        ExcelUtil<SamTeacher> util = new ExcelUtil<SamTeacher>(SamTeacher.class);
+        List<SamTeacher> teacherList = util.importExcel(file.getInputStream());
+        String operName = getUsername();
+        String message = samTeacherService.importTeacher(teacherList, updateSupport, operName);
+        return success(message);
+    }
+
+    @PostMapping("/importTemplate")
+    public void importTemplate(HttpServletResponse response)
+    {
+        ExcelUtil<SamTeacher> util = new ExcelUtil<SamTeacher>(SamTeacher.class);
+        util.importTemplateExcel(response, "教师数据");
+    }
+
     /**
      * 获取教师档案详细信息
      */
@@ -77,7 +108,17 @@ public class SamTeacherController extends BaseController
     @PostMapping
     public AjaxResult add(@RequestBody SamTeacher samTeacher)
     {
-        return toAjax(samTeacherService.insertSamTeacher(samTeacher));
+        int rows = samTeacherService.insertSamTeacher(samTeacher);
+        if (rows > 0 && StringUtils.isNotBlank(samTeacher.getNo()))
+        {
+            LoginUser loginUser = SecurityUtils.getLoginUser();
+            if (loginUser != null && StringUtils.equals(loginUser.getUsername(), samTeacher.getNo()))
+            {
+                profileCompletionService.refreshProfileCompletion(loginUser);
+                tokenService.setLoginUser(loginUser);
+            }
+        }
+        return toAjax(rows);
     }
 
     /**
@@ -88,7 +129,17 @@ public class SamTeacherController extends BaseController
     @PutMapping
     public AjaxResult edit(@RequestBody SamTeacher samTeacher)
     {
-        return toAjax(samTeacherService.updateSamTeacher(samTeacher));
+        int rows = samTeacherService.updateSamTeacher(samTeacher);
+        if (rows > 0 && StringUtils.isNotBlank(samTeacher.getNo()))
+        {
+            LoginUser loginUser = SecurityUtils.getLoginUser();
+            if (loginUser != null && StringUtils.equals(loginUser.getUsername(), samTeacher.getNo()))
+            {
+                profileCompletionService.refreshProfileCompletion(loginUser);
+                tokenService.setLoginUser(loginUser);
+            }
+        }
+        return toAjax(rows);
     }
 
     /**
