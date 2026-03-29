@@ -15,6 +15,7 @@ import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 import com.ruoyi.common.annotation.Log;
 import com.ruoyi.common.core.controller.BaseController;
@@ -24,6 +25,8 @@ import com.ruoyi.achievement.domain.SamAchievement;
 import com.ruoyi.achievement.service.ISamAchievementService;
 import com.ruoyi.common.utils.poi.ExcelUtil;
 import com.ruoyi.common.core.page.TableDataInfo;
+import com.ruoyi.achievement.domain.ExportAttachmentZipReq;
+import java.io.IOException;
 
 /**
  * 成果录入Controller
@@ -109,8 +112,13 @@ public class SamAchievementController extends BaseController
      */
     @PreAuthorize("@ss.hasAnyPermi('achievement:manage:query,achievement:manage:participated:query,achievement:manage:guided:query')")
     @GetMapping(value = "/{achievementId}")
-    public AjaxResult getInfo(@PathVariable("achievementId") String achievementId)
+    public AjaxResult getInfo(@PathVariable("achievementId") String achievementId,
+                              @RequestParam(value = "selfEditScene", required = false) String selfEditScene)
     {
+        if (StringUtils.isNotEmpty(selfEditScene))
+        {
+            return success(samAchievementService.selectSamAchievementForSelf(achievementId, selfEditScene));
+        }
         return success(samAchievementService.selectSamAchievementByAchievementId(achievementId));
     }
 
@@ -148,6 +156,15 @@ public class SamAchievementController extends BaseController
     }
 
     /**
+     * 根据比赛和届次查询已有的赛道
+     */
+    @GetMapping("/listTracks")
+    public AjaxResult listTracks(Long competitionId, Long sessionId)
+    {
+        return success(samAchievementService.selectTrackList(competitionId, sessionId));
+    }
+
+    /**
      * 校验证书编号是否唯一
      */
     @GetMapping("/checkCertificateNoUnique")
@@ -175,12 +192,33 @@ public class SamAchievementController extends BaseController
         // 使用统一的查询方法，查找该用户在“选手”或“指导老师”中出现的所有记录
         samAchievement.getParams().put("userId", username);
         List<SamAchievement> list = samAchievementService.selectSamAchievementListByUserId(samAchievement);
-        
+
         return getDataTable(list);
     }
 
     /**
-     * 查询我指导的成果列表（教师端-包含在指导老师列表的所有成果）
+     * Responsible achievement list
+     */
+    @PreAuthorize("@ss.hasPermi('achievement:manage:list')")
+    @GetMapping("/list-responsible")
+    public TableDataInfo listResponsible(SamAchievement samAchievement)
+    {
+        startPage();
+        String username = SecurityUtils.getUsername();
+        if (StringUtils.isEmpty(username)) {
+            throw new com.ruoyi.common.exception.ServiceException("Current user info cannot be empty");
+        }
+        if (samAchievement.getParams() == null) {
+            samAchievement.setParams(new HashMap<>());
+        }
+        samAchievement.getParams().put("studentId", username);
+        List<SamAchievement> list = samAchievementService.selectSamAchievementListByResponsibleStudentId(samAchievement);
+
+        return getDataTable(list);
+    }
+
+    /**
+     * Query achievements guided by the current teacher
      */
     @PreAuthorize("@ss.hasPermi('achievement:manage:guided:list')")
     @GetMapping("/list-guided")
@@ -188,7 +226,7 @@ public class SamAchievementController extends BaseController
     {
         // 获取当前用户工号
         String username = SecurityUtils.getUsername();
-        
+
         // 核心逻辑：如果是老师或者管理员，查询本用户参与指导的所有成果
         if (SecurityUtils.hasRole("teacher") || SecurityUtils.isAdmin(SecurityUtils.getUserId())) {
             startPage();
@@ -205,4 +243,14 @@ public class SamAchievementController extends BaseController
         // 如果是纯学生角色（且不是管理员），或者不具备上述权限，返回空
         return getDataTable(new java.util.ArrayList<>());
     }
+
+    @PreAuthorize("@ss.hasAnyPermi('achievement:manage:export,achievement:manage:participated:export,achievement:manage:guided:export')")
+    @Log(title = "成果附件批量导出", businessType = BusinessType.EXPORT)
+    @PostMapping("/exportAttachmentZip")
+    public void exportAttachmentZip(@RequestBody ExportAttachmentZipReq req,
+                                    HttpServletResponse response) throws IOException
+    {
+        samAchievementService.exportAttachmentZip(req, response);
+    }
+
 }

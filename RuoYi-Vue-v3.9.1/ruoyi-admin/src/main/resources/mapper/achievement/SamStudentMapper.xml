@@ -11,30 +11,38 @@ PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
         <result property="school"    column="school"    />
         <result property="department"    column="department"    />
         <result property="major"    column="major"    />
+        <result property="schoolName"    column="school_name"    />
+        <result property="departmentName"    column="department_name"    />
+        <result property="majorName"    column="major_name"    />
         <result property="className"    column="class_name"    />
         <result property="classYear"    column="class_year"    />
     </resultMap>
 
     <sql id="selectSamStudentVo">
-        select student_id, name, no, school, department, major, class_name, class_year from sam_student
+        select s.student_id, s.name, s.no, s.school, s.department, s.major, s.class_name, s.class_year,
+               d1.dept_name as school_name, d2.dept_name as department_name, d3.dept_name as major_name
+        from sam_student s
+        left join sys_dept d1 on s.school = d1.dept_id
+        left join sys_dept d2 on s.department = d2.dept_id
+        left join sys_dept d3 on s.major = d3.dept_id
     </sql>
 
     <select id="selectSamStudentList" parameterType="SamStudent" resultMap="SamStudentResult">
         <include refid="selectSamStudentVo"/>
         <where>  
-            <if test="name != null  and name != ''"> and name like concat('%', #{name}, '%')</if>
-            <if test="no != null  and no != ''"> and no = #{no}</if>
-            <if test="school != null  and school != ''"> and school = #{school}</if>
-            <if test="department != null  and department != ''"> and department = #{department}</if>
-            <if test="major != null  and major != ''"> and major = #{major}</if>
-            <if test="className != null  and className != ''"> and class_name like concat('%', #{className}, '%')</if>
-            <if test="classYear != null  and classYear != ''"> and class_year = #{classYear}</if>
+            <if test="name != null  and name != ''"> and s.name like concat('%', #{name}, '%')</if>
+            <if test="no != null  and no != ''"> and s.no = #{no}</if>
+            <if test="school != null  and school != ''"> and d1.dept_name like concat('%', #{school}, '%')</if>
+            <if test="department != null  and department != ''"> and d2.dept_name like concat('%', #{department}, '%')</if>
+            <if test="major != null  and major != ''"> and d3.dept_name like concat('%', #{major}, '%')</if>
+            <if test="className != null  and className != ''"> and s.class_name like concat('%', #{className}, '%')</if>
+            <if test="classYear != null  and classYear != ''"> and s.class_year = #{classYear}</if>
         </where>
     </select>
     
     <select id="selectSamStudentByStudentId" parameterType="Long" resultMap="SamStudentResult">
         <include refid="selectSamStudentVo"/>
-        where student_id = #{studentId}
+        where s.student_id = #{studentId}
     </select>
 
     <insert id="insertSamStudent" parameterType="SamStudent" useGeneratedKeys="true" keyProperty="studentId">
@@ -83,4 +91,9 @@ PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
             #{studentId}
         </foreach>
     </delete>
+
+    <select id="selectSamStudentByNo" parameterType="String" resultMap="SamStudentResult">
+        <include refid="selectSamStudentVo"/>
+        where no = #{no}
+    </select>
 </mapper>

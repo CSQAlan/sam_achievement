@@ -74,6 +74,15 @@ public class SysUser extends BaseEntity
     /** 密码最后更新时间 */
     private Date pwdUpdateDate;
 
+    /** 个人信息是否已初始化(0:否 1:是) */
+    private Integer profileInitialized;
+
+    /** WeChat nickname */
+    private String wxNickName;
+
+    /** WeChat openid */
+    private String openid;
+
     /** 部门对象 */
     @Excels({
         @Excel(name = "部门名称", targetAttr = "deptName", type = Type.EXPORT),
@@ -262,6 +271,36 @@ public class SysUser extends BaseEntity
         this.pwdUpdateDate = pwdUpdateDate;
     }
 
+    public Integer getProfileInitialized()
+    {
+        return profileInitialized;
+    }
+
+    public void setProfileInitialized(Integer profileInitialized)
+    {
+        this.profileInitialized = profileInitialized;
+    }
+
+    public String getWxNickName()
+    {
+        return wxNickName;
+    }
+
+    public void setWxNickName(String wxNickName)
+    {
+        this.wxNickName = wxNickName;
+    }
+
+    public String getOpenid()
+    {
+        return openid;
+    }
+
+    public void setOpenid(String openid)
+    {
+        this.openid = openid;
+    }
+
     public SysDept getDept()
     {
         return dept;
@@ -329,6 +368,9 @@ public class SysUser extends BaseEntity
             .append("loginIp", getLoginIp())
             .append("loginDate", getLoginDate())
             .append("pwdUpdateDate", getPwdUpdateDate())
+            .append("profileInitialized", getProfileInitialized())
+            .append("wxNickName", getWxNickName())
+            .append("openid", getOpenid())
             .append("createBy", getCreateBy())
             .append("createTime", getCreateTime())
             .append("updateBy", getUpdateBy())

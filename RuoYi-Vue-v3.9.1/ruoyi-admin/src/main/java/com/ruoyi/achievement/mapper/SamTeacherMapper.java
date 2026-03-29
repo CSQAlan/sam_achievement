@@ -1,6 +1,7 @@
 package com.ruoyi.achievement.mapper;
 
 import java.util.List;
+import org.apache.ibatis.annotations.Mapper;
 import com.ruoyi.achievement.domain.SamTeacher;
 
 /**
@@ -9,6 +10,7 @@ import com.ruoyi.achievement.domain.SamTeacher;
  * @author 王璨
  * @date 2026-02-03
  */
+@Mapper
 public interface SamTeacherMapper 
 {
     /**
@@ -58,4 +60,12 @@ public interface SamTeacherMapper
      * @return 结果
      */
     public int deleteSamTeacherByIds(Long[] ids);
+
+    /**
+     * 通过工号查询教师
+     * 
+     * @param no 工号
+     * @return 教师
+     */
+    public SamTeacher selectSamTeacherByNo(String no);
 }
