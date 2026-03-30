@@ -145,11 +145,11 @@
                         <el-radio :label="1">是 (需要上传凭证)</el-radio>
                         <el-radio :label="0">否</el-radio>
                       </el-radio-group>
-                      <div v-if="form.isReimburse === 1 && form.reimbursementStatus !== undefined && form.reimbursementStatus !== null" style="margin-left: 15px; display: flex; align-items: center;">
+                      <div v-if="form.isReimburse === 1" style="margin-left: 15px; display: flex; align-items: center;">
                         <span style="font-size: 12px; color: #909399; margin-right: 8px;">报销状态:</span>
-                        <div style="transform: scale(1.5); transform-origin: left center;">
-                          <dict-tag :options="reimbursement_status" :value="form.reimbursementStatus" />
-                        </div>
+                      <div style="transform: scale(1.5); transform-origin: left center;">
+  <dict-tag :options="reimbursement_status" :value="form.reimbursementStatus ?? 0" />
+</div>
                       </div>
                     </div>
                     <div style="color: #F56C6C; font-size: 12px; margin-top: 5px; line-height: 1.2; font-weight: bold;">
@@ -459,11 +459,11 @@
                     <el-radio :label="1">是 (需要上传凭证)</el-radio>
                     <el-radio :label="0">否</el-radio>
                   </el-radio-group>
-                  <div v-if="form.isReimburse === 1 && form.reimbursementStatus !== undefined && form.reimbursementStatus !== null" style="margin-left: 15px; display: flex; align-items: center;">
+                  <div v-if="form.isReimburse === 1" style="margin-left: 15px; display: flex; align-items: center;">
                     <span style="font-size: 12px; color: #909399; margin-right: 8px;">报销状态:</span>
-                    <div style="transform: scale(1.5); transform-origin: left center;">
-                      <dict-tag :options="reimbursement_status" :value="form.reimbursementStatus" />
-                    </div>
+                  <div style="transform: scale(1.5); transform-origin: left center;">
+  <dict-tag :options="reimbursement_status" :value="form.reimbursementStatus ?? 0" />
+</div>
                   </div>
                 </div>
                 <div style="color: #F56C6C; font-size: 12px;font-weight: bold;">
@@ -2311,6 +2311,7 @@ function loadDetail(id) {
       reIndexList(samAchievementAdvisorList.value);
 
       if (form.value.isReimburse == null) form.value.isReimburse = 0;
+      if (form.value.reimbursementStatus == null) form.value.reimbursementStatus = null;
 
       updateSnapshot();
     })
@@ -2326,7 +2327,7 @@ function reset() {
   form.value = {
     competitionId: null, achievementId: null, sessionId: null, category: "3", name: null, teamName: null,
     level: null, grade: null, track: null, certificateNo: null, groupId: null, ownerDepId: null,
-    awardTime: null, fee: null, reimbursementFee: null, isReimburse: 0,
+    awardTime: null, fee: null, reimbursementFee: null, isReimburse: 0, reimbursementStatus: null,
     fileAward: null, fileNotice: null, fileWork: [], filePhoto: [], filePayment: null, fileInvoice: null, fileReceiptCode: null,
     hasFileWork: 1, hasFilePhoto: 1
   };

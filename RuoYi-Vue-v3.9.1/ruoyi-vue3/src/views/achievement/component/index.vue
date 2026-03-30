@@ -406,8 +406,7 @@
                   v-hasPermi="permEdit"
                   :disabled="openingReviewPage || !checkEditable(scope.row)"
                   :loading="openingReviewPage && String(openingReviewPageId) === String(scope.row?.achievementId)"
-              >审核</el-button>
-            </slot>
+              >{{ reviewSource ? '审核' : '修改' }}</el-button>            </slot>
 
             <el-button
                 v-if="showDelete"
