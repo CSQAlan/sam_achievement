@@ -2010,8 +2010,10 @@ function autoMatchSession() {
   const month = date.getMonth() + 1; // getMonth 是 0-11
 
   // 2. 设定搜索年份窗口 (解决跨年问题)
-  // 1-4月获奖，可能属于去年或当年的比赛；5-12月获奖，基本属于当年比赛
-  const targetYears = month <= 4 ? [year.getTime() ? year.toString() : "", (year - 1).toString()] : [year.toString()];
+  // 修复：将 year.getTime() 改为 !isNaN(date.getTime()) 来判断是否是合法日期
+  const targetYears = month <= 4 
+    ? [!isNaN(date.getTime()) ? year.toString() : "", (year - 1).toString()] 
+    : [year.toString()];
 
   // 3. 在候选列表中筛选
   const matched = sessionOptions.value.filter(item => {
