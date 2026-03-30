@@ -7,6 +7,7 @@ PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
     <resultMap type="reviewed" id="reviewedResult">
         <result property="achievementId"    column="achievement_id"    />
         <result property="sessionId"    column="session_id"    />
+        <result property="sessionName"    column="session_name"    />
         <result property="competitionId"    column="competition_id"    />
         <result property="competitionName"    column="competition_name"    />
         <result property="category"    column="category"    />
@@ -92,6 +93,7 @@ PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
         select
             a.achievement_id,
             a.session_id,
+            s.session as session_name,
             s.competition_id as competition_id,
             c.name as competition_name,
             a.category,

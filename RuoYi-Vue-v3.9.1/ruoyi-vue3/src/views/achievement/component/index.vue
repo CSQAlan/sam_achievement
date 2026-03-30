@@ -307,10 +307,14 @@
         <el-table-column label="成果编号" width="80" align="center" prop="achievementId" />
         <el-table-column label="比赛" width="120" align="center" prop="competitionName">
           <template #default="scope">
-            <span>{{ scope.row.competitionName || scope.row.competition_name || scope.row.track || '-' }}</span>
+            <span>{{ scope.row.competitionName || scope.row.competition_name || '-' }}</span>
           </template>
         </el-table-column>
-        <el-table-column label="届次" width="50" align="center" prop="sessionId" />
+        <el-table-column label="届次" width="90" align="center" prop="sessionName">
+          <template #default="scope">
+            <span>{{ scope.row.sessionName || scope.row.session || scope.row.sessionId || '-' }}</span>
+          </template>
+        </el-table-column>
         <el-table-column label="证书编号" width="120" align="center" prop="certificateNo" />
         <el-table-column label="获奖等级" align="center" prop="grade" width="80">
           <template #default="scope">
