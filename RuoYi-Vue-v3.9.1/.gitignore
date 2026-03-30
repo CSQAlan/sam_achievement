@@ -48,7 +48,6 @@ nbdist/
 
 ######################################################################
 # Local-only files
-
 .m2/
 .mvn-local-settings.xml
 .vscode/
@@ -59,4 +58,6 @@ sql/*.zip
 temp-logback*.xml
 result_*.md
 ruoyi-admin/src/main/resources/application-druid.yml.backup
-.node_modules/
+
+# Node modules
+node_modules/
