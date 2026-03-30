@@ -3,11 +3,13 @@ package com.ruoyi.achievement.service.impl;
 import java.util.*;
 
 import com.ruoyi.achievement.domain.SamStudent;
+import com.ruoyi.common.annotation.BizAudit;
 import com.ruoyi.common.utils.DateUtils;
 import com.ruoyi.common.utils.SecurityUtils;
 import com.ruoyi.common.core.domain.entity.SysDept;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
+import com.ruoyi.common.enums.BizAuditOpType;
 import com.ruoyi.common.exception.ServiceException;
 import com.ruoyi.common.utils.StringUtils;
 import org.springframework.transaction.annotation.Transactional;
@@ -66,6 +68,7 @@ public class reviewedServiceImpl implements IreviewedService
 
     @Transactional
     @Override
+    @BizAudit(bizType = "achievement_review", bizName = "新增成果审核", opType = BizAuditOpType.ADD, handler = "achievementBizAuditHandler", async = false)
     public int insertreviewed(reviewed reviewed)
     {
         String stage = resolveStage(reviewed.getReviewStage());
@@ -115,6 +118,7 @@ public class reviewedServiceImpl implements IreviewedService
 
     @Transactional
     @Override
+    @BizAudit(bizType = "achievement_review", bizName = "批量删除成果审核", opType = BizAuditOpType.DELETE, handler = "achievementBizAuditHandler", async = false)
     public int deletereviewedByAchievementIds(String[] achievementIds)
     {
         reviewedMapper.deleteSamAchievementParticipantByParticipantIds(achievementIds);
@@ -123,6 +127,7 @@ public class reviewedServiceImpl implements IreviewedService
 
     @Transactional
     @Override
+    @BizAudit(bizType = "achievement_review", bizName = "删除成果审核", opType = BizAuditOpType.DELETE, handler = "achievementBizAuditHandler", async = false)
     public int deletereviewedByAchievementId(String achievementId)
     {
         reviewedMapper.deleteSamAchievementParticipantByParticipantId(achievementId);
@@ -131,6 +136,7 @@ public class reviewedServiceImpl implements IreviewedService
 
     @Transactional
     @Override
+    @BizAudit(bizType = "achievement_review", bizName = "提交成果审核", opType = BizAuditOpType.UPDATE, handler = "achievementBizAuditHandler", async = false)
     public reviewed submitReview(String source, String achievementId, Long reviewStatus, String rejectReason)
     {
         return submitReviewInternal(source, achievementId, reviewStatus, rejectReason);
@@ -138,6 +144,7 @@ public class reviewedServiceImpl implements IreviewedService
 
     @Transactional
     @Override
+    @BizAudit(bizType = "achievement_review", bizName = "批量提交成果审核", opType = BizAuditOpType.UPDATE, handler = "achievementBizAuditHandler", async = false)
     public int batchSubmitReview(String source, String[] achievementIds, Long reviewStatus, String rejectReason)
     {
         ReviewSourceContext context = resolveSourceContext(source);

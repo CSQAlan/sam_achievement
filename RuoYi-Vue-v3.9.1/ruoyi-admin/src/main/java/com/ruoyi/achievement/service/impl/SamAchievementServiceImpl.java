@@ -27,7 +27,9 @@ import com.ruoyi.achievement.domain.ExportAchievementBaseVo;
 import com.ruoyi.achievement.domain.ExportAttachmentFailExcelVo;
 import com.ruoyi.achievement.domain.ExportAttachmentFileVo;
 import com.ruoyi.achievement.domain.ExportAttachmentZipReq;
+import com.ruoyi.common.annotation.BizAudit;
 import com.ruoyi.common.core.domain.entity.SysDept;
+import com.ruoyi.common.enums.BizAuditOpType;
 import com.ruoyi.common.utils.DateUtils;
 import com.ruoyi.common.utils.SecurityUtils;
 import com.ruoyi.common.utils.StringUtils;
@@ -183,6 +185,7 @@ public class SamAchievementServiceImpl implements ISamAchievementService
      */
     @Transactional
     @Override
+    @BizAudit(bizType = "achievement", bizName = "新增成果", opType = BizAuditOpType.ADD, handler = "achievementBizAuditHandler", async = false)
     public int insertSamAchievement(SamAchievement samAchievement)
     {
         // 1. 验证成果录入主表信息
@@ -279,6 +282,7 @@ public class SamAchievementServiceImpl implements ISamAchievementService
      */
     @Transactional
     @Override
+    @BizAudit(bizType = "achievement", bizName = "修改成果", opType = BizAuditOpType.UPDATE, handler = "achievementBizAuditHandler", async = false)
     public int updateSamAchievement(SamAchievement samAchievement)
     {
         SamAchievement existing = samAchievementMapper.selectSamAchievementByAchievementId(samAchievement.getAchievementId());
@@ -1104,6 +1108,7 @@ public class SamAchievementServiceImpl implements ISamAchievementService
      */
     @Transactional
     @Override
+    @BizAudit(bizType = "achievement", bizName = "批量删除成果", opType = BizAuditOpType.DELETE, handler = "achievementBizAuditHandler", async = false)
     public int deleteSamAchievementByAchievementIds(String[] achievementIds)
     {
         samAchievementMapper.deleteSamAchievementParticipantByParticipantIds(achievementIds);
@@ -1120,6 +1125,7 @@ public class SamAchievementServiceImpl implements ISamAchievementService
      */
     @Transactional
     @Override
+    @BizAudit(bizType = "achievement", bizName = "删除成果", opType = BizAuditOpType.DELETE, handler = "achievementBizAuditHandler", async = false)
     public int deleteSamAchievementByAchievementId(String achievementId)
     {
         samAchievementMapper.deleteSamAchievementParticipantByParticipantId(achievementId);
