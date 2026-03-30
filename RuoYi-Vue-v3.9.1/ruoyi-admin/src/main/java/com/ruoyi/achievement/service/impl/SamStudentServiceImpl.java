@@ -12,6 +12,7 @@ import com.ruoyi.achievement.mapper.SamStudentMapper;
 import com.ruoyi.achievement.domain.SamStudent;
 import com.ruoyi.achievement.service.ISamStudentService;
 import javax.validation.Validator;
+import com.ruoyi.common.utils.StringUtils;
 
 /**
  * 学生档案Service业务层处理
@@ -78,6 +79,20 @@ public class SamStudentServiceImpl implements ISamStudentService
     @Override
     public int updateSamStudent(SamStudent samStudent)
     {
+        if (samStudent.getStudentId() == null && StringUtils.isNotBlank(samStudent.getNo()))
+        {
+            SamStudent query = new SamStudent();
+            query.setNo(samStudent.getNo());
+            List<SamStudent> exists = samStudentMapper.selectSamStudentList(query);
+            if (exists != null && !exists.isEmpty())
+            {
+                samStudent.setStudentId(exists.get(0).getStudentId());
+            }
+            else
+            {
+                return samStudentMapper.insertSamStudent(samStudent);
+            }
+        }
         return samStudentMapper.updateSamStudent(samStudent);
     }
 
@@ -135,8 +150,8 @@ public class SamStudentServiceImpl implements ISamStudentService
                 }
 
                 // 2. 严谨的层级机构匹配逻辑 (根节点 ID 默认为 100)
-                Long rootId = 100L; 
-                
+                Long rootId = 100L;
+
                 // 匹配学院
                 com.ruoyi.common.core.domain.entity.SysDept schoolDept = sysDeptMapper.checkDeptNameUnique(student.getSchoolName(), rootId);
                 if (schoolDept == null) {
@@ -189,7 +204,7 @@ public class SamStudentServiceImpl implements ISamStudentService
                 log.error(msg, e);
             }
         }
-        
+
         if (failureNum > 0)
         {
             failureMsg.insert(0, "很抱歉，导入过程中出现错误！共失败 " + failureNum + " 条数据，成功 " + successNum + " 条，错误明细如下：");

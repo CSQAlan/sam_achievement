@@ -17,11 +17,13 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.web.bind.annotation.*;
+import com.ruoyi.common.annotation.BizAudit;
 import com.ruoyi.common.annotation.Log;
 import com.ruoyi.common.config.RuoYiConfig;
 import com.ruoyi.common.core.controller.BaseController;
 import com.ruoyi.common.core.domain.AjaxResult;
 import com.ruoyi.common.core.domain.entity.SysUser;
+import com.ruoyi.common.enums.BizAuditOpType;
 import com.ruoyi.common.enums.BusinessType;
 import com.ruoyi.common.utils.SecurityUtils;
 import com.ruoyi.common.utils.StringUtils;
@@ -72,6 +74,7 @@ public class CompetitionApplyController extends BaseController
      */
     @PreAuthorize("@ss.hasPermi('competition-apply:competitionapply:export')")
     @Log(title = "赛事申请", businessType = BusinessType.EXPORT)
+    @BizAudit(bizType = "competition_apply", bizName = "赛事申请", opType = BizAuditOpType.EXPORT, handler = "competitionApplyBizAuditHandler")
     @PostMapping("/export")
     public void export(HttpServletResponse response, CompetitionApply competitionApply)
     {

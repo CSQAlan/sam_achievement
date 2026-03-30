@@ -12,6 +12,8 @@ PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
         <result property="category"    column="category"    />
         <result property="name"    column="name"    />
         <result property="teamName"    column="team_name"    />
+        <result property="contestant"    column="contestant"    />
+        <result property="instructor"    column="instructor"    />
         <result property="level"    column="level"    />
         <result property="grade"    column="grade"    />
         <result property="track"    column="track"    />
@@ -46,6 +48,8 @@ PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
         <result property="remark"    column="remark"    />
     </resultMap>
 
+    <resultMap id="reviewedListResult" type="reviewed" extends="reviewedResult" />
+
     <resultMap id="reviewedSamAchievementParticipantResult" type="reviewed" extends="reviewedResult">
         <collection property="samAchievementParticipantList" ofType="SamAchievementParticipant" column="achievement_id" select="selectSamAchievementParticipantList" />
         <collection property="samAchievementAdvisorList" ofType="SamAchievementAdvisor" column="achievement_id" select="selectSamAchievementAdvisorList" />
@@ -74,6 +78,8 @@ PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
         <result property="teacherId"    column="teacher_id"    />
         <result property="teacherNo"    column="teacher_id"    />
         <result property="teacherName"    column="teacher_name"    />
+        <result property="orderNo"    column="order_no"    />
+        <result property="manager"    column="manager"    />
         <result property="createBy"    column="create_by"    />
         <result property="updateBy"    column="update_by"    />
         <result property="createTime"    column="create_time"    />
@@ -91,6 +97,8 @@ PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
             a.category,
             a.name,
             a.team_name,
+            p_view.contestant,
+            ad_view.instructor,
             a.level,
             a.grade,
             a.track,
@@ -126,12 +134,29 @@ PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
         from sam_achievement a
         left join sam_competition_session s on a.session_id = s.session_id
         left join sam_competition c on s.competition_id = c.id
+        left join (
+            select
+                p.achievement_id,
+                group_concat(concat(ifnull(s.name, '-'), '(', ifnull(p.student_id, '-'), ')') order by p.order_no separator '，') as contestant
+            from sam_achievement_participant p
+            left join sam_student s on p.student_id = s.no
+            group by p.achievement_id
+        ) p_view on p_view.achievement_id = a.achievement_id
+        left join (
+            select
+                ad.achievement_id,
+                group_concat(concat(ifnull(t.teacher_name, '-'), '(', ifnull(ad.teacher_id, '-'), ')') order by ad.order_no separator '，') as instructor
+            from sam_achievement_advisor ad
+            left join sam_teacher t on ad.teacher_id = t.no
+            group by ad.achievement_id
+        ) ad_view on ad_view.achievement_id = a.achievement_id
     </sql>
 
-    <select id="selectreviewedList" parameterType="reviewed" resultMap="reviewedSamAchievementParticipantResult">
+    <select id="selectreviewedList" parameterType="reviewed" resultMap="reviewedListResult">
         <include refid="selectreviewedVo"/>
         <where>  
             <if test="achievementId != null  and achievementId != ''"> and a.achievement_id = #{achievementId}</if>
+            <if test="competitionId != null  and competitionId != ''"> and s.competition_id = #{competitionId}</if>
             <if test="sessionId != null  and sessionId != ''"> and a.session_id = #{sessionId}</if>
             <if test="category != null  and category != ''"> and a.category like concat('%', #{category}, '%')</if>
             <if test="name != null  and name != ''"> and a.name like concat('%', #{name}, '%')</if>
@@ -154,7 +179,7 @@ PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
                     <when test="reviewStage == 'school'">
                         <choose>
                             <when test="reviewStatus == 'unreviewed'"> and a.review_result = 2 and a.schooi_review_result = 2</when>
-                            <when test="reviewStatus == 'reviewed'"> and a.review_result = 2 and a.schooi_review_result in (0, 1)</when>
+                            <when test="reviewStatus == 'reviewed'"> and a.schooi_review_result in (0, 1)</when>
                         </choose>
                     </when>
                 </choose>
@@ -168,6 +193,14 @@ PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
         where a.achievement_id = #{achievementId}
     </select>
 
+    <select id="selectreviewedByAchievementIds" resultMap="reviewedResult">
+        <include refid="selectreviewedVo"/>
+        where a.achievement_id in
+        <foreach item="achievementId" collection="achievementIds" open="(" separator="," close=")">
+            #{achievementId}
+        </foreach>
+    </select>
+
     <select id="selectSamAchievementParticipantList" resultMap="SamAchievementParticipantResult">
         select p.participant_id, p.achievement_id, p.student_id, s.name as student_name, s.school, p.order_no, p.manager, p.create_by, p.update_by, p.create_time, p.update_time, p.del_flag, p.remark
         from sam_achievement_participant p
@@ -176,7 +209,7 @@ PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
     </select>
 
     <select id="selectSamAchievementAdvisorList" resultMap="SamAchievementAdvisorResult">
-        select a.advisor_id, a.achievement_id, a.teacher_id, t.teacher_name, a.create_by, a.update_by, a.create_time, a.update_time, a.del_flag, a.remark
+        select a.advisor_id, a.achievement_id, a.teacher_id, t.teacher_name, a.order_no, a.manager, a.create_by, a.update_by, a.create_time, a.update_time, a.del_flag, a.remark
         from sam_achievement_advisor a
         left join sam_teacher t on a.teacher_id = t.no
         where a.achievement_id = #{achievement_id}
@@ -289,14 +322,29 @@ PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
             <if test="itemIndex != null">item_index = #{itemIndex},</if>
             <if test="qualityIndex != null">quality_index = #{qualityIndex},</if>
             <if test="submittedAt != null">submitted_at = #{submittedAt},</if>
-            <if test="reviewedAt != null">reviewed_at = #{reviewedAt},</if>
-            <if test="schoolReviewedAt != null">school_reviewed_at = #{schoolReviewedAt},</if>
+            <if test="reviewResult != null and reviewResult == 0">reviewed_at = null,</if>
+            <if test="(reviewResult == null or reviewResult != 0) and reviewedAt != null">reviewed_at = #{reviewedAt},</if>
+            <if test="(reviewResult == null or (reviewResult != 0 and reviewResult != 1)) and schoolReviewedAt != null">school_reviewed_at = #{schoolReviewedAt},</if>
             <if test="reviewResult != null">review_result = #{reviewResult},</if>
-            <if test="schooiReviewResult != null">schooi_review_result = #{schooiReviewResult},</if>
-            <if test="reviewReason != null">review_reason = #{reviewReason},</if>
-            <if test="schoolReviewReason != null">school_review_reason = #{schoolReviewReason},</if>
-            <if test="auditBy != null">audit_by = #{auditBy},</if>
-            <if test="schoolAuditBy != null">school_audit_by = #{schoolAuditBy},</if>
+            <if test="reviewResult != null and (reviewResult == 0 or reviewResult == 1)">
+                schooi_review_result = 0,
+                school_reviewed_at = now(),
+                school_review_reason = '因院级状态变更自动驳回',
+                school_audit_by = 'system',
+            </if>
+            <if test="(reviewResult == null or (reviewResult != 0 and reviewResult != 1)) and schooiReviewResult != null">schooi_review_result = #{schooiReviewResult},</if>
+            <if test="(reviewResult == null or (reviewResult != 0 and reviewResult != 1)) and schooiReviewResult != null and schooiReviewResult == 2">
+                school_reviewed_at = null,
+                school_review_reason = null,
+                school_audit_by = null,
+            </if>
+            <if test="reviewResult != null and reviewResult != 1">review_reason = null,</if>
+            <if test="(reviewResult == null or reviewResult == 1) and reviewReason != null">review_reason = #{reviewReason},</if>
+            <if test="(reviewResult == null or (reviewResult != 0 and reviewResult != 1)) and schooiReviewResult != null and schooiReviewResult == 1">school_review_reason = null,</if>
+            <if test="(reviewResult == null or (reviewResult != 0 and reviewResult != 1)) and schoolReviewReason != null">school_review_reason = #{schoolReviewReason},</if>
+            <if test="reviewResult != null and reviewResult == 0">audit_by = null,</if>
+            <if test="(reviewResult == null or reviewResult != 0) and auditBy != null">audit_by = #{auditBy},</if>
+            <if test="(reviewResult == null or (reviewResult != 0 and reviewResult != 1)) and schoolAuditBy != null">school_audit_by = #{schoolAuditBy},</if>
             <if test="createBy != null">create_by = #{createBy},</if>
             <if test="updateBy != null">update_by = #{updateBy},</if>
             <if test="createTime != null">create_time = #{createTime},</if>
@@ -310,9 +358,37 @@ PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
     <update id="batchUpdateCollegeReviewStatus">
         update sam_achievement
         set review_result = #{reviewStatus},
+            reviewed_at = case
+                when #{reviewStatus} = 0 then null
+                else now()
+            end,
+            review_reason = case
+                when #{reviewStatus} = 1 then #{rejectReason}
+                else null
+            end,
+            audit_by = case
+                when #{reviewStatus} = 0 then null
+                else #{auditBy}
+            end,
             schooi_review_result = case
-                when #{reviewStatus} = 2 and schooi_review_result is null then 2
+                when #{reviewStatus} in (0, 1) then 0
+                when #{reviewStatus} = 2 then 2
                 else schooi_review_result
+            end,
+            school_reviewed_at = case
+                when #{reviewStatus} in (0, 1) then now()
+                when #{reviewStatus} = 2 then null
+                else school_reviewed_at
+            end,
+            school_review_reason = case
+                when #{reviewStatus} in (0, 1) then '因院级状态变更自动驳回'
+                when #{reviewStatus} = 2 then null
+                else school_review_reason
+            end,
+            school_audit_by = case
+                when #{reviewStatus} in (0, 1) then 'system'
+                when #{reviewStatus} = 2 then null
+                else school_audit_by
             end,
             update_time = now()
         where achievement_id in
@@ -324,12 +400,35 @@ PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
     <update id="batchUpdateSchoolReviewStatus">
         update sam_achievement
         set schooi_review_result = #{reviewStatus},
+            school_reviewed_at = case
+                when #{reviewStatus} = 2 then null
+                else now()
+            end,
+            school_review_reason = case
+                when #{reviewStatus} = 0 then #{rejectReason}
+                else null
+            end,
+            school_audit_by = case
+                when #{reviewStatus} = 2 then null
+                else #{auditBy}
+            end,
             update_time = now()
         where achievement_id in
         <foreach item="achievementId" collection="achievementIds" open="(" separator="," close=")">
             #{achievementId}
         </foreach>
+        and review_result = 2
     </update>
+
+    <select id="countNotCollegePassedAchievements" resultType="int">
+        select count(1)
+        from sam_achievement
+        where achievement_id in
+        <foreach item="achievementId" collection="achievementIds" open="(" separator="," close=")">
+            #{achievementId}
+        </foreach>
+        and (review_result is null or review_result != 2)
+    </select>
 
     <delete id="deletereviewedByAchievementId" parameterType="String">
         delete from sam_achievement where achievement_id = #{achievementId}
@@ -343,9 +442,9 @@ PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
     </delete>
     
     <delete id="deleteSamAchievementParticipantByParticipantIds" parameterType="String">
-        delete from sam_achievement_participant where participant_id in 
+        delete from sam_achievement_participant where participant_id in
         <foreach item="participantId" collection="array" open="(" separator="," close=")">
-            #{participantId}
+            #{achievementId}
         </foreach>
     </delete>
 
@@ -360,3 +459,4 @@ PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
         </foreach>
     </insert>
 </mapper>
+

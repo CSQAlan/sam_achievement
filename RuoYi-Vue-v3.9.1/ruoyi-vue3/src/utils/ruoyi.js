@@ -224,5 +224,8 @@ export function getNormalPath(p) {
 
 // 验证是否为blob格式
 export function blobValidate(data) {
-  return data.type !== 'application/json'
+  if (!data || !data.type) {
+    return false
+  }
+  return !data.type.toLowerCase().includes('application/json')
 }

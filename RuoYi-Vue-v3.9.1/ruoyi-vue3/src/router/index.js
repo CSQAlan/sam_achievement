@@ -146,6 +146,20 @@ export const dynamicRoutes = [
     ]
   },
   {
+    path: '/monitor/biz-audit',
+    component: Layout,
+    hidden: true,
+    permissions: ['monitor:bizaudit:query'],
+    children: [
+      {
+        path: 'detail/:id(\\d+)',
+        component: () => import('@/views/monitor/bizAudit/detail'),
+        name: 'BizAuditDetail',
+        meta: { title: '业务审计详情', activeMenu: '/monitor/biz-audit' }
+      }
+    ]
+  },
+  {
     path: '/tool/gen-edit',
     component: Layout,
     hidden: true,
@@ -168,7 +182,23 @@ export const dynamicRoutes = [
   name: 'ReimbursementAchievement',
   hidden: true,
   meta: { title: '关联成果', icon: 'list' }
+},
+
+{
+  path: '/reimbursement',
+  component: Layout,
+  hidden: false,
+  children: [
+    {
+      path: '/reimbursement/Reimbursement',
+      name: 'Reimbursement',
+      component: () => import('@/views/system/Reimbursement/index'),
+      meta: { title: '报销项目详情', icon: 'list', noCache: false }
+    }
+  ]
 }
+
+
 ]
 
 const router = createRouter({

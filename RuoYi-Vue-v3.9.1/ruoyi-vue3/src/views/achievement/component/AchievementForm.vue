@@ -1,18 +1,30 @@
 <template>
   <div v-if="isPageMode" class="app-container outcome-page">
-    <div class="page-card">
+    <div class="page-card" v-loading="detailLoading">
       <div class="page-header">
         <div class="header-left">
-          <div class="page-title">{{ title }}</div>
-        </div>
-        <div class="page-actions" v-if="!readOnly">
-          <el-button v-if="showSubmit" type="primary" @click="submitForm">{{ submitTextComputed }}</el-button>
-          <el-button @click="handleCancel">{{ cancelText }}</el-button>
+          <div class="page-title">
+            {{
+              isPageMode
+                ? `${title}${
+                    displayAchievementId
+                      ? ` - 成果编号: ${displayAchievementId}`
+                      : ""
+                  }`
+                : title
+            }}
+          </div>
         </div>
       </div>
       <el-divider style="margin: 10px 0 20px 0"></el-divider>
       <div class="outcome-body">
-        <el-form ref="outcomeRefPage" :model="form" :rules="rules" label-width="110px" :disabled="readOnly">
+        <el-form
+          ref="outcomeRefPage"
+          :model="form"
+          :rules="rules"
+          label-width="110px"
+          :disabled="readOnly"
+        >
           <div class="common-form-content">
              <template v-for="(_, slot) in $slots">
                 <slot :name="slot"></slot>
@@ -55,11 +67,11 @@
 
                     <el-col :span="24">
                       <el-form-item label="比赛届次" prop="sessionId">
-                        <el-select 
-                          v-model="form.sessionId" 
-                          placeholder="系统将根据前三步自动匹配，也可手动修改" 
-                          filterable 
-                          clearable 
+                        <el-select
+                          v-model="form.sessionId"
+                          placeholder="系统将根据前三步自动匹配，也可手动修改"
+                          filterable
+                          clearable
                           style="width: 100%"
                           :disabled="readOnly || !form.competitionId"
                         >
@@ -213,7 +225,7 @@
                                 <el-radio :label="1">有 (需上传至少5张PDF)</el-radio>
                                 <el-radio :label="0">无 (需上传手写声明PDF)</el-radio>
                               </el-radio-group>
-                              
+
                               <div v-if="form[item.name === 'work' ? 'hasFileWork' : 'hasFilePhoto'] === 0" style="margin-top: 10px; padding: 10px; background: #fdf6ec; border-radius: 4px; border: 1px solid #faecd8;">
                                 <el-icon style="vertical-align: middle; color: #e6a23c; margin-right: 5px;"><InfoFilled /></el-icon>
                                 <span style="font-size: 13px; color: #e6a23c;">
@@ -226,7 +238,7 @@
                           <!-- 【修改】：根据是否为多图上传显示不同的提示 -->
                           <el-alert v-if="!item.isMultiple && !form[item.prop]" :type="item.type || 'info'" :closable="false" class="mb10">
                             <template #title>
-                              {{ item.alert }} 
+                              {{ item.alert }}
                               <el-button link type="primary" style="margin-left: 10px" @click="handlePreUpload(item.name)">查看上传示例</el-button>
                             </template>
                           </el-alert>
@@ -236,19 +248,19 @@
                               <el-button v-if="!((item.name === 'work' || item.name === 'photo') && form[item.name === 'work' ? 'hasFileWork' : 'hasFilePhoto'] === 1)" link type="primary" style="margin-left: 10px" @click="handlePreUpload(item.name)">查看上传示例</el-button>
                             </template>
                           </el-alert>
-                          
+
                           <el-form-item label-width="0" :prop="item.prop">
                             <!-- 【修改】：参赛作品/照片有图时直接显示上传，无需解锁 -->
-                            <file-upload 
+                            <file-upload
                               v-if="!readOnly && (uploadUnlocked[item.name] || ((item.name === 'work' || item.name === 'photo') && form[item.name === 'work' ? 'hasFileWork' : 'hasFilePhoto'] === 1)) && (item.isMultiple || !form[item.prop])"
-                              v-model="form[item.prop]" 
-                              :limit="item.limit || 1" 
-                              :fileSize="10" 
-                              :fileType="item.fileType || ['pdf']" 
-                              class="hide-file-list" 
-                              :upload-url="uploadUrl" 
+                              v-model="form[item.prop]"
+                              :limit="item.limit || 1"
+                              :fileSize="10"
+                              :fileType="item.fileType || ['pdf']"
+                              class="hide-file-list"
+                              :upload-url="uploadUrl"
                             />
-                            
+
                             <div v-if="!readOnly && !form[item.prop] && !uploadUnlocked[item.name] && !((item.name === 'work' || item.name === 'photo') && form[item.name === 'work' ? 'hasFileWork' : 'hasFilePhoto'] === 1)" class="fake-upload-box" @click="handlePreUpload(item.name)">
                                <el-icon :size="30" color="#C0C4CC"><UploadFilled /></el-icon>
                                <div style="color: #606266; margin-top: 10px">点击上传文件</div>
@@ -322,8 +334,14 @@
     @closed="reset"
     top="5vh"
   >
-    <div class="outcome-body">
-      <el-form ref="outcomeRefDialog" :model="form" :rules="rules" label-width="110px" :disabled="readOnly">
+    <div class="outcome-body" v-loading="detailLoading">
+      <el-form
+        ref="outcomeRefDialog"
+        :model="form"
+        :rules="rules"
+        label-width="110px"
+        :disabled="readOnly"
+      >
         <el-row :gutter="20">
             <el-col :span="12">
               <el-row>
@@ -608,7 +626,11 @@
           <slot name="footer-left" :form="form"></slot>
         </div>
         <div class="footer-right">
-          <el-button v-if="showSubmit && !readOnly" type="primary" @click="submitForm">
+          <el-button
+            v-if="showSubmit && !readOnly"
+            type="primary"
+            @click="submitForm"
+          >
             {{ submitTextComputed }}
           </el-button>
           <el-button @click="handleCancel">{{ cancelText }}</el-button>
@@ -671,7 +693,7 @@
           {{ getDeptName(participantForm.school) }} / {{ getDeptName(participantForm.department) }} / {{ getDeptName(participantForm.major) }}
         </div>
       </el-form-item>
-      
+
       <template v-if="isParticipantNew">
         <el-alert title="未匹配到该学号，请完善下方信息完成录入" type="warning" show-icon :closable="false" style="margin-bottom: 15px;" />
         <el-form-item label="所属机构" prop="school">
@@ -728,7 +750,7 @@
          {{ getDeptName(advisorForm.school) }}
         </div>
       </el-form-item>
-      
+
       <template v-if="isAdvisorNew">
         <el-alert title="未匹配到该工号，请完善下方信息完成录入" type="warning" show-icon :closable="false" style="margin-bottom: 15px;" />
         <el-form-item label="所属机构" prop="school">
@@ -794,25 +816,36 @@
 </template>
 
 <script setup name="AchievementForm">
-import { getCurrentInstance, ref, reactive, toRefs, computed, onMounted, onBeforeUnmount, onUnmounted, watch, nextTick } from "vue";
-import { useRoute } from "vue-router";
-import { onBeforeRouteLeave } from "vue-router";
+import { getCurrentInstance, ref, reactive, toRefs, computed, onMounted, onUnmounted, watch, nextTick } from "vue";
+import { useRoute, onBeforeRouteLeave } from "vue-router";
 import Sortable from "sortablejs";
 import useUserStore from "@/store/modules/user";
-import { Plus, Delete, Document, Download, View, UploadFilled, Rank, InfoFilled } from "@element-plus/icons-vue";
 import {
+  Plus,
+  Delete,
+  Document,
+  Download,
+  View,
+  UploadFilled,
+  Rank,
+  InfoFilled,
+  Edit,
+  Search,
+  CircleCheck,
+} from "@element-plus/icons-vue";
+import{
   listStudent,
   getStudent,
   delStudent,
   addStudent,
   updateStudent,
 } from "@/api/achievement/student";
-import { listTeacher, addTeacher, updateTeacher } from "@/api/achievement/teacher";
 import { listTracks } from "@/api/achievement/manage";
+import { listTeacher, addTeacher, updateTeacher } from "@/api/achievement/teacher";
 import { listDept } from "@/api/system/dept";
-import { handleTree } from "@/utils/ruoyi";
-import request from '@/utils/request';
-import FileUpload from '@/components/FileUpload';
+import { handleTree, blobValidate } from "@/utils/ruoyi";
+import request from "@/utils/request";
+import FileUpload from "@/components/FileUpload";
 
 const { proxy } = getCurrentInstance();
 const route = useRoute();
@@ -833,7 +866,22 @@ const props = defineProps({
   sourceMode: { type: String, default: "" },
 });
 
-const { achievement_category, group_type, award_rank, award_level_type, attach_type, reimbursement_status } = proxy.useDict('achievement_category', 'group_type', 'award_rank', 'award_level_type', 'attach_type', 'reimbursement_status');
+const {
+  achievement_category,
+  group_type,
+  award_rank,
+  award_level_type,
+  attach_type,
+  reimbursement_status,
+} =
+  proxy.useDict(
+    "achievement_category",
+    "group_type",
+    "award_rank",
+    "award_level_type",
+    "attach_type",
+    "reimbursement_status"
+  );
 const isPageMode = computed(() => props.pageMode);
 const visible = ref(false);
 const title = ref("");
@@ -842,7 +890,9 @@ const studentDeptOptions = ref([]);
 const advisorDeptOptions = ref([]);
 const outcomeRefPage = ref(null);
 const outcomeRefDialog = ref(null);
-const activeAttachmentTab = ref('award');
+const activeAttachmentTab = ref("award");
+const detailLoading = ref(false);
+const pendingAchievementId = ref("");
 
 const uploadUrl = ref("/dev-api/attachment/upload");
 const userStore = useUserStore();
@@ -876,23 +926,23 @@ function handleEditParticipant(row, index) {
   editingParticipantIndex.value = index;
   isParticipantNew.value = true;
   const studentId = row.studentId || row.studentNo;
-  participantForm.value = { 
+  participantForm.value = {
     studentId: studentId, // 业务学号
     dbId: row.id || row.studentId, // 记录数据库主键
-    studentName: row.studentName, 
-    school: row.school, 
-    department: row.department, 
-    major: row.major, 
-    class_name: row.class_name || row.className, 
-    class_year: row.class_year || row.classYear 
+    studentName: row.studentName,
+    school: row.school,
+    department: row.department,
+    major: row.major,
+    class_name: row.class_name || row.className,
+    class_year: row.class_year || row.classYear
   };
-  
+
   if (studentId) {
     listStudent({ no: studentId }).then(res => {
       if (res.rows && res.rows.length > 0) {
         const s = res.rows[0];
         // 关键：保存后端返回的真实主键 studentId
-        participantForm.value.dbId = s.studentId; 
+        participantForm.value.dbId = s.studentId;
         participantForm.value.school = s.school;
         participantForm.value.department = s.department;
         participantForm.value.major = s.major;
@@ -913,21 +963,21 @@ function handleEditAdvisor(row, index) {
   editingAdvisorIndex.value = index;
   isAdvisorNew.value = true;
   const teacherId = row.teacherId || row.teacherNo;
-  
-  advisorForm.value = { 
-    teacherId: teacherId, 
+
+  advisorForm.value = {
+    teacherId: teacherId,
     dbId: row.id || row.teacherId, // 记录数据库主键
-    teacherName: row.teacherName, 
-    school: row.school, 
-    department: row.department 
+    teacherName: row.teacherName,
+    school: row.school,
+    department: row.department
   };
-  
+
   if (teacherId) {
     listTeacher({ no: teacherId }).then(res => {
       if (res.rows && res.rows.length > 0) {
         const t = res.rows[0];
         // 关键修复：兼容获取后端返回的主键 ID
-        advisorForm.value.dbId = t.id || t.teacherId; 
+        advisorForm.value.dbId = t.id || t.teacherId;
         advisorForm.value.school = t.school || t.department;
         advisorForm.value.department = t.department || t.major;
         const values = [];
@@ -1004,33 +1054,82 @@ const data = reactive({
 });
 const { form, formSnapshot, rules } = toRefs(data);
 
+const displayAchievementId = computed(() => {
+  const formId = form.value?.achievementId;
+  if (formId !== null && formId !== undefined && String(formId).trim() !== "") {
+    return String(formId);
+  }
+  if (
+    pendingAchievementId.value !== null &&
+    pendingAchievementId.value !== undefined &&
+    String(pendingAchievementId.value).trim() !== ""
+  ) {
+    return String(pendingAchievementId.value);
+  }
+  const routeId =
+    route.query.id || route.query.achievementId || route.params.id;
+  if (
+    routeId !== null &&
+    routeId !== undefined &&
+    String(routeId).trim() !== ""
+  ) {
+    return String(routeId);
+  }
+  return "";
+});
+
+function trimIfString(value) {
+  return typeof value === "string" ? value.trim() : value;
+}
+
+function trimStringFields(target, fields = []) {
+  if (!target || !Array.isArray(fields)) return;
+  fields.forEach((field) => {
+    if (Object.prototype.hasOwnProperty.call(target, field)) {
+      target[field] = trimIfString(target[field]);
+    }
+  });
+}
+
 const trackSuggestions = ref([]);
-const queryTrackSearch = async (queryString, cb) => {
-  if (!form.value.competitionId || !form.value.sessionId) {
-    cb([]);
+
+function normalizeTrackSuggestions(rows = []) {
+  return Array.from(
+    new Set(
+      (rows || [])
+        .map((item) => trimIfString(item))
+        .filter(Boolean)
+    )
+  ).map((value) => ({ value }));
+}
+
+function loadTrackSuggestions(competitionId, sessionId) {
+  if (!competitionId || !sessionId) {
+    trackSuggestions.value = [];
     return;
   }
-  
-  if (trackSuggestions.value.length === 0) {
-    try {
-      const res = await listTracks(form.value.competitionId, form.value.sessionId);
-      if (res.data) {
-        trackSuggestions.value = res.data.map(t => ({ value: t }));
-      }
-    } catch (e) {
-      console.error("获取赛道建议失败", e);
-    }
-  }
+  listTracks(competitionId, sessionId)
+    .then((response) => {
+      const rows = response?.data || response?.rows || [];
+      trackSuggestions.value = normalizeTrackSuggestions(rows);
+    })
+    .catch(() => {
+      trackSuggestions.value = [];
+    });
+}
 
-  const results = queryString
-    ? trackSuggestions.value.filter(t => t.value.toLowerCase().includes(queryString.toLowerCase()))
+function queryTrackSearch(queryString, cb) {
+  const keyword = String(queryString || "").trim().toLowerCase();
+  const results = keyword
+    ? trackSuggestions.value.filter((item) =>
+        item.value.toLowerCase().includes(keyword)
+      )
     : trackSuggestions.value;
-  
   cb(results);
-};
+}
 
 watch(() => [form.value.competitionId, form.value.sessionId], ([compId, sessionId]) => {
-  trackSuggestions.value = [];
+  loadTrackSuggestions(compId, sessionId);
   // 当比赛和届次都选择后，尝试从届次信息中提取比赛通知 UUID 并回显
   if (compId && sessionId && sessionOptions.value.length > 0) {
     const session = sessionOptions.value.find(s => s.id === sessionId);
@@ -1041,13 +1140,14 @@ watch(() => [form.value.competitionId, form.value.sessionId], ([compId, sessionI
 });
 
 const validateCertificateNo = (rule, value, callback) => {
-  if (!value) {
+  const certificateNo = trimIfString(value);
+  form.value.certificateNo = certificateNo;
+  if (!certificateNo) {
     callback();
   } else {
     const params = {
-      certificateNo: value,
-      competitionId: form.value.competitionId,
-      achievementId: form.value.achievementId
+      certificateNo,
+      achievementId: form.value.achievementId,
     };
     request({
       url: '/achievement/manage/checkCertificateNoUnique',
@@ -1176,6 +1276,13 @@ function findDeptNode(tree, targetVal) {
   return null;
 }
 
+function resolveDeptIdBySchool(schoolValue) {
+  const node = findDeptNode(deptOptions.value, schoolValue);
+  if (!node || node.deptId == null || node.deptId === '') return null;
+  const deptId = Number(node.deptId);
+  return Number.isNaN(deptId) ? null : deptId;
+}
+
 const participantDepartmentOptions = computed(() => {
   const node = findDeptNode(deptOptions.value, participantForm.value.school);
   return node && node.children ? node.children : [];
@@ -1202,6 +1309,18 @@ const advisorDepartmentOptions = computed(() => {
 
 function handleAdvisorSchoolChange() {
   advisorForm.value.department = '';
+}
+
+function findDeptPathByIds(nodes = [], ids = [], path = []) {
+  if (!Array.isArray(ids) || !ids.length) return [];
+  for (const node of nodes || []) {
+    const currentPath = [...path, node];
+    if (node.deptId === ids[0]) {
+      if (ids.length === 1) return currentPath;
+      return findDeptPathByIds(node.children || [], ids.slice(1), currentPath);
+    }
+  }
+  return [];
 }
 
 // 弹窗控制与提交逻辑
@@ -1309,19 +1428,13 @@ function applyStudentInfo(student) {
   participantForm.value.school = student.school;
   participantForm.value.department = student.department;
   participantForm.value.major = student.major;
-
-  // Re-populate cascader starting from Root (Level 1)
-  const values = [];
-  if (deptOptions.value && deptOptions.value.length > 0) {
-    values.push(deptOptions.value[0].deptId); // Prepend Root ID
-  }
-  if (participantForm.value.school) values.push(Number(participantForm.value.school));
-  if (participantForm.value.department) values.push(Number(participantForm.value.department));
-  if (participantForm.value.major) values.push(Number(participantForm.value.major));
-  participantDeptCascaderValue.value = values;
-
+  participantForm.value.class_name = student.className;
+  participantForm.value.class_year = student.classYear;
   isParticipantNew.value = false;
   studentSelectVisible.value = false;
+  if (!student.school) {
+    proxy.$modal.msgWarning("该学生档案未维护学院，请从所属机构中补选");
+  }
 }
 
 function selectStudent(row) {
@@ -1423,7 +1536,7 @@ const canEditMemberList = computed(() => {
 });
 
 function submitAddParticipant() {
-  // 如果还在查询中，等待一小会或者直接拦截
+  // 如果还在查询中，等待一小会或者直接拦截（通常 blur 会先于 click 触发并完成请求）
   if (searchingParticipant.value) {
     setTimeout(submitAddParticipant, 300);
     return;
@@ -1434,7 +1547,7 @@ function submitAddParticipant() {
     return;
   }
 
-  const localDuplicate = samAchievementParticipantList.value.some((p, idx) => 
+  const localDuplicate = samAchievementParticipantList.value.some((p, idx) =>
     idx !== editingParticipantIndex.value && p.studentId === participantForm.value.studentId
   );
   if (localDuplicate) {
@@ -1444,24 +1557,32 @@ function submitAddParticipant() {
 
   proxy.$refs.addParticipantRef.validate(valid => {
     if (valid) {
+      trimStringFields(participantForm.value, [
+        "studentId",
+        "studentName",
+        "className",
+        "classYear",
+        "class_name",
+        "class_year",
+      ]);
       const finishAction = () => {
         const itemData = {
           id: participantForm.value.id, // 保持 ID 传递
-          studentId: participantForm.value.studentId,
-          studentName: participantForm.value.studentName,
-          school: participantForm.value.school,
-          department: participantForm.value.department,
-          major: participantForm.value.major,
-          class_name: participantForm.value.class_name,
-          class_year: participantForm.value.class_year,
-          isNewLocal: true 
+          studentId: trimIfString(participantForm.value.studentId),
+          studentName: trimIfString(participantForm.value.studentName),
+          school: trimIfString(participantForm.value.school),
+          department: trimIfString(participantForm.value.department),
+          major: trimIfString(participantForm.value.major),
+          class_name: trimIfString(participantForm.value.class_name),
+          class_year: trimIfString(participantForm.value.class_year),
+          isNewLocal: true
         };
 
         if (editingParticipantIndex.value > -1) {
           const oldItem = samAchievementParticipantList.value[editingParticipantIndex.value];
-          samAchievementParticipantList.value[editingParticipantIndex.value] = { 
-            ...oldItem, 
-            ...itemData 
+          samAchievementParticipantList.value[editingParticipantIndex.value] = {
+            ...oldItem,
+            ...itemData
           };
           proxy.$modal.msgSuccess("修改选手信息成功");
         } else {
@@ -1490,7 +1611,7 @@ function submitAddParticipant() {
         };
 
         const apiCall = editingParticipantIndex.value > -1 ? updateStudent(studentData) : addStudent(studentData);
-        
+
         apiCall.then(res => {
           if (res.code === 200 || res.msg === '操作成功') {
             proxy.$modal.msgSuccess("学生基础信息保存成功");
@@ -1519,7 +1640,7 @@ function submitAddAdvisor() {
     return;
   }
 
-  const localDuplicate = samAchievementAdvisorList.value.some((a, idx) => 
+  const localDuplicate = samAchievementAdvisorList.value.some((a, idx) =>
     idx !== editingAdvisorIndex.value && a.teacherId === advisorForm.value.teacherId
   );
   if (localDuplicate) {
@@ -1531,7 +1652,7 @@ function submitAddAdvisor() {
     if (valid) {
       const finishAction = () => {
         const itemData = {
-          id: advisorForm.value.dbId, 
+          id: advisorForm.value.dbId,
           teacherId: advisorForm.value.teacherId,
           teacherName: advisorForm.value.teacherName,
           school: advisorForm.value.school,
@@ -1541,9 +1662,9 @@ function submitAddAdvisor() {
 
         if (editingAdvisorIndex.value > -1) {
           const oldItem = samAchievementAdvisorList.value[editingAdvisorIndex.value];
-          samAchievementAdvisorList.value[editingAdvisorIndex.value] = { 
-            ...oldItem, 
-            ...itemData 
+          samAchievementAdvisorList.value[editingAdvisorIndex.value] = {
+            ...oldItem,
+            ...itemData
           };
           proxy.$modal.msgSuccess("修改指导老师成功");
         } else {
@@ -1565,7 +1686,7 @@ function submitAddAdvisor() {
           school: advisorForm.value.school,
           department: advisorForm.value.department
         };
-        
+
         const apiCall = editingAdvisorIndex.value > -1 ? updateTeacher(teacherData) : addTeacher(teacherData);
         apiCall.then(() => {
           proxy.$modal.msgSuccess("教师信息保存成功");
@@ -1607,13 +1728,29 @@ const uploadUnlocked = reactive({
   award: false, notice: false, work: false, photo: false, payment: false, invoice: false, receipt: false
 });
 
+const previewUrls = reactive({
+  award: "",
+  notice: "",
+  work: {},
+  photo: {},
+  payment: "",
+  invoice: "",
+  receipt: "",
+});
+
+function revokePreviewUrl(url) {
+  if (url) {
+    window.URL.revokeObjectURL(url);
+  }
+}
+
 const exampleMap = {
   'award': '/image/扫描文件.pdf',   
   'notice': '/image/tongzhi.pdf',   
   'payment': '/image/jilu.pdf',     
   'invoice': '/image/fapiao.pdf',   
-  'work': '//image/zuopingzhaopian.pdf',
-  'photo': 'image/caisaizhaopian.pdf',
+  'work': '/image/zuopingzhaopian.pdf',
+  'photo': '/image/cansaizhaopian.pdf',
 };
 
 function handlePreUpload(type) {
@@ -1671,13 +1808,21 @@ const attachmentConfig = computed(() => {
   ];
 });
 const visibleAttachments = computed(() => {
-  return attachmentConfig.value.filter(item => {
+  return attachmentConfig.value.filter((item) => {
     if (!item.condition) return true;
     return item.condition(form.value);
   });
 });
 
-const previewUrls = reactive({ award: "", notice: "", work: {}, photo: {}, payment: "", invoice: "", receipt: "" });
+async function getBlobErrorMessage(blob, fallback = "文件获取失败，请稍后重试") {
+  try {
+    const text = await blob.text();
+    const data = JSON.parse(text);
+    return data?.msg || fallback;
+  } catch (e) {
+    return fallback;
+  }
+}
 
 // 生成安全的本地预览流
 function loadSafePreview(uuid, type, index = null) {
@@ -1724,19 +1869,29 @@ function getFileList(val) {
   return val.split(',').filter(s => s !== "");
 }
 
+function syncMultiPreview(type, value) {
+  const uuids = getFileList(value);
+  const currentMap = previewUrls[type];
+
+  Object.keys(currentMap).forEach((uuid) => {
+    if (!uuids.includes(uuid)) {
+      revokePreviewUrl(currentMap[uuid]);
+      delete currentMap[uuid];
+    }
+  });
+
+  uuids.forEach((uuid) => {
+    if (!currentMap[uuid]) {
+      loadSafePreview(uuid, type);
+    }
+  });
+}
+
 watch(() => form.value.fileAward, (uuid) => loadSafePreview(uuid, 'award'));
 watch(() => form.value.fileNotice, (uuid) => loadSafePreview(uuid, 'notice'));
-watch(() => form.value.fileWork, (val) => {
-  const uuids = getFileList(val);
-  uuids.forEach(uuid => loadSafePreview(uuid, 'work'));
-}, { deep: true, immediate: true });
-watch(() => form.value.filePhoto, (val) => {
-  const uuids = getFileList(val);
-  uuids.forEach(uuid => loadSafePreview(uuid, 'photo'));
-}, { deep: true, immediate: true });
+watch(() => form.value.fileWork, (val) => syncMultiPreview('work', val), { deep: true, immediate: true });
+watch(() => form.value.filePhoto, (val) => syncMultiPreview('photo', val), { deep: true, immediate: true });
 watch(() => form.value.filePayment, (uuid) => loadSafePreview(uuid, 'payment'));
-watch(() => form.value.fileInvoice, (uuid) => loadSafePreview(uuid, 'invoice'));
-watch(() => form.value.fileReceiptCode, (uuid) => loadSafePreview(uuid, 'receipt'));watch(() => form.value.filePayment, (uuid) => loadSafePreview(uuid, 'payment'));
 watch(() => form.value.fileInvoice, (uuid) => loadSafePreview(uuid, 'invoice'));
 watch(() => form.value.fileReceiptCode, (uuid) => loadSafePreview(uuid, 'receipt'));
 
@@ -1842,6 +1997,7 @@ watch(() => [form.value.level, form.value.awardTime], () => {
 
 function open(id) {
   if (!isPageMode.value) visible.value = true;
+  pendingAchievementId.value = id ? String(id) : "";
   reset();
   getDeptTree();
   getCompetitionList();
@@ -1849,9 +2005,12 @@ function open(id) {
   activeAttachmentTab.value = 'award';
   if (id) {
     title.value = props.titleEdit;
+    detailLoading.value = true;
     loadDetail(id);
   } else {
     title.value = props.titleAdd;
+    detailLoading.value = false;
+    pendingAchievementId.value = "";
     // 【核心修改】：根据 sourceMode 进行默认填充
     if (props.sourceMode === 'guided') {
       // 教师端：我指导的成果，默认填入当前教师为第一指导老师
@@ -1927,6 +2086,9 @@ function open(id) {
       }
     }
 
+    reIndexList(samAchievementParticipantList.value, 'participant');
+    reIndexList(samAchievementAdvisorList.value);
+
     updateSnapshot();
     // 只有在弹窗模式下（非页面模式）才在 open 时检查草稿
     // 因为页面模式下 onMounted 已经检查过了，避免重复弹窗
@@ -1937,7 +2099,7 @@ function open(id) {
   initSortable();
 }
 function getForm() { return form.value; }
-defineExpose({ open, getForm, activeAttachmentTab });
+defineExpose({ open, getForm, activeAttachmentTab, submitForm });
 
 const sortableInstances = ref([]);
 const sortableTimeout = ref(null);
@@ -1967,12 +2129,34 @@ onMounted(() => {
 });
 
 function initSortable() {
-  if (sortableTimeout.value) clearTimeout(sortableTimeout.value);
-  
-  sortableTimeout.value = setTimeout(() => {
-    // 清除旧实例
-    sortableInstances.value.forEach(instance => instance.destroy());
-    sortableInstances.value = [];
+  setTimeout(() => {
+    const pTable = participantTable.value || participantTableDialog.value;
+    if (pTable) {
+      const el =
+        pTable.$el.querySelector(".el-table__body-wrapper tbody") ||
+        pTable.$el.querySelector("tbody");
+      if (el) {
+        Sortable.create(el, {
+          handle: ".drag-handle",
+          filter: ".fixed-row", // 禁止拖动带 fixed-row 类的行
+          onMove: (evt) => {
+            // 禁止拖动到带 fixed-row 类的行上方（即禁止覆盖索引为0的位置）
+            return evt.related.className.indexOf("fixed-row") === -1;
+          },
+          onEnd: ({ newIndex, oldIndex }) => {
+            if (newIndex === oldIndex) return;
+            const list = [...samAchievementParticipantList.value];
+            const currRow = list.splice(oldIndex, 1)[0];
+            list.splice(newIndex, 0, currRow);
+            samAchievementParticipantList.value = [];
+            nextTick(() => {
+              samAchievementParticipantList.value = list;
+              reIndexList(samAchievementParticipantList.value, 'participant');
+            });
+          },
+        });
+      }
+    }
 
     const tables = [
       { ref: participantTable.value || participantTableDialog.value, list: samAchievementParticipantList },
@@ -2010,18 +2194,25 @@ function initSortable() {
 
 // === 【核心修复】：增强的数据回显逻辑 ===
 function loadDetail(id) {
-  if (!props.getFn) return;
-  props.getFn(id).then(response => {
-    const d = response.data;
-    
-    if (d.category != null) d.category = String(d.category);
-    if (d.level != null) d.level = String(d.level);
-    if (d.grade != null) d.grade = String(d.grade);
-    if (d.groupId != null) d.groupId = String(d.groupId);
+  if (!props.getFn) {
+    detailLoading.value = false;
+    return;
+  }
+  pendingAchievementId.value = id ? String(id) : pendingAchievementId.value;
+  detailLoading.value = true;
+  props
+    .getFn(id)
+    .then((response) => {
+      const d = response.data;
 
-    if (d.competitionId != null) d.competitionId = Number(d.competitionId);
-    if (d.sessionId != null) d.sessionId = Number(d.sessionId);
-    if (d.ownerDepId != null) d.ownerDepId = Number(d.ownerDepId);
+      if (d.category != null) d.category = String(d.category);
+      if (d.level != null) d.level = String(d.level);
+      if (d.grade != null) d.grade = String(d.grade);
+      if (d.groupId != null) d.groupId = String(d.groupId);
+
+      if (d.competitionId != null) d.competitionId = Number(d.competitionId);
+      if (d.sessionId != null) d.sessionId = Number(d.sessionId);
+      if (d.ownerDepId != null) d.ownerDepId = Number(d.ownerDepId);
 
     // 预先占位，确保 Vue 的模板监听能够完美挂载并触发渲染
     d.fileAward = null;
@@ -2059,17 +2250,24 @@ function loadDetail(id) {
     
     if (d.competitionId) {
         getSessionList(d.competitionId);
-    }
-    
-    samAchievementParticipantList.value = d.samAchievementParticipantList || [];
-    samAchievementAdvisorList.value = d.samAchievementAdvisorList || [];
-    reIndexList(samAchievementParticipantList.value);
-    reIndexList(samAchievementAdvisorList.value);
-    
-    if (form.value.isReimburse == null) form.value.isReimburse = 0;
-    
-    updateSnapshot();
-  });
+      }
+
+      samAchievementParticipantList.value =
+        d.samAchievementParticipantList || [];
+      samAchievementAdvisorList.value = d.samAchievementAdvisorList || [];
+      reIndexList(samAchievementParticipantList.value, 'participant');
+      reIndexList(samAchievementAdvisorList.value);
+
+      if (form.value.isReimburse == null) form.value.isReimburse = 0;
+
+      updateSnapshot();
+    })
+    .catch(() => {
+      // keep pendingAchievementId so the header remains stable while the caller handles the error
+    })
+    .finally(() => {
+      detailLoading.value = false;
+    });
 }
 
 function reset() {
@@ -2124,50 +2322,88 @@ function validatePDFUpload() {
 
   if (!f.fileAward) { proxy.$modal.msgWarning(`请上传【${awardLabel}】PDF文件！`); activeAttachmentTab.value = 'award'; return false; }
   if (!f.fileNotice) { proxy.$modal.msgWarning(`请上传【${noticeLabel}】PDF文件！`); activeAttachmentTab.value = 'notice'; return false; }
-  
+
+  const workFiles = getFileList(f.fileWork);
+  const photoFiles = getFileList(f.filePhoto);
+
   if (f.hasFileWork === 1) {
-    if (!f.fileWork || f.fileWork.length < 5) { 
-      proxy.$modal.msgWarning(`【${workLabel}】要求上传至少5份PDF文件！当前已上传 ${f.fileWork ? f.fileWork.length : 0} 份`); 
-      activeAttachmentTab.value = 'work'; 
-      return false; 
+    if (workFiles.length < 5) {
+      proxy.$modal.msgWarning(`【${workLabel}】要求上传至少5份PDF文件！当前已上传 ${workFiles.length} 份`);
+      activeAttachmentTab.value = 'work';
+      return false;
     }
   } else {
-    if (!f.fileWork || f.fileWork.length < 1) {
-      proxy.$modal.msgWarning(`请上传【${workLabel}】手写声明PDF文件！`); 
-      activeAttachmentTab.value = 'work'; 
-      return false; 
+    if (workFiles.length < 1) {
+      proxy.$modal.msgWarning(`请上传【${workLabel}】手写声明PDF文件！`);
+      activeAttachmentTab.value = 'work';
+      return false;
     }
   }
 
   if (f.hasFilePhoto === 1) {
-    if (!f.filePhoto || f.filePhoto.length < 5) { 
-      proxy.$modal.msgWarning(`【${photoLabel}】要求上传至少5份PDF文件！当前已上传 ${f.filePhoto ? f.filePhoto.length : 0} 份`); 
-      activeAttachmentTab.value = 'photo'; 
-      return false; 
+    if (photoFiles.length < 5) {
+      proxy.$modal.msgWarning(`【${photoLabel}】要求上传至少5份PDF文件！当前已上传 ${photoFiles.length} 份`);
+      activeAttachmentTab.value = 'photo';
+      return false;
     }
   } else {
-    if (!f.filePhoto || f.filePhoto.length < 1) {
-      proxy.$modal.msgWarning(`请上传【${photoLabel}】手写声明PDF文件！`); 
-      activeAttachmentTab.value = 'photo'; 
-      return false; 
+    if (photoFiles.length < 1) {
+      proxy.$modal.msgWarning(`请上传【${photoLabel}】手写声明PDF文件！`);
+      activeAttachmentTab.value = 'photo';
+      return false;
     }
   }
 
   if (f.isReimburse === 1) {
-    if (!f.filePayment) { proxy.$modal.msgWarning(`申请报销必须上传【${paymentLabel}】PDF文件！`); activeAttachmentTab.value = 'payment'; return false; }
-    if (!f.fileInvoice) { proxy.$modal.msgWarning(`申请报销必须上传【${invoiceLabel}】PDF文件！`); activeAttachmentTab.value = 'invoice'; return false; }
-    if (!f.fileReceiptCode) { proxy.$modal.msgWarning(`申请报销必须上传【${receiptLabel}】PDF文件！`); activeAttachmentTab.value = 'receipt'; return false; }
+    if (!f.filePayment) {
+      proxy.$modal.msgWarning("申请报销必须上传【支付记录】PDF文件！");
+      activeAttachmentTab.value = "payment";
+      return false;
+    }
+    if (!f.fileInvoice) {
+      proxy.$modal.msgWarning("申请报销必须上传【正规发票】PDF文件！");
+      activeAttachmentTab.value = "invoice";
+      return false;
+    }
+    if (!f.fileReceiptCode) {
+      proxy.$modal.msgWarning("申请报销必须上传【收款码】PDF文件！");
+      activeAttachmentTab.value = "receipt";
+      return false;
+    }
   }
   return true;
 }
 
 function submitForm() {
-  if (props.readOnly) return;
-  const activeRef = isPageMode.value ? outcomeRefPage.value : outcomeRefDialog.value;
-  
-  activeRef.validate(valid => {
-    if (valid) {
-      if (!validatePDFUpload()) return;
+  if (props.readOnly) return Promise.resolve(false);
+  const activeRef = isPageMode.value
+    ? outcomeRefPage.value
+    : outcomeRefDialog.value;
+
+  return new Promise((resolve) => {
+    activeRef.validate((valid) => {
+      if (!valid) {
+        resolve(false);
+        return;
+      }
+      if (!validatePDFUpload()) {
+        resolve(false);
+        return;
+      }
+
+      trimStringFields(form.value, [
+        "name",
+        "track",
+        "certificateNo",
+        "teamName",
+        "fee",
+      ]);
+
+      if (!form.value.ownerDepId) {
+        proxy.$modal.msgWarning("归属学院不能为空，请先确认第一负责人所属学院");
+        resolve(false);
+        return;
+      }
 
       let attachments = [];
       const pushFile = (type, path) => {
@@ -2184,7 +2420,8 @@ function submitForm() {
             if (trimmed) attachments.push({ type: type, fileUuid: trimmed, fileType: 1 });
           });
         }
-      };      pushFile(1, form.value.fileAward);
+      };
+      pushFile(1, form.value.fileAward);
       pushFile(2, form.value.fileNotice);
       pushFile(3, form.value.fileWork);
       pushFile(8, form.value.filePhoto);
@@ -2193,18 +2430,24 @@ function submitForm() {
       pushFile(6, form.value.fileReceiptCode);
 
       form.value.samAchievementAttachmentList = attachments;
-      
-      form.value.samAchievementParticipantList = samAchievementParticipantList.value.map(p => ({
-        ...p,
-        studentNo: p.studentId, 
-        manager: String(p.manager) 
-      }));
-      
-      form.value.samAchievementAdvisorList = samAchievementAdvisorList.value.map(a => ({
-        ...a,
-        teacherNo: a.teacherId,
-        manager: a.manager // 确保 manager 字段也传给后端
-      }));
+
+      form.value.samAchievementParticipantList =
+        samAchievementParticipantList.value.map((p) => ({
+          ...p,
+          studentId: trimIfString(p.studentId),
+          studentName: trimIfString(p.studentName),
+          studentNo: trimIfString(p.studentId),
+          manager: String(p.manager),
+        }));
+
+      form.value.samAchievementAdvisorList =
+        samAchievementAdvisorList.value.map((a) => ({
+          ...a,
+          teacherId: trimIfString(a.teacherId),
+          teacherName: trimIfString(a.teacherName),
+          teacherNo: trimIfString(a.teacherId),
+          manager: a.manager, // 确保 manager 字段也传给后端
+        }));
 
       const isEdit = form.value.achievementId != null;
       const apiFn = isEdit ? props.updateFn : props.addFn;
@@ -2214,14 +2457,18 @@ function submitForm() {
           proxy.$modal.msgSuccess(isEdit ? "修改成功" : "新增成功");
           // 提交成功清除草稿
           clearDraft();
-          updateSnapshot(); 
+          updateSnapshot();
           if (!isPageMode.value) visible.value = false;
           emit('ok');
+          resolve(true);
+        }).catch(() => {
+          resolve(false);
         });
       } else {
         proxy.$modal.msgError("未配置保存接口");
+        resolve(false);
       }
-    }
+    });
   });
 }
 
@@ -2411,7 +2658,7 @@ function handleOpenDetail(uuid) {
     params: { resource: uuid },
     responseType: 'blob'
   }).then(blob => {
-    const blobData = blob.data || blob; 
+    const blobData = blob.data || blob;
     const blobWithMime = new Blob([blobData], { type: 'application/pdf' });
     const url = window.URL.createObjectURL(blobWithMime);
     window.open(url, '_blank');
@@ -2424,7 +2671,7 @@ function handleOpenDetail(uuid) {
 // 下载文件
 function handleDownload(uuid) {
   if (!uuid) return proxy.$modal.msgError("文件不存在");
-  
+
   request({
     url: '/attachment/download',
     method: 'get',
@@ -2433,7 +2680,7 @@ function handleDownload(uuid) {
   }).then(blob => {
     const blobData = blob.data || blob;
     let fileName = getFileName(uuid) || '下载文件';
-    
+
     // 【核心修复】：如果文件名没有小数点（没有后缀），强行加上 .pdf
     if (!fileName.includes('.')) {
       fileName += '.pdf';
@@ -2462,16 +2709,26 @@ function handleDownload(uuid) {
 
 <style scoped>
 .outcome-page .page-header {
-  display: flex; align-items: center; justify-content: space-between; margin-bottom: 14px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 14px;
 }
-.outcome-page .page-title { font-size: 18px; font-weight: 600; }
-.outcome-page .page-actions { display: flex; align-items: center; gap: 10px; }
-.dialog-footer-wrapper { 
-  display: flex; 
-  justify-content: space-between; 
-  align-items: center; 
+.outcome-page .page-title {
+  font-size: 18px;
+  font-weight: 600;
+}
+.outcome-page .page-actions {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+.dialog-footer-wrapper {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
   position: relative;
-  z-index: 999; 
+  z-index: 999;
 }
 .footer-right {
   position: relative;
@@ -2481,13 +2738,29 @@ function handleDownload(uuid) {
   position: relative;
   z-index: 99;
 }
-.attach-card { background: #f8f8f9; padding: 10px; border-radius: 4px; border: 1px solid #d9d9d9; height: 100%; }
-.upload-pane-content { padding: 5px 10px; }
-.mb10 { margin-bottom: 15px; }
-.mr5 { margin-right: 5px; }
-:deep(.el-tabs__content) { height: 100%; }
+.attach-card {
+  background: #f8f8f9;
+  padding: 10px;
+  border-radius: 4px;
+  border: 1px solid #d9d9d9;
+  height: 100%;
+}
+.upload-pane-content {
+  padding: 5px 10px;
+}
+.mb10 {
+  margin-bottom: 15px;
+}
+.mr5 {
+  margin-right: 5px;
+}
+:deep(.el-tabs__content) {
+  height: 100%;
+}
 
-.hide-file-list :deep(.el-upload-list) { display: none !important; }
+.hide-file-list :deep(.el-upload-list) {
+  display: none !important;
+}
 
 .fake-upload-box {
   width: 100%;
@@ -2499,10 +2772,10 @@ function handleDownload(uuid) {
   text-align: center;
   padding: 30px 0;
   background-color: #fff;
-  transition: border-color .3s;
+  transition: border-color 0.3s;
 }
 .fake-upload-box:hover {
-  border-color: #409EFF;
+  border-color: #409eff;
 }
 
 .custom-file-row {
@@ -2513,17 +2786,17 @@ function handleDownload(uuid) {
   font-size: 13px;
   color: #606266;
   border: 1px solid #e4e7ed;
-  display: block; 
+  display: block;
 }
 
 .file-name {
-  display: flex; 
-  align-items: center; 
+  display: flex;
+  align-items: center;
   width: 100%;
   margin-bottom: 8px;
   font-weight: 500;
-  white-space: nowrap; 
-  overflow: hidden; 
+  white-space: nowrap;
+  overflow: hidden;
   text-overflow: ellipsis;
 }
 
@@ -2535,7 +2808,8 @@ function handleDownload(uuid) {
 }
 
 .preview-box {
-  margin-top: 5px; line-height: 1.2;
+  margin-top: 5px;
+  line-height: 1.2;
   border: 1px solid #ddd;
   padding: 2px;
   background-color: #fff;
