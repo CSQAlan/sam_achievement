@@ -67,11 +67,11 @@
 
                     <el-col :span="24">
                       <el-form-item label="比赛届次" prop="sessionId">
-                        <el-select 
-                          v-model="form.sessionId" 
-                          placeholder="系统将根据前三步自动匹配，也可手动修改" 
-                          filterable 
-                          clearable 
+                        <el-select
+                          v-model="form.sessionId"
+                          placeholder="系统将根据前三步自动匹配，也可手动修改"
+                          filterable
+                          clearable
                           style="width: 100%"
                           :disabled="readOnly || !form.competitionId"
                         >
@@ -225,7 +225,7 @@
                                 <el-radio :label="1">有 (需上传至少5张PDF)</el-radio>
                                 <el-radio :label="0">无 (需上传手写声明PDF)</el-radio>
                               </el-radio-group>
-                              
+
                               <div v-if="form[item.name === 'work' ? 'hasFileWork' : 'hasFilePhoto'] === 0" style="margin-top: 10px; padding: 10px; background: #fdf6ec; border-radius: 4px; border: 1px solid #faecd8;">
                                 <el-icon style="vertical-align: middle; color: #e6a23c; margin-right: 5px;"><InfoFilled /></el-icon>
                                 <span style="font-size: 13px; color: #e6a23c;">
@@ -238,7 +238,7 @@
                           <!-- 【修改】：根据是否为多图上传显示不同的提示 -->
                           <el-alert v-if="!item.isMultiple && !form[item.prop]" :type="item.type || 'info'" :closable="false" class="mb10">
                             <template #title>
-                              {{ item.alert }} 
+                              {{ item.alert }}
                               <el-button link type="primary" style="margin-left: 10px" @click="handlePreUpload(item.name)">查看上传示例</el-button>
                             </template>
                           </el-alert>
@@ -248,19 +248,19 @@
                               <el-button v-if="!((item.name === 'work' || item.name === 'photo') && form[item.name === 'work' ? 'hasFileWork' : 'hasFilePhoto'] === 1)" link type="primary" style="margin-left: 10px" @click="handlePreUpload(item.name)">查看上传示例</el-button>
                             </template>
                           </el-alert>
-                          
+
                           <el-form-item label-width="0" :prop="item.prop">
                             <!-- 【修改】：参赛作品/照片有图时直接显示上传，无需解锁 -->
-                            <file-upload 
+                            <file-upload
                               v-if="!readOnly && (uploadUnlocked[item.name] || ((item.name === 'work' || item.name === 'photo') && form[item.name === 'work' ? 'hasFileWork' : 'hasFilePhoto'] === 1)) && (item.isMultiple || !form[item.prop])"
-                              v-model="form[item.prop]" 
-                              :limit="item.limit || 1" 
-                              :fileSize="10" 
-                              :fileType="item.fileType || ['pdf']" 
-                              class="hide-file-list" 
-                              :upload-url="uploadUrl" 
+                              v-model="form[item.prop]"
+                              :limit="item.limit || 1"
+                              :fileSize="10"
+                              :fileType="item.fileType || ['pdf']"
+                              class="hide-file-list"
+                              :upload-url="uploadUrl"
                             />
-                            
+
                             <div v-if="!readOnly && !form[item.prop] && !uploadUnlocked[item.name] && !((item.name === 'work' || item.name === 'photo') && form[item.name === 'work' ? 'hasFileWork' : 'hasFilePhoto'] === 1)" class="fake-upload-box" @click="handlePreUpload(item.name)">
                                <el-icon :size="30" color="#C0C4CC"><UploadFilled /></el-icon>
                                <div style="color: #606266; margin-top: 10px">点击上传文件</div>
@@ -334,8 +334,14 @@
     @closed="reset"
     top="5vh"
   >
-    <div class="outcome-body">
-      <el-form ref="outcomeRefDialog" :model="form" :rules="rules" label-width="110px" :disabled="readOnly">
+    <div class="outcome-body" v-loading="detailLoading">
+      <el-form
+        ref="outcomeRefDialog"
+        :model="form"
+        :rules="rules"
+        label-width="110px"
+        :disabled="readOnly"
+      >
         <el-row :gutter="20">
             <el-col :span="12">
               <el-row>
@@ -620,7 +626,11 @@
           <slot name="footer-left" :form="form"></slot>
         </div>
         <div class="footer-right">
-          <el-button v-if="showSubmit && !readOnly" type="primary" @click="submitForm">
+          <el-button
+            v-if="showSubmit && !readOnly"
+            type="primary"
+            @click="submitForm"
+          >
             {{ submitTextComputed }}
           </el-button>
           <el-button @click="handleCancel">{{ cancelText }}</el-button>
@@ -807,20 +817,31 @@
 
 <script setup name="AchievementForm">
 import { getCurrentInstance, ref, reactive, toRefs, computed, onMounted, onUnmounted, watch, nextTick } from "vue";
-import { useRoute } from "vue-router";
-import { onBeforeRouteLeave } from "vue-router";
+import { useRoute, onBeforeRouteLeave } from "vue-router";
 import Sortable from "sortablejs";
 import useUserStore from "@/store/modules/user";
-import { Plus, Delete, Document, Download, View, UploadFilled, Rank, InfoFilled, Edit, Search, CircleCheck } from "@element-plus/icons-vue";
 import {
+  Plus,
+  Delete,
+  Document,
+  Download,
+  View,
+  UploadFilled,
+  Rank,
+  InfoFilled,
+  Edit,
+  Search,
+  CircleCheck,
+} from "@element-plus/icons-vue";
+import{
   listStudent,
   getStudent,
   delStudent,
   addStudent,
   updateStudent,
 } from "@/api/achievement/student";
-import { listTeacher, addTeacher, updateTeacher } from "@/api/achievement/teacher";
 import { listTracks } from "@/api/achievement/manage";
+import { listTeacher, addTeacher, updateTeacher } from "@/api/achievement/teacher";
 import { listDept } from "@/api/system/dept";
 import { handleTree, blobValidate } from "@/utils/ruoyi";
 import request from "@/utils/request";
@@ -869,7 +890,9 @@ const studentDeptOptions = ref([]);
 const advisorDeptOptions = ref([]);
 const outcomeRefPage = ref(null);
 const outcomeRefDialog = ref(null);
-const activeAttachmentTab = ref('award');
+const activeAttachmentTab = ref("award");
+const detailLoading = ref(false);
+const pendingAchievementId = ref("");
 
 const uploadUrl = ref("/dev-api/attachment/upload");
 const userStore = useUserStore();
@@ -884,8 +907,6 @@ const checkedParticipant = ref([]);
 const checkedAdvisor = ref([]);
 const competitionOptions = ref([]);
 const sessionOptions = ref([]);
-const detailLoading = ref(false);
-const pendingAchievementId = ref("");
 
 const studentSelectVisible = ref(false);
 const studentOptions = ref([]);
@@ -1016,7 +1037,7 @@ function handleAdvisorCascaderChange(value) {
 }
 
 const data = reactive({
-  form: { competitionId: null, filePhoto: [], hasFileWork: 1, hasFilePhoto: 1 },
+  form: { competitionId: null, filePhoto: [], hasFileWork: 1, hasFilePhoto: 1, fee: null, reimbursementFee: null },
   formSnapshot: "",
   rules: {
     competitionId: [{ required: true, message: "比赛不能为空", trigger: "change" }],
@@ -1071,32 +1092,44 @@ function trimStringFields(target, fields = []) {
 }
 
 const trackSuggestions = ref([]);
-const queryTrackSearch = async (queryString, cb) => {
-  if (!form.value.competitionId || !form.value.sessionId) {
-    cb([]);
+
+function normalizeTrackSuggestions(rows = []) {
+  return Array.from(
+    new Set(
+      (rows || [])
+        .map((item) => trimIfString(item))
+        .filter(Boolean)
+    )
+  ).map((value) => ({ value }));
+}
+
+function loadTrackSuggestions(competitionId, sessionId) {
+  if (!competitionId || !sessionId) {
+    trackSuggestions.value = [];
     return;
   }
-  
-  if (trackSuggestions.value.length === 0) {
-    try {
-      const res = await listTracks(form.value.competitionId, form.value.sessionId);
-      if (res.data) {
-        trackSuggestions.value = res.data.map(t => ({ value: t }));
-      }
-    } catch (e) {
-      console.error("获取赛道建议失败", e);
-    }
-  }
+  listTracks(competitionId, sessionId)
+    .then((response) => {
+      const rows = response?.data || response?.rows || [];
+      trackSuggestions.value = normalizeTrackSuggestions(rows);
+    })
+    .catch(() => {
+      trackSuggestions.value = [];
+    });
+}
 
-  const results = queryString
-    ? trackSuggestions.value.filter(t => t.value.toLowerCase().includes(queryString.toLowerCase()))
+function queryTrackSearch(queryString, cb) {
+  const keyword = String(queryString || "").trim().toLowerCase();
+  const results = keyword
+    ? trackSuggestions.value.filter((item) =>
+        item.value.toLowerCase().includes(keyword)
+      )
     : trackSuggestions.value;
-  
   cb(results);
-};
+}
 
 watch(() => [form.value.competitionId, form.value.sessionId], ([compId, sessionId]) => {
-  trackSuggestions.value = [];
+  loadTrackSuggestions(compId, sessionId);
   // 当比赛和届次都选择后，尝试从届次信息中提取比赛通知 UUID 并回显
   if (compId && sessionId && sessionOptions.value.length > 0) {
     const session = sessionOptions.value.find(s => s.id === sessionId);
@@ -1107,13 +1140,14 @@ watch(() => [form.value.competitionId, form.value.sessionId], ([compId, sessionI
 });
 
 const validateCertificateNo = (rule, value, callback) => {
-  if (!value) {
+  const certificateNo = trimIfString(value);
+  form.value.certificateNo = certificateNo;
+  if (!certificateNo) {
     callback();
   } else {
     const params = {
-      certificateNo: value,
-      competitionId: form.value.competitionId,
-      achievementId: form.value.achievementId
+      certificateNo,
+      achievementId: form.value.achievementId,
     };
     request({
       url: '/achievement/manage/checkCertificateNoUnique',
@@ -1231,7 +1265,6 @@ const submitTextComputed = computed(() => {
 // 学生与老师的级联选择逻辑 (查找与动态过滤)
 function findDeptNode(tree, targetVal) {
   if (!tree || targetVal == null || targetVal === '') return null;
-  const normalizedTarget = String(targetVal);
   for (let i = 0; i < tree.length; i++) {
     const node = tree[i];
     if (node.deptId === targetVal || node.deptName === targetVal) return node;
@@ -1395,19 +1428,13 @@ function applyStudentInfo(student) {
   participantForm.value.school = student.school;
   participantForm.value.department = student.department;
   participantForm.value.major = student.major;
-
-  // Re-populate cascader starting from Root (Level 1)
-  const values = [];
-  if (deptOptions.value && deptOptions.value.length > 0) {
-    values.push(deptOptions.value[0].deptId); // Prepend Root ID
-  }
-  if (participantForm.value.school) values.push(Number(participantForm.value.school));
-  if (participantForm.value.department) values.push(Number(participantForm.value.department));
-  if (participantForm.value.major) values.push(Number(participantForm.value.major));
-  participantDeptCascaderValue.value = values;
-
+  participantForm.value.class_name = student.className;
+  participantForm.value.class_year = student.classYear;
   isParticipantNew.value = false;
   studentSelectVisible.value = false;
+  if (!student.school) {
+    proxy.$modal.msgWarning("该学生档案未维护学院，请从所属机构中补选");
+  }
 }
 
 function selectStudent(row) {
@@ -1530,16 +1557,24 @@ function submitAddParticipant() {
 
   proxy.$refs.addParticipantRef.validate(valid => {
     if (valid) {
+      trimStringFields(participantForm.value, [
+        "studentId",
+        "studentName",
+        "className",
+        "classYear",
+        "class_name",
+        "class_year",
+      ]);
       const finishAction = () => {
         const itemData = {
           id: participantForm.value.id, // 保持 ID 传递
-          studentId: participantForm.value.studentId,
-          studentName: participantForm.value.studentName,
-          school: participantForm.value.school,
-          department: participantForm.value.department,
-          major: participantForm.value.major,
-          class_name: participantForm.value.class_name,
-          class_year: participantForm.value.class_year,
+          studentId: trimIfString(participantForm.value.studentId),
+          studentName: trimIfString(participantForm.value.studentName),
+          school: trimIfString(participantForm.value.school),
+          department: trimIfString(participantForm.value.department),
+          major: trimIfString(participantForm.value.major),
+          class_name: trimIfString(participantForm.value.class_name),
+          class_year: trimIfString(participantForm.value.class_year),
           isNewLocal: true
         };
 
@@ -1693,13 +1728,29 @@ const uploadUnlocked = reactive({
   award: false, notice: false, work: false, photo: false, payment: false, invoice: false, receipt: false
 });
 
+const previewUrls = reactive({
+  award: "",
+  notice: "",
+  work: {},
+  photo: {},
+  payment: "",
+  invoice: "",
+  receipt: "",
+});
+
+function revokePreviewUrl(url) {
+  if (url) {
+    window.URL.revokeObjectURL(url);
+  }
+}
+
 const exampleMap = {
   'award': '/image/扫描文件.pdf',   
   'notice': '/image/tongzhi.pdf',   
   'payment': '/image/jilu.pdf',     
   'invoice': '/image/fapiao.pdf',   
-  'work': '//image/zuopingzhaopian.pdf',
-  'photo': 'image/caisaizhaopian.pdf',
+  'work': '/image/zuopingzhaopian.pdf',
+  'photo': '/image/cansaizhaopian.pdf',
 };
 
 function handlePreUpload(type) {
@@ -1757,13 +1808,21 @@ const attachmentConfig = computed(() => {
   ];
 });
 const visibleAttachments = computed(() => {
-  return attachmentConfig.value.filter(item => {
+  return attachmentConfig.value.filter((item) => {
     if (!item.condition) return true;
     return item.condition(form.value);
   });
 });
 
-const previewUrls = reactive({ award: "", notice: "", work: {}, photo: {}, payment: "", invoice: "", receipt: "" });
+async function getBlobErrorMessage(blob, fallback = "文件获取失败，请稍后重试") {
+  try {
+    const text = await blob.text();
+    const data = JSON.parse(text);
+    return data?.msg || fallback;
+  } catch (e) {
+    return fallback;
+  }
+}
 
 // 生成安全的本地预览流
 function loadSafePreview(uuid, type, index = null) {
@@ -1828,22 +1887,10 @@ function syncMultiPreview(type, value) {
   });
 }
 
-function revokePreviewUrl(url) {
-  if (url) {
-    window.URL.revokeObjectURL(url);
-  }
-}
-
 watch(() => form.value.fileAward, (uuid) => loadSafePreview(uuid, 'award'));
 watch(() => form.value.fileNotice, (uuid) => loadSafePreview(uuid, 'notice'));
-watch(() => form.value.fileWork, (val) => {
-  const uuids = getFileList(val);
-  uuids.forEach(uuid => loadSafePreview(uuid, 'work'));
-}, { deep: true, immediate: true });
-watch(() => form.value.filePhoto, (val) => {
-  const uuids = getFileList(val);
-  uuids.forEach(uuid => loadSafePreview(uuid, 'photo'));
-}, { deep: true, immediate: true });
+watch(() => form.value.fileWork, (val) => syncMultiPreview('work', val), { deep: true, immediate: true });
+watch(() => form.value.filePhoto, (val) => syncMultiPreview('photo', val), { deep: true, immediate: true });
 watch(() => form.value.filePayment, (uuid) => loadSafePreview(uuid, 'payment'));
 watch(() => form.value.fileInvoice, (uuid) => loadSafePreview(uuid, 'invoice'));
 watch(() => form.value.fileReceiptCode, (uuid) => loadSafePreview(uuid, 'receipt'));
@@ -2082,12 +2129,34 @@ onMounted(() => {
 });
 
 function initSortable() {
-  if (sortableTimeout.value) clearTimeout(sortableTimeout.value);
-  
-  sortableTimeout.value = setTimeout(() => {
-    // 清除旧实例
-    sortableInstances.value.forEach(instance => instance.destroy());
-    sortableInstances.value = [];
+  setTimeout(() => {
+    const pTable = participantTable.value || participantTableDialog.value;
+    if (pTable) {
+      const el =
+        pTable.$el.querySelector(".el-table__body-wrapper tbody") ||
+        pTable.$el.querySelector("tbody");
+      if (el) {
+        Sortable.create(el, {
+          handle: ".drag-handle",
+          filter: ".fixed-row", // 禁止拖动带 fixed-row 类的行
+          onMove: (evt) => {
+            // 禁止拖动到带 fixed-row 类的行上方（即禁止覆盖索引为0的位置）
+            return evt.related.className.indexOf("fixed-row") === -1;
+          },
+          onEnd: ({ newIndex, oldIndex }) => {
+            if (newIndex === oldIndex) return;
+            const list = [...samAchievementParticipantList.value];
+            const currRow = list.splice(oldIndex, 1)[0];
+            list.splice(newIndex, 0, currRow);
+            samAchievementParticipantList.value = [];
+            nextTick(() => {
+              samAchievementParticipantList.value = list;
+              reIndexList(samAchievementParticipantList.value, 'participant');
+            });
+          },
+        });
+      }
+    }
 
     const tables = [
       { ref: participantTable.value || participantTableDialog.value, list: samAchievementParticipantList },
@@ -2153,7 +2222,7 @@ function loadDetail(id) {
     d.filePayment = null;
     d.fileInvoice = null;
     d.fileReceiptCode = null;
-
+    
     // 初始化 hasFile 状态
     d.hasFileWork = 1;
     d.hasFilePhoto = 1;
@@ -2181,23 +2250,24 @@ function loadDetail(id) {
     
     if (d.competitionId) {
         getSessionList(d.competitionId);
-    }
-    
-    samAchievementParticipantList.value = d.samAchievementParticipantList || [];
-    samAchievementAdvisorList.value = d.samAchievementAdvisorList || [];
-    reIndexList(samAchievementParticipantList.value);
-    reIndexList(samAchievementAdvisorList.value);
-    
-    if (form.value.isReimburse == null) form.value.isReimburse = 0;
-    
-    updateSnapshot();
+      }
+
+      samAchievementParticipantList.value =
+        d.samAchievementParticipantList || [];
+      samAchievementAdvisorList.value = d.samAchievementAdvisorList || [];
+      reIndexList(samAchievementParticipantList.value, 'participant');
+      reIndexList(samAchievementAdvisorList.value);
+
+      if (form.value.isReimburse == null) form.value.isReimburse = 0;
+
+      updateSnapshot();
     })
-    .catch((error) => {
-      console.error("加载成果详情失败", error);
+    .catch(() => {
+      // keep pendingAchievementId so the header remains stable while the caller handles the error
     })
     .finally(() => {
       detailLoading.value = false;
-  });
+    });
 }
 
 function reset() {
@@ -2285,9 +2355,21 @@ function validatePDFUpload() {
   }
 
   if (f.isReimburse === 1) {
-    if (!f.filePayment) { proxy.$modal.msgWarning(`申请报销必须上传【${paymentLabel}】PDF文件！`); activeAttachmentTab.value = 'payment'; return false; }
-    if (!f.fileInvoice) { proxy.$modal.msgWarning(`申请报销必须上传【${invoiceLabel}】PDF文件！`); activeAttachmentTab.value = 'invoice'; return false; }
-    if (!f.fileReceiptCode) { proxy.$modal.msgWarning(`申请报销必须上传【${receiptLabel}】PDF文件！`); activeAttachmentTab.value = 'receipt'; return false; }
+    if (!f.filePayment) {
+      proxy.$modal.msgWarning("申请报销必须上传【支付记录】PDF文件！");
+      activeAttachmentTab.value = "payment";
+      return false;
+    }
+    if (!f.fileInvoice) {
+      proxy.$modal.msgWarning("申请报销必须上传【正规发票】PDF文件！");
+      activeAttachmentTab.value = "invoice";
+      return false;
+    }
+    if (!f.fileReceiptCode) {
+      proxy.$modal.msgWarning("申请报销必须上传【收款码】PDF文件！");
+      activeAttachmentTab.value = "receipt";
+      return false;
+    }
   }
   return true;
 }
@@ -2338,7 +2420,8 @@ function submitForm() {
             if (trimmed) attachments.push({ type: type, fileUuid: trimmed, fileType: 1 });
           });
         }
-      };      pushFile(1, form.value.fileAward);
+      };
+      pushFile(1, form.value.fileAward);
       pushFile(2, form.value.fileNotice);
       pushFile(3, form.value.fileWork);
       pushFile(8, form.value.filePhoto);
@@ -2347,18 +2430,24 @@ function submitForm() {
       pushFile(6, form.value.fileReceiptCode);
 
       form.value.samAchievementAttachmentList = attachments;
-      
-      form.value.samAchievementParticipantList = samAchievementParticipantList.value.map(p => ({
-        ...p,
-        studentNo: p.studentId, 
-        manager: String(p.manager) 
-      }));
-      
-      form.value.samAchievementAdvisorList = samAchievementAdvisorList.value.map(a => ({
-        ...a,
-        teacherNo: a.teacherId,
-        manager: a.manager // 确保 manager 字段也传给后端
-      }));
+
+      form.value.samAchievementParticipantList =
+        samAchievementParticipantList.value.map((p) => ({
+          ...p,
+          studentId: trimIfString(p.studentId),
+          studentName: trimIfString(p.studentName),
+          studentNo: trimIfString(p.studentId),
+          manager: String(p.manager),
+        }));
+
+      form.value.samAchievementAdvisorList =
+        samAchievementAdvisorList.value.map((a) => ({
+          ...a,
+          teacherId: trimIfString(a.teacherId),
+          teacherName: trimIfString(a.teacherName),
+          teacherNo: trimIfString(a.teacherId),
+          manager: a.manager, // 确保 manager 字段也传给后端
+        }));
 
       const isEdit = form.value.achievementId != null;
       const apiFn = isEdit ? props.updateFn : props.addFn;
@@ -2368,7 +2457,7 @@ function submitForm() {
           proxy.$modal.msgSuccess(isEdit ? "修改成功" : "新增成功");
           // 提交成功清除草稿
           clearDraft();
-          updateSnapshot(); 
+          updateSnapshot();
           if (!isPageMode.value) visible.value = false;
           emit('ok');
           resolve(true);
@@ -2582,7 +2671,7 @@ function handleOpenDetail(uuid) {
 // 下载文件
 function handleDownload(uuid) {
   if (!uuid) return proxy.$modal.msgError("文件不存在");
-  
+
   request({
     url: '/attachment/download',
     method: 'get',
