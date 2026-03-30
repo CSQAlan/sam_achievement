@@ -434,8 +434,8 @@
         cancel-text="返回"
         @ok="handleFormOk"
         @cancel="handleFormCancel"
-    />
-    <AchievementForm
+    >
+    </AchievementForm>    <AchievementForm
         ref="achievementDialogRef"
         :get-fn="getFn"
         :add-fn="addFn"
@@ -617,6 +617,7 @@ const syncingSelection = ref(false);
 const batchReviewLoading = ref(false);
 const openingReviewPage = ref(false);
 const openingReviewPageId = ref('');
+const currentId = ref(null);
 const exportAttachmentDialogVisible = ref(false);
 const exportAttachmentLoading = ref(false);
 const selectedAttachmentTypes = ref([]);
@@ -1480,6 +1481,7 @@ onBeforeUnmount(() => {
 });
 
 function openPageForm(id, options = {}) {
+  currentId.value = id || null;
   formReadOnly.value = !!options.readOnly;
   formShowSubmit.value = !formReadOnly.value;
   pageModeActive.value = true;
@@ -1490,6 +1492,7 @@ function openPageForm(id, options = {}) {
 }
 
 function openDialog(id, options = {}) {
+  currentId.value = id || null;
   formReadOnly.value = !!options.readOnly;
   formShowSubmit.value = !formReadOnly.value;
   nextTick(() => {

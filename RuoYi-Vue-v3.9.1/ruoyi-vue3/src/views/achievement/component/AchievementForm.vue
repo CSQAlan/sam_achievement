@@ -3,6 +3,7 @@
     <div class="page-card" v-loading="detailLoading">
       <div class="page-header">
         <div class="header-left">
+          <slot name="header-left"></slot>
           <div class="page-title">
             {{
               isPageMode
@@ -15,12 +16,11 @@
             }}
           </div>
         </div>
-        <div class="page-actions" v-if="!readOnly">
-          <el-button v-if="showSubmit" type="primary" @click="submitForm">{{ submitTextComputed }}</el-button>
-          <el-button @click="handleCancel">{{ cancelText }}</el-button>
-        </div>
-        <div class="page-actions" v-else>
-          <el-button @click="handleCancel">{{ cancelText }}</el-button>
+        <div class="page-actions" v-if="!displayAchievementId">
+          <slot name="page-actions">
+            <el-button v-if="showSubmit" type="primary" @click="submitForm">{{ submitTextComputed }}</el-button>
+            <el-button @click="handleCancel">{{ cancelText }}</el-button>
+          </slot>
         </div>
       </div>
       <el-divider style="margin: 10px 0 20px 0"></el-divider>
@@ -81,10 +81,11 @@
                           clearable
                           style="width: 100%"
                           :disabled="readOnly || !form.competitionId"
+                          @change="isAutoMatched = false"
                         >
                           <el-option v-for="item in sessionOptions" :key="item.id" :label="item.session" :value="item.id" />
                         </el-select>
-                        <div v-if="form.sessionId" style="color: #67C23A; font-size: 12px; margin-top: 5px;">
+                        <div v-if="isAutoMatched" style="color: #67C23A; font-size: 12px; margin-top: 5px;">
                           <el-icon style="vertical-align: middle;"><CircleCheck /></el-icon> 已根据时间与级别自动锁定届次
                         </div>
                       </el-form-item>
@@ -394,10 +395,11 @@
                       clearable 
                       style="width: 100%"
                       :disabled="readOnly || !form.competitionId"
+                      @change="isAutoMatched = false"
                     >
                       <el-option v-for="item in sessionOptions" :key="item.id" :label="item.session" :value="item.id" />
                     </el-select>
-                    <div v-if="form.sessionId" style="color: #67C23A; font-size: 12px; margin-top: 5px;">
+                    <div v-if="isAutoMatched" style="color: #67C23A; font-size: 12px; margin-top: 5px;">
                       <el-icon style="vertical-align: middle;"><CircleCheck /></el-icon> 已根据时间与级别自动锁定届次
                     </div>
                   </el-form-item>
@@ -924,6 +926,7 @@ const checkedParticipant = ref([]);
 const checkedAdvisor = ref([]);
 const competitionOptions = ref([]);
 const sessionOptions = ref([]);
+const isAutoMatched = ref(false);
 
 const studentSelectVisible = ref(false);
 const studentOptions = ref([]);
@@ -1054,7 +1057,33 @@ function handleAdvisorCascaderChange(value) {
 }
 
 const data = reactive({
-  form: { competitionId: null, filePhoto: [], hasFileWork: 1, hasFilePhoto: 1, fee: null, reimbursementFee: null },
+  form: {
+    competitionId: null,
+    achievementId: null,
+    sessionId: null,
+    category: "3",
+    name: null,
+    teamName: null,
+    level: null,
+    grade: null,
+    track: null,
+    certificateNo: null,
+    groupId: null,
+    ownerDepId: null,
+    awardTime: null,
+    fee: null,
+    reimbursementFee: null,
+    isReimburse: 0,
+    fileAward: null,
+    fileNotice: null,
+    fileWork: [],
+    filePhoto: [],
+    filePayment: null,
+    fileInvoice: null,
+    fileReceiptCode: null,
+    hasFileWork: 1,
+    hasFilePhoto: 1
+  },
   formSnapshot: "",
   rules: {
     competitionId: [{ required: true, message: "比赛不能为空", trigger: "change" }],
@@ -1982,26 +2011,30 @@ function autoMatchSession() {
 
   // 2. 设定搜索年份窗口 (解决跨年问题)
   // 1-4月获奖，可能属于去年或当年的比赛；5-12月获奖，基本属于当年比赛
-  const targetYears = month <= 4 ? [year.toString(), (year - 1).toString()] : [year.toString()];
+  const targetYears = month <= 4 ? [year.getTime() ? year.toString() : "", (year - 1).toString()] : [year.toString()];
 
   // 3. 在候选列表中筛选
   const matched = sessionOptions.value.filter(item => {
     // A. 级别必须一致 (注意类型转换或弱等于)
     const isLevelMatch = item.level == level;
     // B. 年份匹配：session 字段通常包含年份文字，如 "2025" 或 "2025第十八届"
-    const isYearMatch = targetYears.some(y => item.session && item.session.includes(y));
+    const isYearMatch = targetYears.some(y => y && item.session && String(item.session).includes(y));
     return isLevelMatch && isYearMatch;
   });
 
   // 4. 自动赋值：只有当推断结果唯一时才自动勾选，避免歧义
   if (matched.length === 1) {
     form.value.sessionId = matched[0].id;
+    isAutoMatched.value = true;
+  } else {
+    isAutoMatched.value = false;
   }
 }
 
 function handleCompetitionChange(val) {
   form.value.sessionId = null;
   sessionOptions.value = [];
+  isAutoMatched.value = false;
   if (val) {
     getSessionList(val);
   }
@@ -2116,7 +2149,7 @@ function open(id) {
   initSortable();
 }
 function getForm() { return form.value; }
-defineExpose({ open, getForm, activeAttachmentTab, submitForm });
+defineExpose({ open, getForm, activeAttachmentTab, submitForm, handleCancel });
 
 const sortableInstances = ref([]);
 const sortableTimeout = ref(null);
