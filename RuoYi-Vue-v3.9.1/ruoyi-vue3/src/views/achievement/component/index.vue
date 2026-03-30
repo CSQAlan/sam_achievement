@@ -386,16 +386,27 @@
                 :loading="openingReviewPage && String(openingReviewPageId) === String(scope.row?.achievementId)"
             >详情</el-button>
 
-            <el-button
-                v-if="showEdit && canUseEditAction"
-                link
-                type="primary"
-                icon="Edit"
-                @click="handleRowUpdate(scope.row)"
-                v-hasPermi="permEdit"
-                :disabled="openingReviewPage || !checkEditable(scope.row)"
-                :loading="openingReviewPage && String(openingReviewPageId) === String(scope.row?.achievementId)"
-            >审核</el-button>
+            <!-- 原来的按钮代码改为支持 slot -->
+            <slot
+                name="action-button"
+                :row="scope.row"
+                :handle-row-update="handleRowUpdate"
+                :opening-review-page="openingReviewPage"
+                :opening-review-page-id="openingReviewPageId"
+                :check-editable="checkEditable"
+                :perm-edit="permEdit"
+            >
+              <!-- 默认内容（如果没有提供 slot 时显示） -->
+              <el-button
+                  v-if="showEdit && canUseEditAction"
+                  link
+                  type="primary"
+                  icon="Edit"
+                  @click="handleRowUpdate(scope.row)"
+                  v-hasPermi="permEdit"
+                  :disabled="openingReviewPage || !checkEditable(scope.row)"
+                  :loading="openingReviewPage && String(openingReviewPageId) === String(scope.row?.achievementId)"
+              >{{ reviewSource ? '审核' : '修改' }}</el-button>            </slot>
 
             <el-button
                 v-if="showDelete"
@@ -434,8 +445,8 @@
         cancel-text="返回"
         @ok="handleFormOk"
         @cancel="handleFormCancel"
-    />
-    <AchievementForm
+    >
+    </AchievementForm>    <AchievementForm
         ref="achievementDialogRef"
         :get-fn="getFn"
         :add-fn="addFn"
@@ -617,6 +628,7 @@ const syncingSelection = ref(false);
 const batchReviewLoading = ref(false);
 const openingReviewPage = ref(false);
 const openingReviewPageId = ref('');
+const currentId = ref(null);
 const exportAttachmentDialogVisible = ref(false);
 const exportAttachmentLoading = ref(false);
 const selectedAttachmentTypes = ref([]);
@@ -1204,7 +1216,7 @@ function clearSelectionState() {
   tableRef.value?.clearSelection?.();
 }
 function handleAdd() {
-  openDialog();
+  openPageForm();
 }
 
 async function handleUpdate() {
@@ -1480,6 +1492,7 @@ onBeforeUnmount(() => {
 });
 
 function openPageForm(id, options = {}) {
+  currentId.value = id || null;
   formReadOnly.value = !!options.readOnly;
   formShowSubmit.value = !formReadOnly.value;
   pageModeActive.value = true;
@@ -1490,6 +1503,7 @@ function openPageForm(id, options = {}) {
 }
 
 function openDialog(id, options = {}) {
+  currentId.value = id || null;
   formReadOnly.value = !!options.readOnly;
   formShowSubmit.value = !formReadOnly.value;
   nextTick(() => {

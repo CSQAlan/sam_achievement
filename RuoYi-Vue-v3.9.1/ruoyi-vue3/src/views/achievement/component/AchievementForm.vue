@@ -3,6 +3,7 @@
     <div class="page-card" v-loading="detailLoading">
       <div class="page-header">
         <div class="header-left">
+          <slot name="header-left"></slot>
           <div class="page-title">
             {{
               isPageMode
@@ -14,6 +15,12 @@
                 : title
             }}
           </div>
+        </div>
+        <div class="page-actions" v-if="!displayAchievementId">
+          <slot name="page-actions">
+            <el-button v-if="showSubmit" type="primary" @click="submitForm">{{ submitTextComputed }}</el-button>
+            <el-button @click="handleCancel">{{ cancelText }}</el-button>
+          </slot>
         </div>
       </div>
       <el-divider style="margin: 10px 0 20px 0"></el-divider>
@@ -34,11 +41,11 @@
                   <el-row>
                     <el-col :span="24">
                       <el-form-item label="参加比赛" prop="competitionId">
-                        <el-select
-                          v-model="form.competitionId"
-                          placeholder="第一步：请选择您参加的赛事"
-                          filterable
-                          clearable
+                        <el-select 
+                          v-model="form.competitionId" 
+                          placeholder="第一步：请选择您参加的赛事" 
+                          filterable 
+                          clearable 
                           style="width: 100%"
                           @change="handleCompetitionChange"
                         >
@@ -74,10 +81,11 @@
                           clearable
                           style="width: 100%"
                           :disabled="readOnly || !form.competitionId"
+                          @change="isAutoMatched = false"
                         >
                           <el-option v-for="item in sessionOptions" :key="item.id" :label="item.session" :value="item.id" />
                         </el-select>
-                        <div v-if="form.sessionId" style="color: #67C23A; font-size: 12px; margin-top: 5px;">
+                        <div v-if="isAutoMatched" style="color: #67C23A; font-size: 12px; margin-top: 5px;">
                           <el-icon style="vertical-align: middle;"><CircleCheck /></el-icon> 已根据时间与级别自动锁定届次
                         </div>
                       </el-form-item>
@@ -137,11 +145,11 @@
                         <el-radio :label="1">是 (需要上传凭证)</el-radio>
                         <el-radio :label="0">否</el-radio>
                       </el-radio-group>
-                      <div v-if="form.isReimburse === 1 && form.reimbursementStatus !== undefined && form.reimbursementStatus !== null" style="margin-left: 15px; display: flex; align-items: center;">
+                      <div v-if="form.isReimburse === 1" style="margin-left: 15px; display: flex; align-items: center;">
                         <span style="font-size: 12px; color: #909399; margin-right: 8px;">报销状态:</span>
-                        <div style="transform: scale(1.5); transform-origin: left center;">
-                          <dict-tag :options="reimbursement_status" :value="form.reimbursementStatus" />
-                        </div>
+                      <div style="transform: scale(1.5); transform-origin: left center;">
+  <dict-tag :options="reimbursement_status" :value="form.reimbursementStatus ?? 0" />
+</div>
                       </div>
                     </div>
                     <div style="color: #F56C6C; font-size: 12px; margin-top: 5px; line-height: 1.2; font-weight: bold;">
@@ -387,10 +395,11 @@
                       clearable 
                       style="width: 100%"
                       :disabled="readOnly || !form.competitionId"
+                      @change="isAutoMatched = false"
                     >
                       <el-option v-for="item in sessionOptions" :key="item.id" :label="item.session" :value="item.id" />
                     </el-select>
-                    <div v-if="form.sessionId" style="color: #67C23A; font-size: 12px; margin-top: 5px;">
+                    <div v-if="isAutoMatched" style="color: #67C23A; font-size: 12px; margin-top: 5px;">
                       <el-icon style="vertical-align: middle;"><CircleCheck /></el-icon> 已根据时间与级别自动锁定届次
                     </div>
                   </el-form-item>
@@ -450,11 +459,11 @@
                     <el-radio :label="1">是 (需要上传凭证)</el-radio>
                     <el-radio :label="0">否</el-radio>
                   </el-radio-group>
-                  <div v-if="form.isReimburse === 1 && form.reimbursementStatus !== undefined && form.reimbursementStatus !== null" style="margin-left: 15px; display: flex; align-items: center;">
+                  <div v-if="form.isReimburse === 1" style="margin-left: 15px; display: flex; align-items: center;">
                     <span style="font-size: 12px; color: #909399; margin-right: 8px;">报销状态:</span>
-                    <div style="transform: scale(1.5); transform-origin: left center;">
-                      <dict-tag :options="reimbursement_status" :value="form.reimbursementStatus" />
-                    </div>
+                  <div style="transform: scale(1.5); transform-origin: left center;">
+  <dict-tag :options="reimbursement_status" :value="form.reimbursementStatus ?? 0" />
+</div>
                   </div>
                 </div>
                 <div style="color: #F56C6C; font-size: 12px;font-weight: bold;">
@@ -486,6 +495,11 @@
                 <el-table-column v-if="!readOnly" type="selection" width="50" align="center" />
                 <el-table-column label="学生学号" prop="studentId" align="center" />
                 <el-table-column label="姓名" prop="studentName" align="center" />
+                <el-table-column label="操作" align="center" width="100" v-if="!readOnly">
+                  <template #default="scope">
+                    <el-button v-if="!scope.row.isFixed" link type="primary" :icon="Edit" @click="handleEditParticipant(scope.row, scope.$index)">修改</el-button>
+                  </template>
+                </el-table-column>
                 <el-table-column label="排序" prop="orderNo" width="100" align="center" />
                 <el-table-column label="是否负责人" prop="manager" width="150" align="center">
                   <template #default="scope">
@@ -508,6 +522,11 @@
                 <el-table-column v-if="!readOnly" type="selection" width="50" align="center" />
                 <el-table-column label="教师工号" prop="teacherId" align="center" />
                 <el-table-column label="姓名" prop="teacherName" align="center" />
+                <el-table-column label="操作" align="center" width="100" v-if="!readOnly">
+                  <template #default="scope">
+                    <el-button v-if="!scope.row.isFixed" link type="primary" :icon="Edit" @click="handleEditAdvisor(scope.row, scope.$index)">修改</el-button>
+                  </template>
+                </el-table-column>
                 <el-table-column label="排序" prop="orderNo" width="100" align="center" />
               </el-table>
             </el-col>
@@ -907,6 +926,7 @@ const checkedParticipant = ref([]);
 const checkedAdvisor = ref([]);
 const competitionOptions = ref([]);
 const sessionOptions = ref([]);
+const isAutoMatched = ref(false);
 
 const studentSelectVisible = ref(false);
 const studentOptions = ref([]);
@@ -1037,7 +1057,33 @@ function handleAdvisorCascaderChange(value) {
 }
 
 const data = reactive({
-  form: { competitionId: null, filePhoto: [], hasFileWork: 1, hasFilePhoto: 1, fee: null, reimbursementFee: null },
+  form: {
+    competitionId: null,
+    achievementId: null,
+    sessionId: null,
+    category: "3",
+    name: null,
+    teamName: null,
+    level: null,
+    grade: null,
+    track: null,
+    certificateNo: null,
+    groupId: null,
+    ownerDepId: null,
+    awardTime: null,
+    fee: null,
+    reimbursementFee: null,
+    isReimburse: 0,
+    fileAward: null,
+    fileNotice: null,
+    fileWork: [],
+    filePhoto: [],
+    filePayment: null,
+    fileInvoice: null,
+    fileReceiptCode: null,
+    hasFileWork: 1,
+    hasFilePhoto: 1
+  },
   formSnapshot: "",
   rules: {
     competitionId: [{ required: true, message: "比赛不能为空", trigger: "change" }],
@@ -1964,27 +2010,33 @@ function autoMatchSession() {
   const month = date.getMonth() + 1; // getMonth 是 0-11
 
   // 2. 设定搜索年份窗口 (解决跨年问题)
-  // 1-4月获奖，可能属于去年或当年的比赛；5-12月获奖，基本属于当年比赛
-  const targetYears = month <= 4 ? [year.toString(), (year - 1).toString()] : [year.toString()];
+  // 修复：将 year.getTime() 改为 !isNaN(date.getTime()) 来判断是否是合法日期
+  const targetYears = month <= 4 
+    ? [!isNaN(date.getTime()) ? year.toString() : "", (year - 1).toString()] 
+    : [year.toString()];
 
   // 3. 在候选列表中筛选
   const matched = sessionOptions.value.filter(item => {
     // A. 级别必须一致 (注意类型转换或弱等于)
     const isLevelMatch = item.level == level;
     // B. 年份匹配：session 字段通常包含年份文字，如 "2025" 或 "2025第十八届"
-    const isYearMatch = targetYears.some(y => item.session && item.session.includes(y));
+    const isYearMatch = targetYears.some(y => y && item.session && String(item.session).includes(y));
     return isLevelMatch && isYearMatch;
   });
 
   // 4. 自动赋值：只有当推断结果唯一时才自动勾选，避免歧义
   if (matched.length === 1) {
     form.value.sessionId = matched[0].id;
+    isAutoMatched.value = true;
+  } else {
+    isAutoMatched.value = false;
   }
 }
 
 function handleCompetitionChange(val) {
   form.value.sessionId = null;
   sessionOptions.value = [];
+  isAutoMatched.value = false;
   if (val) {
     getSessionList(val);
   }
@@ -2099,7 +2151,7 @@ function open(id) {
   initSortable();
 }
 function getForm() { return form.value; }
-defineExpose({ open, getForm, activeAttachmentTab, submitForm });
+defineExpose({ open, getForm, activeAttachmentTab, submitForm, handleCancel });
 
 const sortableInstances = ref([]);
 const sortableTimeout = ref(null);
@@ -2259,6 +2311,7 @@ function loadDetail(id) {
       reIndexList(samAchievementAdvisorList.value);
 
       if (form.value.isReimburse == null) form.value.isReimburse = 0;
+      if (form.value.reimbursementStatus == null) form.value.reimbursementStatus = null;
 
       updateSnapshot();
     })
@@ -2274,7 +2327,7 @@ function reset() {
   form.value = {
     competitionId: null, achievementId: null, sessionId: null, category: "3", name: null, teamName: null,
     level: null, grade: null, track: null, certificateNo: null, groupId: null, ownerDepId: null,
-    awardTime: null, fee: null, reimbursementFee: null, isReimburse: 0,
+    awardTime: null, fee: null, reimbursementFee: null, isReimburse: 0, reimbursementStatus: null,
     fileAward: null, fileNotice: null, fileWork: [], filePhoto: [], filePayment: null, fileInvoice: null, fileReceiptCode: null,
     hasFileWork: 1, hasFilePhoto: 1
   };
