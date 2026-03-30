@@ -56,3 +56,39 @@ export function importDataSession(data, updateSupport = false) {
     },
   });
 }
+
+// 批量修改届次状态（如：预录 -> 启用）
+export function updateSessionStatusByIds(data) {
+  return request({
+    url: '/session/session/status',
+    method: 'put',
+    data: data
+  })
+}
+
+// 批量复制届次模板（每条必须重新上传参赛通知PDF）
+export function batchCopySession(data) {
+  return request({
+    url: '/session/session/batchCopy',
+    method: 'post',
+    data: data
+  })
+}
+
+// 批量修改届次状态（如：预录 -> 启用）
+// export function updateSessionStatusByIds(data) {
+//   return request({
+//     url: '/session/session/status',
+//     method: 'put',
+//     data: data
+//   })
+// }
+
+// 批量复制届次模板（每条必须重新上传参赛通知PDF）
+// export function batchCopySession(data) {
+//   return request({
+//     url: '/session/session/batchCopy',
+//     method: 'post',
+//     data: data
+//   })
+// }

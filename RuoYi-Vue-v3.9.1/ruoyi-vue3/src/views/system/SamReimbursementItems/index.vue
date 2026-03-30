@@ -94,7 +94,17 @@
     <el-table v-loading="loading" :data="SamReimbursementItemsList" @selection-change="handleSelectionChange">
       <el-table-column type="selection" width="55" align="center" />
       <el-table-column label="主键ID" align="center" prop="id" />
-      <el-table-column label="报销项目名称" align="center" prop="name" :show-overflow-tooltip="true" />
+      <el-table-column label="报销项目名称" align="center" prop="name" width="200">
+        <template #default="scope">
+          <el-link 
+            type="primary" 
+            @click="handleViewDetail(scope.row)"
+            :underline="false"
+          >
+      {{ scope.row.name }}
+    </el-link>
+  </template>
+</el-table-column>
       <el-table-column label="报销时间" align="center" prop="reimbursementTime" width="180">
         <template #default="scope">
           <span>{{ parseTime(scope.row.reimbursementTime, '{y}-{m}-{d}') }}</span>
@@ -131,7 +141,7 @@
              :icon="Document"
              @click="viewAchievements(scope.row)"
              v-hasPermi="['system:SamReimbursementItems:view']"
-          >关联成果</el-button>
+          >详细信息</el-button>
           <el-button
               size="mini"
               type="text"
@@ -361,7 +371,7 @@ const getDeptTree = async () => {
     
     console.log('处理前的部门数据:', deptData)
     
-    // ✅ 关键修复：使用 handleTree 处理数据
+    // 关键修复：使用 handleTree 处理数据
     deptOptions.value = handleTree(deptData, "deptId")
     console.log('处理后的deptOptions:', deptOptions.value)
     
@@ -634,6 +644,33 @@ const handleExportPdf = async (row) => {
   } catch (error) {
     console.log('取消导出')
   }
+}
+
+// 跳转到详情页，并传递项目ID
+const handleViewDetail = (row) => {
+  // 🔴 关键：先打印 row 对象，看看ID字段叫什么
+  console.log('=== 点击的项目数据 ===');
+  console.log('完整row:', row);
+  console.log('row的所有字段:', Object.keys(row));
+  
+  // 尝试找出ID字段
+  const projectId = row.itemId || row.id || row.reimbursementItemId;
+  console.log('找到的项目ID:', projectId);
+  
+  if (!projectId) {
+    console.error('错误：找不到项目ID！');
+    alert('无法获取项目ID，请检查数据');
+    return;
+  }
+  
+  // 跳转时传递ID
+  router.push({
+    path: '/reimbursement/Reimbursement',
+    query: {
+      reimbursementItemId: projectId,
+      name: row.name
+    }
+  });
 }
 
 // 获取字典数据

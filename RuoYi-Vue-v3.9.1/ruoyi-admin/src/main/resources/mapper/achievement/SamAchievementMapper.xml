@@ -183,6 +183,7 @@
             <if test="groupId != null "> and a.group_id = #{groupId}</if>
             <if test="awardTime != null "> and a.award_time = #{awardTime}</if>
         </where>
+        order by a.achievement_id desc
     </select>
 
     <select id="selectSamAchievementListByStudentId" parameterType="SamAchievement" resultMap="SamAchievementListResult">
@@ -194,6 +195,7 @@
             <if test="name != null  and name != ''"> and a.name like concat('%', #{name}, '%')</if>
             <if test="reviewResult != null  and reviewResult != ''"> and a.review_result = #{reviewResult}</if>
         </where>
+        order by a.achievement_id desc
     </select>
 
     <select id="selectSamAchievementListByResponsibleStudentId" parameterType="SamAchievement" resultMap="SamAchievementListResult">
@@ -216,6 +218,7 @@
             <if test="name != null  and name != ''"> and a.name like concat('%', #{name}, '%')</if>
             <if test="reviewResult != null  and reviewResult != ''"> and a.review_result = #{reviewResult}</if>
         </where>
+        order by a.achievement_id desc
     </select>
 
     <select id="selectSamAchievementListByUserId" parameterType="SamAchievement" resultMap="SamAchievementSamAchievementParticipantResult">
@@ -223,12 +226,13 @@
         <where>
             (
                 exists (select 1 from sam_achievement_participant p where p.achievement_id = a.achievement_id and p.student_id = #{params.userId})
-                or 
+                or
                 exists (select 1 from sam_achievement_advisor ad where ad.achievement_id = a.achievement_id and ad.teacher_id = #{params.userId})
             )
             <if test="name != null  and name != ''"> and a.name like concat('%', #{name}, '%')</if>
             <if test="reviewResult != null  and reviewResult != ''"> and a.review_result = #{reviewResult}</if>
         </where>
+        order by a.achievement_id desc
     </select>
 
     <select id="selectSamAchievementByAchievementId" parameterType="String" resultMap="SamAchievementSamAchievementParticipantResult">

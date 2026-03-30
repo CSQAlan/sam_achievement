@@ -17,7 +17,7 @@
       v-if="!disabled"
     >
       <!-- 上传按钮 -->
-      <el-button type="primary">选取文件</el-button>
+      <el-button type="primary">{{ buttonText }}</el-button>
     </el-upload>
     <!-- 上传提示 -->
     <div class="el-upload__tip" v-if="showTip && !disabled">
@@ -70,6 +70,11 @@ import PdfThumbnail from './PdfThumbnail.vue'
 const props = defineProps({
 // ... (omitted props for brevity in thought, but I must include them in new_string as per tool requirements if I replace the whole script, but I'll target the script body)
   modelValue: [String, Object, Array],
+  // 上传按钮文案
+  buttonText: {
+    type: String,
+    default: "选择文件"
+  },
   // 上传接口地址
   action: {
     type: String,

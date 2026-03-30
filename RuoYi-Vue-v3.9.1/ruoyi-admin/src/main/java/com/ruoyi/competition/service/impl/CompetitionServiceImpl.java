@@ -4,6 +4,8 @@ import java.util.List;
 import com.ruoyi.common.utils.DateUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
+import com.ruoyi.common.annotation.BizAudit;
+import com.ruoyi.common.enums.BizAuditOpType;
 import java.util.ArrayList;
 import com.ruoyi.common.utils.StringUtils;
 import org.springframework.transaction.annotation.Transactional;
@@ -56,6 +58,7 @@ public class CompetitionServiceImpl implements ICompetitionService
      */
     @Transactional
     @Override
+    @BizAudit(bizType = "competition", bizName = "新增赛事", opType = BizAuditOpType.ADD, handler = "competitionBizAuditHandler", async = false)
     public int insertCompetition(Competition competition)
     {
         competition.setCreateTime(DateUtils.getNowDate());
@@ -72,6 +75,7 @@ public class CompetitionServiceImpl implements ICompetitionService
      */
     @Transactional
     @Override
+    @BizAudit(bizType = "competition", bizName = "修改赛事", opType = BizAuditOpType.UPDATE, handler = "competitionBizAuditHandler", async = false)
     public int updateCompetition(Competition competition)
     {
         competition.setUpdateTime(DateUtils.getNowDate());
@@ -88,6 +92,7 @@ public class CompetitionServiceImpl implements ICompetitionService
      */
     @Transactional
     @Override
+    @BizAudit(bizType = "competition", bizName = "批量删除赛事", opType = BizAuditOpType.DELETE, handler = "competitionBizAuditHandler", async = false)
     public int deleteCompetitionByIds(Long[] ids)
     {
         competitionMapper.deleteCompetitionDeptRelBySessionIds(ids);
@@ -102,6 +107,7 @@ public class CompetitionServiceImpl implements ICompetitionService
      */
     @Transactional
     @Override
+    @BizAudit(bizType = "competition", bizName = "删除赛事", opType = BizAuditOpType.DELETE, handler = "competitionBizAuditHandler", async = false)
     public int deleteCompetitionById(Long id)
     {
         competitionMapper.deleteCompetitionDeptRelBySessionId(id);
@@ -135,11 +141,11 @@ public class CompetitionServiceImpl implements ICompetitionService
     // ========== 实现新增的按名称查询方法 ==========
     @Override
     public Competition selectCompetitionByCompName(String compName) {
-        Competition query = new Competition();
-        query.setName(compName); // 假设赛事主表中“名称”对应的字段是name
-        List<Competition> list = competitionMapper.selectCompetitionList(query);
-        // 按名称查询，返回第一个匹配的实体（默认赛事名称唯一）
-        return list.isEmpty() ? null : list.get(0);
+        if (StringUtils.isBlank(compName))
+        {
+            return null;
+        }
+        return competitionMapper.selectCompetitionByNameExact(compName.trim());
     }
 
 
