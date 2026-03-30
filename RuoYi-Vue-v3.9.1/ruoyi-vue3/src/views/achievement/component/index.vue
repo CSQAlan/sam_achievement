@@ -1,4 +1,4 @@
-﻿<template>
+<template>
   <div class="achievement-manage-root">
     <div v-show="!pageModeActive" class="app-container">
       <!-- 搜索表单 -->

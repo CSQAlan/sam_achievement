@@ -1,4 +1,4 @@
-﻿<template>
+<template>
   <div v-if="isPageMode" class="app-container outcome-page">
     <div class="page-card" v-loading="detailLoading">
       <div class="page-header">

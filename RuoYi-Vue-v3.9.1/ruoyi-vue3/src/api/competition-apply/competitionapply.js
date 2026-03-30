@@ -1,12 +1,12 @@
-import request from "@/utils/request";
+import request from '@/utils/request'
 
 // 查询赛事申请列表
 export function listCompetitionapply(query) {
   return request({
-    url: "/competition-apply/competitionapply/list",
-    method: "get",
-    params: query,
-  });
+    url: '/competition-apply/competitionapply/list',
+    method: 'get',
+    params: query
+  })
 }
 
 // 查询赛事申请详细

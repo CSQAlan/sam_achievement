@@ -1,5 +1,0 @@
-#NOTE: This is a Maven Resolver internal implementation file, its format can be changed without prior notice.
-#Sat Mar 07 02:09:49 CST 2026
-@default-central-https\://repo.maven.apache.org/maven2/.lastUpdated=1772820551393
-https\://maven.aliyun.com/repository/public/.lastUpdated=1772820589933
-https\://repo.maven.apache.org/maven2/.error=Could not transfer artifact org.springframework\:spring-framework-bom\:pom\:5.3.39 from/to central (https\://repo.maven.apache.org/maven2)\: Permission denied\: getsockopt
