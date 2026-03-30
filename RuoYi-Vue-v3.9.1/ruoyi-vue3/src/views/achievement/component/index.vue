@@ -1204,7 +1204,7 @@ function clearSelectionState() {
   tableRef.value?.clearSelection?.();
 }
 function handleAdd() {
-  openDialog();
+  openPageForm();
 }
 
 async function handleUpdate() {

@@ -15,6 +15,13 @@
             }}
           </div>
         </div>
+        <div class="page-actions" v-if="!readOnly">
+          <el-button v-if="showSubmit" type="primary" @click="submitForm">{{ submitTextComputed }}</el-button>
+          <el-button @click="handleCancel">{{ cancelText }}</el-button>
+        </div>
+        <div class="page-actions" v-else>
+          <el-button @click="handleCancel">{{ cancelText }}</el-button>
+        </div>
       </div>
       <el-divider style="margin: 10px 0 20px 0"></el-divider>
       <div class="outcome-body">
@@ -486,6 +493,11 @@
                 <el-table-column v-if="!readOnly" type="selection" width="50" align="center" />
                 <el-table-column label="学生学号" prop="studentId" align="center" />
                 <el-table-column label="姓名" prop="studentName" align="center" />
+                <el-table-column label="操作" align="center" width="100" v-if="!readOnly">
+                  <template #default="scope">
+                    <el-button v-if="!scope.row.isFixed" link type="primary" :icon="Edit" @click="handleEditParticipant(scope.row, scope.$index)">修改</el-button>
+                  </template>
+                </el-table-column>
                 <el-table-column label="排序" prop="orderNo" width="100" align="center" />
                 <el-table-column label="是否负责人" prop="manager" width="150" align="center">
                   <template #default="scope">
@@ -508,6 +520,11 @@
                 <el-table-column v-if="!readOnly" type="selection" width="50" align="center" />
                 <el-table-column label="教师工号" prop="teacherId" align="center" />
                 <el-table-column label="姓名" prop="teacherName" align="center" />
+                <el-table-column label="操作" align="center" width="100" v-if="!readOnly">
+                  <template #default="scope">
+                    <el-button v-if="!scope.row.isFixed" link type="primary" :icon="Edit" @click="handleEditAdvisor(scope.row, scope.$index)">修改</el-button>
+                  </template>
+                </el-table-column>
                 <el-table-column label="排序" prop="orderNo" width="100" align="center" />
               </el-table>
             </el-col>
