@@ -2019,8 +2019,17 @@ function autoMatchSession() {
   const matched = sessionOptions.value.filter(item => {
     // A. 级别必须一致 (注意类型转换或弱等于)
     const isLevelMatch = item.level == level;
-    // B. 年份匹配：session 字段通常包含年份文字，如 "2025" 或 "2025第十八届"
-    const isYearMatch = targetYears.some(y => y && item.session && String(item.session).includes(y));
+    
+    // B. 规范化年份匹配：优先匹配独立的 year 字段，若无则回退到名称模糊匹配
+    const isYearMatch = targetYears.some(y => {
+      if (!y) return false;
+      // 1. 优先匹配届次对象中的 year 字段 (规范做法)
+      const sessionYear = item.year || item.sessionYear; // 兼容不同可能的字段名
+      if (sessionYear && String(sessionYear) === y) return true;
+      // 2. 兜底匹配：匹配名称字符串 (如 "2026第十八届")
+      return item.session && String(item.session).includes(y);
+    });
+    
     return isLevelMatch && isYearMatch;
   });
 
