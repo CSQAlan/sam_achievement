@@ -1,9 +1,12 @@
 package com.ruoyi.system.service.impl;
 
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.Iterator;
 import java.util.List;
+import java.util.Map;
 import java.util.stream.Collectors;
+import javax.validation.Validator;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import com.ruoyi.common.annotation.DataScope;
@@ -16,6 +19,7 @@ import com.ruoyi.common.core.text.Convert;
 import com.ruoyi.common.exception.ServiceException;
 import com.ruoyi.common.utils.SecurityUtils;
 import com.ruoyi.common.utils.StringUtils;
+import com.ruoyi.common.utils.bean.BeanValidators;
 import com.ruoyi.common.utils.spring.SpringUtils;
 import com.ruoyi.system.mapper.SysDeptMapper;
 import com.ruoyi.system.mapper.SysRoleMapper;
@@ -34,6 +38,9 @@ public class SysDeptServiceImpl implements ISysDeptService
 
     @Autowired
     private SysRoleMapper roleMapper;
+
+    @Autowired
+    private Validator validator;
 
     /**
      * 查询部门管理数据
@@ -249,6 +256,87 @@ public class SysDeptServiceImpl implements ISysDeptService
         return result;
     }
 
+    @Override
+    public String importDept(List<SysDept> deptList, Boolean updateSupport, String operName)
+    {
+        if (StringUtils.isNull(deptList) || deptList.isEmpty())
+        {
+            throw new ServiceException("导入部门数据不能为空！");
+        }
+
+        int successNum = 0;
+        int failureNum = 0;
+        StringBuilder successMsg = new StringBuilder();
+        StringBuilder failureMsg = new StringBuilder();
+
+        List<SysDept> allDeptList = deptMapper.selectDeptList(new SysDept());
+        Map<String, List<SysDept>> deptNameMap = buildDeptNameMap(allDeptList);
+        SysDept defaultRootDept = resolveDefaultRootDept(allDeptList);
+
+        for (SysDept dept : deptList)
+        {
+            try
+            {
+                normalizeImportDept(dept);
+                BeanValidators.validateWithException(validator, dept);
+
+                SysDept parentDept = resolveImportParentDept(dept, deptNameMap, defaultRootDept);
+                dept.setParentId(parentDept.getDeptId());
+                dept.setParentName(parentDept.getDeptName());
+
+                if (StringUtils.isBlank(dept.getStatus()))
+                {
+                    dept.setStatus(UserConstants.DEPT_NORMAL);
+                }
+
+                SysDept exists = deptMapper.checkDeptNameUnique(dept.getDeptName(), dept.getParentId());
+                if (StringUtils.isNull(exists))
+                {
+                    dept.setCreateBy(operName);
+                    this.insertDept(dept);
+                    successNum++;
+                    successMsg.append("<br/>").append(successNum).append("、部门 ").append(dept.getDeptName()).append(" 导入成功");
+
+                    SysDept importedDept = deptMapper.checkDeptNameUnique(dept.getDeptName(), dept.getParentId());
+                    if (importedDept != null)
+                    {
+                        appendDeptNameMap(deptNameMap, importedDept);
+                    }
+                }
+                else if (Boolean.TRUE.equals(updateSupport))
+                {
+                    dept.setDeptId(exists.getDeptId());
+                    dept.setUpdateBy(operName);
+                    this.updateDept(dept);
+                    successNum++;
+                    successMsg.append("<br/>").append(successNum).append("、部门 ").append(dept.getDeptName()).append(" 更新成功");
+                    replaceDeptNameMap(deptNameMap, dept);
+                }
+                else
+                {
+                    failureNum++;
+                    failureMsg.append("<br/>").append(failureNum).append("、部门 ").append(dept.getDeptName()).append(" 已存在");
+                }
+            }
+            catch (Exception e)
+            {
+                failureNum++;
+                String deptName = dept == null || StringUtils.isBlank(dept.getDeptName()) ? "未知部门" : dept.getDeptName();
+                String msg = "<br/>" + failureNum + "、部门 " + deptName + " 导入失败：";
+                failureMsg.append(msg).append(e.getMessage());
+            }
+        }
+
+        if (failureNum > 0)
+        {
+            failureMsg.insert(0, "很抱歉，导入失败！共 " + failureNum + " 条数据格式不正确，成功 " + successNum + " 条，错误如下：");
+            throw new ServiceException(failureMsg.toString());
+        }
+
+        successMsg.insert(0, "恭喜您，数据已全部导入成功！共计 " + successNum + " 条记录。");
+        return successMsg.toString();
+    }
+
     /**
      * 修改该部门的父级部门状态
      * 
@@ -334,5 +422,91 @@ public class SysDeptServiceImpl implements ISysDeptService
     private boolean hasChild(List<SysDept> list, SysDept t)
     {
         return getChildList(list, t).size() > 0;
+    }
+
+    private void normalizeImportDept(SysDept dept)
+    {
+        if (dept == null)
+        {
+            throw new ServiceException("部门数据不能为空");
+        }
+        dept.setDeptName(StringUtils.trim(dept.getDeptName()));
+        dept.setParentName(StringUtils.trim(dept.getParentName()));
+        dept.setLeader(StringUtils.trim(dept.getLeader()));
+        dept.setPhone(StringUtils.trim(dept.getPhone()));
+        dept.setEmail(StringUtils.trim(dept.getEmail()));
+        dept.setStatus(StringUtils.trim(dept.getStatus()));
+        if (dept.getOrderNum() == null)
+        {
+            dept.setOrderNum(0);
+        }
+    }
+
+    private Map<String, List<SysDept>> buildDeptNameMap(List<SysDept> deptList)
+    {
+        Map<String, List<SysDept>> deptNameMap = new HashMap<String, List<SysDept>>();
+        for (SysDept dept : deptList)
+        {
+            appendDeptNameMap(deptNameMap, dept);
+        }
+        return deptNameMap;
+    }
+
+    private void appendDeptNameMap(Map<String, List<SysDept>> deptNameMap, SysDept dept)
+    {
+        if (dept == null || StringUtils.isBlank(dept.getDeptName()))
+        {
+            return;
+        }
+        String key = dept.getDeptName().trim();
+        List<SysDept> sameNameDeptList = deptNameMap.computeIfAbsent(key, k -> new ArrayList<SysDept>());
+        sameNameDeptList.add(dept);
+    }
+
+    private void replaceDeptNameMap(Map<String, List<SysDept>> deptNameMap, SysDept dept)
+    {
+        if (dept == null || StringUtils.isBlank(dept.getDeptName()) || dept.getDeptId() == null)
+        {
+            return;
+        }
+        String key = dept.getDeptName().trim();
+        List<SysDept> sameNameDeptList = deptNameMap.computeIfAbsent(key, k -> new ArrayList<SysDept>());
+        sameNameDeptList.removeIf(item -> item != null && dept.getDeptId().equals(item.getDeptId()));
+        SysDept latest = deptMapper.selectDeptById(dept.getDeptId());
+        if (latest != null)
+        {
+            sameNameDeptList.add(latest);
+        }
+    }
+
+    private SysDept resolveDefaultRootDept(List<SysDept> deptList)
+    {
+        List<SysDept> rootDeptList = deptList.stream()
+                .filter(item -> item != null && Long.valueOf(0L).equals(item.getParentId()))
+                .collect(Collectors.toList());
+        return rootDeptList.size() == 1 ? rootDeptList.get(0) : null;
+    }
+
+    private SysDept resolveImportParentDept(SysDept dept, Map<String, List<SysDept>> deptNameMap, SysDept defaultRootDept)
+    {
+        if (StringUtils.isBlank(dept.getParentName()))
+        {
+            if (defaultRootDept != null)
+            {
+                return defaultRootDept;
+            }
+            throw new ServiceException("上级部门名称不能为空");
+        }
+
+        List<SysDept> parentDeptList = deptNameMap.get(dept.getParentName().trim());
+        if (parentDeptList == null || parentDeptList.isEmpty())
+        {
+            throw new ServiceException("未找到上级部门[" + dept.getParentName() + "]");
+        }
+        if (parentDeptList.size() > 1)
+        {
+            throw new ServiceException("上级部门[" + dept.getParentName() + "]存在重名，请先保证唯一");
+        }
+        return parentDeptList.get(0);
     }
 }

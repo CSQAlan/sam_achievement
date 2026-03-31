@@ -8,6 +8,9 @@ import javax.validation.constraints.NotNull;
 import javax.validation.constraints.Size;
 import org.apache.commons.lang3.builder.ToStringBuilder;
 import org.apache.commons.lang3.builder.ToStringStyle;
+import com.ruoyi.common.annotation.Excel;
+import com.ruoyi.common.annotation.Excel.ColumnType;
+import com.ruoyi.common.annotation.Excel.Type;
 import com.ruoyi.common.core.domain.BaseEntity;
 
 /**
@@ -29,27 +32,34 @@ public class SysDept extends BaseEntity
     private String ancestors;
 
     /** 部门名称 */
+    @Excel(name = "部门名称", prompt = "部门名称不能为空")
     private String deptName;
 
     /** 显示顺序 */
+    @Excel(name = "显示顺序", cellType = ColumnType.NUMERIC, prompt = "显示顺序不能为空")
     private Integer orderNum;
 
     /** 负责人 */
+    @Excel(name = "负责人")
     private String leader;
 
     /** 联系电话 */
+    @Excel(name = "联系电话", cellType = ColumnType.TEXT)
     private String phone;
 
     /** 邮箱 */
+    @Excel(name = "邮箱")
     private String email;
 
     /** 部门状态:0正常,1停用 */
+    @Excel(name = "状态", readConverterExp = "0=正常,1=停用")
     private String status;
 
     /** 删除标志（0代表存在 2代表删除） */
     private String delFlag;
 
     /** 父部门名称 */
+    @Excel(name = "上级部门名称", type = Type.IMPORT, prompt = "为空时默认挂到唯一根部门下")
     private String parentName;
     
     /** 子部门 */

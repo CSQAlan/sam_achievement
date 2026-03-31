@@ -115,6 +115,16 @@ public interface ISysDeptService
     public int updateDept(SysDept dept);
 
     /**
+     * 导入部门数据
+     *
+     * @param deptList 部门数据列表
+     * @param updateSupport 是否更新已存在数据
+     * @param operName 操作人
+     * @return 导入结果
+     */
+    public String importDept(List<SysDept> deptList, Boolean updateSupport, String operName);
+
+    /**
      * 删除部门管理信息
      * 
      * @param deptId 部门ID

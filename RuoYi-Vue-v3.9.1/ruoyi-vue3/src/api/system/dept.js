@@ -50,3 +50,22 @@ export function delDept(deptId) {
     method: 'delete'
   })
 }
+
+// 导入部门数据
+export function importDeptData(data, updateSupport) {
+  return request({
+    url: '/system/dept/importData?updateSupport=' + updateSupport,
+    method: 'post',
+    data: data,
+    headers: { 'Content-Type': 'multipart/form-data' }
+  })
+}
+
+// 下载部门导入模板
+export function importDeptTemplate() {
+  return request({
+    url: '/system/dept/importTemplate',
+    method: 'post',
+    responseType: 'blob'
+  })
+}
