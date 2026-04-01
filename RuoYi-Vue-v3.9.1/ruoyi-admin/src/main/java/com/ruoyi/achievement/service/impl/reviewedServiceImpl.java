@@ -520,12 +520,12 @@ public class reviewedServiceImpl implements IreviewedService
 
     private void applyDefaultYear(reviewed incoming)
     {
-        if (incoming.getYear() != null)
+        Date awardTime = incoming.getAwardTime();
+        if (awardTime == null)
         {
             return;
         }
-        Date awardTime = incoming.getAwardTime();
-        if (awardTime == null)
+        if (SecurityUtils.isAdmin(SecurityUtils.getUserId()) && incoming.getYear() != null)
         {
             return;
         }

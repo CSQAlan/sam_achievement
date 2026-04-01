@@ -1,21 +1,24 @@
 package com.ruoyi.competition.audit;
 
+import com.alibaba.fastjson2.JSON;
+import com.alibaba.fastjson2.JSONArray;
 import com.alibaba.fastjson2.JSONObject;
+import com.ruoyi.common.core.domain.entity.SysDept;
 import com.ruoyi.common.enums.BizAuditOpType;
 import com.ruoyi.common.utils.StringUtils;
 import com.ruoyi.competition.domain.Competition;
+import com.ruoyi.competition.domain.CompetitionDeptRel;
 import com.ruoyi.competition.mapper.CompetitionMapper;
 import com.ruoyi.framework.bizaudit.BizAuditHandler;
 import com.ruoyi.framework.bizaudit.model.BizAuditContext;
-
+import com.ruoyi.system.service.ISysDeptService;
 import java.util.ArrayList;
 import java.util.Arrays;
-import java.util.HashMap;
 import java.util.HashSet;
+import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
-
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
 
@@ -24,12 +27,13 @@ import org.springframework.stereotype.Component;
  * 直接使用 Mapper 避免与 CompetitionServiceImpl（含@BizAudit方法）产生循环依赖
  */
 @Component("competitionBizAuditHandler")
-public class CompetitionBizAuditHandler implements BizAuditHandler
+public class  CompetitionBizAuditHandler implements BizAuditHandler
 {
     @Autowired
     private CompetitionMapper competitionMapper;
 
-    // === 快照采集 ===
+    @Autowired
+    private ISysDeptService deptService;
 
     @Override
     public Object captureBefore(BizAuditContext context)
@@ -37,7 +41,7 @@ public class CompetitionBizAuditHandler implements BizAuditHandler
         BizAuditOpType opType = context.getAnnotation().opType();
         if (opType == BizAuditOpType.ADD || opType == BizAuditOpType.IMPORT)
         {
-            return null; // 新增前无数据
+            return null;
         }
 
         Long id = resolveId(context);
@@ -46,19 +50,11 @@ public class CompetitionBizAuditHandler implements BizAuditHandler
             Long[] ids = resolveIds(context);
             if (ids != null && ids.length > 0)
             {
-                ArrayList<Competition> list = new ArrayList<Competition>();
-                for (Long itemId : ids)
-                {
-                    Competition comp = competitionMapper.selectCompetitionById(itemId);
-                    if (comp != null) list.add(comp);
-                }
-                JSONObject root = new JSONObject();
-                root.put("batchItems", list);
-                return root;
+                return buildBatchSnapshot(ids);
             }
             return buildArgsSnapshot(context.getArgs());
         }
-        return competitionMapper.selectCompetitionById(id);
+        return buildCompetitionSnapshot(competitionMapper.selectCompetitionById(id));
     }
 
     @Override
@@ -67,7 +63,7 @@ public class CompetitionBizAuditHandler implements BizAuditHandler
         BizAuditOpType opType = context.getAnnotation().opType();
         if (opType == BizAuditOpType.DELETE)
         {
-            return null; // 删除后无数据
+            return null;
         }
 
         Long id = resolveId(context);
@@ -76,22 +72,12 @@ public class CompetitionBizAuditHandler implements BizAuditHandler
             Long[] ids = resolveIds(context);
             if (ids != null && ids.length > 0)
             {
-                ArrayList<Competition> list = new ArrayList<Competition>();
-                for (Long itemId : ids)
-                {
-                    Competition comp = competitionMapper.selectCompetitionById(itemId);
-                    if (comp != null) list.add(comp);
-                }
-                JSONObject root = new JSONObject();
-                root.put("batchItems", list);
-                return root;
+                return buildBatchSnapshot(ids);
             }
             return buildArgsSnapshot(context.getArgs());
         }
-        return competitionMapper.selectCompetitionById(id);
+        return buildCompetitionSnapshot(competitionMapper.selectCompetitionById(id));
     }
-
-    // === 元数据解析 ===
 
     @Override
     public BizAuditOpType resolveOpType(BizAuditContext context, Object before, Object after)
@@ -103,12 +89,18 @@ public class CompetitionBizAuditHandler implements BizAuditHandler
     public String resolveBizId(BizAuditContext context, Object before, Object after)
     {
         Long id = resolveId(context);
-        if (id != null) return String.valueOf(id);
+        if (id != null)
+        {
+            return String.valueOf(id);
+        }
         Long[] ids = resolveIds(context);
         if (ids != null && ids.length > 0)
         {
             StringBuilder sb = new StringBuilder();
-            for (Long itemId : ids) sb.append(itemId).append(",");
+            for (Long itemId : ids)
+            {
+                sb.append(itemId).append(",");
+            }
             return sb.deleteCharAt(sb.length() - 1).toString();
         }
         return null;
@@ -117,18 +109,23 @@ public class CompetitionBizAuditHandler implements BizAuditHandler
     @Override
     public String resolveBizName(BizAuditContext context, Object before, Object after)
     {
-        Competition source = after instanceof Competition ? (Competition) after
-                : before instanceof Competition ? (Competition) before : null;
-        if (source != null && StringUtils.isNotBlank(source.getName())) return source.getName();
+        String name = extractCompetitionName(after);
+        if (StringUtils.isBlank(name))
+        {
+            name = extractCompetitionName(before);
+        }
+        if (StringUtils.isNotBlank(name))
+        {
+            return name;
+        }
         return context.getAnnotation().bizName();
     }
 
     @Override
     public String resolveBizKey(BizAuditContext context, Object before, Object after)
     {
-        Competition source = after instanceof Competition ? (Competition) after
-                : before instanceof Competition ? (Competition) before : null;
-        return source == null ? null : source.getName();
+        String name = extractCompetitionName(after);
+        return StringUtils.isNotBlank(name) ? name : extractCompetitionName(before);
     }
 
     @Override
@@ -145,59 +142,64 @@ public class CompetitionBizAuditHandler implements BizAuditHandler
         return ids != null ? ids.length : null;
     }
 
-    // === 字段配置 ===
-
     @Override
     public Map<String, String> fieldLabels(BizAuditContext context)
     {
-        Map<String, String> map = new HashMap<String, String>();
-        // 保留 id 供查询使用
-        map.put("id",            "赛事ID");
-        map.put("name",          "赛事名称");
-        map.put("category",      "赛事类别");
-        map.put("level",         "赛事级别");
+        Map<String, String> map = new LinkedHashMap<String, String>();
+        map.put("id", "赛事ID");
+        map.put("name", "赛事名称");
+        map.put("category", "赛事类别");
+        map.put("level", "赛事级别");
         map.put("organizations", "盖章单位");
-        map.put("tags",          "标签");
-        map.put("status",        "状态");
-        map.put("scopeType",     "适用范围");
-        map.put("memo",          "备注");
-        map.put("batchItems",    "批量对象");
-        map.put("competitionDeptRelList",         "关联学院");
-        map.put("competitionDeptRelList.deptId",  "部门ID");
+        map.put("tags", "标签");
+        map.put("scopeType", "适用范围");
+        map.put("status", "状态");
+        map.put("deptNames", "归属学院");
+        map.put("memo", "备注");
+        map.put("batchItems", "批量对象");
+        map.put("competitionDeptRelList", "归属学院明细");
+        map.put("competitionDeptRelList.deptId", "学院ID");
+        map.put("competitionDeptRelList.deptName", "学院名称");
+        map.put("competitionDeptRelList.sort", "排序");
         return map;
     }
 
     @Override
     public Map<String, String> fieldDictTypes(BizAuditContext context)
     {
-        Map<String, String> map = new HashMap<String, String>();
+        Map<String, String> map = new LinkedHashMap<String, String>();
         map.put("category", "sys_competition_category");
-        map.put("level",    "sys_competition_level");
-        map.put("status",   "sys_competition_status");
+        map.put("level", "sys_competition_level");
+        map.put("tags", "sys_competition_tag");
+        map.put("scopeType", "sys_competition_scope_type");
+        map.put("status", "sys_competition_status");
         return map;
     }
 
     @Override
     public List<String> fieldOrder(BizAuditContext context)
     {
-        // 按用户可读顺序排列展示（最重要的在前）
         return Arrays.asList(
-                "id", "name", "category", "level", "organizations", "tags", "status", "scopeType", "memo"
+                "id", "name", "category", "level", "organizations", "tags", "scopeType", "status", "deptNames", "memo"
         );
     }
 
     @Override
     public Set<String> ignoredFields(BizAuditContext context)
     {
-        // 只屏蔽真正无意义的技术字段，id 保留
-        return new HashSet<String>(Arrays.asList("serialVersionUID"));
+        return new HashSet<String>(Arrays.asList(
+                "serialVersionUID",
+                "categoryList",
+                "levelList",
+                "tagsList"
+        ));
     }
 
     @Override
     public Map<String, String> arrayKeyFields(BizAuditContext context)
     {
-        Map<String, String> map = new HashMap<String, String>();
-        map.put("batchItems",             "id");
+        Map<String, String> map = new LinkedHashMap<String, String>();
+        map.put("batchItems", "id");
         map.put("competitionDeptRelList", "deptId");
         return map;
     }
@@ -205,8 +207,9 @@ public class CompetitionBizAuditHandler implements BizAuditHandler
     @Override
     public Map<String, String> arrayItemNameFields(BizAuditContext context)
     {
-        Map<String, String> map = new HashMap<String, String>();
+        Map<String, String> map = new LinkedHashMap<String, String>();
         map.put("batchItems", "name");
+        map.put("competitionDeptRelList", "deptName");
         return map;
     }
 
@@ -218,16 +221,23 @@ public class CompetitionBizAuditHandler implements BizAuditHandler
         return extra;
     }
 
-    // === 私有工具 ===
-
     private Long resolveId(BizAuditContext context)
     {
         Object[] args = context.getArgs();
-        if (args == null) return null;
+        if (args == null)
+        {
+            return null;
+        }
         for (Object arg : args)
         {
-            if (arg instanceof Competition) return ((Competition) arg).getId();
-            if (arg instanceof Long)        return (Long) arg;
+            if (arg instanceof Competition)
+            {
+                return ((Competition) arg).getId();
+            }
+            if (arg instanceof Long)
+            {
+                return (Long) arg;
+            }
         }
         return null;
     }
@@ -235,26 +245,117 @@ public class CompetitionBizAuditHandler implements BizAuditHandler
     private Long[] resolveIds(BizAuditContext context)
     {
         Object[] args = context.getArgs();
-        if (args == null) return null;
+        if (args == null)
+        {
+            return null;
+        }
         for (Object arg : args)
         {
-            if (arg instanceof Long[]) return (Long[]) arg;
+            if (arg instanceof Long[])
+            {
+                return (Long[]) arg;
+            }
+        }
+        return null;
+    }
+
+    private JSONObject buildBatchSnapshot(Long[] ids)
+    {
+        JSONArray items = new JSONArray();
+        for (Long itemId : ids)
+        {
+            Object snapshot = buildCompetitionSnapshot(competitionMapper.selectCompetitionById(itemId));
+            if (snapshot != null)
+            {
+                items.add(snapshot);
+            }
+        }
+        JSONObject root = new JSONObject();
+        root.put("batchItems", items);
+        return root;
+    }
+
+    private Object buildCompetitionSnapshot(Competition competition)
+    {
+        if (competition == null)
+        {
+            return null;
+        }
+        JSONObject snapshot = (JSONObject) JSON.toJSON(competition);
+        List<CompetitionDeptRel> relList = competition.getCompetitionDeptRelList();
+        if (relList == null || relList.isEmpty())
+        {
+            return snapshot;
+        }
+
+        JSONArray relSnapshots = new JSONArray();
+        List<String> deptNames = new ArrayList<String>();
+        for (CompetitionDeptRel rel : relList)
+        {
+            JSONObject relSnapshot = (JSONObject) JSON.toJSON(rel);
+            String deptName = resolveDeptName(rel.getDeptId());
+            if (StringUtils.isNotBlank(deptName))
+            {
+                relSnapshot.put("deptName", deptName);
+                if (!deptNames.contains(deptName))
+                {
+                    deptNames.add(deptName);
+                }
+            }
+            relSnapshots.add(relSnapshot);
+        }
+        snapshot.put("competitionDeptRelList", relSnapshots);
+        if (StringUtils.isBlank(snapshot.getString("deptNames")) && !deptNames.isEmpty())
+        {
+            snapshot.put("deptNames", String.join("、", deptNames));
+        }
+        return snapshot;
+    }
+
+    private String resolveDeptName(Long deptId)
+    {
+        if (deptId == null)
+        {
+            return null;
+        }
+        SysDept dept = deptService.selectDeptById(deptId);
+        return dept == null ? null : dept.getDeptName();
+    }
+
+    private String extractCompetitionName(Object source)
+    {
+        if (source instanceof Competition)
+        {
+            return ((Competition) source).getName();
+        }
+        if (source instanceof JSONObject)
+        {
+            return ((JSONObject) source).getString("name");
         }
         return null;
     }
 
     private static Object buildArgsSnapshot(Object[] args)
     {
-        if (args == null || args.length == 0) return null;
+        if (args == null || args.length == 0)
+        {
+            return null;
+        }
         if (args.length == 1 && (args[0] instanceof List || args[0].getClass().isArray()))
         {
             JSONObject wrapper = new JSONObject();
             wrapper.put("batchItems", args[0]);
             return wrapper;
         }
-        if (args.length == 1) return args[0];
+        if (args.length == 1)
+        {
+            return args[0];
+        }
         JSONObject root = new JSONObject();
-        for (int i = 0; i < args.length; i++) root.put("arg" + i, args[i]);
+        for (int i = 0; i < args.length; i++)
+        {
+            root.put("arg" + i, args[i]);
+        }
         return root;
     }
 }

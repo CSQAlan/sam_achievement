@@ -165,6 +165,28 @@
               />
             </el-form-item>
           </el-col>
+          <el-col v-if="reviewSource" :span="4">
+            <el-form-item label="年份" prop="year" class="search-item" >
+              <el-input
+                  v-model="queryParams.year"
+                  placeholder="请输入年份"
+                  clearable
+                  @keyup.enter="handleQuery"
+              />
+            </el-form-item>
+          </el-col>
+          <el-col v-if="reviewSource" :span="4">
+            <el-form-item label="是否补录" prop="isSupplement" class="search-item">
+              <el-select v-model="queryParams.isSupplement" placeholder="请选择是否补录" clearable>
+                <el-option
+                    v-for="item in supplementOptions"
+                    :key="item.value"
+                    :label="item.label"
+                    :value="item.value"
+                />
+              </el-select>
+            </el-form-item>
+          </el-col>
           <el-col :span="4" v-if="showReviewStatusFilter">
             <el-form-item label="审核状态" prop="reviewStatus" class="search-item">
               <el-select v-model="queryParams.reviewStatus" placeholder="请选择审核状态" clearable>
@@ -304,7 +326,7 @@
 
       <el-table ref="tableRef" v-loading="loading" :data="listData" @selection-change="handleSelectionChange">
         <el-table-column type="selection" width="55" align="center" />
-        <el-table-column label="成果编号" width="80" align="center" prop="achievementId" />
+        <el-table-column label="成果编号" width="77" align="center" prop="achievementId" />
         <el-table-column label="比赛" width="120" align="center" prop="competitionName">
           <template #default="scope">
             <span>{{ scope.row.competitionName || scope.row.competition_name || '-' }}</span>
@@ -378,6 +400,12 @@
             <span>{{ parseTime(scope.row.awardTime, '{y}-{m}-{d}') }}</span>
           </template>
         </el-table-column>
+        <el-table-column v-if="reviewSource" label="年份" align="center" prop="year" width="60">
+          <template #default="scope">
+            <span>{{ scope.row.year ?? '-' }}</span>
+          </template>
+        </el-table-column>
+
         <el-table-column label="操作" align="center" class-name="small-padding fixed-width">
           <template #default="scope">
             <el-button
@@ -431,6 +459,7 @@
         :get-fn="getFn"
         :add-fn="addFn"
         :update-fn="updateFn"
+        :review-source="reviewSource"
         :page-mode="pageModeActive"
         :read-only="formReadOnly"
         :show-submit="formShowSubmit"
@@ -444,6 +473,7 @@
         :get-fn="getFn"
         :add-fn="addFn"
         :update-fn="updateFn"
+        :review-source="reviewSource"
         :read-only="formReadOnly"
         :show-submit="formShowSubmit"
         :source-mode="sourceMode"
@@ -552,6 +582,10 @@ const isUnreviewedPage = computed(() => {
   return reviewSource.value === 'college_level_unreviewed' || reviewSource.value === 'school_level_unreviewed';
 });
 const showReviewStatusFilter = computed(() => !isUnreviewedPage.value);
+const supplementOptions = [
+  { label: '是', value: 1 },
+  { label: '否', value: 0 }
+];
 
 const { achievement_category, group_type, award_rank, award_level_type, college_audit_status, school_audit_status, college_reason, school_reason } = useDict(
     'achievement_category',
@@ -578,6 +612,8 @@ const queryParams = reactive({
   track: null,
   certificateNo: null,
   groupId: null,
+  year: null,
+  isSupplement: null,
   awardTime: null,
   reviewStatus: null,
   awardTimeStart: null,

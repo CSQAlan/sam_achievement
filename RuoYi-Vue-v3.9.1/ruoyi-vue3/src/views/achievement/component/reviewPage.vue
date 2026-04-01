@@ -6,6 +6,7 @@
       :getFn="currentApi.getFn"
       :addFn="currentApi.addFn"
       :updateFn="currentApi.updateFn"
+      :review-source="source"
       :pageMode="true"
       :readOnly="isView"
       :showSubmit="isEdit"

@@ -18,6 +18,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Set;
+import java.util.Date;
 import java.util.zip.ZipEntry;
 import java.util.zip.ZipOutputStream;
 import javax.servlet.http.HttpServletResponse;
@@ -188,6 +189,7 @@ public class SamAchievementServiceImpl implements ISamAchievementService
     @BizAudit(bizType = "achievement", bizName = "新增成果", opType = BizAuditOpType.ADD, handler = "achievementBizAuditHandler", async = false)
     public int insertSamAchievement(SamAchievement samAchievement)
     {
+        applyControlledReviewFields(samAchievement, null);
         // 1. 验证成果录入主表信息
         validateSamAchievement(samAchievement);
 
@@ -195,12 +197,6 @@ public class SamAchievementServiceImpl implements ISamAchievementService
         validatePDFAttachments(samAchievement);
 
         // 3. 自动提取年份
-        if (samAchievement.getAwardTime() != null) {
-            Calendar cal = Calendar.getInstance();
-            cal.setTime(samAchievement.getAwardTime());
-            samAchievement.setYear((long) cal.get(Calendar.YEAR));
-        }
-
         if (StringUtils.isNotEmpty(samAchievement.getOwnerDepId())) {
             samAchievement.setOwnerDepId(normalizeDeptId(samAchievement.getOwnerDepId()));
         }
@@ -274,6 +270,59 @@ public class SamAchievementServiceImpl implements ISamAchievementService
         return null;
     }
 
+    private void applyControlledReviewFields(SamAchievement incoming, SamAchievement existing)
+    {
+        if (incoming == null)
+        {
+            return;
+        }
+
+        Long autoYear = resolveYearFromAwardTime(incoming.getAwardTime());
+        boolean canEditReviewMeta = canEditAchievementReviewFields();
+        boolean canEditYear = SecurityUtils.isAdmin(SecurityUtils.getUserId());
+
+        if (canEditYear)
+        {
+            if (incoming.getYear() == null)
+            {
+                incoming.setYear(autoYear != null ? autoYear : existing == null ? null : existing.getYear());
+            }
+        }
+        else
+        {
+            incoming.setYear(autoYear != null ? autoYear : existing == null ? null : existing.getYear());
+        }
+
+        if (!canEditReviewMeta)
+        {
+            incoming.setIsSupplement(existing == null ? null : existing.getIsSupplement());
+        }
+    }
+
+    private Long resolveYearFromAwardTime(Date awardTime)
+    {
+        if (awardTime == null)
+        {
+            return null;
+        }
+        Calendar cal = Calendar.getInstance();
+        cal.setTime(awardTime);
+        return (long) cal.get(Calendar.YEAR);
+    }
+
+    private boolean canEditAchievementReviewFields()
+    {
+        Long userId = SecurityUtils.getUserId();
+        if (SecurityUtils.isAdmin(userId))
+        {
+            return true;
+        }
+        return SecurityUtils.hasPermi("achievement:college_level_unreviewed:edit")
+                || SecurityUtils.hasPermi("achievement:college_level_reviewed:edit")
+                || SecurityUtils.hasPermi("achievement:school_level_unreviewed:edit")
+                || SecurityUtils.hasPermi("achievement:school_level_reviewed:edit");
+    }
+
     /**
      * 修改成果录入
      *
@@ -290,6 +339,7 @@ public class SamAchievementServiceImpl implements ISamAchievementService
         {
             throw new ServiceException("成果不存在");
         }
+        applyControlledReviewFields(samAchievement, existing);
         // 1. 验证成果录入主表信息
         validateSamAchievement(samAchievement);
 
@@ -1147,5 +1197,4 @@ public class SamAchievementServiceImpl implements ISamAchievementService
         return samAchievementMapper.selectTrackList(competitionId, sessionId);
     }
 }
-
 

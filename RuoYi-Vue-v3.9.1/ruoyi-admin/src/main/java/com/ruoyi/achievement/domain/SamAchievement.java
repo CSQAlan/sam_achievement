@@ -83,6 +83,7 @@ public class SamAchievement extends BaseEntity
     private Date awardTime;
 
     /** 年份 */
+    @Excel(name = "\u5e74\u4efd")
     private Long year;
 
     /** 部门 */
@@ -96,6 +97,7 @@ public class SamAchievement extends BaseEntity
 
 
     /** 是否补录 */
+    @Excel(name = "\u662f\u5426\u8865\u5f55", readConverterExp = "0=\u5426,1=\u662f")
     private Integer isSupplement;
 
     /** 报名费金额 */

@@ -57,6 +57,33 @@
                       </el-form-item>
                     </el-col>
 
+                    <template v-if="showReviewExtraFields">
+                      <el-col :span="24">
+                        <el-form-item label="年份" prop="year">
+                          <el-input
+                            v-model="form.year"
+                            placeholder="请输入年份"
+                            clearable
+                            maxlength="4"
+                            :disabled="readOnly || !canEditReviewYear"
+                            style="width: 100%"
+                            @input="form.year = String(form.year || '').replace(/\\D/g, '').slice(0, 4)"
+                          />
+                          <div style="color: #909399; font-size: 12px; margin-top: 5px; line-height: 1.2;">
+                            根据获奖时间自动带出年份，仅管理员可修改。
+                          </div>
+                        </el-form-item>
+                      </el-col>
+                      <el-col :span="24">
+                        <el-form-item label="是否补录" prop="isSupplement">
+                          <el-radio-group v-model="form.isSupplement" :disabled="readOnly || !canEditReviewMeta">
+                            <el-radio :label="1">是</el-radio>
+                            <el-radio :label="0">否</el-radio>
+                          </el-radio-group>
+                        </el-form-item>
+                      </el-col>
+                    </template>
+
                     <el-col :span="24">
                       <el-form-item label="获奖级别" prop="level">
                         <el-select v-model="form.level" placeholder="第三步：请选择获奖级别（国家级/省级等）" style="width: 100%">
@@ -349,6 +376,33 @@
                     <div style="color: #909399; font-size: 12px; margin-top: 5px; line-height: 1.2;">获奖时间为奖状上日期为准，若只有年月，请填写当月最后一天。</div>
                   </el-form-item>
                 </el-col>
+
+                <template v-if="showReviewExtraFields">
+                  <el-col :span="24">
+                    <el-form-item label="年份" prop="year">
+                      <el-input
+                        v-model="form.year"
+                        placeholder="请输入年份"
+                        clearable
+                        maxlength="4"
+                        :disabled="readOnly || !canEditReviewYear"
+                        style="width: 100%"
+                        @input="form.year = String(form.year || '').replace(/\\D/g, '').slice(0, 4)"
+                      />
+                      <div style="color: #909399; font-size: 12px; margin-top: 5px; line-height: 1.2;">
+                        根据获奖时间自动带出年份，仅管理员可修改。
+                      </div>
+                    </el-form-item>
+                  </el-col>
+                  <el-col :span="24">
+                    <el-form-item label="是否补录" prop="isSupplement">
+                      <el-radio-group v-model="form.isSupplement" :disabled="readOnly || !canEditReviewMeta">
+                        <el-radio :label="1">是</el-radio>
+                        <el-radio :label="0">否</el-radio>
+                      </el-radio-group>
+                    </el-form-item>
+                  </el-col>
+                </template>
 
                 <el-col :span="24">
                   <el-form-item label="获奖级别" prop="level">
@@ -783,6 +837,7 @@ const props = defineProps({
   cancelText: { type: String, default: "取 消" },
   userRole: { type: String, default: "student" },
   sourceMode: { type: String, default: "" },
+  reviewSource: { type: String, default: "" },
 });
 
 const {
@@ -801,7 +856,24 @@ const {
     "attach_type",
     "reimbursement_status"
   );
+const userStore = useUserStore();
 const isPageMode = computed(() => props.pageMode);
+const normalizedUserRoles = computed(() =>
+  (userStore.roles || []).map((role) =>
+    String(role || "").replace(/^ROLE_/, "").toLowerCase()
+  )
+);
+const isAdminUser = computed(() => normalizedUserRoles.value.includes("admin"));
+const currentReviewSource = computed(() =>
+  String(props.reviewSource || route.query.source || "").trim().toLowerCase()
+);
+const showReviewExtraFields = computed(() => !!currentReviewSource.value);
+const canEditReviewMeta = computed(
+  () => showReviewExtraFields.value && !props.readOnly
+);
+const canEditReviewYear = computed(
+  () => canEditReviewMeta.value && isAdminUser.value
+);
 const visible = ref(false);
 const title = ref("");
 const deptOptions = ref([]);
@@ -810,9 +882,9 @@ const outcomeRefDialog = ref(null);
 const activeAttachmentTab = ref("award");
 const detailLoading = ref(false);
 const pendingAchievementId = ref("");
+const loadingFormDetail = ref(false);
 
 const uploadUrl = ref("/dev-api/attachment/upload");
-const userStore = useUserStore();
 
 const samAchievementParticipantList = ref([]);
 const samAchievementAdvisorList = ref([]);
@@ -877,6 +949,27 @@ function trimStringFields(target, fields = []) {
       target[field] = trimIfString(target[field]);
     }
   });
+}
+
+function extractYearFromAwardTime(value) {
+  if (value === null || value === undefined || value === "") return null;
+  if (typeof value === "string") {
+    const match = value.match(/^(\d{4})/);
+    return match ? Number(match[1]) : null;
+  }
+  const date = new Date(value);
+  if (Number.isNaN(date.getTime())) return null;
+  return date.getFullYear();
+}
+
+function normalizeIntegerOrNull(value) {
+  if (value === null || value === undefined || value === "") return null;
+  const normalized = Number(value);
+  return Number.isFinite(normalized) ? normalized : null;
+}
+
+function syncYearFromAwardTime(awardTime) {
+  form.value.year = extractYearFromAwardTime(awardTime);
 }
 
 const trackSuggestions = ref([]);
@@ -1755,6 +1848,14 @@ watch(() => [form.value.level, form.value.awardTime], () => {
   autoMatchSession();
 });
 
+watch(
+  () => form.value.awardTime,
+  (value) => {
+    if (loadingFormDetail.value) return;
+    syncYearFromAwardTime(value);
+  }
+);
+
 function open(id) {
   if (!isPageMode.value) visible.value = true;
   pendingAchievementId.value = id ? String(id) : "";
@@ -1955,11 +2056,14 @@ function loadDetail(id) {
     .getFn(id)
     .then((response) => {
       const d = response.data;
+      loadingFormDetail.value = true;
 
       if (d.category != null) d.category = String(d.category);
       if (d.level != null) d.level = String(d.level);
       if (d.grade != null) d.grade = String(d.grade);
       if (d.groupId != null) d.groupId = String(d.groupId);
+      if (d.year != null) d.year = Number(d.year);
+      if (d.isSupplement != null) d.isSupplement = Number(d.isSupplement);
 
       if (d.competitionId != null) d.competitionId = Number(d.competitionId);
       if (d.sessionId != null) d.sessionId = Number(d.sessionId);
@@ -2012,9 +2116,13 @@ function loadDetail(id) {
       if (form.value.isReimburse == null) form.value.isReimburse = 0;
 
       updateSnapshot();
+      nextTick(() => {
+        loadingFormDetail.value = false;
+      });
     })
     .catch(() => {
       // keep pendingAchievementId so the header remains stable while the caller handles the error
+      loadingFormDetail.value = false;
     })
     .finally(() => {
       detailLoading.value = false;
@@ -2036,6 +2144,8 @@ function reset() {
     groupId: null,
     ownerDepId: null,
     awardTime: null,
+    year: null,
+    isSupplement: null,
     fee: null,
     isReimburse: 0,
     fileAward: null,
@@ -2153,6 +2263,8 @@ function submitForm() {
         "teamName",
         "fee",
       ]);
+      form.value.year = normalizeIntegerOrNull(form.value.year);
+      form.value.isSupplement = normalizeIntegerOrNull(form.value.isSupplement);
 
       if (!form.value.ownerDepId) {
         proxy.$modal.msgWarning("归属学院不能为空，请先确认第一负责人所属学院");

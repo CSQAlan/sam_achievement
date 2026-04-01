@@ -169,6 +169,8 @@ PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
             <if test="certificateNo != null  and certificateNo != ''"> and a.certificate_no = #{certificateNo}</if>
             <if test="groupId != null "> and a.group_id = #{groupId}</if>
             <if test="awardTime != null "> and a.award_time = #{awardTime}</if>
+            <if test="year != null"> and a.year = #{year}</if>
+            <if test="isSupplement != null"> and a.is_supplement = #{isSupplement}</if>
         
             <if test="reviewStage != null and reviewStage != '' and reviewStatus != null and reviewStatus != ''">
                 <choose>

@@ -1,6 +1,7 @@
 package com.ruoyi.web.controller.system;
 
 import java.util.List;
+import java.util.stream.Collectors;
 import javax.servlet.http.HttpServletResponse;
 import org.apache.commons.lang3.ArrayUtils;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -23,6 +24,8 @@ import com.ruoyi.common.core.domain.entity.SysDept;
 import com.ruoyi.common.enums.BusinessType;
 import com.ruoyi.common.utils.StringUtils;
 import com.ruoyi.common.utils.poi.ExcelUtil;
+import com.ruoyi.system.domain.vo.DeptImportResultVo;
+import com.ruoyi.system.domain.vo.DeptImportRowVo;
 import com.ruoyi.system.service.ISysDeptService;
 
 /**
@@ -58,6 +61,30 @@ public class SysDeptController extends BaseController
         String operName = getUsername();
         String message = deptService.importDept(deptList, updateSupport, operName);
         return success(message);
+    }
+
+    @PreAuthorize("@ss.hasPermi('system:dept:add')")
+    @PostMapping("/importCheck")
+    public AjaxResult importCheck(MultipartFile file, boolean updateSupport) throws Exception
+    {
+        ExcelUtil<SysDept> util = new ExcelUtil<SysDept>(SysDept.class);
+        List<SysDept> deptList = util.importExcel(file.getInputStream());
+        DeptImportResultVo result = deptService.checkDeptImport(deptList, updateSupport);
+        return AjaxResult.success(result.getMessage(), result);
+    }
+
+    @PreAuthorize("@ss.hasPermi('system:dept:add')")
+    @PostMapping("/importFailDetails")
+    public void importFailDetails(HttpServletResponse response, MultipartFile file, boolean updateSupport) throws Exception
+    {
+        ExcelUtil<SysDept> util = new ExcelUtil<SysDept>(SysDept.class);
+        List<SysDept> deptList = util.importExcel(file.getInputStream());
+        DeptImportResultVo result = deptService.checkDeptImport(deptList, updateSupport);
+        List<DeptImportRowVo> failRows = result.getRows().stream()
+                .filter(row -> !Boolean.TRUE.equals(row.getSuccess()))
+                .collect(Collectors.toList());
+        ExcelUtil<DeptImportRowVo> exportUtil = new ExcelUtil<DeptImportRowVo>(DeptImportRowVo.class);
+        exportUtil.exportExcel(response, failRows, "部门导入失败明细");
     }
 
     @PreAuthorize("@ss.hasPermi('system:dept:add')")
