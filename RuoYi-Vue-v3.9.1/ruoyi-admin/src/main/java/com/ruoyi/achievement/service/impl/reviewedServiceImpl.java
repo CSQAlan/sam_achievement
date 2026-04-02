@@ -33,6 +33,9 @@ public class reviewedServiceImpl implements IreviewedService
     @Autowired
     private ISysDeptService deptService;
 
+    @Autowired
+    private com.ruoyi.system.service.AchievementPostPermissionService postPermissionService;
+
     private static final String STAGE_COLLEGE = "college";
     private static final String STAGE_SCHOOL = "school";
     private static final String STATUS_UNREVIEWED = "unreviewed";
@@ -61,6 +64,27 @@ public class reviewedServiceImpl implements IreviewedService
     @Override
     public List<reviewed> selectreviewedList(reviewed reviewed)
     {
+        // 针对院级审核页面的数据过滤逻辑
+        if (STAGE_COLLEGE.equals(reviewed.getReviewStage())) {
+            // 如果是超级管理员，不过滤
+            if (!SecurityUtils.isAdmin(SecurityUtils.getUserId())) {
+                // 判断是否具有 院级管理员 角色 (权限字符: collegeleveladmin 或 collegeadmin)
+                boolean isCollegeAdmin = SecurityUtils.hasRole("collegeleveladmin") || SecurityUtils.hasRole("collegeadmin");
+                
+                if (isCollegeAdmin) {
+                    // 获取当前登录人的部门 ID
+                    Long userDeptId = SecurityUtils.getDeptId();
+                    if (userDeptId != null) {
+                        // 向上追溯到学院 ID
+                        Long collegeId = deptService.getCollegeId(userDeptId);
+                        if (collegeId != null) {
+                            // 数据库 owner_dep_id 存储的是 ID 数字，这里设置 ID 过滤
+                            reviewed.setOwnerDepId(String.valueOf(collegeId));
+                        }
+                    }
+                }
+            }
+        }
         return reviewedMapper.selectreviewedList(reviewed);
     }
 
@@ -535,31 +559,44 @@ public class reviewedServiceImpl implements IreviewedService
             return;
         }
 
+        // 尝试从参与人（负责人）中获取学院
         List<SamAchievementParticipant> participantList = incoming.getSamAchievementParticipantList();
-        if (participantList == null || participantList.isEmpty())
+        if (participantList != null && !participantList.isEmpty())
         {
-            return;
-        }
-
-        SamAchievementParticipant managerParticipant = null;
-        for (SamAchievementParticipant participant : participantList)
-        {
-            if ("1".equals(StringUtils.trim(participant.getManager())))
+            SamAchievementParticipant managerParticipant = null;
+            for (SamAchievementParticipant participant : participantList)
             {
-                managerParticipant = participant;
-                break;
+                if ("1".equals(StringUtils.trim(participant.getManager())))
+                {
+                    managerParticipant = participant;
+                    break;
+                }
+            }
+
+            if (managerParticipant == null)
+            {
+                managerParticipant = participantList.get(0);
+            }
+
+            String ownerDepId = resolveOwnerDepIdFromParticipant(managerParticipant);
+            if (StringUtils.hasText(ownerDepId))
+            {
+                incoming.setOwnerDepId(ownerDepId);
+                return;
             }
         }
 
-        if (managerParticipant == null)
-        {
-            managerParticipant = participantList.get(0);
-        }
-
-        String ownerDepId = resolveOwnerDepIdFromParticipant(managerParticipant);
-        if (StringUtils.hasText(ownerDepId))
-        {
-            incoming.setOwnerDepId(ownerDepId);
+        // 兜底方案：从当前登录人的部门获取学院
+        try {
+            Long userDeptId = SecurityUtils.getDeptId();
+            if (userDeptId != null) {
+                Long collegeId = deptService.getCollegeId(userDeptId);
+                if (collegeId != null) {
+                    incoming.setOwnerDepId(String.valueOf(collegeId));
+                }
+            }
+        } catch (Exception e) {
+            // 忽略非登录环境下的异常
         }
     }
 
@@ -594,6 +631,17 @@ public class reviewedServiceImpl implements IreviewedService
         return null;
     }
 
+    /**
+     * 根据部门ID向上查找归属学院ID (parent_id 为 100 的部门)
+     */
+    private String getCollegeIdByAnyDeptId(String deptIdStr) {
+        if (!StringUtils.hasText(deptIdStr) || !deptIdStr.matches("\\d+")) {
+            return null;
+        }
+        Long collegeId = deptService.getCollegeId(Long.valueOf(deptIdStr));
+        return collegeId != null ? String.valueOf(collegeId) : null;
+    }
+
     private String normalizeDeptId(String schoolValue)
     {
         if (!StringUtils.hasText(schoolValue))
@@ -602,28 +650,30 @@ public class reviewedServiceImpl implements IreviewedService
         }
 
         String normalized = schoolValue.trim();
+        String foundId = null;
+
         if (normalized.matches("\\d+"))
         {
-            return normalized;
-        }
-
-        SysDept query = new SysDept();
-        query.setDeptName(normalized);
-        List<SysDept> deptList = deptService.selectDeptList(query);
-        if (deptList == null || deptList.isEmpty())
-        {
-            return null;
-        }
-
-        for (SysDept dept : deptList)
-        {
-            if (dept != null && StringUtils.equals(normalized, dept.getDeptName()) && dept.getDeptId() != null)
+            foundId = normalized;
+        } else {
+            SysDept query = new SysDept();
+            query.setDeptName(normalized);
+            List<SysDept> deptList = deptService.selectDeptList(query);
+            if (deptList != null && !deptList.isEmpty())
             {
-                return String.valueOf(dept.getDeptId());
+                for (SysDept dept : deptList)
+                {
+                    if (dept != null && StringUtils.equals(normalized, dept.getDeptName()) && dept.getDeptId() != null)
+                    {
+                        foundId = String.valueOf(dept.getDeptId());
+                        break;
+                    }
+                }
             }
         }
 
-        return null;
+        // 统一向上追溯到学院级 (parent_id = 100)
+        return getCollegeIdByAnyDeptId(foundId);
     }
 
     private void validateInsertByStage(reviewed incoming, String stage, String status)
