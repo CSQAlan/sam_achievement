@@ -145,7 +145,7 @@
                         <el-radio :label="1">是 (需要上传凭证)</el-radio>
                         <el-radio :label="0">否</el-radio>
                       </el-radio-group>
-                      <div v-if="form.isReimburse === 1" style="margin-left: 15px; display: flex; align-items: center;">
+                      <div v-if="form.isReimburse === 1 && form.achievementId" style="margin-left: 15px; display: flex; align-items: center;">
                         <span style="font-size: 12px; color: #909399; margin-right: 8px;">报销状态:</span>
                       <div style="transform: scale(1.5); transform-origin: left center;">
   <dict-tag :options="reimbursement_status" :value="form.reimbursementStatus ?? 0" />
@@ -459,7 +459,7 @@
                     <el-radio :label="1">是 (需要上传凭证)</el-radio>
                     <el-radio :label="0">否</el-radio>
                   </el-radio-group>
-                  <div v-if="form.isReimburse === 1" style="margin-left: 15px; display: flex; align-items: center;">
+                  <div v-if="form.isReimburse === 1 && form.achievementId" style="margin-left: 15px; display: flex; align-items: center;">
                     <span style="font-size: 12px; color: #909399; margin-right: 8px;">报销状态:</span>
                   <div style="transform: scale(1.5); transform-origin: left center;">
   <dict-tag :options="reimbursement_status" :value="form.reimbursementStatus ?? 0" />
