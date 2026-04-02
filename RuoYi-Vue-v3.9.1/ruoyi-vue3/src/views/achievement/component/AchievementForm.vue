@@ -714,7 +714,7 @@
       </el-form-item>
 
       <template v-if="isParticipantNew">
-        <el-alert title="未匹配到该学号，请完善下方信息完成录入" type="warning" show-icon :closable="false" style="margin-bottom: 15px;" />
+        <el-alert v-if="editingParticipantIndex === -1" title="未匹配到该学号，请完善下方信息完成录入" type="warning" show-icon :closable="false" style="margin-bottom: 15px;" />
         <el-form-item label="所属机构" prop="school">
           <el-cascader
             ref="participantCascader"
@@ -771,7 +771,7 @@
       </el-form-item>
 
       <template v-if="isAdvisorNew">
-        <el-alert title="未匹配到该工号，请完善下方信息完成录入" type="warning" show-icon :closable="false" style="margin-bottom: 15px;" />
+        <el-alert v-if="editingAdvisorIndex === -1" title="未匹配到该工号，请完善下方信息完成录入" type="warning" show-icon :closable="false" style="margin-bottom: 15px;" />
         <el-form-item label="所属机构" prop="school">
           <el-cascader
             ref="advisorCascader"
