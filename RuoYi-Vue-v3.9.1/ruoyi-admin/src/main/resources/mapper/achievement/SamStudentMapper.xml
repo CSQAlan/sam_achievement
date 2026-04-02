@@ -20,11 +20,8 @@ PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
 
     <sql id="selectSamStudentVo">
         select s.student_id, s.name, s.no, s.school, s.department, s.major, s.class_name, s.class_year,
-               d1.dept_name as school_name, d2.dept_name as department_name, d3.dept_name as major_name
+               s.school as school_name, s.department as department_name, s.major as major_name
         from sam_student s
-        left join sys_dept d1 on s.school = d1.dept_id
-        left join sys_dept d2 on s.department = d2.dept_id
-        left join sys_dept d3 on s.major = d3.dept_id
     </sql>
 
     <select id="selectSamStudentList" parameterType="SamStudent" resultMap="SamStudentResult">
@@ -32,9 +29,9 @@ PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
         <where>  
             <if test="name != null  and name != ''"> and s.name like concat('%', #{name}, '%')</if>
             <if test="no != null  and no != ''"> and s.no = #{no}</if>
-            <if test="school != null  and school != ''"> and d1.dept_name like concat('%', #{school}, '%')</if>
-            <if test="department != null  and department != ''"> and d2.dept_name like concat('%', #{department}, '%')</if>
-            <if test="major != null  and major != ''"> and d3.dept_name like concat('%', #{major}, '%')</if>
+            <if test="school != null  and school != ''"> and s.school like concat('%', #{school}, '%')</if>
+            <if test="department != null  and department != ''"> and s.department like concat('%', #{department}, '%')</if>
+            <if test="major != null  and major != ''"> and s.major like concat('%', #{major}, '%')</if>
             <if test="className != null  and className != ''"> and s.class_name like concat('%', #{className}, '%')</if>
             <if test="classYear != null  and classYear != ''"> and s.class_year = #{classYear}</if>
         </where>

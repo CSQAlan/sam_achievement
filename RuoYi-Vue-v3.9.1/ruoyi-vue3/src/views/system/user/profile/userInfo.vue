@@ -457,19 +457,19 @@ function buildSchoolOptions(nodes = []) {
 
       schoolOptions.push({
         id: node.id,
-        value: String(node.id),
+        value: node.label,
         label: node.label,
         departments: children
             .filter((child) => getNodeHeight(child) === 1)
             .map((child) => ({
               id: child.id,
-              value: String(child.id),
+              value: child.label,
               label: child.label,
               majors: getEnabledChildren(child)
                   .filter((major) => getNodeHeight(major) === 0)
                   .map((major) => ({
                     id: major.id,
-                    value: String(major.id),
+                    value: major.label,
                     label: major.label,
                   })),
             })),

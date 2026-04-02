@@ -157,21 +157,21 @@ public class SamStudentServiceImpl implements ISamStudentService
                 if (schoolDept == null) {
                     throw new Exception("找不到名为 [" + student.getSchoolName() + "] 的学院，请检查名称是否正确");
                 }
-                student.setSchool(schoolDept.getDeptId().toString());
+                student.setSchool(schoolDept.getDeptName());
 
                 // 匹配院系 (在学院下找)
                 com.ruoyi.common.core.domain.entity.SysDept deptDept = sysDeptMapper.checkDeptNameUnique(student.getDepartmentName(), schoolDept.getDeptId());
                 if (deptDept == null) {
                     throw new Exception("在 " + student.getSchoolName() + " 下找不到名为 [" + student.getDepartmentName() + "] 的院系");
                 }
-                student.setDepartment(deptDept.getDeptId().toString());
+                student.setDepartment(deptDept.getDeptName());
 
                 // 匹配专业 (在院系下找)
                 com.ruoyi.common.core.domain.entity.SysDept majorDept = sysDeptMapper.checkDeptNameUnique(student.getMajorName(), deptDept.getDeptId());
                 if (majorDept == null) {
                     throw new Exception("在 " + student.getDepartmentName() + " 下找不到名为 [" + student.getMajorName() + "] 的专业");
                 }
-                student.setMajor(majorDept.getDeptId().toString());
+                student.setMajor(majorDept.getDeptName());
 
                 // 3. 验证业务主键 (学号) 是否已存在
                 SamStudent s = samStudentMapper.selectSamStudentByNo(student.getNo());
