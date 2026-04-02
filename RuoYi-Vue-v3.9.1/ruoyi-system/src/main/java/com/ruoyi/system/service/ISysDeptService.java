@@ -121,4 +121,12 @@ public interface ISysDeptService
      * @return 结果
      */
     public int deleteDeptById(Long deptId);
+
+    /**
+     * 根据部门ID获取学院ID (parentId为100的部门)
+     *
+     * @param deptId 部门ID
+     * @return 学院ID
+     */
+    public Long getCollegeId(Long deptId);
 }
