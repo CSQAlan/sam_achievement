@@ -90,7 +90,8 @@ PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
     </delete>
 
     <select id="selectSamStudentByNo" parameterType="String" resultMap="SamStudentResult">
-        <include refid="selectSamStudentVo"/>
+        select s.student_id, s.no
+        from sam_student s
         where no = #{no}
     </select>
 </mapper>

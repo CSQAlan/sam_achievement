@@ -75,7 +75,8 @@ PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
     </delete>
 
     <select id="selectSamTeacherByNo" parameterType="String" resultMap="SamTeacherResult">
-        <include refid="selectSamTeacherVo"/>
+        select t.id, t.no
+        from sam_teacher t
         where no = #{no}
     </select>
 </mapper>

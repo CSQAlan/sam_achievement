@@ -720,7 +720,7 @@
             ref="participantCascader"
             v-model="participantDeptCascaderValue"
             :options="studentDeptOptions"
-            :props="{ value: 'deptId', label: 'deptName', children: 'children' }"
+            :props="{ value: 'deptName', label: 'deptName', children: 'children' }"
             placeholder="请选择学院/院系/专业"
             clearable
             filterable
@@ -777,7 +777,7 @@
             ref="advisorCascader"
             v-model="advisorDeptCascaderValue"
             :options="advisorDeptOptions"
-            :props="{ value: 'deptId', label: 'deptName', children: 'children' }"
+            :props="{ value: 'deptName', label: 'deptName', children: 'children' }"
             placeholder="请选择学院/院系"
             clearable
             filterable
@@ -969,9 +969,9 @@ function handleEditParticipant(row, index) {
         participantForm.value.class_name = s.className || s.class_name;
         participantForm.value.class_year = s.classYear || s.class_year;
         const values = [];
-        if (s.school) values.push(Number(s.school));
-        if (s.department) values.push(Number(s.department));
-        if (s.major) values.push(Number(s.major));
+        if (s.school) values.push(s.school);
+        if (s.department) values.push(s.department);
+        if (s.major) values.push(s.major);
         participantDeptCascaderValue.value = values;
       }
     });
@@ -1001,8 +1001,8 @@ function handleEditAdvisor(row, index) {
         advisorForm.value.school = t.school || t.department;
         advisorForm.value.department = t.department || t.major;
         const values = [];
-        if (advisorForm.value.school) values.push(Number(advisorForm.value.school));
-        if (advisorForm.value.department) values.push(Number(advisorForm.value.department));
+        if (advisorForm.value.school) values.push(advisorForm.value.school);
+        if (advisorForm.value.department) values.push(advisorForm.value.department);
         advisorDeptCascaderValue.value = values;
       }
     });
@@ -2273,7 +2273,7 @@ function loadDetail(id) {
 
       if (d.competitionId != null) d.competitionId = Number(d.competitionId);
       if (d.sessionId != null) d.sessionId = Number(d.sessionId);
-      if (d.ownerDepId != null) d.ownerDepId = Number(d.ownerDepId);
+      if (d.ownerDepId != null) d.ownerDepId = d.ownerDepId;
 
     // 预先占位，确保 Vue 的模板监听能够完美挂载并触发渲染
     d.fileAward = null;
@@ -2665,7 +2665,7 @@ function reIndexList(list, type) {
   if (type === 'participant' && list.length > 0) {
     const first = list[0];
     if (first.school) {
-      form.value.ownerDepId = Number(first.school);
+      form.value.ownerDepId = first.school;
     } else if (userStore.deptId) {
       // 兜底：如果第一负责人没学院信息，取当前登录人的部门
       form.value.ownerDepId = userStore.deptId;
