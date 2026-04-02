@@ -124,7 +124,7 @@ public class SamTeacherController extends BaseController
     /**
      * 修改教师档案
      */
-    @PreAuthorize("@ss.hasPermi('achievement:teacher:edit')")
+    @PreAuthorize("@ss.hasAnyPermi('achievement:teacher:edit,achievement:manage:list,achievement:manage:participated:list,achievement:manage:guided:list')")
     @Log(title = "教师档案", businessType = BusinessType.UPDATE)
     @PutMapping
     public AjaxResult edit(@RequestBody SamTeacher samTeacher)

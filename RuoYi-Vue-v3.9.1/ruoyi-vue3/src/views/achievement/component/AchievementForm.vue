@@ -145,7 +145,7 @@
                         <el-radio :label="1">是 (需要上传凭证)</el-radio>
                         <el-radio :label="0">否</el-radio>
                       </el-radio-group>
-                      <div v-if="form.isReimburse === 1" style="margin-left: 15px; display: flex; align-items: center;">
+                      <div v-if="form.isReimburse === 1 && form.achievementId" style="margin-left: 15px; display: flex; align-items: center;">
                         <span style="font-size: 12px; color: #909399; margin-right: 8px;">报销状态:</span>
                       <div style="transform: scale(1.5); transform-origin: left center;">
   <dict-tag :options="reimbursement_status" :value="form.reimbursementStatus ?? 0" />
@@ -294,8 +294,8 @@
                                   <div class="custom-file-row" style="flex-direction: column; align-items: flex-start;">
                                     <div class="file-name" style="font-size: 12px;"><el-icon class="mr5"><Document /></el-icon><span>{{ getFileName(uuid) }}</span></div>
                                     <div class="file-action" style="justify-content: flex-start; gap: 5px;">
-                                      <el-button link type="primary" :icon="View" @click="handleOpenDetail(uuid)" style="font-size: 12px; padding: 0;">详情</el-button>
-                                      <el-button link type="primary" :icon="Download" @click="handleDownload(uuid)" style="font-size: 12px; padding: 0;">下载</el-button>
+                                      <el-button :disabled="false" link type="primary" :icon="View" @click="handleOpenDetail(uuid)" style="font-size: 12px; padding: 0;">详情</el-button>
+                                      <el-button :disabled="false" link type="primary" :icon="Download" @click="handleDownload(uuid)" style="font-size: 12px; padding: 0;">下载</el-button>
                                       <el-button v-if="!readOnly" link type="danger" :icon="Delete" @click="handleRemoveFile(item.prop, uuid)" style="font-size: 12px; padding: 0;">删除</el-button>
                                     </div>
                                   </div>
@@ -311,8 +311,8 @@
                                 <div class="custom-file-row">
                                   <div class="file-name"><el-icon class="mr5"><Document /></el-icon><span>{{ getFileName(form[item.prop]) }}</span></div>
                                   <div class="file-action">
-                                    <el-button link type="primary" :icon="View" @click="handleOpenDetail(form[item.prop])">详情</el-button>
-                                    <el-button link type="primary" :icon="Download" @click="handleDownload(form[item.prop])">下载</el-button>
+                                    <el-button :disabled="false" link type="primary" :icon="View" @click="handleOpenDetail(form[item.prop])">详情</el-button>
+                                    <el-button :disabled="false" link type="primary" :icon="Download" @click="handleDownload(form[item.prop])">下载</el-button>
                                     <el-button v-if="!readOnly" link type="danger" :icon="Delete" @click="form[item.prop] = null">删除</el-button>
                                   </div>
                                 </div>
@@ -459,7 +459,7 @@
                     <el-radio :label="1">是 (需要上传凭证)</el-radio>
                     <el-radio :label="0">否</el-radio>
                   </el-radio-group>
-                  <div v-if="form.isReimburse === 1" style="margin-left: 15px; display: flex; align-items: center;">
+                  <div v-if="form.isReimburse === 1 && form.achievementId" style="margin-left: 15px; display: flex; align-items: center;">
                     <span style="font-size: 12px; color: #909399; margin-right: 8px;">报销状态:</span>
                   <div style="transform: scale(1.5); transform-origin: left center;">
   <dict-tag :options="reimbursement_status" :value="form.reimbursementStatus ?? 0" />
@@ -606,8 +606,8 @@
                               <div class="custom-file-row" style="flex-direction: column; align-items: flex-start;">
                                 <div class="file-name" style="font-size: 12px;"><el-icon class="mr5"><Document /></el-icon><span>{{ getFileName(uuid) }}</span></div>
                                 <div class="file-action" style="justify-content: flex-start; gap: 5px;">
-                                  <el-button link type="primary" :icon="View" @click="handleOpenDetail(uuid)" style="font-size: 12px; padding: 0;">详情</el-button>
-                                  <el-button link type="primary" :icon="Download" @click="handleDownload(uuid)" style="font-size: 12px; padding: 0;">下载</el-button>
+                                  <el-button :disabled="false" link type="primary" :icon="View" @click="handleOpenDetail(uuid)" style="font-size: 12px; padding: 0;">详情</el-button>
+                                  <el-button :disabled="false" link type="primary" :icon="Download" @click="handleDownload(uuid)" style="font-size: 12px; padding: 0;">下载</el-button>
                                   <el-button v-if="!readOnly" link type="danger" :icon="Delete" @click="handleRemoveFile(item.prop, uuid)" style="font-size: 12px; padding: 0;">删除</el-button>
                                 </div>
                               </div>
@@ -623,8 +623,8 @@
                             <div v-if="form[item.prop]" class="custom-file-row">
                               <div class="file-name"><el-icon class="mr5"><Document /></el-icon><span>{{ getFileName(form[item.prop]) }}</span></div>
                               <div class="file-action">
-                                <el-button link type="primary" :icon="View" @click="handleOpenDetail(form[item.prop])">详情</el-button>
-                                <el-button link type="primary" :icon="Download" @click="handleDownload(form[item.prop])">下载</el-button>
+                                <el-button :disabled="false" link type="primary" :icon="View" @click="handleOpenDetail(form[item.prop])">详情</el-button>
+                                <el-button :disabled="false" link type="primary" :icon="Download" @click="handleDownload(form[item.prop])">下载</el-button>
                                 <el-button v-if="!readOnly" link type="danger" :icon="Delete" @click="form[item.prop] = null">删除</el-button>
                               </div>
                             </div>
@@ -714,7 +714,7 @@
       </el-form-item>
 
       <template v-if="isParticipantNew">
-        <el-alert title="未匹配到该学号，请完善下方信息完成录入" type="warning" show-icon :closable="false" style="margin-bottom: 15px;" />
+        <el-alert v-if="editingParticipantIndex === -1" title="未匹配到该学号，请完善下方信息完成录入" type="warning" show-icon :closable="false" style="margin-bottom: 15px;" />
         <el-form-item label="所属机构" prop="school">
           <el-cascader
             ref="participantCascader"
@@ -771,7 +771,7 @@
       </el-form-item>
 
       <template v-if="isAdvisorNew">
-        <el-alert title="未匹配到该工号，请完善下方信息完成录入" type="warning" show-icon :closable="false" style="margin-bottom: 15px;" />
+        <el-alert v-if="editingAdvisorIndex === -1" title="未匹配到该工号，请完善下方信息完成录入" type="warning" show-icon :closable="false" style="margin-bottom: 15px;" />
         <el-form-item label="所属机构" prop="school">
           <el-cascader
             ref="advisorCascader"
@@ -2019,8 +2019,17 @@ function autoMatchSession() {
   const matched = sessionOptions.value.filter(item => {
     // A. 级别必须一致 (注意类型转换或弱等于)
     const isLevelMatch = item.level == level;
-    // B. 年份匹配：session 字段通常包含年份文字，如 "2025" 或 "2025第十八届"
-    const isYearMatch = targetYears.some(y => y && item.session && String(item.session).includes(y));
+    
+    // B. 规范化年份匹配：优先匹配独立的 year 字段，若无则回退到名称模糊匹配
+    const isYearMatch = targetYears.some(y => {
+      if (!y) return false;
+      // 1. 优先匹配届次对象中的 year 字段 (规范做法)
+      const sessionYear = item.year || item.sessionYear; // 兼容不同可能的字段名
+      if (sessionYear && String(sessionYear) === y) return true;
+      // 2. 兜底匹配：匹配名称字符串 (如 "2026第十八届")
+      return item.session && String(item.session).includes(y);
+    });
+    
     return isLevelMatch && isYearMatch;
   });
 
