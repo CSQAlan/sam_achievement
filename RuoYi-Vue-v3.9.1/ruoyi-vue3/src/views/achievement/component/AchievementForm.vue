@@ -294,8 +294,8 @@
                                   <div class="custom-file-row" style="flex-direction: column; align-items: flex-start;">
                                     <div class="file-name" style="font-size: 12px;"><el-icon class="mr5"><Document /></el-icon><span>{{ getFileName(uuid) }}</span></div>
                                     <div class="file-action" style="justify-content: flex-start; gap: 5px;">
-                                      <el-button link type="primary" :icon="View" @click="handleOpenDetail(uuid)" style="font-size: 12px; padding: 0;">详情</el-button>
-                                      <el-button link type="primary" :icon="Download" @click="handleDownload(uuid)" style="font-size: 12px; padding: 0;">下载</el-button>
+                                      <el-button :disabled="false" link type="primary" :icon="View" @click="handleOpenDetail(uuid)" style="font-size: 12px; padding: 0;">详情</el-button>
+                                      <el-button :disabled="false" link type="primary" :icon="Download" @click="handleDownload(uuid)" style="font-size: 12px; padding: 0;">下载</el-button>
                                       <el-button v-if="!readOnly" link type="danger" :icon="Delete" @click="handleRemoveFile(item.prop, uuid)" style="font-size: 12px; padding: 0;">删除</el-button>
                                     </div>
                                   </div>
@@ -311,8 +311,8 @@
                                 <div class="custom-file-row">
                                   <div class="file-name"><el-icon class="mr5"><Document /></el-icon><span>{{ getFileName(form[item.prop]) }}</span></div>
                                   <div class="file-action">
-                                    <el-button link type="primary" :icon="View" @click="handleOpenDetail(form[item.prop])">详情</el-button>
-                                    <el-button link type="primary" :icon="Download" @click="handleDownload(form[item.prop])">下载</el-button>
+                                    <el-button :disabled="false" link type="primary" :icon="View" @click="handleOpenDetail(form[item.prop])">详情</el-button>
+                                    <el-button :disabled="false" link type="primary" :icon="Download" @click="handleDownload(form[item.prop])">下载</el-button>
                                     <el-button v-if="!readOnly" link type="danger" :icon="Delete" @click="form[item.prop] = null">删除</el-button>
                                   </div>
                                 </div>
@@ -606,8 +606,8 @@
                               <div class="custom-file-row" style="flex-direction: column; align-items: flex-start;">
                                 <div class="file-name" style="font-size: 12px;"><el-icon class="mr5"><Document /></el-icon><span>{{ getFileName(uuid) }}</span></div>
                                 <div class="file-action" style="justify-content: flex-start; gap: 5px;">
-                                  <el-button link type="primary" :icon="View" @click="handleOpenDetail(uuid)" style="font-size: 12px; padding: 0;">详情</el-button>
-                                  <el-button link type="primary" :icon="Download" @click="handleDownload(uuid)" style="font-size: 12px; padding: 0;">下载</el-button>
+                                  <el-button :disabled="false" link type="primary" :icon="View" @click="handleOpenDetail(uuid)" style="font-size: 12px; padding: 0;">详情</el-button>
+                                  <el-button :disabled="false" link type="primary" :icon="Download" @click="handleDownload(uuid)" style="font-size: 12px; padding: 0;">下载</el-button>
                                   <el-button v-if="!readOnly" link type="danger" :icon="Delete" @click="handleRemoveFile(item.prop, uuid)" style="font-size: 12px; padding: 0;">删除</el-button>
                                 </div>
                               </div>
@@ -623,8 +623,8 @@
                             <div v-if="form[item.prop]" class="custom-file-row">
                               <div class="file-name"><el-icon class="mr5"><Document /></el-icon><span>{{ getFileName(form[item.prop]) }}</span></div>
                               <div class="file-action">
-                                <el-button link type="primary" :icon="View" @click="handleOpenDetail(form[item.prop])">详情</el-button>
-                                <el-button link type="primary" :icon="Download" @click="handleDownload(form[item.prop])">下载</el-button>
+                                <el-button :disabled="false" link type="primary" :icon="View" @click="handleOpenDetail(form[item.prop])">详情</el-button>
+                                <el-button :disabled="false" link type="primary" :icon="Download" @click="handleDownload(form[item.prop])">下载</el-button>
                                 <el-button v-if="!readOnly" link type="danger" :icon="Delete" @click="form[item.prop] = null">删除</el-button>
                               </div>
                             </div>
