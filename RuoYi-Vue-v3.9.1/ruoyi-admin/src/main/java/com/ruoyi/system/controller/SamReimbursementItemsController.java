@@ -1,6 +1,7 @@
 package com.ruoyi.system.controller;
 
 import java.util.List;
+import java.util.Map;
 import java.io.IOException;
 import javax.servlet.http.HttpServletResponse;
 import org.springframework.security.access.prepost.PreAuthorize;
@@ -112,5 +113,21 @@ public class SamReimbursementItemsController extends BaseController
     public void exportPdf(@PathVariable("id") Long id, HttpServletResponse response) throws IOException
     {
         samReimbursementItemsService.exportReimbursementPdf(id, response);
+    }
+
+    /**
+     * 更新报销项目状态
+     */
+    @PreAuthorize("@ss.hasPermi('system:SamReimbursementItems:edit')")
+    @Log(title = "报销项目", businessType = BusinessType.UPDATE)
+    @PutMapping("/updateStatus")
+    public AjaxResult updateStatus(@RequestBody Map<String, Object> params) {
+        Long id = Long.valueOf(params.get("id").toString());
+        String status = params.get("status").toString();
+        
+        SamReimbursementItems item = new SamReimbursementItems();
+        item.setId(id);
+        item.setStatus(status);
+        return toAjax(samReimbursementItemsService.updateSamReimbursementItems(item));
     }
 }

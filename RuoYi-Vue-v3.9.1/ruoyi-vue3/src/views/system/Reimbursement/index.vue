@@ -226,12 +226,13 @@
           plain
           icon="Refresh"
           :loading="calculating"
+          :disabled="calculateDisabled"
           @click="handleRecalculate"
           v-hasPermi="['system:Reimbursement:calculate']"
         >计算报销金额</el-button>
       </el-col>
       <el-col :span="1.5" v-if="reimbursementItemId">
-        <el-tooltip :content="associateButtonDisabled ? '项目已确认，无法关联成果' : '关联成果'" placement="top">
+        <el-tooltip :content="associateButtonDisabled ? (isProjectConfirmed ? '项目已确认，无法关联成果' : '请先选择报销项目') : '关联成果'" placement="top">
           <el-button
             type="primary"
             plain
@@ -247,10 +248,27 @@
           type="warning"
           plain
           icon="Link"
-          :disabled="multiple || currentProjectStatus === '1'"
+          :disabled="batchCancelDisabled"
           @click="handleBatchCancelAssociation"
           v-hasPermi="['system:Reimbursement:edit']"
         >批量取消关联</el-button>
+      </el-col>
+      <el-col :span="1.5" v-if="reimbursementItemId">
+        <el-tooltip 
+          :content="currentProjectStatus === '1' ? '项目已确认，清单已锁定' : '确认后清单将被锁定，不可再修改'" 
+          placement="top"
+        >
+          <el-button
+            :type="currentProjectStatus === '1' ? 'success' : 'danger'"
+            plain
+            :icon="currentProjectStatus === '1' ? 'Lock' : 'Edit'"
+            :loading="confirmLoading"
+            @click="handleToggleStatus"
+            v-hasPermi="['system:Reimbursement:confirm']"
+          >
+            {{ currentProjectStatus === '1' ? '已确认报销清单' : '确认报销清单' }}
+          </el-button>
+        </el-tooltip>
       </el-col>
       <right-toolbar v-model:showSearch="showSearch" @queryTable="getList"></right-toolbar>
     </el-row>
@@ -342,11 +360,25 @@
       <el-table-column label="操作" align="center" width="280" class-name="small-padding fixed-width">
         <template #default="scope">
           <el-button link type="primary" icon="View" @click="handleViewDetail(scope.row)">详情</el-button>
-          <el-button link type="primary" icon="Edit" @click="handleUpdate(scope.row)" v-hasPermi="['system:Reimbursement:edit']">修改</el-button>
-          <el-button link type="danger" icon="Delete" @click="handleDelete(scope.row)" v-hasPermi="['system:Reimbursement:remove']">删除</el-button>
+          <el-button 
+            link 
+            type="primary" 
+            icon="Edit" 
+            :disabled="isProjectConfirmed"
+            @click="handleUpdate(scope.row)" 
+            v-hasPermi="['system:Reimbursement:edit']"
+          >修改</el-button>
+          <el-button 
+            link 
+            type="danger" 
+            icon="Delete" 
+            :disabled="isProjectConfirmed"
+            @click="handleDelete(scope.row)" 
+            v-hasPermi="['system:Reimbursement:remove']"
+          >删除</el-button>
           <!-- 取消关联按钮 - 仅当项目未确认时显示 -->
           <el-button 
-            v-if="currentProjectStatus !== '1'"
+            v-if="!isProjectConfirmed"
             link 
             type="warning" 
             icon="Link" 
@@ -781,9 +813,9 @@
 
 <script setup name="Reimbursement">
 import { ref, reactive, toRefs, getCurrentInstance, onMounted, computed } from 'vue'
-import { listReimbursement, getReimbursement, delReimbursement, addReimbursement, updateReimbursement, recalculateReimbursementAmount, listUnassociatedProduct, associateAchievements, cancelAssociation, batchCancelAssociation, getAchievementParticipants, getAchievementAdvisors, getAchievementAttachments } from "@/api/system/Reimbursement"
+import { listReimbursement, getReimbursement, delReimbursement, addReimbursement, updateReimbursement, recalculateReimbursementAmount, listUnassociatedProduct, associateAchievements, cancelAssociation, batchCancelAssociation, getAchievementParticipants, getAchievementAdvisors, getAchievementAttachments, getReimbursementProjectInfo, updateProjectStatus } from "@/api/system/Reimbursement"
 // 导入图标
-import { View, Document, User, Avatar, Paperclip, Link } from '@element-plus/icons-vue'
+import { View, Document, User, Avatar, Paperclip, Link, Lock, Edit } from '@element-plus/icons-vue'
 import { useRoute } from 'vue-router'
 
 
@@ -823,6 +855,27 @@ const selectedAchievements = ref([])           // 选中的成果列表
 
 // 当前项目状态（需要从路由或接口获取）
 const currentProjectStatus = ref('0')          // '0'-进行中(未确认), '1'-已完成(已确认)
+const confirmLoading = ref(false)
+
+// 计算按钮禁用状态
+const isProjectConfirmed = computed(() => {
+  return currentProjectStatus.value === '1'
+})
+
+// 关联按钮是否禁用
+const associateButtonDisabled = computed(() => {
+  return isProjectConfirmed.value || !reimbursementItemId.value
+})
+
+// 批量取消关联按钮禁用
+const batchCancelDisabled = computed(() => {
+  return isProjectConfirmed.value || multiple.value || !reimbursementItemId.value
+})
+
+// 计算按钮禁用
+const calculateDisabled = computed(() => {
+  return isProjectConfirmed.value || !reimbursementItemId.value
+})
 
 // 详情抽屉相关变量
 const detailDrawerVisible = ref(false)
@@ -931,10 +984,51 @@ const downloadAttachment = (file) => {
   }
 }
 
-// 关联按钮是否禁用（项目状态为已确认时禁用）
-const associateButtonDisabled = computed(() => {
-  return currentProjectStatus.value === '1' || !reimbursementItemId.value
-})
+/**
+ * 切换项目状态（确认/取消确认报销清单）
+ */
+const handleToggleStatus = async () => {
+  const isConfirming = currentProjectStatus.value !== '1'
+  const actionText = isConfirming ? '确认' : '取消确认'
+  
+  try {
+    await proxy.$modal.confirm(
+      isConfirming 
+        ? '确认报销清单后，将无法再关联成果、修改报销金额等操作。是否确认？'
+        : '取消确认后，清单将恢复可编辑状态。是否继续？',
+      `${actionText}报销清单`,
+      {
+        confirmButtonText: '确定',
+        cancelButtonText: '取消',
+        type: 'warning'
+      }
+    )
+  } catch {
+    return
+  }
+  
+  confirmLoading.value = true
+  
+  try {
+    const newStatus = isConfirming ? '1' : '0'
+    const res = await updateProjectStatus(reimbursementItemId.value, newStatus)
+    
+    if (res.code === 200) {
+      currentProjectStatus.value = newStatus
+      proxy.$modal.msgSuccess(`${actionText}成功！`)
+      
+      // 刷新列表
+      await loadDetailByReimbursementItemId()
+    } else {
+      throw new Error(res.msg || `${actionText}失败`)
+    }
+  } catch (error) {
+    console.error(`${actionText}失败:`, error)
+    proxy.$modal.msgError(error.message || `${actionText}失败，请稍后重试`)
+  } finally {
+    confirmLoading.value = false
+  }
+}
 
 // 关联弹窗查询参数
 const associateQueryParams = reactive({
@@ -1032,22 +1126,33 @@ onMounted(() => {
 })
 
 // 根据报销项目ID加载详情
-const loadDetailByReimbursementItemId = () => {
+const loadDetailByReimbursementItemId = async () => {
   loading.value = true
-  listReimbursement({
-    reimbursementItemId: reimbursementItemId.value,
-    pageNum: queryParams.value.pageNum,
-    pageSize: queryParams.value.pageSize
-  }).then(response => {
-    ReimbursementList.value = response.rows
-    total.value = response.total
+  try {
+    // 获取项目信息（包含状态）
+    if (reimbursementItemId.value) {
+      const projectRes = await getReimbursementProjectInfo(reimbursementItemId.value)
+      if (projectRes.code === 200) {
+        currentProjectStatus.value = projectRes.data.status || '0'
+      }
+    }
+    
+    // 获取成果列表
+    const listRes = await listReimbursement({
+      reimbursementItemId: reimbursementItemId.value,
+      pageNum: queryParams.value.pageNum,
+      pageSize: queryParams.value.pageSize
+    })
+    
+    ReimbursementList.value = listRes.rows
+    total.value = listRes.total
     loading.value = false
     console.log('加载的详情数据:', ReimbursementList.value)
-    updateStatsFromList(response.rows)  // 添加这行，更新统计卡片
-  }).catch(error => {
+    updateStatsFromList(listRes.rows)  // 添加这行，更新统计卡片
+  } catch (error) {
     console.error('加载失败:', error)
     loading.value = false
-  })
+  }
 }
 
 /** 查询报销项目详情列表 */

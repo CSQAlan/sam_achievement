@@ -119,3 +119,20 @@ export function getAchievementAttachments(achievementId) {
     method: 'get'
   })
 }
+
+// 获取报销项目信息
+export function getReimbursementProjectInfo(id) {
+  return request({
+    url: '/system/SamReimbursementItems/' + id,
+    method: 'get'
+  })
+}
+
+// 更新项目状态
+export function updateProjectStatus(id, status) {
+  return request({
+    url: '/system/SamReimbursementItems/updateStatus',
+    method: 'put',
+    data: { id, status }
+  })
+}
