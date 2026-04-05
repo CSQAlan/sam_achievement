@@ -173,6 +173,20 @@ export const dynamicRoutes = [
       }
     ]
   },
+
+  {
+    path: '/achievement',
+    component: Layout,
+    hidden: true,
+    children: [
+      {
+        path: 'reviewPage',
+        component: () => import('@/views/achievement/component/reviewPage'),
+        name: 'AchievementReviewPage',
+        meta: { title: '成果审核' }
+      }
+    ]
+  },
   
   // 新增报销项目关联成果路由
   // 在路由配置中添加

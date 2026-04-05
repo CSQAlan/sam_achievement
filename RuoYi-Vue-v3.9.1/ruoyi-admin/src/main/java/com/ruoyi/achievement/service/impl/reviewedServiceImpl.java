@@ -64,13 +64,25 @@ public class reviewedServiceImpl implements IreviewedService
     @Override
     public List<reviewed> selectreviewedList(reviewed reviewed)
     {
+        // 如果是超级管理员（userId=1），不执行任何数据过滤
+        if (SecurityUtils.isAdmin(SecurityUtils.getUserId())) {
+            return reviewedMapper.selectreviewedList(reviewed);
+        }
+
         // 针对院级审核页面的数据过滤逻辑
         if (STAGE_COLLEGE.equals(reviewed.getReviewStage())) {
-            // 如果是超级管理员，不过滤
-            if (!SecurityUtils.isAdmin(SecurityUtils.getUserId())) {
-                // 判断是否具有 院级管理员 角色 (权限字符: collegeleveladmin 或 collegeadmin)
-                boolean isCollegeAdmin = SecurityUtils.hasRole("collegeleveladmin") || SecurityUtils.hasRole("collegeadmin");
-                
+            // 优先检查是否具有校级审核权限（岗位或角色）
+            String userName = SecurityUtils.getUsername();
+            boolean hasSchoolReview = postPermissionService.canAccessSchoolReview(userName)
+                                   || SecurityUtils.hasRole("schoolleveladmin")
+                                   || SecurityUtils.hasRole("schooladmin");
+
+            // 如果没有校级权限，才进一步判断是否为院级管理员并进行过滤
+            if (!hasSchoolReview) {
+                // 判断是否具有 院级管理员 角色或岗位
+                boolean isCollegeAdmin = SecurityUtils.hasRole("collegeleveladmin") || SecurityUtils.hasRole("collegeadmin")
+                                      || postPermissionService.canAccessCollegeReview(userName);
+
                 if (isCollegeAdmin) {
                     // 获取当前登录人的部门 ID
                     Long userDeptId = SecurityUtils.getDeptId();
