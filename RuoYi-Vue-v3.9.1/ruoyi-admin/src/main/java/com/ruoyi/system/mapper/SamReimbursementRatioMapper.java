@@ -1,6 +1,7 @@
 package com.ruoyi.system.mapper;
 
 import java.util.List;
+import org.apache.ibatis.annotations.Param;
 import com.ruoyi.system.domain.SamReimbursementRatio;
 
 /**
@@ -58,4 +59,11 @@ public interface SamReimbursementRatioMapper
      * @return 结果
      */
     public int deleteSamReimbursementRatioByIds(Long[] ids);
+    
+    /**
+     * 根据获奖等级、类别、归属学院获取报销比例
+     */
+    public Integer getReimbursementRatio(@Param("grade") String grade, 
+                                          @Param("category") String category,
+                                          @Param("ownerDepId") Long ownerDepId);
 }

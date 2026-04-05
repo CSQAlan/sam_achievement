@@ -97,4 +97,13 @@ PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
             #{id}
         </foreach>
     </delete>
+    
+    <select id="getReimbursementRatio" resultType="java.lang.Integer">
+        SELECT ratio FROM sam_reimbursement_ratio
+        WHERE grade = #{grade} 
+          AND category = #{category}
+          AND (owner_dep_id = #{ownerDepId} OR owner_dep_id IS NULL)
+          AND status = '1' AND del_flag = '0'
+        ORDER BY owner_dep_id DESC LIMIT 1
+    </select>
 </mapper>

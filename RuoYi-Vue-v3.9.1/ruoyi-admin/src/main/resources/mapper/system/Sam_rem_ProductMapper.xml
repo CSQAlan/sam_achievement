@@ -309,4 +309,103 @@ PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
             ( #{item.id}, #{item.name}, #{item.reimbursementTime}, #{item.totalFee}, #{item.paidFee}, #{item.amount}, #{item.ownerDepId}, #{item.status}, #{item.createBy}, #{item.createTime}, #{item.updateBy}, #{item.updateTime}, #{item.remark}, #{item.delFlag})
         </foreach>
     </insert>
+    
+    <update id="batchUpdateReimbursementFee">
+        <foreach collection="list" item="item" separator=";">
+            UPDATE sam_achievement
+            SET reimbursement_fee = #{item.reimbursementFee},
+                reimbursement_ratio = #{item.reimbursementRatio}
+            WHERE achievement_id = #{item.achievementId}
+        </foreach>
+    </update>
+
+    <!-- 查询未关联的成果列表 -->
+    <select id="selectUnassociatedAchievements" parameterType="Sam_rem_Product" resultMap="Sam_rem_ProductResult">
+        <include refid="selectSam_rem_ProductVo"/>
+        <where>
+            reimbursement_item_id IS NULL OR reimbursement_item_id = ''
+            <if test="category != null  and category != ''"> and category like concat('%', #{category}, '%')</if>
+            <if test="name != null  and name != ''"> and name like concat('%', #{name}, '%')</if>
+            <if test="teamName != null  and teamName != ''"> and team_name like concat('%', #{teamName}, '%')</if>
+            <if test="level != null  and level != ''"> and level = #{level}</if>
+            <if test="grade != null "> and grade = #{grade}</if>
+            <if test="ownerDepId != null  and ownerDepId != ''"> and owner_dep_id = #{ownerDepId}</if>
+        </where>
+    </select>
+
+    <!-- 批量更新成果的报销项目ID -->
+    <update id="batchUpdateReimbursementItemId" parameterType="Map">
+        UPDATE sam_achievement
+        SET reimbursement_item_id = #{reimbursementItemId},
+            update_time = NOW()
+        WHERE achievement_id IN
+        <foreach item="achievementId" collection="achievementIds" open="(" separator="," close=")">
+            #{achievementId}
+        </foreach>
+    </update>
+
+    <!-- 查询未关联的成果列表（排除已关联到其他报销项目的） -->
+    <select id="selectUnassociatedProductList" resultMap="Sam_rem_ProductResult">
+        SELECT * FROM sam_achievement
+        WHERE del_flag = '0'
+          AND (reimbursement_item_id IS NULL OR reimbursement_item_id = '')
+        <if test="ownerDepId != null and ownerDepId != ''">
+          AND owner_dep_id = #{ownerDepId}
+        </if>
+        <if test="name != null and name != ''">
+            AND name LIKE CONCAT('%', #{name}, '%')
+        </if>
+        <if test="category != null and category != ''">
+            AND category = #{category}
+        </if>
+        <if test="level != null and level != ''">
+            AND level = #{level}
+        </if>
+        <if test="grade != null">
+            AND grade = #{grade}
+        </if>
+        ORDER BY create_time DESC
+    </select>
+
+    <!-- 批量关联成果 -->
+    <update id="batchAssociateAchievements">
+        UPDATE sam_achievement
+        SET reimbursement_item_id = #{reimbursementItemId},
+            update_time = NOW()
+        WHERE achievement_id IN
+        <foreach collection="list" item="id" open="(" separator="," close=")">
+            #{id}
+        </foreach>
+        AND (reimbursement_item_id IS NULL OR reimbursement_item_id = '')
+    </update>
+
+    <!-- 统计关联成果数量 -->
+    <select id="countByReimbursementItemId" resultType="java.lang.Integer">
+        SELECT COUNT(*) FROM sam_achievement
+        WHERE reimbursement_item_id = #{reimbursementItemId}
+          AND del_flag = '0'
+    </select>
+
+    <!-- 取消单个关联 -->
+    <update id="cancelAssociation">
+        UPDATE sam_achievement
+        SET reimbursement_item_id = NULL,
+            reimbursement_fee = NULL,
+            reimbursement_ratio = NULL,
+            update_time = NOW()
+        WHERE achievement_id = #{achievementId}
+    </update>
+
+    <!-- 批量取消关联 -->
+    <update id="batchCancelAssociation">
+        UPDATE sam_achievement
+        SET reimbursement_item_id = NULL,
+            reimbursement_fee = NULL,
+            reimbursement_ratio = NULL,
+            update_time = NOW()
+        WHERE achievement_id IN
+        <foreach collection="list" item="id" open="(" separator="," close=")">
+            #{id}
+        </foreach>
+    </update>
 </mapper>

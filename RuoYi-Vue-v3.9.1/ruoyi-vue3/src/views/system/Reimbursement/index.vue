@@ -145,6 +145,42 @@
       </el-form-item>
     </el-form>
 
+    <!-- 统计卡片 -->
+    <el-row :gutter="10" class="mb8" v-if="reimbursementItemId">
+      <el-col :span="6">
+        <el-card shadow="hover" class="statistics-card">
+          <div class="card-content">
+            <div class="card-label">成果数量</div>
+            <div class="card-value">{{ stats.productCount || 0 }}</div>
+          </div>
+        </el-card>
+      </el-col>
+      <el-col :span="6">
+        <el-card shadow="hover" class="statistics-card">
+          <div class="card-content">
+            <div class="card-label">总金额</div>
+            <div class="card-value">¥{{ stats.totalAmount || 0 }}</div>
+          </div>
+        </el-card>
+      </el-col>
+      <el-col :span="6">
+        <el-card shadow="hover" class="statistics-card">
+          <div class="card-content">
+            <div class="card-label">已发放金额</div>
+            <div class="card-value">¥{{ stats.paidAmount || 0 }}</div>
+          </div>
+        </el-card>
+      </el-col>
+      <el-col :span="6">
+        <el-card shadow="hover" class="statistics-card">
+          <div class="card-content">
+            <div class="card-label">待发放金额</div>
+            <div class="card-value">¥{{ (stats.totalAmount || 0) - (stats.paidAmount || 0) }}</div>
+          </div>
+        </el-card>
+      </el-col>
+    </el-row>
+
     <el-row :gutter="10" class="mb8">
       <el-col :span="1.5">
         <el-button
@@ -183,6 +219,38 @@
           @click="handleExport"
           v-hasPermi="['system:Reimbursement:export']"
         >导出</el-button>
+      </el-col>
+      <el-col :span="1.5" v-if="reimbursementItemId">
+        <el-button
+          type="info"
+          plain
+          icon="Refresh"
+          :loading="calculating"
+          @click="handleRecalculate"
+          v-hasPermi="['system:Reimbursement:calculate']"
+        >计算报销金额</el-button>
+      </el-col>
+      <el-col :span="1.5" v-if="reimbursementItemId">
+        <el-tooltip :content="associateButtonDisabled ? '项目已确认，无法关联成果' : '关联成果'" placement="top">
+          <el-button
+            type="primary"
+            plain
+            icon="Link"
+            :disabled="associateButtonDisabled"
+            @click="handleOpenAssociateDialog"
+            v-hasPermi="['system:Reimbursement:edit']"
+          >关联成果</el-button>
+        </el-tooltip>
+      </el-col>
+      <el-col :span="1.5" v-if="reimbursementItemId">
+        <el-button
+          type="warning"
+          plain
+          icon="Link"
+          :disabled="multiple || currentProjectStatus === '1'"
+          @click="handleBatchCancelAssociation"
+          v-hasPermi="['system:Reimbursement:edit']"
+        >批量取消关联</el-button>
       </el-col>
       <right-toolbar v-model:showSearch="showSearch" @queryTable="getList"></right-toolbar>
     </el-row>
@@ -262,10 +330,19 @@
 
 
 
-      <el-table-column label="操作" align="center" class-name="small-padding fixed-width">
+      <el-table-column label="操作" align="center" width="200" class-name="small-padding fixed-width">
         <template #default="scope">
           <el-button link type="primary" icon="Edit" @click="handleUpdate(scope.row)" v-hasPermi="['system:Reimbursement:edit']">修改</el-button>
-          <el-button link type="primary" icon="Delete" @click="handleDelete(scope.row)" v-hasPermi="['system:Reimbursement:remove']">删除</el-button>
+          <el-button link type="danger" icon="Delete" @click="handleDelete(scope.row)" v-hasPermi="['system:Reimbursement:remove']">删除</el-button>
+          <!-- 取消关联按钮 - 仅当项目未确认时显示 -->
+          <el-button 
+            v-if="currentProjectStatus !== '1'"
+            link 
+            type="warning" 
+            icon="Link" 
+            @click="handleCancelAssociation(scope.row)"
+            v-hasPermi="['system:Reimbursement:edit']"
+          >取消关联</el-button>
         </template>
       </el-table-column>
     </el-table>
@@ -461,12 +538,123 @@
         </div>
       </template>
     </el-dialog>
+
+    <!-- 关联成果弹窗 -->
+    <el-dialog 
+      title="可报销未关联成果列表" 
+      v-model="associateDialogVisible" 
+      width="900px" 
+      append-to-body
+      :close-on-click-modal="false"
+      @close="handleCloseAssociateDialog"
+    >
+      <!-- 筛选表单 -->
+      <el-form :model="associateQueryParams" ref="associateQueryRef" :inline="true" label-width="80px">
+        <el-form-item label="作品名称" prop="name">
+          <el-input 
+            v-model="associateQueryParams.name" 
+            placeholder="请输入作品名称" 
+            clearable 
+            style="width: 180px"
+          />
+        </el-form-item>
+        <el-form-item label="类别" prop="category">
+          <el-select v-model="associateQueryParams.category" placeholder="请选择类别" clearable style="width: 120px">
+            <el-option 
+              v-for="dict in achievement_category" 
+              :key="dict.value" 
+              :label="dict.label" 
+              :value="dict.value" 
+            />
+          </el-select>
+        </el-form-item>
+        <el-form-item label="获奖级别" prop="level">
+          <el-select v-model="associateQueryParams.level" placeholder="请选择级别" clearable style="width: 120px">
+            <el-option 
+              v-for="dict in award_level_type" 
+              :key="dict.value" 
+              :label="dict.label" 
+              :value="dict.value" 
+            />
+          </el-select>
+        </el-form-item>
+        <el-form-item label="获奖等级" prop="grade">
+          <el-select v-model="associateQueryParams.grade" placeholder="请选择等级" clearable style="width: 120px">
+            <el-option 
+              v-for="dict in award_rank" 
+              :key="dict.value" 
+              :label="dict.label" 
+              :value="dict.value" 
+            />
+          </el-select>
+        </el-form-item>
+        <el-form-item>
+          <el-button type="primary" icon="Search" @click="handleAssociateQuery">搜索</el-button>
+          <el-button icon="Refresh" @click="resetAssociateQuery">重置</el-button>
+        </el-form-item>
+      </el-form>
+
+      <!-- 成果列表表格 -->
+      <el-table 
+        v-loading="associateLoading" 
+        :data="unassociatedList" 
+        @selection-change="handleAssociateSelectionChange"
+        height="400"
+        stripe
+      >
+        <el-table-column type="selection" width="55" align="center" />
+        <el-table-column label="成果ID" align="center" prop="achievementId" width="100" />
+        <el-table-column label="作品名称" align="center" prop="name" min-width="180" show-overflow-tooltip />
+        <el-table-column label="类别" align="center" prop="category" width="100">
+          <template #default="scope">
+            <dict-tag :options="achievement_category" :value="scope.row.category"/>
+          </template>
+        </el-table-column>
+        <el-table-column label="获奖级别" align="center" prop="level" width="100">
+          <template #default="scope">
+            <dict-tag :options="award_level_type" :value="scope.row.level"/>
+          </template>
+        </el-table-column>
+        <el-table-column label="获奖等级" align="center" prop="grade" width="100">
+          <template #default="scope">
+            <dict-tag :options="award_rank" :value="scope.row.grade"/>
+          </template>
+        </el-table-column>
+        <el-table-column label="团队名称" align="center" prop="teamName" min-width="150" show-overflow-tooltip />
+        <el-table-column label="报名费" align="center" prop="fee" width="100">
+          <template #default="scope">
+            <span>{{ scope.row.fee ? '¥' + formatMoney(scope.row.fee) : '-' }}</span>
+          </template>
+        </el-table-column>
+      </el-table>
+
+      <!-- 分页 -->
+      <pagination
+        v-show="associateTotal > 0"
+        :total="associateTotal"
+        v-model:page="associateQueryParams.pageNum"
+        v-model:limit="associateQueryParams.pageSize"
+        @pagination="getUnassociatedList"
+      />
+
+      <template #footer>
+        <div class="dialog-footer">
+          <el-button 
+            type="primary" 
+            :loading="associateSubmitLoading" 
+            :disabled="selectedAchievements.length === 0"
+            @click="handleConfirmAssociate"
+          >确认关联至当前报销项目</el-button>
+          <el-button @click="associateDialogVisible = false">取 消</el-button>
+        </div>
+      </template>
+    </el-dialog>
   </div>
 </template>
 
 <script setup name="Reimbursement">
-import { ref, reactive, toRefs, getCurrentInstance } from 'vue'
-import { listReimbursement, getReimbursement, delReimbursement, addReimbursement, updateReimbursement } from "@/api/system/Reimbursement"
+import { ref, reactive, toRefs, getCurrentInstance, onMounted, computed } from 'vue'
+import { listReimbursement, getReimbursement, delReimbursement, addReimbursement, updateReimbursement, recalculateReimbursementAmount, listUnassociatedProduct, associateAchievements, cancelAssociation, batchCancelAssociation } from "@/api/system/Reimbursement"
 import { useRoute } from 'vue-router'
 
 
@@ -482,6 +670,7 @@ const ReimbursementList = ref([])
 const samReimbursementItemsList = ref([])
 const open = ref(false)
 const loading = ref(true)
+const calculating = ref(false)
 const showSearch = ref(true)
 const ids = ref([])
 const checkedSamReimbursementItems = ref([])
@@ -489,6 +678,38 @@ const single = ref(true)
 const multiple = ref(true)
 const total = ref(0)
 const title = ref("")
+const stats = ref({
+  productCount: 0,
+  totalAmount: 0,
+  paidAmount: 0
+})
+
+// 关联成果相关变量
+const associateDialogVisible = ref(false)      // 弹窗显示状态
+const associateLoading = ref(false)            // 弹窗表格加载状态
+const associateSubmitLoading = ref(false)      // 确认按钮加载状态
+const unassociatedList = ref([])               // 未关联成果列表
+const associateTotal = ref(0)                  // 未关联成果总数
+const selectedAchievements = ref([])           // 选中的成果列表
+
+// 当前项目状态（需要从路由或接口获取）
+const currentProjectStatus = ref('0')          // '0'-进行中(未确认), '1'-已完成(已确认)
+
+// 关联按钮是否禁用（项目状态为已确认时禁用）
+const associateButtonDisabled = computed(() => {
+  return currentProjectStatus.value === '1' || !reimbursementItemId.value
+})
+
+// 关联弹窗查询参数
+const associateQueryParams = reactive({
+  pageNum: 1,
+  pageSize: 10,
+  name: null,
+  category: null,
+  level: null,
+  grade: null,
+  ownerDepId: null
+})
 
 
 const data = reactive({
@@ -496,6 +717,7 @@ const data = reactive({
   queryParams: {
     pageNum: 1,
     pageSize: 10,
+    reimbursementItemId: null,  // 这个字段用于筛选已关联的成果
     achievementId: null,
     sessionId: null,
     category: null,
@@ -553,8 +775,14 @@ onMounted(() => {
   reimbursementItemId.value = route.query.reimbursementItemId
   projectName.value = route.query.name || '报销项目详情'
   
+  // 从路由state获取项目状态（如果有）
+  if (route.query.status) {
+    currentProjectStatus.value = route.query.status
+  }
+  
   console.log('接收到的项目ID:', reimbursementItemId.value)
   console.log('项目名称:', projectName.value)
+  console.log('项目状态:', currentProjectStatus.value)
   
   if (reimbursementItemId.value) {
     // 如果有项目ID，只加载该项目的详情
@@ -588,7 +816,13 @@ const loadDetailByReimbursementItemId = () => {
 /** 查询报销项目详情列表 */
 function getList() {
   loading.value = true
-  listReimbursement(queryParams.value).then(response => {
+  // 关键：设置 reimbursementItemId 只查询已关联的成果
+  const params = {
+    ...queryParams.value,
+    reimbursementItemId: reimbursementItemId.value  // 确保这个参数有值
+  }
+  
+  listReimbursement(params).then(response => {
     ReimbursementList.value = response.rows
     total.value = response.total
     loading.value = false
@@ -767,6 +1001,251 @@ function handleExport() {
   }, `Reimbursement_${new Date().getTime()}.xlsx`)
 }
 
+/** 计算报销金额 */
+function handleRecalculate() {
+  if (!reimbursementItemId.value) {
+    proxy.$modal.msgError('请先选择报销项目')
+    return
+  }
+  
+  calculating.value = true
+  recalculateReimbursementAmount(reimbursementItemId.value).then(response => {
+    if (response.success) {
+      proxy.$modal.msgSuccess(response.data.message)
+      stats.value = {
+        productCount: response.data.productCount || 0,
+        totalAmount: response.data.totalAmount || 0,
+        paidAmount: response.data.paidAmount || 0
+      }
+      // 重新加载数据
+      if (reimbursementItemId.value) {
+        loadDetailByReimbursementItemId()
+      } else {
+        getList()
+      }
+    } else {
+      proxy.$modal.msgError(response.data.message)
+    }
+  }).catch(error => {
+    console.error('计算失败:', error)
+    proxy.$modal.msgError('计算失败，请稍后重试')
+  }).finally(() => {
+    calculating.value = false
+  })
+}
+
+// 获取未关联的成果列表
+const getUnassociatedList = async () => {
+  associateLoading.value = true
+  try {
+    // 设置归属学院ID（从当前用户或项目获取）
+    associateQueryParams.ownerDepId = form.value.ownerDepId
+    
+    const res = await listUnassociatedProduct(associateQueryParams)
+    unassociatedList.value = res.rows || []
+    associateTotal.value = res.total || 0
+  } catch (error) {
+    console.error('获取未关联成果失败:', error)
+    proxy.$modal.msgError('获取未关联成果列表失败')
+  } finally {
+    associateLoading.value = false
+  }
+}
+
+// 打开关联成果弹窗
+const handleOpenAssociateDialog = () => {
+  // 重置选中状态
+  selectedAchievements.value = []
+  // 重置查询参数
+  resetAssociateQuery()
+  // 打开弹窗
+  associateDialogVisible.value = true
+  // 加载数据
+  getUnassociatedList()
+}
+
+// 关闭关联成果弹窗
+const handleCloseAssociateDialog = () => {
+  // 重置选中状态
+  selectedAchievements.value = []
+  // 重置查询参数
+  resetAssociateQuery()
+}
+
+// 关联成果搜索
+const handleAssociateQuery = () => {
+  associateQueryParams.pageNum = 1
+  getUnassociatedList()
+}
+
+// 重置关联搜索
+const resetAssociateQuery = () => {
+  associateQueryParams.name = null
+  associateQueryParams.category = null
+  associateQueryParams.level = null
+  associateQueryParams.grade = null
+  associateQueryParams.pageNum = 1
+  handleAssociateQuery()
+}
+
+// 弹窗中选择变化
+const handleAssociateSelectionChange = (selection) => {
+  selectedAchievements.value = selection
+}
+
+// 确认关联成果
+const handleConfirmAssociate = async () => {
+  if (selectedAchievements.value.length === 0) {
+    proxy.$modal.msgWarning("请选择要关联的成果")
+    return
+  }
+  
+  // 确认对话框
+  try {
+    await proxy.$modal.confirm(
+      `是否确认关联选中的 ${selectedAchievements.value.length} 个成果？`,
+      '关联确认',
+      {
+        confirmButtonText: '确定',
+        cancelButtonText: '取消',
+        type: 'info'
+      }
+    )
+  } catch {
+    return
+  }
+  
+  associateSubmitLoading.value = true
+  
+  try {
+    const achievementIds = selectedAchievements.value.map(item => item.achievementId)
+    const reimbursementItemIdValue = reimbursementItemId.value
+    
+    const res = await associateAchievements(achievementIds, reimbursementItemIdValue)
+    
+    if (res.code === 200) {
+      proxy.$modal.msgSuccess(`关联成功！已关联 ${res.data?.successCount || achievementIds.length} 个成果`)
+      
+      // 关闭弹窗
+      associateDialogVisible.value = false
+      
+      // 重置选中状态
+      selectedAchievements.value = []
+      
+      // 刷新主列表
+      await getList()
+      
+      // 自动计算报销金额
+      await handleRecalculate()
+    } else {
+      throw new Error(res.msg || "关联失败")
+    }
+  } catch (error) {
+    console.error("关联失败:", error)
+    proxy.$modal.msgError(error.message || "关联失败，请稍后重试")
+  } finally {
+    associateSubmitLoading.value = false
+  }
+}
+
+// 格式化金额
+const formatMoney = (value) => {
+  if (value === null || value === undefined) return '0.00'
+  return parseFloat(value).toFixed(2)
+}
+
+/**
+ * 取消单个成果关联
+ */
+const handleCancelAssociation = async (row) => {
+  // 确认对话框
+  try {
+    await proxy.$modal.confirm(
+      `确定要将成果"${row.name}"从当前报销项目中取消关联吗？`,
+      '取消关联确认',
+      {
+        confirmButtonText: '确定',
+        cancelButtonText: '取消',
+        type: 'warning'
+      }
+    )
+  } catch {
+    return
+  }
+  
+  try {
+    const res = await cancelAssociation(row.achievementId, reimbursementItemId.value)
+    
+    if (res.code === 200) {
+      proxy.$modal.msgSuccess("取消关联成功")
+      // 刷新列表
+      await getList()
+      // 重新计算金额
+      await handleRecalculate()
+    } else {
+      throw new Error(res.msg || "取消关联失败")
+    }
+  } catch (error) {
+    console.error("取消关联失败:", error)
+    proxy.$modal.msgError(error.message || "取消关联失败，请稍后重试")
+  }
+}
+
+/**
+ * 批量取消关联
+ */
+const handleBatchCancelAssociation = async () => {
+  if (ids.value.length === 0) {
+    proxy.$modal.msgWarning("请选择要取消关联的成果")
+    return
+  }
+  
+  try {
+    await proxy.$modal.confirm(
+      `确定要将选中的 ${ids.value.length} 个成果从当前报销项目中取消关联吗？`,
+      '批量取消关联确认',
+      {
+        confirmButtonText: '确定',
+        cancelButtonText: '取消',
+        type: 'warning'
+      }
+    )
+  } catch {
+    return
+  }
+  
+  try {
+    const res = await batchCancelAssociation(ids.value, reimbursementItemId.value)
+    
+    if (res.code === 200) {
+      proxy.$modal.msgSuccess(res.msg)
+      // 清空选中
+      ids.value = []
+      // 刷新列表
+      await getList()
+      // 重新计算金额
+      await handleRecalculate()
+    } else {
+      throw new Error(res.msg || "批量取消关联失败")
+    }
+  } catch (error) {
+    console.error("批量取消关联失败:", error)
+    proxy.$modal.msgError(error.message || "批量取消关联失败，请稍后重试")
+  }
+}
+
 // 初始化加载数据
 getList()
 </script>
+
+<style scoped>
+.dialog-footer {
+  display: flex;
+  justify-content: flex-end;
+  gap: 10px;
+}
+
+.el-tooltip__trigger {
+  display: inline-block;
+}
+</style>
