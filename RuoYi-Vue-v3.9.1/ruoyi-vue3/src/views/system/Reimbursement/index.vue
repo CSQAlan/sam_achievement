@@ -306,22 +306,31 @@
       <span>{{ scope.row.reimbursementRatio ? scope.row.reimbursementRatio + '%' : '-' }}</span>
     </template>
   </el-table-column>
-  <el-table-column label="实际报销金额" align="center" prop="reimbursementFee" width="120">
+  <!-- 实际报销金额 -->
+  <el-table-column label="实际报销金额" align="center" width="120">
     <template #default="scope">
-      <span>{{ scope.row.reimbursementFee ? '¥' + scope.row.reimbursementFee : '-' }}</span>
-    </template>
-  </el-table-column>
-  <el-table-column label="是否报销" align="center" prop="isReimburse" width="100">
-    <template #default="scope">
-      <el-tag v-if="scope.row.isReimburse === '1'" type="success">已报销</el-tag>
-      <el-tag v-else-if="scope.row.isReimburse === '0'" type="info">未报销</el-tag>
+      <span v-if="scope.row.reimbursementFee || scope.row.reimbursement_fee">
+        ¥{{ formatMoney(scope.row.reimbursementFee || scope.row.reimbursement_fee) }}
+      </span>
       <span v-else>-</span>
     </template>
   </el-table-column>
-  <el-table-column label="是否补录" align="center" prop="isSupplement" width="100">
+
+  <!-- 是否报销 -->
+  <el-table-column label="是否报销" align="center" width="100">
     <template #default="scope">
-      <el-tag v-if="scope.row.isSupplement === '1'" type="warning">是</el-tag>
-      <el-tag v-else-if="scope.row.isSupplement === '0'" type="info">否</el-tag>
+      <!-- 兼容 isReimburse 和 is_reimburse -->
+      <el-tag v-if="scope.row.isReimburse === 1 || scope.row.is_reimburse === 1" type="success">已报销</el-tag>
+      <el-tag v-else-if="scope.row.isReimburse === 0 || scope.row.is_reimburse === 0" type="info">未报销</el-tag>
+      <span v-else>-</span>
+    </template>
+  </el-table-column>
+
+  <!-- 是否补录 -->
+  <el-table-column label="是否补录" align="center" width="100">
+    <template #default="scope">
+      <el-tag v-if="scope.row.isSupplement === 1 || scope.row.is_supplement === 1" type="warning">是</el-tag>
+      <el-tag v-else-if="scope.row.isSupplement === 0 || scope.row.is_supplement === 0" type="info">否</el-tag>
       <span v-else>-</span>
     </template>
   </el-table-column>
@@ -807,6 +816,7 @@ const loadDetailByReimbursementItemId = () => {
     total.value = response.total
     loading.value = false
     console.log('加载的详情数据:', ReimbursementList.value)
+    updateStatsFromList(response.rows)  // 添加这行，更新统计卡片
   }).catch(error => {
     console.error('加载失败:', error)
     loading.value = false
@@ -825,6 +835,10 @@ function getList() {
   listReimbursement(params).then(response => {
     ReimbursementList.value = response.rows
     total.value = response.total
+    loading.value = false
+    updateStatsFromList(response.rows)  // 添加这行，更新统计卡片
+  }).catch(error => {
+    console.error("获取列表失败:", error)
     loading.value = false
   })
 }
@@ -1002,36 +1016,39 @@ function handleExport() {
 }
 
 /** 计算报销金额 */
-function handleRecalculate() {
+async function handleRecalculate() {
   if (!reimbursementItemId.value) {
     proxy.$modal.msgError('请先选择报销项目')
     return
   }
   
   calculating.value = true
-  recalculateReimbursementAmount(reimbursementItemId.value).then(response => {
-    if (response.success) {
-      proxy.$modal.msgSuccess(response.data.message)
+  try {
+    const res = await recalculateReimbursementAmount(reimbursementItemId.value)
+    console.log('计算返回结果:', res)
+    
+    if (res.code === 200) {
+      const data = res.data
+      proxy.$modal.msgSuccess(`计算完成！共处理 ${data?.productCount || 0} 个成果，总金额：¥${data?.totalAmount || 0}`)
+      
+      // 直接使用后端返回的统计信息
       stats.value = {
-        productCount: response.data.productCount || 0,
-        totalAmount: response.data.totalAmount || 0,
-        paidAmount: response.data.paidAmount || 0
+        productCount: data?.productCount || 0,
+        totalAmount: (data?.totalAmount || 0).toFixed(2),
+        paidAmount: (data?.paidAmount || 0).toFixed(2)
       }
-      // 重新加载数据
-      if (reimbursementItemId.value) {
-        loadDetailByReimbursementItemId()
-      } else {
-        getList()
-      }
+      
+      // 重新加载列表
+      await loadDetailByReimbursementItemId()
     } else {
-      proxy.$modal.msgError(response.data.message)
+      proxy.$modal.msgError(res.msg || '计算失败')
     }
-  }).catch(error => {
+  } catch (error) {
     console.error('计算失败:', error)
-    proxy.$modal.msgError('计算失败，请稍后重试')
-  }).finally(() => {
+    proxy.$modal.msgError(error.message || '计算失败，请稍后重试')
+  } finally {
     calculating.value = false
-  })
+  }
 }
 
 // 获取未关联的成果列表
@@ -1126,16 +1143,13 @@ const handleConfirmAssociate = async () => {
     if (res.code === 200) {
       proxy.$modal.msgSuccess(`关联成功！已关联 ${res.data?.successCount || achievementIds.length} 个成果`)
       
-      // 关闭弹窗
       associateDialogVisible.value = false
-      
-      // 重置选中状态
       selectedAchievements.value = []
       
-      // 刷新主列表
-      await getList()
+      // 刷新列表和统计
+      await loadDetailByReimbursementItemId()  // 使用这个方法，它会同时更新列表和统计
       
-      // 自动计算报销金额
+      // 可选：自动计算金额
       await handleRecalculate()
     } else {
       throw new Error(res.msg || "关联失败")
@@ -1152,6 +1166,45 @@ const handleConfirmAssociate = async () => {
 const formatMoney = (value) => {
   if (value === null || value === undefined) return '0.00'
   return parseFloat(value).toFixed(2)
+}
+
+/**
+ * 从成果列表计算统计信息
+ */
+const updateStatsFromList = (list) => {
+  if (!list || list.length === 0) {
+    stats.value = {
+      productCount: 0,
+      totalAmount: 0,
+      paidAmount: 0
+    }
+    return
+  }
+  
+  let totalAmount = 0
+  let paidAmount = 0
+  
+  list.forEach(item => {
+    // 获取需报销金额（报名费）或实际报销金额
+    // 根据业务，总金额应该是需报销金额的总和
+    const fee = parseFloat(item.fee) || 0  // 需报销金额（报名费）
+    totalAmount += fee
+    
+    // 已发放金额：已报销的成果的实际报销金额
+    const isReimburse = item.isReimburse === '1' || item.is_reimburse === '1'
+    if (isReimburse) {
+      const reimbursementFee = parseFloat(item.reimbursementFee) || parseFloat(item.reimbursement_fee) || 0
+      paidAmount += reimbursementFee
+    }
+  })
+  
+  stats.value = {
+    productCount: list.length,
+    totalAmount: totalAmount.toFixed(2),
+    paidAmount: paidAmount.toFixed(2)
+  }
+  
+  console.log('统计已更新:', stats.value)
 }
 
 /**
@@ -1178,9 +1231,8 @@ const handleCancelAssociation = async (row) => {
     
     if (res.code === 200) {
       proxy.$modal.msgSuccess("取消关联成功")
-      // 刷新列表
-      await getList()
-      // 重新计算金额
+      // 刷新列表和统计
+      await loadDetailByReimbursementItemId()
       await handleRecalculate()
     } else {
       throw new Error(res.msg || "取消关联失败")
@@ -1221,9 +1273,8 @@ const handleBatchCancelAssociation = async () => {
       proxy.$modal.msgSuccess(res.msg)
       // 清空选中
       ids.value = []
-      // 刷新列表
-      await getList()
-      // 重新计算金额
+      // 刷新列表和统计
+      await loadDetailByReimbursementItemId()
       await handleRecalculate()
     } else {
       throw new Error(res.msg || "批量取消关联失败")

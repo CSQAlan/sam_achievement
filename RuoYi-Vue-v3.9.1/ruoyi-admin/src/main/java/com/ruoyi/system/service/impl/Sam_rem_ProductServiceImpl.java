@@ -4,6 +4,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.HashMap;
 import java.math.BigDecimal;
+import java.time.Year;
 import com.ruoyi.common.utils.DateUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
@@ -76,6 +77,12 @@ public class Sam_rem_ProductServiceImpl implements ISam_rem_ProductService
     @Override
     public int insertSam_rem_Product(Sam_rem_Product sam_rem_Product)
     {
+        // 在插入前设置 year
+        if (sam_rem_Product.getYear() == null) {
+            // 设置当前年份为 Long 类型
+            sam_rem_Product.setYear(Long.valueOf(Year.now().getValue()));
+        }
+        
         sam_rem_Product.setCreateTime(DateUtils.getNowDate());
         int rows = sam_rem_ProductMapper.insertSam_rem_Product(sam_rem_Product);
         insertSamReimbursementItems(sam_rem_Product);

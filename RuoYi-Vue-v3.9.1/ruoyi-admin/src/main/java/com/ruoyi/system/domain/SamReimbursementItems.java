@@ -52,6 +52,39 @@ public class SamReimbursementItems extends BaseEntity
     /** 删除标记（0存在 2删除） */
     private String delFlag;
 
+    /** 实际关联成果数量（用于列表显示） */
+    private Integer actualAmount;
+
+    /** 实际总金额（用于列表显示） */
+    private Double actualTotalFee;
+
+    /** 实际已发放金额（用于列表显示） */
+    private Double actualPaidFee;
+
+    public Integer getActualAmount() {
+        return actualAmount;
+    }
+
+    public void setActualAmount(Integer actualAmount) {
+        this.actualAmount = actualAmount;
+    }
+
+    public Double getActualTotalFee() {
+        return actualTotalFee;
+    }
+
+    public void setActualTotalFee(Double actualTotalFee) {
+        this.actualTotalFee = actualTotalFee;
+    }
+
+    public Double getActualPaidFee() {
+        return actualPaidFee;
+    }
+
+    public void setActualPaidFee(Double actualPaidFee) {
+        this.actualPaidFee = actualPaidFee;
+    }
+
     public void setId(Long id) 
     {
         this.id = id;
@@ -153,6 +186,9 @@ public class SamReimbursementItems extends BaseEntity
             .append("amount", getAmount())
             .append("ownerDepId", getOwnerDepId())
             .append("status", getStatus())
+            .append("actualAmount", getActualAmount())
+            .append("actualTotalFee", getActualTotalFee())
+            .append("actualPaidFee", getActualPaidFee())
             .append("createBy", getCreateBy())
             .append("createTime", getCreateTime())
             .append("updateBy", getUpdateBy())
