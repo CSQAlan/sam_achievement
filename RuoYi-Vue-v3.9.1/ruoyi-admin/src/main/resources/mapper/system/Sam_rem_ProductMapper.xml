@@ -408,4 +408,58 @@ PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
             #{id}
         </foreach>
     </update>
+
+    <!-- 查询成果的参赛选手 -->
+    <select id="selectParticipantsByAchievementId" resultType="java.util.HashMap">
+        SELECT 
+            p.id,
+            p.student_id as studentId,
+            p.order_no as orderNo,
+            p.manager,
+            s.name as studentName,
+            s.no as studentNo,
+            s.class_name as className,
+            d.dept_name as depName
+        FROM sam_participant p
+        LEFT JOIN sam_student s ON p.student_id = s.student_id
+        LEFT JOIN sys_dept d ON s.dep_id = d.dept_id
+        WHERE p.achievement_id = #{achievementId}
+          AND p.del_flag = '0'
+        ORDER BY p.order_no
+    </select>
+
+    <!-- 查询成果的指导老师 -->
+    <select id="selectAdvisorsByAchievementId" resultType="java.util.HashMap">
+        SELECT 
+            a.id,
+            a.teacher_id as teacherId,
+            a.order_no as orderNo,
+            a.manager,
+            t.name as teacherName,
+            t.no as teacherNo,
+            d.dept_name as depName
+        FROM sam_advisor a
+        LEFT JOIN sam_teacher t ON a.teacher_id = t.teacher_id
+        LEFT JOIN sys_dept d ON t.dep_id = d.dept_id
+        WHERE a.achievement_id = #{achievementId}
+          AND a.del_flag = '0'
+        ORDER BY a.order_no
+    </select>
+
+    <!-- 查询成果的附件 -->
+    <select id="selectAttachmentsByAchievementId" resultType="java.util.HashMap">
+        SELECT 
+            id,
+            type,
+            file_type as fileType,
+            origin_name as originName,
+            store_name as storeName,
+            file_path as filePath,
+            file_url as fileUrl,
+            file_size as fileSize
+        FROM sam_attachment
+        WHERE achievement_id = #{achievementId}
+          AND del_flag = '0'
+        ORDER BY upload_time DESC
+    </select>
 </mapper>

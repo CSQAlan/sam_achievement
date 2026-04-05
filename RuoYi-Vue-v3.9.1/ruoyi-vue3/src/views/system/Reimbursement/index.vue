@@ -339,8 +339,9 @@
 
 
 
-      <el-table-column label="操作" align="center" width="200" class-name="small-padding fixed-width">
+      <el-table-column label="操作" align="center" width="280" class-name="small-padding fixed-width">
         <template #default="scope">
+          <el-button link type="primary" icon="View" @click="handleViewDetail(scope.row)">详情</el-button>
           <el-button link type="primary" icon="Edit" @click="handleUpdate(scope.row)" v-hasPermi="['system:Reimbursement:edit']">修改</el-button>
           <el-button link type="danger" icon="Delete" @click="handleDelete(scope.row)" v-hasPermi="['system:Reimbursement:remove']">删除</el-button>
           <!-- 取消关联按钮 - 仅当项目未确认时显示 -->
@@ -658,12 +659,131 @@
         </div>
       </template>
     </el-dialog>
+
+    <!-- 成果详情抽屉 -->
+    <el-drawer
+      v-model="detailDrawerVisible"
+      title="成果详细信息"
+      direction="rtl"
+      size="60%"
+      :close-on-click-modal="false"
+      destroy-on-close
+    >
+      <div v-loading="detailLoading" class="drawer-content">
+        <!-- 基础信息区域 -->
+        <div class="detail-section">
+          <h3 class="section-title">
+            <el-icon><Document /></el-icon>
+            基础信息
+          </h3>
+          <el-descriptions :column="2" border>
+            <el-descriptions-item label="成果ID">{{ currentAchievement.achievementId || '-' }}</el-descriptions-item>
+            <el-descriptions-item label="作品名称">{{ currentAchievement.name || '-' }}</el-descriptions-item>
+            <el-descriptions-item label="团队名称">{{ currentAchievement.teamName || '-' }}</el-descriptions-item>
+            <el-descriptions-item label="届次">{{ currentAchievement.sessionId || '-' }}</el-descriptions-item>
+            <el-descriptions-item label="类别">
+              <dict-tag :options="achievement_category" :value="currentAchievement.category"/>
+            </el-descriptions-item>
+            <el-descriptions-item label="获奖级别">
+              <dict-tag :options="award_level_type" :value="currentAchievement.level"/>
+            </el-descriptions-item>
+            <el-descriptions-item label="获奖等级">
+              <dict-tag :options="award_rank" :value="currentAchievement.grade"/>
+            </el-descriptions-item>
+            <el-descriptions-item label="赛道">{{ currentAchievement.track || '-' }}</el-descriptions-item>
+            <el-descriptions-item label="证书编号">{{ currentAchievement.certificateNo || '-' }}</el-descriptions-item>
+            <el-descriptions-item label="组别">
+              <dict-tag :options="group_type" :value="currentAchievement.groupId"/>
+            </el-descriptions-item>
+            <el-descriptions-item label="获奖时间">{{ parseTime(currentAchievement.awardTime, '{y}-{m}-{d}') }}</el-descriptions-item>
+            <el-descriptions-item label="报名费">{{ currentAchievement.fee ? '¥' + currentAchievement.fee : '-' }}</el-descriptions-item>
+            <el-descriptions-item label="报销比例">{{ currentAchievement.reimbursementRatio ? currentAchievement.reimbursementRatio + '%' : '-' }}</el-descriptions-item>
+            <el-descriptions-item label="实际报销金额">{{ currentAchievement.reimbursementFee ? '¥' + currentAchievement.reimbursementFee : '-' }}</el-descriptions-item>
+            <el-descriptions-item label="是否报销">
+              <el-tag v-if="currentAchievement.isReimburse === '1' || currentAchievement.is_reimburse === '1'" type="success">已报销</el-tag>
+              <el-tag v-else-if="currentAchievement.isReimburse === '0' || currentAchievement.is_reimburse === '0'" type="info">未报销</el-tag>
+              <span v-else>-</span>
+            </el-descriptions-item>
+            <el-descriptions-item label="报销时间">{{ parseTime(currentAchievement.reimbursementDate, '{y}-{m}-{d}') }}</el-descriptions-item>
+            <el-descriptions-item label="备注" :span="2">{{ currentAchievement.remark || '-' }}</el-descriptions-item>
+          </el-descriptions>
+        </div>
+
+        <!-- 参赛选手信息 -->
+        <div class="detail-section">
+          <h3 class="section-title">
+            <el-icon><User /></el-icon>
+            参赛选手
+          </h3>
+          <el-table :data="participantList" border stripe v-loading="participantLoading" size="small">
+            <el-table-column label="序号" type="index" width="60" align="center" />
+            <el-table-column label="学生姓名" prop="studentName" min-width="120" />
+            <el-table-column label="学号" prop="studentNo" min-width="150" />
+            <el-table-column label="学院" prop="depName" min-width="150" />
+            <el-table-column label="班级" prop="className" min-width="120" />
+            <el-table-column label="是否负责人" width="100" align="center">
+              <template #default="scope">
+                <el-tag v-if="scope.row.manager === 1" type="success">是</el-tag>
+                <el-tag v-else type="info">否</el-tag>
+              </template>
+            </el-table-column>
+          </el-table>
+          <div v-if="participantList.length === 0" class="empty-tip">暂无参赛选手信息</div>
+        </div>
+
+        <!-- 指导老师信息 -->
+        <div class="detail-section">
+          <h3 class="section-title">
+            <el-icon><Avatar /></el-icon>
+            指导老师
+          </h3>
+          <el-table :data="advisorList" border stripe v-loading="advisorLoading" size="small">
+            <el-table-column label="序号" type="index" width="60" align="center" />
+            <el-table-column label="教师姓名" prop="teacherName" min-width="120" />
+            <el-table-column label="工号" prop="teacherNo" min-width="150" />
+            <el-table-column label="学院" prop="depName" min-width="150" />
+            <el-table-column label="是否负责人" width="100" align="center">
+              <template #default="scope">
+                <el-tag v-if="scope.row.manager === 1" type="success">是</el-tag>
+                <el-tag v-else type="info">否</el-tag>
+              </template>
+            </el-table-column>
+          </el-table>
+          <div v-if="advisorList.length === 0" class="empty-tip">暂无指导老师信息</div>
+        </div>
+
+        <!-- 附件预览区域 -->
+        <div class="detail-section">
+          <h3 class="section-title">
+            <el-icon><Paperclip /></el-icon>
+            附件列表
+          </h3>
+          <div class="attachment-list">
+            <div v-for="(file, index) in attachmentList" :key="index" class="attachment-item">
+              <el-icon><Link /></el-icon>
+              <span class="file-name">{{ file.originName || file.fileName }}</span>
+              <span class="file-type">({{ file.fileType }})</span>
+              <el-button type="primary" link size="small" @click="previewAttachment(file)">预览</el-button>
+              <el-button type="primary" link size="small" @click="downloadAttachment(file)">下载</el-button>
+            </div>
+            <div v-if="attachmentList.length === 0" class="empty-tip">暂无附件</div>
+          </div>
+        </div>
+
+        <!-- 底部按钮 -->
+        <div class="drawer-footer">
+          <el-button @click="detailDrawerVisible = false">关 闭</el-button>
+        </div>
+      </div>
+    </el-drawer>
   </div>
 </template>
 
 <script setup name="Reimbursement">
 import { ref, reactive, toRefs, getCurrentInstance, onMounted, computed } from 'vue'
-import { listReimbursement, getReimbursement, delReimbursement, addReimbursement, updateReimbursement, recalculateReimbursementAmount, listUnassociatedProduct, associateAchievements, cancelAssociation, batchCancelAssociation } from "@/api/system/Reimbursement"
+import { listReimbursement, getReimbursement, delReimbursement, addReimbursement, updateReimbursement, recalculateReimbursementAmount, listUnassociatedProduct, associateAchievements, cancelAssociation, batchCancelAssociation, getAchievementParticipants, getAchievementAdvisors, getAchievementAttachments } from "@/api/system/Reimbursement"
+// 导入图标
+import { View, Document, User, Avatar, Paperclip, Link } from '@element-plus/icons-vue'
 import { useRoute } from 'vue-router'
 
 
@@ -703,6 +823,113 @@ const selectedAchievements = ref([])           // 选中的成果列表
 
 // 当前项目状态（需要从路由或接口获取）
 const currentProjectStatus = ref('0')          // '0'-进行中(未确认), '1'-已完成(已确认)
+
+// 详情抽屉相关变量
+const detailDrawerVisible = ref(false)
+const detailLoading = ref(false)
+const currentAchievement = ref({})
+const participantList = ref([])
+const advisorList = ref([])
+const attachmentList = ref([])
+const participantLoading = ref(false)
+const advisorLoading = ref(false)
+
+/**
+ * 查看成果详情
+ */
+const handleViewDetail = async (row) => {
+  detailDrawerVisible.value = true
+  detailLoading.value = true
+  
+  // 设置基础信息
+  currentAchievement.value = row
+  
+  try {
+    // 并行加载选手、老师、附件信息
+    await Promise.all([
+      loadParticipants(row.achievementId),
+      loadAdvisors(row.achievementId),
+      loadAttachments(row.achievementId)
+    ])
+  } catch (error) {
+    console.error('加载详情失败:', error)
+    proxy.$modal.msgError('加载详情失败')
+  } finally {
+    detailLoading.value = false
+  }
+}
+
+/**
+ * 加载参赛选手
+ */
+const loadParticipants = async (achievementId) => {
+  participantLoading.value = true
+  try {
+    const res = await getAchievementParticipants(achievementId)
+    participantList.value = res.data || res.rows || []
+  } catch (error) {
+    console.error('加载选手失败:', error)
+    participantList.value = []
+  } finally {
+    participantLoading.value = false
+  }
+}
+
+/**
+ * 加载指导老师
+ */
+const loadAdvisors = async (achievementId) => {
+  advisorLoading.value = true
+  try {
+    const res = await getAchievementAdvisors(achievementId)
+    advisorList.value = res.data || res.rows || []
+  } catch (error) {
+    console.error('加载老师失败:', error)
+    advisorList.value = []
+  } finally {
+    advisorLoading.value = false
+  }
+}
+
+/**
+ * 加载附件
+ */
+const loadAttachments = async (achievementId) => {
+  try {
+    const res = await getAchievementAttachments(achievementId)
+    attachmentList.value = res.data || res.rows || []
+  } catch (error) {
+    console.error('加载附件失败:', error)
+    attachmentList.value = []
+  }
+}
+
+/**
+ * 预览附件
+ */
+const previewAttachment = (file) => {
+  const url = file.fileUrl || file.url
+  if (url) {
+    window.open(url, '_blank')
+  } else {
+    proxy.$modal.msgWarning('无法预览该文件')
+  }
+}
+
+/**
+ * 下载附件
+ */
+const downloadAttachment = (file) => {
+  const url = file.fileUrl || file.url
+  if (url) {
+    const a = document.createElement('a')
+    a.href = url
+    a.download = file.originName || file.fileName
+    a.click()
+  } else {
+    proxy.$modal.msgWarning('无法下载该文件')
+  }
+}
 
 // 关联按钮是否禁用（项目状态为已确认时禁用）
 const associateButtonDisabled = computed(() => {
@@ -1298,5 +1525,73 @@ getList()
 
 .el-tooltip__trigger {
   display: inline-block;
+}
+
+/* 抽屉样式 */
+.drawer-content {
+  padding: 0 20px;
+  height: 100%;
+  overflow-y: auto;
+}
+
+.detail-section {
+  margin-bottom: 30px;
+}
+
+.section-title {
+  font-size: 16px;
+  font-weight: 600;
+  margin-bottom: 15px;
+  padding-bottom: 8px;
+  border-bottom: 2px solid #409eff;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  color: #303133;
+}
+
+.section-title .el-icon {
+  font-size: 18px;
+  color: #409eff;
+}
+
+.empty-tip {
+  text-align: center;
+  padding: 20px;
+  color: #909399;
+  background: #f5f7fa;
+  border-radius: 4px;
+}
+
+.attachment-list {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.attachment-item {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 10px;
+  background: #f5f7fa;
+  border-radius: 4px;
+}
+
+.attachment-item .file-name {
+  flex: 1;
+  color: #303133;
+}
+
+.attachment-item .file-type {
+  color: #909399;
+  font-size: 12px;
+}
+
+.drawer-footer {
+  text-align: center;
+  padding: 20px 0;
+  border-top: 1px solid #e4e7ed;
+  margin-top: 20px;
 }
 </style>

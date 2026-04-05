@@ -225,5 +225,35 @@ public TableDataInfo list(Sam_rem_Product sam_rem_Product)
             return AjaxResult.error(e.getMessage());
         }
     }
+
+    /**
+     * 获取成果的参赛选手
+     */
+    @PreAuthorize("@ss.hasPermi('system:Reimbursement:query')")
+    @GetMapping("/participants/{achievementId}")
+    public AjaxResult getParticipants(@PathVariable("achievementId") String achievementId) {
+        Long id = Long.valueOf(achievementId);
+        return success(sam_rem_ProductService.selectParticipantsByAchievementId(id));
+    }
+
+    /**
+     * 获取成果的指导老师
+     */
+    @PreAuthorize("@ss.hasPermi('system:Reimbursement:query')")
+    @GetMapping("/advisors/{achievementId}")
+    public AjaxResult getAdvisors(@PathVariable("achievementId") String achievementId) {
+        Long id = Long.valueOf(achievementId);
+        return success(sam_rem_ProductService.selectAdvisorsByAchievementId(id));
+    }
+
+    /**
+     * 获取成果的附件
+     */
+    @PreAuthorize("@ss.hasPermi('system:Reimbursement:query')")
+    @GetMapping("/attachments/{achievementId}")
+    public AjaxResult getAttachments(@PathVariable("achievementId") String achievementId) {
+        Long id = Long.valueOf(achievementId);
+        return success(sam_rem_ProductService.selectAttachmentsByAchievementId(id));
+    }
 }
 

@@ -473,6 +473,21 @@ public class Sam_rem_ProductServiceImpl implements ISam_rem_ProductService
         samReimbursementItemsMapper.updateSamReimbursementItems(updateProject);
     }
 
+    @Override
+    public List<Map<String, Object>> selectParticipantsByAchievementId(Long achievementId) {
+        return sam_rem_ProductMapper.selectParticipantsByAchievementId(achievementId);
+    }
+
+    @Override
+    public List<Map<String, Object>> selectAdvisorsByAchievementId(Long achievementId) {
+        return sam_rem_ProductMapper.selectAdvisorsByAchievementId(achievementId);
+    }
+
+    @Override
+    public List<Map<String, Object>> selectAttachmentsByAchievementId(Long achievementId) {
+        return sam_rem_ProductMapper.selectAttachmentsByAchievementId(achievementId);
+    }
+
 } 
 
 

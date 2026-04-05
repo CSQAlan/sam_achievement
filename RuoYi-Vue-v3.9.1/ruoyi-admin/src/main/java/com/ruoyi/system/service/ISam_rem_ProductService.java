@@ -127,4 +127,28 @@ public interface ISam_rem_ProductService
      */
     public Map<String, Object> batchCancelAssociation(List<String> achievementIds, String reimbursementItemId);
 
+    /**
+     * 查询成果的参赛选手
+     * 
+     * @param achievementId 成果ID
+     * @return 参赛选手列表
+     */
+    public List<Map<String, Object>> selectParticipantsByAchievementId(Long achievementId);
+
+    /**
+     * 查询成果的指导老师
+     * 
+     * @param achievementId 成果ID
+     * @return 指导老师列表
+     */
+    public List<Map<String, Object>> selectAdvisorsByAchievementId(Long achievementId);
+
+    /**
+     * 查询成果的附件
+     * 
+     * @param achievementId 成果ID
+     * @return 附件列表
+     */
+    public List<Map<String, Object>> selectAttachmentsByAchievementId(Long achievementId);
+
 } 

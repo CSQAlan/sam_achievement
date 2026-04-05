@@ -164,5 +164,29 @@ public interface Sam_rem_ProductMapper
      */
     public int batchCancelAssociation(@Param("list") List<String> achievementIds);
 
+    /**
+     * 查询成果的参赛选手
+     * 
+     * @param achievementId 成果ID
+     * @return 参赛选手列表
+     */
+    public List<Map<String, Object>> selectParticipantsByAchievementId(@Param("achievementId") Long achievementId);
+
+    /**
+     * 查询成果的指导老师
+     * 
+     * @param achievementId 成果ID
+     * @return 指导老师列表
+     */
+    public List<Map<String, Object>> selectAdvisorsByAchievementId(@Param("achievementId") Long achievementId);
+
+    /**
+     * 查询成果的附件
+     * 
+     * @param achievementId 成果ID
+     * @return 附件列表
+     */
+    public List<Map<String, Object>> selectAttachmentsByAchievementId(@Param("achievementId") Long achievementId);
+
 } 
 
