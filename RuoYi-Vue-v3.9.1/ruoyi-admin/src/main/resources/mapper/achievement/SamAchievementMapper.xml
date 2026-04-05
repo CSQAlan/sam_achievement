@@ -263,7 +263,9 @@
     </select>
 
     <select id="checkCertificateNoUnique" resultMap="SamAchievementResult">
-        <include refid="selectSamAchievementVo"/>
+        select a.achievement_id, a.certificate_no
+        from sam_achievement a
+        left join sam_competition_session s on a.session_id = s.session_id
         where a.certificate_no = #{certificateNo}
         <if test="competitionId != null and competitionId != ''">and s.competition_id = #{competitionId}</if>
         limit 1

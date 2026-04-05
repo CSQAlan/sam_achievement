@@ -129,7 +129,7 @@ public class SamStudentController extends BaseController
     /**
      * 修改学生档案
      */
-    @PreAuthorize("@ss.hasPermi('student:student:edit')")
+    @PreAuthorize("@ss.hasAnyPermi('student:student:edit,achievement:manage:list,achievement:manage:participated:list,achievement:manage:guided:list')")
     @Log(title = "学生档案", businessType = BusinessType.UPDATE)
     @BizAudit(bizType = "student_archive", bizName = "修改学生档案", opType = BizAuditOpType.UPDATE, handler = "studentBizAuditHandler", async = false)
     @PutMapping

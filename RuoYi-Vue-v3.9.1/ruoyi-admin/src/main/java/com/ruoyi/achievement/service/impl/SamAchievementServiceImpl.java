@@ -197,29 +197,14 @@ public class SamAchievementServiceImpl implements ISamAchievementService
         validatePDFAttachments(samAchievement);
 
         // 3. 自动提取年份
-        if (StringUtils.isNotEmpty(samAchievement.getOwnerDepId())) {
-            samAchievement.setOwnerDepId(normalizeDeptId(samAchievement.getOwnerDepId()));
+        if (samAchievement.getAwardTime() != null) {
+            Calendar cal = Calendar.getInstance();
+            cal.setTime(samAchievement.getAwardTime());
+            samAchievement.setYear((long) cal.get(Calendar.YEAR));
         }
 
-        // 4. 设置所属学院 (选取参赛选手第一个负责人的所属学院)
-        if (samAchievement.getSamAchievementParticipantList() != null) {
-            for (SamAchievementParticipant participant : samAchievement.getSamAchievementParticipantList()) {
-                if ("1".equals(participant.getManager())) {
-                    if (StringUtils.isNotEmpty(participant.getStudentId())) {
-                        SamStudent query = new SamStudent();
-                        query.setNo(participant.getStudentId());
-                        List<SamStudent> students = samStudentService.selectSamStudentList(query);
-                        if (students != null && !students.isEmpty() && StringUtils.isNotEmpty(students.get(0).getSchool())) {
-                            samAchievement.setOwnerDepId(normalizeDeptId(students.get(0).getSchool()));
-                        }
-                    }
-                    if (StringUtils.isEmpty(samAchievement.getOwnerDepId()) && StringUtils.isNotEmpty(participant.getSchool())) {
-                        samAchievement.setOwnerDepId(normalizeDeptId(participant.getSchool()));
-                    }
-                    break;
-                }
-            }
-        }
+        // 4. 设置归属学院 (owner_dep_id)
+        applyDefaultOwnerDepId(samAchievement);
 
         samAchievement.setCreateTime(DateUtils.getNowDate());
 
@@ -238,6 +223,88 @@ public class SamAchievementServiceImpl implements ISamAchievementService
         return rows;
     }
 
+    private void applyDefaultOwnerDepId(SamAchievement samAchievement)
+    {
+        if (StringUtils.isNotEmpty(samAchievement.getOwnerDepId()))
+        {
+            samAchievement.setOwnerDepId(normalizeDeptId(samAchievement.getOwnerDepId()));
+            if (StringUtils.isNotEmpty(samAchievement.getOwnerDepId())) {
+                return;
+            }
+        }
+
+        // 尝试从参与人（负责人）中获取学院
+        List<SamAchievementParticipant> participantList = samAchievement.getSamAchievementParticipantList();
+        if (participantList != null && !participantList.isEmpty())
+        {
+            SamAchievementParticipant managerParticipant = null;
+            for (SamAchievementParticipant participant : participantList)
+            {
+                if ("1".equals(StringUtils.trim(participant.getManager())))
+                {
+                    managerParticipant = participant;
+                    break;
+                }
+            }
+
+            if (managerParticipant == null)
+            {
+                managerParticipant = participantList.get(0);
+            }
+
+            String ownerDepId = resolveOwnerDepIdFromParticipant(managerParticipant);
+            if (StringUtils.isNotEmpty(ownerDepId))
+            {
+                samAchievement.setOwnerDepId(ownerDepId);
+                return;
+            }
+        }
+
+        // 兜底方案：从当前登录人的部门获取学院
+        try {
+            Long userDeptId = SecurityUtils.getDeptId();
+            if (userDeptId != null) {
+                Long collegeId = deptService.getCollegeId(userDeptId);
+                if (collegeId != null) {
+                    samAchievement.setOwnerDepId(String.valueOf(collegeId));
+                }
+            }
+        } catch (Exception e) {
+            // 忽略异常
+        }
+    }
+
+    private String resolveOwnerDepIdFromParticipant(SamAchievementParticipant participant)
+    {
+        if (participant == null)
+        {
+            return null;
+        }
+
+        if (StringUtils.isNotEmpty(participant.getStudentId()))
+        {
+            SamStudent query = new SamStudent();
+            query.setNo(participant.getStudentId().trim());
+            List<SamStudent> students = samStudentService.selectSamStudentList(query);
+            if (students != null && !students.isEmpty())
+            {
+                String ownerDepId = normalizeDeptId(students.get(0).getSchool());
+                if (StringUtils.isNotEmpty(ownerDepId))
+                {
+                    return ownerDepId;
+                }
+            }
+        }
+
+        String ownerDepId = normalizeDeptId(participant.getSchool());
+        if (StringUtils.isNotEmpty(ownerDepId))
+        {
+            return ownerDepId;
+        }
+
+        return null;
+    }
+
     private String normalizeDeptId(String schoolValue)
     {
         if (StringUtils.isEmpty(schoolValue))
@@ -246,28 +313,38 @@ public class SamAchievementServiceImpl implements ISamAchievementService
         }
 
         String normalized = schoolValue.trim();
+        String foundId = null;
+
         if (normalized.matches("\\d+"))
         {
-            return normalized;
-        }
-
-        SysDept query = new SysDept();
-        query.setDeptName(normalized);
-        List<SysDept> deptList = deptService.selectDeptList(query);
-        if (deptList == null || deptList.isEmpty())
-        {
-            return null;
-        }
-
-        for (SysDept dept : deptList)
-        {
-            if (dept != null && StringUtils.equals(normalized, dept.getDeptName()) && dept.getDeptId() != null)
+            foundId = normalized;
+        } else {
+            SysDept query = new SysDept();
+            query.setDeptName(normalized);
+            List<SysDept> deptList = deptService.selectDeptList(query);
+            if (deptList != null && !deptList.isEmpty())
             {
-                return String.valueOf(dept.getDeptId());
+                for (SysDept dept : deptList)
+                {
+                    if (dept != null && StringUtils.equals(normalized, dept.getDeptName()) && dept.getDeptId() != null)
+                    {
+                        foundId = String.valueOf(dept.getDeptId());
+                        break;
+                    }
+                }
             }
         }
 
-        return null;
+        // 统一向上追溯到学院级 (parent_id = 100)
+        return getCollegeIdByAnyDeptId(foundId);
+    }
+
+    private String getCollegeIdByAnyDeptId(String deptIdStr) {
+        if (StringUtils.isEmpty(deptIdStr) || !deptIdStr.matches("\\d+")) {
+            return null;
+        }
+        Long collegeId = deptService.getCollegeId(Long.valueOf(deptIdStr));
+        return collegeId != null ? String.valueOf(collegeId) : null;
     }
 
     private void applyControlledReviewFields(SamAchievement incoming, SamAchievement existing)
@@ -1197,4 +1274,5 @@ public class SamAchievementServiceImpl implements ISamAchievementService
         return samAchievementMapper.selectTrackList(competitionId, sessionId);
     }
 }
+
 

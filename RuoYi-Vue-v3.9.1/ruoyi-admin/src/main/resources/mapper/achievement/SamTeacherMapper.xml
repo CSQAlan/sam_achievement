@@ -16,10 +16,8 @@ PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
 
     <sql id="selectSamTeacherVo">
         select t.id, t.teacher_name, t.no, t.school, t.department, 
-               d1.dept_name as school_name, d2.dept_name as department_name
+               t.school as school_name, t.department as department_name
         from sam_teacher t
-        left join sys_dept d1 on t.school = d1.dept_id
-        left join sys_dept d2 on t.department = d2.dept_id
     </sql>
 
     <select id="selectSamTeacherList" parameterType="SamTeacher" resultMap="SamTeacherResult">
@@ -28,8 +26,8 @@ PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
             <if test="id != null "> and t.id = #{id}</if>
             <if test="teacherName != null  and teacherName != ''"> and t.teacher_name like concat('%', #{teacherName}, '%')</if>
             <if test="no != null  and no != ''"> and t.no = #{no}</if>
-            <if test="school != null  and school != ''"> and d1.dept_name like concat('%', #{school}, '%')</if>
-            <if test="department != null  and department != ''"> and d2.dept_name like concat('%', #{department}, '%')</if>
+            <if test="school != null  and school != ''"> and t.school like concat('%', #{school}, '%')</if>
+            <if test="department != null  and department != ''"> and t.department like concat('%', #{department}, '%')</if>
         </where>
     </select>
     
@@ -77,7 +75,8 @@ PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
     </delete>
 
     <select id="selectSamTeacherByNo" parameterType="String" resultMap="SamTeacherResult">
-        <include refid="selectSamTeacherVo"/>
+        select t.id, t.no
+        from sam_teacher t
         where no = #{no}
     </select>
 </mapper>

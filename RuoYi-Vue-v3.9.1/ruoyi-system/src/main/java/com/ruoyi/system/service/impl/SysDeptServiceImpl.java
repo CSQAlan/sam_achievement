@@ -439,6 +439,50 @@ public class SysDeptServiceImpl implements ISysDeptService
     }
 
     /**
+     * 根据部门ID获取学院ID (parentId为100的部门)
+     *
+     * @param deptId 部门ID
+     * @return 学院ID
+     */
+    @Override
+    public Long getCollegeId(Long deptId)
+    {
+        if (StringUtils.isNull(deptId))
+        {
+            return null;
+        }
+        SysDept dept = deptMapper.selectDeptById(deptId);
+        if (StringUtils.isNull(dept))
+        {
+            return null;
+        }
+
+        // 如果当前部门的父级就是100，说明它自己就是学院
+        if (dept.getParentId() != null && dept.getParentId() == 100L)
+        {
+            return dept.getDeptId();
+        }
+
+        // 否则从ancestors中寻找。ancestors格式通常为: 0,100,学院ID,专业ID
+        String ancestors = dept.getAncestors();
+        if (StringUtils.isNotEmpty(ancestors))
+        {
+            String[] ids = ancestors.split(",");
+            for (int i = 0; i < ids.length; i++)
+            {
+                // 找到100后，下一个就是学院ID
+                if ("100".equals(ids[i]) && (i + 1) < ids.length)
+                {
+                    return Long.valueOf(ids[i + 1]);
+                }
+            }
+        }
+        
+        // 兜底方案：如果没找到100（说明层级结构不标准），则直接返回当前部门ID
+        return dept.getDeptId();
+    }
+
+    /**
      * 递归列表
      */
     private void recursionFn(List<SysDept> list, SysDept t)
