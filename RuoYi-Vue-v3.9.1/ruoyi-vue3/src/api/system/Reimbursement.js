@@ -88,37 +88,6 @@ export function batchCancelAssociation(achievementIds, reimbursementItemId) {
   })
 }
 
-// 获取成果详情（包含选手、老师、附件）
-export function getAchievementDetail(achievementId) {
-  return request({
-    url: '/system/Reimbursement/detail/' + achievementId,
-    method: 'get'
-  })
-}
-
-// 获取成果的参赛选手
-export function getAchievementParticipants(achievementId) {
-  return request({
-    url: '/system/Reimbursement/participants/' + achievementId,
-    method: 'get'
-  })
-}
-
-// 获取成果的指导老师
-export function getAchievementAdvisors(achievementId) {
-  return request({
-    url: '/system/Reimbursement/advisors/' + achievementId,
-    method: 'get'
-  })
-}
-
-// 获取成果的附件
-export function getAchievementAttachments(achievementId) {
-  return request({
-    url: '/system/Reimbursement/attachments/' + achievementId,
-    method: 'get'
-  })
-}
 
 // 获取报销项目信息
 export function getReimbursementProjectInfo(id) {
