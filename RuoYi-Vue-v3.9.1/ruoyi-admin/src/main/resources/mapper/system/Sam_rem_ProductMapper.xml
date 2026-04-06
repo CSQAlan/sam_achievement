@@ -118,6 +118,7 @@ PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
     <select id="selectSam_rem_ProductList" parameterType="Sam_rem_Product" resultMap="Sam_rem_ProductResult">
         <include refid="selectSam_rem_ProductVo"/>
         <where>  
+            <if test="reimbursementItemId != null and reimbursementItemId != ''"> and reimbursement_item_id = #{reimbursementItemId}</if>
             <if test="achievementId != null  and achievementId != ''"> and achievement_id = #{achievementId}</if>
             <if test="sessionId != null  and sessionId != ''"> and session_id = #{sessionId}</if>
             <if test="category != null  and category != ''"> and category like concat('%', #{category}, '%')</if>

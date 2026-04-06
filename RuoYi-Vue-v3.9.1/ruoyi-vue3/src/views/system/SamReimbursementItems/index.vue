@@ -134,7 +134,7 @@
       <el-table-column label="备注" align="center" prop="remark" :show-overflow-tooltip="true" />
       <el-table-column label="操作" align="center" class-name="small-padding fixed-width" width="200">
         <template #default="scope">
-          <!-- 新增的关联成果按钮 -->
+          <!-- 新增的关联成果按钮
           <el-button
              size="mini"
              type="primary"
@@ -142,6 +142,7 @@
              @click="viewAchievements(scope.row)"
              v-hasPermi="['system:SamReimbursementItems:view']"
           >详细信息</el-button>
+          -->
           <el-button
               size="mini"
               type="text"

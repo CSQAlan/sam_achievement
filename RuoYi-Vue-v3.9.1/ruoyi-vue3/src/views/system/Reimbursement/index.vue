@@ -1158,11 +1158,21 @@ const loadDetailByReimbursementItemId = async () => {
 /** 查询报销项目详情列表 */
 function getList() {
   loading.value = true
-  // 关键：设置 reimbursementItemId 只查询已关联的成果
-  const params = {
-    ...queryParams.value,
-    reimbursementItemId: reimbursementItemId.value  // 确保这个参数有值
+  const params = { ...queryParams.value }
+  
+  // 只有在详情页面（有 reimbursementItemId）时才传递该参数
+  if (reimbursementItemId.value) {
+    params.reimbursementItemId = reimbursementItemId.value
   }
+  
+  // 移除空值参数
+  Object.keys(params).forEach(key => {
+    if (params[key] === null || params[key] === '' || params[key] === undefined) {
+      delete params[key]
+    }
+  })
+  
+  console.log('搜索参数:', params)
   
   listReimbursement(params).then(response => {
     ReimbursementList.value = response.rows
@@ -1234,13 +1244,38 @@ function reset() {
 
 /** 搜索按钮操作 */
 function handleQuery() {
+  console.log('搜索参数:', queryParams.value)
   queryParams.value.pageNum = 1
   getList()
 }
 
 /** 重置按钮操作 */
 function resetQuery() {
-  proxy.resetForm("queryRef")
+  // 重置查询参数
+  queryParams.value = {
+    pageNum: 1,
+    pageSize: 10,
+    reimbursementItemId: reimbursementItemId.value,  // 保留项目ID
+    achievementId: null,
+    sessionId: null,
+    category: null,
+    name: null,
+    teamName: null,
+    level: null,
+    grade: null,
+    track: null,
+    certificateNo: null,
+    groupId: null,
+    awardTime: null,
+    reimbursementTime: null,
+    status: null
+  }
+  
+  // 重置表单
+  if (proxy.$refs.queryRef) {
+    proxy.$refs.queryRef.resetFields()
+  }
+  
   handleQuery()
 }
 

@@ -61,6 +61,9 @@ public class SamReimbursementItems extends BaseEntity
     /** 实际已发放金额（用于列表显示） */
     private Double actualPaidFee;
 
+    /** 实际报销总金额（用于列表显示） */
+    private Double actualReimbursementFee;
+
     public Integer getActualAmount() {
         return actualAmount;
     }
@@ -83,6 +86,14 @@ public class SamReimbursementItems extends BaseEntity
 
     public void setActualPaidFee(Double actualPaidFee) {
         this.actualPaidFee = actualPaidFee;
+    }
+
+    public Double getActualReimbursementFee() {
+        return actualReimbursementFee;
+    }
+
+    public void setActualReimbursementFee(Double actualReimbursementFee) {
+        this.actualReimbursementFee = actualReimbursementFee;
     }
 
     public void setId(Long id) 
@@ -188,6 +199,7 @@ public class SamReimbursementItems extends BaseEntity
             .append("status", getStatus())
             .append("actualAmount", getActualAmount())
             .append("actualTotalFee", getActualTotalFee())
+            .append("actualReimbursementFee", getActualReimbursementFee())
             .append("actualPaidFee", getActualPaidFee())
             .append("createBy", getCreateBy())
             .append("createTime", getCreateTime())

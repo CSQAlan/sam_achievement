@@ -211,9 +211,8 @@ public class Sam_rem_ProductServiceImpl implements ISam_rem_ProductService
             sam_rem_ProductMapper.batchUpdateReimbursementFee(updateList);
         }
         
-        // 4. 更新报销项目的总金额和已发放金额
-        // 这里需要根据实际的报销项目表结构进行更新
-        // 暂时省略，实际项目中需要实现
+        // 4. 更新报销项目的统计信息
+        updateProjectStatistics(reimbursementItemId);
         
         result.put("success", true);
         result.put("message", "报销金额计算成功");
@@ -452,12 +451,19 @@ public class Sam_rem_ProductServiceImpl implements ISam_rem_ProductService
         
         // 重新计算总金额
         List<Sam_rem_Product> achievements = sam_rem_ProductMapper.selectSam_rem_ProductByReimbursementItemId(reimbursementItemId);
-        double totalFee = 0.0;
-        double paidFee = 0.0;
+        double totalFee = 0.0;  // 需报销金额总和（报名费）
+        double reimbursementFee = 0.0;  // 实际报销金额总和
+        double paidFee = 0.0;  // 已发放金额
         for (Sam_rem_Product achievement : achievements) {
-            if (achievement.getReimbursementFee() != null) {
-                totalFee += achievement.getReimbursementFee().doubleValue();
+            // 统计需报销金额（报名费）
+            if (achievement.getFee() != null) {
+                totalFee += achievement.getFee().doubleValue();
             }
+            // 统计实际报销金额
+            if (achievement.getReimbursementFee() != null) {
+                reimbursementFee += achievement.getReimbursementFee().doubleValue();
+            }
+            // 统计已发放金额（已报销成果的实际报销金额）
             if (achievement.getIsReimburse() != null && achievement.getIsReimburse() == 1) {
                 if (achievement.getReimbursementFee() != null) {
                     paidFee += achievement.getReimbursementFee().doubleValue();

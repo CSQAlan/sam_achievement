@@ -21,6 +21,7 @@ PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
         <result property="delFlag"    column="del_flag"    />
         <result property="actualAmount"    column="actual_amount"    />
         <result property="actualTotalFee"    column="actual_total_fee"    />
+        <result property="actualReimbursementFee"    column="actual_reimbursement_fee"    />
         <result property="actualPaidFee"    column="actual_paid_fee"    />
     </resultMap>
 
@@ -44,19 +45,23 @@ PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
             i.update_time,
             i.remark,
             i.del_flag,
-            -- 添加子查询：统计关联的成果数量
-            (SELECT COUNT(*) FROM sam_achievement a 
-             WHERE a.reimbursement_item_id = i.id 
-               AND a.del_flag = '0') AS actual_amount,
-            -- 添加子查询：统计关联成果的总报销金额
-            (SELECT COALESCE(SUM(a.reimbursement_fee), 0) FROM sam_achievement a 
+            -- 实时统计：关联成果的总报名费（需报销金额）
+            (SELECT COALESCE(SUM(a.fee), 0) FROM sam_achievement a 
              WHERE a.reimbursement_item_id = i.id 
                AND a.del_flag = '0') AS actual_total_fee,
-            -- 添加子查询：统计已发放金额
+            -- 实时统计：关联成果的实际报销总金额
+            (SELECT COALESCE(SUM(a.reimbursement_fee), 0) FROM sam_achievement a 
+             WHERE a.reimbursement_item_id = i.id 
+               AND a.del_flag = '0') AS actual_reimbursement_fee,
+            -- 实时统计：已发放金额
             (SELECT COALESCE(SUM(a.reimbursement_fee), 0) FROM sam_achievement a 
              WHERE a.reimbursement_item_id = i.id 
                AND a.del_flag = '0'
-               AND a.is_reimburse = '1') AS actual_paid_fee
+               AND a.is_reimburse = '1') AS actual_paid_fee,
+            -- 实时统计：关联成果数量
+            (SELECT COUNT(*) FROM sam_achievement a 
+             WHERE a.reimbursement_item_id = i.id 
+               AND a.del_flag = '0') AS actual_amount
         FROM sam_reimbursement_items i
         WHERE i.del_flag = '0'
         <if test="name != null and name != ''">
