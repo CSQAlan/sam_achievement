@@ -173,6 +173,20 @@ export const dynamicRoutes = [
       }
     ]
   },
+
+  {
+    path: '/achievement',
+    component: Layout,
+    hidden: true,
+    children: [
+      {
+        path: 'reviewPage',
+        component: () => import('@/views/achievement/component/reviewPage'),
+        name: 'AchievementReviewPage',
+        meta: { title: '成果审核' }
+      }
+    ]
+  },
   
   // 新增报销项目关联成果路由
   // 在路由配置中添加
@@ -182,7 +196,23 @@ export const dynamicRoutes = [
   name: 'ReimbursementAchievement',
   hidden: true,
   meta: { title: '关联成果', icon: 'list' }
+},
+
+{
+  path: '/reimbursement',
+  component: Layout,
+  hidden: false,
+  children: [
+    {
+      path: '/reimbursement/Reimbursement',
+      name: 'Reimbursement',
+      component: () => import('@/views/system/Reimbursement/index'),
+      meta: { title: '报销项目详情', icon: 'list', noCache: false }
+    }
+  ]
 }
+
+
 ]
 
 const router = createRouter({

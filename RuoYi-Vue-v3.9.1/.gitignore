@@ -74,3 +74,19 @@ sql/
 !*/build/*.java
 !*/build/*.html
 !*/build/*.xml
+
+######################################################################
+# Local-only files
+.m2/
+.mvn-local-settings.xml
+.vscode/
+logs/
+.runtime-logs/
+apache-maven-*.zip
+sql/*.zip
+temp-logback*.xml
+result_*.md
+ruoyi-admin/src/main/resources/application-druid.yml.backup
+
+# Node modules
+node_modules/

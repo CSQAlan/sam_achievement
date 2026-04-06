@@ -7,6 +7,7 @@
     <resultMap type="SamAchievement" id="SamAchievementResult">
         <result property="achievementId"    column="achievement_id"    />
         <result property="sessionId"    column="session_id"    />
+        <result property="sessionName"    column="session_name"    />
         <result property="competitionId"    column="competition_id"    />
         <result property="competitionName"    column="competition_name"    />
         <result property="category"    column="category"    />
@@ -102,6 +103,7 @@
         select
             a.achievement_id,
             a.session_id,
+            s.session as session_name,
             s.competition_id as competition_id,
             c.name as competition_name,
             a.category,
@@ -180,6 +182,8 @@
             <if test="certificateNo != null  and certificateNo != ''"> and a.certificate_no = #{certificateNo}</if>
             <if test="groupId != null "> and a.group_id = #{groupId}</if>
             <if test="awardTime != null "> and a.award_time = #{awardTime}</if>
+            <if test="year != null"> and a.year = #{year}</if>
+            <if test="isSupplement != null"> and a.is_supplement = #{isSupplement}</if>
         </where>
         order by a.achievement_id desc
     </select>
@@ -259,7 +263,9 @@
     </select>
 
     <select id="checkCertificateNoUnique" resultMap="SamAchievementResult">
-        <include refid="selectSamAchievementVo"/>
+        select a.achievement_id, a.certificate_no
+        from sam_achievement a
+        left join sam_competition_session s on a.session_id = s.session_id
         where a.certificate_no = #{certificateNo}
         <if test="competitionId != null and competitionId != ''">and s.competition_id = #{competitionId}</if>
         limit 1

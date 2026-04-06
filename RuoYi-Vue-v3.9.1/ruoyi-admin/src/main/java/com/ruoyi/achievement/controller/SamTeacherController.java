@@ -13,10 +13,12 @@ import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 import org.springframework.web.multipart.MultipartFile;
+import com.ruoyi.common.annotation.BizAudit;
 import com.ruoyi.common.annotation.Log;
 import com.ruoyi.common.core.controller.BaseController;
 import com.ruoyi.common.core.domain.AjaxResult;
 import com.ruoyi.common.core.domain.model.LoginUser;
+import com.ruoyi.common.enums.BizAuditOpType;
 import com.ruoyi.common.enums.BusinessType;
 import com.ruoyi.common.utils.SecurityUtils;
 import com.ruoyi.common.utils.StringUtils;
@@ -63,6 +65,7 @@ public class SamTeacherController extends BaseController
      */
     @PreAuthorize("@ss.hasPermi('achievement:teacher:export')")
     @Log(title = "教师档案", businessType = BusinessType.EXPORT)
+    @BizAudit(bizType = "teacher_archive", bizName = "导出教师档案", opType = BizAuditOpType.EXPORT, handler = "teacherBizAuditHandler")
     @PostMapping("/export")
     public void export(HttpServletResponse response, SamTeacher samTeacher)
     {
@@ -73,6 +76,7 @@ public class SamTeacherController extends BaseController
 
     @Log(title = "教师管理", businessType = BusinessType.IMPORT)
     @PreAuthorize("@ss.hasPermi('achievement:teacher:import')")
+    @BizAudit(bizType = "teacher_archive", bizName = "导入教师档案", opType = BizAuditOpType.IMPORT, handler = "teacherBizAuditHandler", async = false)
     @PostMapping("/importData")
     public AjaxResult importData(MultipartFile file, boolean updateSupport) throws Exception
     {
@@ -105,6 +109,7 @@ public class SamTeacherController extends BaseController
      */
     @PreAuthorize("@ss.hasAnyPermi('achievement:teacher:add,achievement:manage:list,achievement:manage:participated:list,achievement:manage:guided:list')")
     @Log(title = "教师档案", businessType = BusinessType.INSERT)
+    @BizAudit(bizType = "teacher_archive", bizName = "新增教师档案", opType = BizAuditOpType.ADD, handler = "teacherBizAuditHandler", async = false)
     @PostMapping
     public AjaxResult add(@RequestBody SamTeacher samTeacher)
     {
@@ -124,8 +129,9 @@ public class SamTeacherController extends BaseController
     /**
      * 修改教师档案
      */
-    @PreAuthorize("@ss.hasPermi('achievement:teacher:edit')")
+    @PreAuthorize("@ss.hasAnyPermi('achievement:teacher:edit,achievement:manage:list,achievement:manage:participated:list,achievement:manage:guided:list')")
     @Log(title = "教师档案", businessType = BusinessType.UPDATE)
+    @BizAudit(bizType = "teacher_archive", bizName = "修改教师档案", opType = BizAuditOpType.UPDATE, handler = "teacherBizAuditHandler", async = false)
     @PutMapping
     public AjaxResult edit(@RequestBody SamTeacher samTeacher)
     {
@@ -147,6 +153,7 @@ public class SamTeacherController extends BaseController
      */
     @PreAuthorize("@ss.hasPermi('achievement:teacher:remove')")
     @Log(title = "教师档案", businessType = BusinessType.DELETE)
+    @BizAudit(bizType = "teacher_archive", bizName = "删除教师档案", opType = BizAuditOpType.DELETE, handler = "teacherBizAuditHandler", async = false)
 	@DeleteMapping("/{ids}")
     public AjaxResult remove(@PathVariable Long[] ids)
     {

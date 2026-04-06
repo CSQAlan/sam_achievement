@@ -18,6 +18,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Set;
+import java.util.Date;
 import java.util.zip.ZipEntry;
 import java.util.zip.ZipOutputStream;
 import javax.servlet.http.HttpServletResponse;
@@ -27,7 +28,9 @@ import com.ruoyi.achievement.domain.ExportAchievementBaseVo;
 import com.ruoyi.achievement.domain.ExportAttachmentFailExcelVo;
 import com.ruoyi.achievement.domain.ExportAttachmentFileVo;
 import com.ruoyi.achievement.domain.ExportAttachmentZipReq;
+import com.ruoyi.common.annotation.BizAudit;
 import com.ruoyi.common.core.domain.entity.SysDept;
+import com.ruoyi.common.enums.BizAuditOpType;
 import com.ruoyi.common.utils.DateUtils;
 import com.ruoyi.common.utils.SecurityUtils;
 import com.ruoyi.common.utils.StringUtils;
@@ -183,8 +186,10 @@ public class SamAchievementServiceImpl implements ISamAchievementService
      */
     @Transactional
     @Override
+    @BizAudit(bizType = "achievement", bizName = "新增成果", opType = BizAuditOpType.ADD, handler = "achievementBizAuditHandler", async = false)
     public int insertSamAchievement(SamAchievement samAchievement)
     {
+        applyControlledReviewFields(samAchievement, null);
         // 1. 验证成果录入主表信息
         validateSamAchievement(samAchievement);
 
@@ -198,29 +203,8 @@ public class SamAchievementServiceImpl implements ISamAchievementService
             samAchievement.setYear((long) cal.get(Calendar.YEAR));
         }
 
-        if (StringUtils.isNotEmpty(samAchievement.getOwnerDepId())) {
-            samAchievement.setOwnerDepId(normalizeDeptId(samAchievement.getOwnerDepId()));
-        }
-
-        // 4. 设置所属学院 (选取参赛选手第一个负责人的所属学院)
-        if (samAchievement.getSamAchievementParticipantList() != null) {
-            for (SamAchievementParticipant participant : samAchievement.getSamAchievementParticipantList()) {
-                if ("1".equals(participant.getManager())) {
-                    if (StringUtils.isNotEmpty(participant.getStudentId())) {
-                        SamStudent query = new SamStudent();
-                        query.setNo(participant.getStudentId());
-                        List<SamStudent> students = samStudentService.selectSamStudentList(query);
-                        if (students != null && !students.isEmpty() && StringUtils.isNotEmpty(students.get(0).getSchool())) {
-                            samAchievement.setOwnerDepId(normalizeDeptId(students.get(0).getSchool()));
-                        }
-                    }
-                    if (StringUtils.isEmpty(samAchievement.getOwnerDepId()) && StringUtils.isNotEmpty(participant.getSchool())) {
-                        samAchievement.setOwnerDepId(normalizeDeptId(participant.getSchool()));
-                    }
-                    break;
-                }
-            }
-        }
+        // 4. 设置归属学院 (owner_dep_id)
+        applyDefaultOwnerDepId(samAchievement);
 
         samAchievement.setCreateTime(DateUtils.getNowDate());
 
@@ -239,6 +223,88 @@ public class SamAchievementServiceImpl implements ISamAchievementService
         return rows;
     }
 
+    private void applyDefaultOwnerDepId(SamAchievement samAchievement)
+    {
+        if (StringUtils.isNotEmpty(samAchievement.getOwnerDepId()))
+        {
+            samAchievement.setOwnerDepId(normalizeDeptId(samAchievement.getOwnerDepId()));
+            if (StringUtils.isNotEmpty(samAchievement.getOwnerDepId())) {
+                return;
+            }
+        }
+
+        // 尝试从参与人（负责人）中获取学院
+        List<SamAchievementParticipant> participantList = samAchievement.getSamAchievementParticipantList();
+        if (participantList != null && !participantList.isEmpty())
+        {
+            SamAchievementParticipant managerParticipant = null;
+            for (SamAchievementParticipant participant : participantList)
+            {
+                if ("1".equals(StringUtils.trim(participant.getManager())))
+                {
+                    managerParticipant = participant;
+                    break;
+                }
+            }
+
+            if (managerParticipant == null)
+            {
+                managerParticipant = participantList.get(0);
+            }
+
+            String ownerDepId = resolveOwnerDepIdFromParticipant(managerParticipant);
+            if (StringUtils.isNotEmpty(ownerDepId))
+            {
+                samAchievement.setOwnerDepId(ownerDepId);
+                return;
+            }
+        }
+
+        // 兜底方案：从当前登录人的部门获取学院
+        try {
+            Long userDeptId = SecurityUtils.getDeptId();
+            if (userDeptId != null) {
+                Long collegeId = deptService.getCollegeId(userDeptId);
+                if (collegeId != null) {
+                    samAchievement.setOwnerDepId(String.valueOf(collegeId));
+                }
+            }
+        } catch (Exception e) {
+            // 忽略异常
+        }
+    }
+
+    private String resolveOwnerDepIdFromParticipant(SamAchievementParticipant participant)
+    {
+        if (participant == null)
+        {
+            return null;
+        }
+
+        if (StringUtils.isNotEmpty(participant.getStudentId()))
+        {
+            SamStudent query = new SamStudent();
+            query.setNo(participant.getStudentId().trim());
+            List<SamStudent> students = samStudentService.selectSamStudentList(query);
+            if (students != null && !students.isEmpty())
+            {
+                String ownerDepId = normalizeDeptId(students.get(0).getSchool());
+                if (StringUtils.isNotEmpty(ownerDepId))
+                {
+                    return ownerDepId;
+                }
+            }
+        }
+
+        String ownerDepId = normalizeDeptId(participant.getSchool());
+        if (StringUtils.isNotEmpty(ownerDepId))
+        {
+            return ownerDepId;
+        }
+
+        return null;
+    }
+
     private String normalizeDeptId(String schoolValue)
     {
         if (StringUtils.isEmpty(schoolValue))
@@ -247,28 +313,91 @@ public class SamAchievementServiceImpl implements ISamAchievementService
         }
 
         String normalized = schoolValue.trim();
+        String foundId = null;
+
         if (normalized.matches("\\d+"))
         {
-            return normalized;
-        }
-
-        SysDept query = new SysDept();
-        query.setDeptName(normalized);
-        List<SysDept> deptList = deptService.selectDeptList(query);
-        if (deptList == null || deptList.isEmpty())
-        {
-            return null;
-        }
-
-        for (SysDept dept : deptList)
-        {
-            if (dept != null && StringUtils.equals(normalized, dept.getDeptName()) && dept.getDeptId() != null)
+            foundId = normalized;
+        } else {
+            SysDept query = new SysDept();
+            query.setDeptName(normalized);
+            List<SysDept> deptList = deptService.selectDeptList(query);
+            if (deptList != null && !deptList.isEmpty())
             {
-                return String.valueOf(dept.getDeptId());
+                for (SysDept dept : deptList)
+                {
+                    if (dept != null && StringUtils.equals(normalized, dept.getDeptName()) && dept.getDeptId() != null)
+                    {
+                        foundId = String.valueOf(dept.getDeptId());
+                        break;
+                    }
+                }
             }
         }
 
-        return null;
+        // 统一向上追溯到学院级 (parent_id = 100)
+        return getCollegeIdByAnyDeptId(foundId);
+    }
+
+    private String getCollegeIdByAnyDeptId(String deptIdStr) {
+        if (StringUtils.isEmpty(deptIdStr) || !deptIdStr.matches("\\d+")) {
+            return null;
+        }
+        Long collegeId = deptService.getCollegeId(Long.valueOf(deptIdStr));
+        return collegeId != null ? String.valueOf(collegeId) : null;
+    }
+
+    private void applyControlledReviewFields(SamAchievement incoming, SamAchievement existing)
+    {
+        if (incoming == null)
+        {
+            return;
+        }
+
+        Long autoYear = resolveYearFromAwardTime(incoming.getAwardTime());
+        boolean canEditReviewMeta = canEditAchievementReviewFields();
+        boolean canEditYear = SecurityUtils.isAdmin(SecurityUtils.getUserId());
+
+        if (canEditYear)
+        {
+            if (incoming.getYear() == null)
+            {
+                incoming.setYear(autoYear != null ? autoYear : existing == null ? null : existing.getYear());
+            }
+        }
+        else
+        {
+            incoming.setYear(autoYear != null ? autoYear : existing == null ? null : existing.getYear());
+        }
+
+        if (!canEditReviewMeta)
+        {
+            incoming.setIsSupplement(existing == null ? null : existing.getIsSupplement());
+        }
+    }
+
+    private Long resolveYearFromAwardTime(Date awardTime)
+    {
+        if (awardTime == null)
+        {
+            return null;
+        }
+        Calendar cal = Calendar.getInstance();
+        cal.setTime(awardTime);
+        return (long) cal.get(Calendar.YEAR);
+    }
+
+    private boolean canEditAchievementReviewFields()
+    {
+        Long userId = SecurityUtils.getUserId();
+        if (SecurityUtils.isAdmin(userId))
+        {
+            return true;
+        }
+        return SecurityUtils.hasPermi("achievement:college_level_unreviewed:edit")
+                || SecurityUtils.hasPermi("achievement:college_level_reviewed:edit")
+                || SecurityUtils.hasPermi("achievement:school_level_unreviewed:edit")
+                || SecurityUtils.hasPermi("achievement:school_level_reviewed:edit");
     }
 
     /**
@@ -279,6 +408,7 @@ public class SamAchievementServiceImpl implements ISamAchievementService
      */
     @Transactional
     @Override
+    @BizAudit(bizType = "achievement", bizName = "修改成果", opType = BizAuditOpType.UPDATE, handler = "achievementBizAuditHandler", async = false)
     public int updateSamAchievement(SamAchievement samAchievement)
     {
         SamAchievement existing = samAchievementMapper.selectSamAchievementByAchievementId(samAchievement.getAchievementId());
@@ -286,6 +416,7 @@ public class SamAchievementServiceImpl implements ISamAchievementService
         {
             throw new ServiceException("成果不存在");
         }
+        applyControlledReviewFields(samAchievement, existing);
         // 1. 验证成果录入主表信息
         validateSamAchievement(samAchievement);
 
@@ -1104,6 +1235,7 @@ public class SamAchievementServiceImpl implements ISamAchievementService
      */
     @Transactional
     @Override
+    @BizAudit(bizType = "achievement", bizName = "批量删除成果", opType = BizAuditOpType.DELETE, handler = "achievementBizAuditHandler", async = false)
     public int deleteSamAchievementByAchievementIds(String[] achievementIds)
     {
         samAchievementMapper.deleteSamAchievementParticipantByParticipantIds(achievementIds);
@@ -1120,6 +1252,7 @@ public class SamAchievementServiceImpl implements ISamAchievementService
      */
     @Transactional
     @Override
+    @BizAudit(bizType = "achievement", bizName = "删除成果", opType = BizAuditOpType.DELETE, handler = "achievementBizAuditHandler", async = false)
     public int deleteSamAchievementByAchievementId(String achievementId)
     {
         samAchievementMapper.deleteSamAchievementParticipantByParticipantId(achievementId);

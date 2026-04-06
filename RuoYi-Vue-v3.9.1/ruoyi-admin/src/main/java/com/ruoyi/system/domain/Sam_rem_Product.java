@@ -1,46 +1,36 @@
-package com.ruoyi.achievement.domain;
+package com.ruoyi.system.domain;
 
 import java.math.BigDecimal;
-import java.util.List;
 import java.util.Date;
-import com.fasterxml.jackson.annotation.JsonFormat;
+import java.util.List;
+
 import org.apache.commons.lang3.builder.ToStringBuilder;
 import org.apache.commons.lang3.builder.ToStringStyle;
+
+import com.fasterxml.jackson.annotation.JsonFormat;
 import com.ruoyi.common.annotation.Excel;
-import com.ruoyi.common.annotation.Excel.Type;
 import com.ruoyi.common.core.domain.BaseEntity;
 
 /**
- * 成果录入对象 sam_achievement
+ * 报销项目详情对象 sam_achievement
  * 
- * @author 王璨
- * @date 2026-02-03
+ * @author luo
+ * @date 2026-03-22
  */
-public class SamAchievement extends BaseEntity
+public class Sam_rem_Product extends BaseEntity
 {
     private static final long serialVersionUID = 1L;
 
     /** 成果ID */
-    @Excel(name = "成果ID",sort = '2',dictType = "sam_achievement")
+    @Excel(name = "成果ID")
     private String achievementId;
 
     /** 届次  */
     @Excel(name = "届次 ")
     private String sessionId;
 
-    /** 届次名称（前端展示用） */
-    @Excel(name = "届次", type = Type.EXPORT)
-    private String sessionName;
-
-    /** derived from session relation for frontend display */
-    private String competitionId;
-
-    /** derived from session relation for frontend display */
-    @Excel(name = "比赛", type = Type.EXPORT)
-    private String competitionName;
-
     /** 类别 */
-    @Excel(name = "类别", dictType = "achievement_category")
+    @Excel(name = "类别")
     private String category;
 
     /** 作品名称 */
@@ -51,18 +41,12 @@ public class SamAchievement extends BaseEntity
     @Excel(name = "团队名称")
     private String teamName;
 
-    /** 列表展示用：参赛选手（姓名+学号） */
-    private String contestant;
-
-    /** 列表展示用：指导老师（姓名+工号） */
-    private String instructor;
-
     /** 获奖级别 */
-    @Excel(name = "获奖级别", dictType = "award_level_type")
+    @Excel(name = "获奖级别")
     private String level;
 
     /** 获奖等级 */
-    @Excel(name = "获奖等级", dictType = "award_rank")
+    @Excel(name = "获奖等级")
     private Long grade;
 
     /** 赛道 */
@@ -74,7 +58,7 @@ public class SamAchievement extends BaseEntity
     private String certificateNo;
 
     /** 组别 */
-    @Excel(name = "组别", dictType = "group_type")
+    @Excel(name = "组别")
     private Long groupId;
 
     /** 获奖时间 */
@@ -83,7 +67,6 @@ public class SamAchievement extends BaseEntity
     private Date awardTime;
 
     /** 年份 */
-    @Excel(name = "\u5e74\u4efd")
     private Long year;
 
     /** 部门 */
@@ -92,12 +75,7 @@ public class SamAchievement extends BaseEntity
     /** 是否报销 */
     private Integer isReimburse;
 
-    /** 审核状态 */
-    private String reimbursementStatus;
-
-
     /** 是否补录 */
-    @Excel(name = "\u662f\u5426\u8865\u5f55", readConverterExp = "0=\u5426,1=\u662f")
     private Integer isSupplement;
 
     /** 报名费金额 */
@@ -105,9 +83,6 @@ public class SamAchievement extends BaseEntity
 
     /** 实际报销金额 */
     private BigDecimal reimbursementFee;
-
-//    /** 报销状态（0进行中 1已完成） */
-//    private String reimbursementStatus;
 
     /** 报销百分比（0-100） */
     private String reimbursementRatio;
@@ -154,12 +129,8 @@ public class SamAchievement extends BaseEntity
     /** 删除标志（0正常 2删除） */
     private Integer delFlag;
 
-    /** 参赛选手信息 */
-    private List<SamAchievementParticipant> samAchievementParticipantList;
-
-    private List<SamAchievementAdvisor> samAchievementAdvisorList;
-
-    private List<SamAchievementAttachment> samAchievementAttachmentList;
+    /** 报销项目信息 */
+    private List<SamReimbursementItems> samReimbursementItemsList;
 
     public void setAchievementId(String achievementId) 
     {
@@ -179,36 +150,6 @@ public class SamAchievement extends BaseEntity
     public String getSessionId() 
     {
         return sessionId;
-    }
-
-    public void setSessionName(String sessionName)
-    {
-        this.sessionName = sessionName;
-    }
-
-    public String getSessionName()
-    {
-        return sessionName;
-    }
-
-    public void setCompetitionId(String competitionId)
-    {
-        this.competitionId = competitionId;
-    }
-
-    public String getCompetitionId()
-    {
-        return competitionId;
-    }
-
-    public void setCompetitionName(String competitionName)
-    {
-        this.competitionName = competitionName;
-    }
-
-    public String getCompetitionName()
-    {
-        return competitionName;
     }
 
     public void setCategory(String category) 
@@ -241,27 +182,7 @@ public class SamAchievement extends BaseEntity
         return teamName;
     }
 
-    public void setContestant(String contestant)
-    {
-        this.contestant = contestant;
-    }
-
-    public String getContestant()
-    {
-        return contestant;
-    }
-
-    public void setInstructor(String instructor)
-    {
-        this.instructor = instructor;
-    }
-
-    public String getInstructor()
-    {
-        return instructor;
-    }
-
-    public void setLevel(String level)
+    public void setLevel(String level) 
     {
         this.level = level;
     }
@@ -379,16 +300,6 @@ public class SamAchievement extends BaseEntity
     public BigDecimal getReimbursementFee() 
     {
         return reimbursementFee;
-    }
-
-    public void setReimbursementStatus(String reimbursementStatus)
-    {
-        this.reimbursementStatus = reimbursementStatus;
-    }
-
-    public String getReimbursementStatus()
-    {
-        return reimbursementStatus;
     }
 
     public void setReimbursementRatio(String reimbursementRatio) 
@@ -541,49 +452,25 @@ public class SamAchievement extends BaseEntity
         return delFlag;
     }
 
-    public List<SamAchievementParticipant> getSamAchievementParticipantList()
+    public List<SamReimbursementItems> getSamReimbursementItemsList()
     {
-        return samAchievementParticipantList;
+        return samReimbursementItemsList;
     }
 
-    public void setSamAchievementParticipantList(List<SamAchievementParticipant> samAchievementParticipantList)
+    public void setSamReimbursementItemsList(List<SamReimbursementItems> samReimbursementItemsList)
     {
-        this.samAchievementParticipantList = samAchievementParticipantList;
+        this.samReimbursementItemsList = samReimbursementItemsList;
     }
 
-    public List<SamAchievementAdvisor> getSamAchievementAdvisorList()
-    {
-        return samAchievementAdvisorList;
-    }
-
-    public void setSamAchievementAdvisorList(List<SamAchievementAdvisor> samAchievementAdvisorList)
-    {
-        this.samAchievementAdvisorList = samAchievementAdvisorList;
-    }
-
-    public List<SamAchievementAttachment> getSamAchievementAttachmentList()
-    {
-        return samAchievementAttachmentList;
-    }
-
-    public void setSamAchievementAttachmentList(List<SamAchievementAttachment> samAchievementAttachmentList)
-    {
-        this.samAchievementAttachmentList = samAchievementAttachmentList;
-    }
 
     @Override
     public String toString() {
         return new ToStringBuilder(this,ToStringStyle.MULTI_LINE_STYLE)
             .append("achievementId", getAchievementId())
             .append("sessionId", getSessionId())
-            .append("sessionName", getSessionName())
-            .append("competitionId", getCompetitionId())
-            .append("competitionName", getCompetitionName())
             .append("category", getCategory())
             .append("name", getName())
             .append("teamName", getTeamName())
-            .append("contestant", getContestant())
-            .append("instructor", getInstructor())
             .append("level", getLevel())
             .append("grade", getGrade())
             .append("track", getTrack())
@@ -616,9 +503,7 @@ public class SamAchievement extends BaseEntity
             .append("updateTime", getUpdateTime())
             .append("delFlag", getDelFlag())
             .append("remark", getRemark())
-            .append("samAchievementParticipantList", getSamAchievementParticipantList())
-            .append("samAchievementAdvisorList", getSamAchievementAdvisorList())
-            .append("samAchievementAttachmentList", getSamAchievementAttachmentList())
+            .append("samReimbursementItemsList", getSamReimbursementItemsList())
             .toString();
     }
 }

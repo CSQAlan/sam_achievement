@@ -3,11 +3,13 @@ package com.ruoyi.achievement.service.impl;
 import java.util.*;
 
 import com.ruoyi.achievement.domain.SamStudent;
+import com.ruoyi.common.annotation.BizAudit;
 import com.ruoyi.common.utils.DateUtils;
 import com.ruoyi.common.utils.SecurityUtils;
 import com.ruoyi.common.core.domain.entity.SysDept;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
+import com.ruoyi.common.enums.BizAuditOpType;
 import com.ruoyi.common.exception.ServiceException;
 import com.ruoyi.common.utils.StringUtils;
 import org.springframework.transaction.annotation.Transactional;
@@ -32,6 +34,9 @@ public class reviewedServiceImpl implements IreviewedService
 
     @Autowired
     private ISysDeptService deptService;
+
+    @Autowired
+    private com.ruoyi.system.service.AchievementPostPermissionService postPermissionService;
 
     private static final String STAGE_COLLEGE = "college";
     private static final String STAGE_SCHOOL = "school";
@@ -61,11 +66,45 @@ public class reviewedServiceImpl implements IreviewedService
     @Override
     public List<reviewed> selectreviewedList(reviewed reviewed)
     {
+        // 如果是超级管理员（userId=1），不执行任何数据过滤
+        if (SecurityUtils.isAdmin(SecurityUtils.getUserId())) {
+            return reviewedMapper.selectreviewedList(reviewed);
+        }
+
+        // 针对院级审核页面的数据过滤逻辑
+        if (STAGE_COLLEGE.equals(reviewed.getReviewStage())) {
+            // 优先检查是否具有校级审核权限（岗位或角色）
+            String userName = SecurityUtils.getUsername();
+            boolean hasSchoolReview = postPermissionService.canAccessSchoolReview(userName)
+                                   || SecurityUtils.hasRole("schoolleveladmin")
+                                   || SecurityUtils.hasRole("schooladmin");
+
+            // 如果没有校级权限，才进一步判断是否为院级管理员并进行过滤
+            if (!hasSchoolReview) {
+                // 判断是否具有 院级管理员 角色或岗位
+                boolean isCollegeAdmin = SecurityUtils.hasRole("collegeleveladmin") || SecurityUtils.hasRole("collegeadmin")
+                                      || postPermissionService.canAccessCollegeReview(userName);
+
+                if (isCollegeAdmin) {
+                    // 获取当前登录人的部门 ID
+                    Long userDeptId = SecurityUtils.getDeptId();
+                    if (userDeptId != null) {
+                        // 向上追溯到学院 ID
+                        Long collegeId = deptService.getCollegeId(userDeptId);
+                        if (collegeId != null) {
+                            // 数据库 owner_dep_id 存储的是 ID 数字，这里设置 ID 过滤
+                            reviewed.setOwnerDepId(String.valueOf(collegeId));
+                        }
+                    }
+                }
+            }
+        }
         return reviewedMapper.selectreviewedList(reviewed);
     }
 
     @Transactional
     @Override
+    @BizAudit(bizType = "achievement_review", bizName = "新增成果审核", opType = BizAuditOpType.ADD, handler = "achievementBizAuditHandler", async = false)
     public int insertreviewed(reviewed reviewed)
     {
         String stage = resolveStage(reviewed.getReviewStage());
@@ -115,6 +154,7 @@ public class reviewedServiceImpl implements IreviewedService
 
     @Transactional
     @Override
+    @BizAudit(bizType = "achievement_review", bizName = "批量删除成果审核", opType = BizAuditOpType.DELETE, handler = "achievementBizAuditHandler", async = false)
     public int deletereviewedByAchievementIds(String[] achievementIds)
     {
         reviewedMapper.deleteSamAchievementParticipantByParticipantIds(achievementIds);
@@ -123,6 +163,7 @@ public class reviewedServiceImpl implements IreviewedService
 
     @Transactional
     @Override
+    @BizAudit(bizType = "achievement_review", bizName = "删除成果审核", opType = BizAuditOpType.DELETE, handler = "achievementBizAuditHandler", async = false)
     public int deletereviewedByAchievementId(String achievementId)
     {
         reviewedMapper.deleteSamAchievementParticipantByParticipantId(achievementId);
@@ -131,6 +172,7 @@ public class reviewedServiceImpl implements IreviewedService
 
     @Transactional
     @Override
+    @BizAudit(bizType = "achievement_review", bizName = "提交成果审核", opType = BizAuditOpType.UPDATE, handler = "achievementBizAuditHandler", async = false)
     public reviewed submitReview(String source, String achievementId, Long reviewStatus, String rejectReason)
     {
         return submitReviewInternal(source, achievementId, reviewStatus, rejectReason);
@@ -138,6 +180,7 @@ public class reviewedServiceImpl implements IreviewedService
 
     @Transactional
     @Override
+    @BizAudit(bizType = "achievement_review", bizName = "批量提交成果审核", opType = BizAuditOpType.UPDATE, handler = "achievementBizAuditHandler", async = false)
     public int batchSubmitReview(String source, String[] achievementIds, Long reviewStatus, String rejectReason)
     {
         ReviewSourceContext context = resolveSourceContext(source);
@@ -513,12 +556,12 @@ public class reviewedServiceImpl implements IreviewedService
 
     private void applyDefaultYear(reviewed incoming)
     {
-        if (incoming.getYear() != null)
+        Date awardTime = incoming.getAwardTime();
+        if (awardTime == null)
         {
             return;
         }
-        Date awardTime = incoming.getAwardTime();
-        if (awardTime == null)
+        if (SecurityUtils.isAdmin(SecurityUtils.getUserId()) && incoming.getYear() != null)
         {
             return;
         }
@@ -535,31 +578,44 @@ public class reviewedServiceImpl implements IreviewedService
             return;
         }
 
+        // 尝试从参与人（负责人）中获取学院
         List<SamAchievementParticipant> participantList = incoming.getSamAchievementParticipantList();
-        if (participantList == null || participantList.isEmpty())
+        if (participantList != null && !participantList.isEmpty())
         {
-            return;
-        }
-
-        SamAchievementParticipant managerParticipant = null;
-        for (SamAchievementParticipant participant : participantList)
-        {
-            if ("1".equals(StringUtils.trim(participant.getManager())))
+            SamAchievementParticipant managerParticipant = null;
+            for (SamAchievementParticipant participant : participantList)
             {
-                managerParticipant = participant;
-                break;
+                if ("1".equals(StringUtils.trim(participant.getManager())))
+                {
+                    managerParticipant = participant;
+                    break;
+                }
+            }
+
+            if (managerParticipant == null)
+            {
+                managerParticipant = participantList.get(0);
+            }
+
+            String ownerDepId = resolveOwnerDepIdFromParticipant(managerParticipant);
+            if (StringUtils.hasText(ownerDepId))
+            {
+                incoming.setOwnerDepId(ownerDepId);
+                return;
             }
         }
 
-        if (managerParticipant == null)
-        {
-            managerParticipant = participantList.get(0);
-        }
-
-        String ownerDepId = resolveOwnerDepIdFromParticipant(managerParticipant);
-        if (StringUtils.hasText(ownerDepId))
-        {
-            incoming.setOwnerDepId(ownerDepId);
+        // 兜底方案：从当前登录人的部门获取学院
+        try {
+            Long userDeptId = SecurityUtils.getDeptId();
+            if (userDeptId != null) {
+                Long collegeId = deptService.getCollegeId(userDeptId);
+                if (collegeId != null) {
+                    incoming.setOwnerDepId(String.valueOf(collegeId));
+                }
+            }
+        } catch (Exception e) {
+            // 忽略非登录环境下的异常
         }
     }
 
@@ -594,6 +650,17 @@ public class reviewedServiceImpl implements IreviewedService
         return null;
     }
 
+    /**
+     * 根据部门ID向上查找归属学院ID (parent_id 为 100 的部门)
+     */
+    private String getCollegeIdByAnyDeptId(String deptIdStr) {
+        if (!StringUtils.hasText(deptIdStr) || !deptIdStr.matches("\\d+")) {
+            return null;
+        }
+        Long collegeId = deptService.getCollegeId(Long.valueOf(deptIdStr));
+        return collegeId != null ? String.valueOf(collegeId) : null;
+    }
+
     private String normalizeDeptId(String schoolValue)
     {
         if (!StringUtils.hasText(schoolValue))
@@ -602,28 +669,30 @@ public class reviewedServiceImpl implements IreviewedService
         }
 
         String normalized = schoolValue.trim();
+        String foundId = null;
+
         if (normalized.matches("\\d+"))
         {
-            return normalized;
-        }
-
-        SysDept query = new SysDept();
-        query.setDeptName(normalized);
-        List<SysDept> deptList = deptService.selectDeptList(query);
-        if (deptList == null || deptList.isEmpty())
-        {
-            return null;
-        }
-
-        for (SysDept dept : deptList)
-        {
-            if (dept != null && StringUtils.equals(normalized, dept.getDeptName()) && dept.getDeptId() != null)
+            foundId = normalized;
+        } else {
+            SysDept query = new SysDept();
+            query.setDeptName(normalized);
+            List<SysDept> deptList = deptService.selectDeptList(query);
+            if (deptList != null && !deptList.isEmpty())
             {
-                return String.valueOf(dept.getDeptId());
+                for (SysDept dept : deptList)
+                {
+                    if (dept != null && StringUtils.equals(normalized, dept.getDeptName()) && dept.getDeptId() != null)
+                    {
+                        foundId = String.valueOf(dept.getDeptId());
+                        break;
+                    }
+                }
             }
         }
 
-        return null;
+        // 统一向上追溯到学院级 (parent_id = 100)
+        return getCollegeIdByAnyDeptId(foundId);
     }
 
     private void validateInsertByStage(reviewed incoming, String stage, String status)

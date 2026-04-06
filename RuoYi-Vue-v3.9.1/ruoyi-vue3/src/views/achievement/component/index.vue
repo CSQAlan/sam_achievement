@@ -1,4 +1,4 @@
-<template>
+﻿<template>
   <div class="achievement-manage-root">
     <div v-show="!pageModeActive" class="app-container">
       <!-- 搜索表单 -->
@@ -165,6 +165,28 @@
               />
             </el-form-item>
           </el-col>
+          <el-col v-if="reviewSource" :span="4">
+            <el-form-item label="年份" prop="year" class="search-item" >
+              <el-input
+                  v-model="queryParams.year"
+                  placeholder="请输入年份"
+                  clearable
+                  @keyup.enter="handleQuery"
+              />
+            </el-form-item>
+          </el-col>
+          <el-col v-if="reviewSource" :span="4">
+            <el-form-item label="是否补录" prop="isSupplement" class="search-item">
+              <el-select v-model="queryParams.isSupplement" placeholder="请选择是否补录" clearable>
+                <el-option
+                    v-for="item in supplementOptions"
+                    :key="item.value"
+                    :label="item.label"
+                    :value="item.value"
+                />
+              </el-select>
+            </el-form-item>
+          </el-col>
           <el-col :span="4" v-if="showReviewStatusFilter">
             <el-form-item label="审核状态" prop="reviewStatus" class="search-item">
               <el-select v-model="queryParams.reviewStatus" placeholder="请选择审核状态" clearable>
@@ -304,13 +326,17 @@
 
       <el-table ref="tableRef" v-loading="loading" :data="listData" @selection-change="handleSelectionChange">
         <el-table-column type="selection" width="55" align="center" />
-        <el-table-column label="成果编号" width="80" align="center" prop="achievementId" />
+        <el-table-column label="成果编号" width="77" align="center" prop="achievementId" />
         <el-table-column label="比赛" width="120" align="center" prop="competitionName">
           <template #default="scope">
-            <span>{{ scope.row.competitionName || scope.row.competition_name || scope.row.track || '-' }}</span>
+            <span>{{ scope.row.competitionName || scope.row.competition_name || '-' }}</span>
           </template>
         </el-table-column>
-        <el-table-column label="届次" width="50" align="center" prop="sessionId" />
+        <el-table-column label="届次" width="90" align="center" prop="sessionName">
+          <template #default="scope">
+            <span>{{ scope.row.sessionName || scope.row.session || scope.row.sessionId || '-' }}</span>
+          </template>
+        </el-table-column>
         <el-table-column label="证书编号" width="120" align="center" prop="certificateNo" />
         <el-table-column label="获奖等级" align="center" prop="grade" width="80">
           <template #default="scope">
@@ -374,6 +400,12 @@
             <span>{{ parseTime(scope.row.awardTime, '{y}-{m}-{d}') }}</span>
           </template>
         </el-table-column>
+        <el-table-column v-if="reviewSource" label="年份" align="center" prop="year" width="60">
+          <template #default="scope">
+            <span>{{ scope.row.year ?? '-' }}</span>
+          </template>
+        </el-table-column>
+
         <el-table-column label="操作" align="center" class-name="small-padding fixed-width">
           <template #default="scope">
             <el-button
@@ -386,16 +418,27 @@
                 :loading="openingReviewPage && String(openingReviewPageId) === String(scope.row?.achievementId)"
             >详情</el-button>
 
-            <el-button
-                v-if="showEdit && canUseEditAction"
-                link
-                type="primary"
-                icon="Edit"
-                @click="handleRowUpdate(scope.row)"
-                v-hasPermi="permEdit"
-                :disabled="openingReviewPage || !checkEditable(scope.row)"
-                :loading="openingReviewPage && String(openingReviewPageId) === String(scope.row?.achievementId)"
-            >审核</el-button>
+            <!-- 原来的按钮代码改为支持 slot -->
+            <slot
+                name="action-button"
+                :row="scope.row"
+                :handle-row-update="handleRowUpdate"
+                :opening-review-page="openingReviewPage"
+                :opening-review-page-id="openingReviewPageId"
+                :check-editable="checkEditable"
+                :perm-edit="permEdit"
+            >
+              <!-- 默认内容（如果没有提供 slot 时显示） -->
+              <el-button
+                  v-if="showEdit && canUseEditAction"
+                  link
+                  type="primary"
+                  icon="Edit"
+                  @click="handleRowUpdate(scope.row)"
+                  v-hasPermi="permEdit"
+                  :disabled="openingReviewPage || !checkEditable(scope.row)"
+                  :loading="openingReviewPage && String(openingReviewPageId) === String(scope.row?.achievementId)"
+              >{{ reviewSource ? '审核' : '修改' }}</el-button>            </slot>
 
             <el-button
                 v-if="showDelete"
@@ -427,6 +470,7 @@
         :get-fn="getFn"
         :add-fn="addFn"
         :update-fn="updateFn"
+        :review-source="reviewSource"
         :page-mode="pageModeActive"
         :read-only="formReadOnly"
         :show-submit="formShowSubmit"
@@ -434,12 +478,13 @@
         cancel-text="返回"
         @ok="handleFormOk"
         @cancel="handleFormCancel"
-    />
-    <AchievementForm
+    >
+    </AchievementForm>    <AchievementForm
         ref="achievementDialogRef"
         :get-fn="getFn"
         :add-fn="addFn"
         :update-fn="updateFn"
+        :review-source="reviewSource"
         :read-only="formReadOnly"
         :show-submit="formShowSubmit"
         :source-mode="sourceMode"
@@ -548,6 +593,10 @@ const isUnreviewedPage = computed(() => {
   return reviewSource.value === 'college_level_unreviewed' || reviewSource.value === 'school_level_unreviewed';
 });
 const showReviewStatusFilter = computed(() => !isUnreviewedPage.value);
+const supplementOptions = [
+  { label: '是', value: 1 },
+  { label: '否', value: 0 }
+];
 
 const { achievement_category, group_type, award_rank, award_level_type, college_audit_status, school_audit_status, college_reason, school_reason } = useDict(
     'achievement_category',
@@ -574,6 +623,8 @@ const queryParams = reactive({
   track: null,
   certificateNo: null,
   groupId: null,
+  year: null,
+  isSupplement: null,
   awardTime: null,
   reviewStatus: null,
   awardTimeStart: null,
@@ -617,6 +668,7 @@ const syncingSelection = ref(false);
 const batchReviewLoading = ref(false);
 const openingReviewPage = ref(false);
 const openingReviewPageId = ref('');
+const currentId = ref(null);
 const exportAttachmentDialogVisible = ref(false);
 const exportAttachmentLoading = ref(false);
 const selectedAttachmentTypes = ref([]);
@@ -1204,7 +1256,7 @@ function clearSelectionState() {
   tableRef.value?.clearSelection?.();
 }
 function handleAdd() {
-  openDialog();
+  openPageForm();
 }
 
 async function handleUpdate() {
@@ -1480,6 +1532,7 @@ onBeforeUnmount(() => {
 });
 
 function openPageForm(id, options = {}) {
+  currentId.value = id || null;
   formReadOnly.value = !!options.readOnly;
   formShowSubmit.value = !formReadOnly.value;
   pageModeActive.value = true;
@@ -1490,6 +1543,7 @@ function openPageForm(id, options = {}) {
 }
 
 function openDialog(id, options = {}) {
+  currentId.value = id || null;
   formReadOnly.value = !!options.readOnly;
   formShowSubmit.value = !formReadOnly.value;
   nextTick(() => {

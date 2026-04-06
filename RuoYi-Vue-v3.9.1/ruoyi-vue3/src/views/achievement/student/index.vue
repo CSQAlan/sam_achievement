@@ -191,7 +191,7 @@
   <el-cascader
     v-model="deptCascaderValue"
     :options="deptOptions"
-    :props="{ value: 'deptId', label: 'deptName', children: 'children' }"
+    :props="{ value: 'deptName', label: 'deptName', children: 'children' }"
     placeholder="请选择学院/院系/专业"
     clearable
     filterable
@@ -408,9 +408,9 @@ function handleUpdate(row) {
     form.value = response.data;
     // 回填级联选择器 (Now starting directly from Level 2: school, department, major)
     const values = [];
-    if (form.value.school) values.push(Number(form.value.school));
-    if (form.value.department) values.push(Number(form.value.department));
-    if (form.value.major) values.push(Number(form.value.major));
+    if (form.value.school) values.push(form.value.school);
+    if (form.value.department) values.push(form.value.department);
+    if (form.value.major) values.push(form.value.major);
     deptCascaderValue.value = values;
     
     open.value = true;

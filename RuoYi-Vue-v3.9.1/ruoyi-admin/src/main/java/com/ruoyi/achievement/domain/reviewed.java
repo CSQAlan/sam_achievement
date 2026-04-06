@@ -7,6 +7,7 @@ import com.fasterxml.jackson.annotation.JsonFormat;
 import org.apache.commons.lang3.builder.ToStringBuilder;
 import org.apache.commons.lang3.builder.ToStringStyle;
 import com.ruoyi.common.annotation.Excel;
+import com.ruoyi.common.annotation.Excel.Type;
 import com.ruoyi.common.core.domain.BaseEntity;
 
 /**
@@ -24,13 +25,18 @@ public class reviewed extends BaseEntity
     private String achievementId;
 
     /** 届次  */
-    @Excel(name = "届次 ")
+    @Excel(name = "届次 ", type = Type.IMPORT)
     private String sessionId;
+
+    /** 届次名称（前端展示用） */
+    @Excel(name = "届次", type = Type.EXPORT)
+    private String sessionName;
 
     /** derived from session relation for frontend display */
     private String competitionId;
 
     /** derived from session relation for frontend display */
+    @Excel(name = "比赛", type = Type.EXPORT)
     private String competitionName;
 
     /** 类别 */
@@ -77,6 +83,7 @@ public class reviewed extends BaseEntity
     private Date awardTime;
 
     /** 年份 */
+    @Excel(name = "\u5e74\u4efd")
     private Long year;
 
     /** 部门 */
@@ -86,6 +93,7 @@ public class reviewed extends BaseEntity
     private Integer isReimburse;
 
     /** 是否补录 */
+    @Excel(name = "\u662f\u5426\u8865\u5f55", readConverterExp = "0=\u5426,1=\u662f")
     private Integer isSupplement;
 
     /** 报名费金额 */
@@ -169,6 +177,16 @@ public class reviewed extends BaseEntity
     public String getSessionId() 
     {
         return sessionId;
+    }
+
+    public void setSessionName(String sessionName)
+    {
+        this.sessionName = sessionName;
+    }
+
+    public String getSessionName()
+    {
+        return sessionName;
     }
 
     public void setCompetitionId(String competitionId)
@@ -556,6 +574,7 @@ public class reviewed extends BaseEntity
         return new ToStringBuilder(this,ToStringStyle.MULTI_LINE_STYLE)
             .append("achievementId", getAchievementId())
             .append("sessionId", getSessionId())
+            .append("sessionName", getSessionName())
             .append("competitionId", getCompetitionId())
             .append("competitionName", getCompetitionName())
             .append("category", getCategory())
