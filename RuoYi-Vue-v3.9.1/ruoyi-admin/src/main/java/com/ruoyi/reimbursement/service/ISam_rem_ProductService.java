@@ -127,5 +127,21 @@ public interface ISam_rem_ProductService
      */
     public Map<String, Object> batchCancelAssociation(List<String> achievementIds, String reimbursementItemId);
 
+    /**
+     * 更新报销状态
+     * 
+     * @param achievementIds 成果ID列表
+     * @param reimbursementItemId 报销项目ID
+     * @return 结果
+     */
+    public Map<String, Object> updateTransferStatus(List<String> achievementIds, String reimbursementItemId);
 
-} 
+    /**
+     * 获取支付信息
+     * 
+     * @param reimbursementItemId 报销项目ID
+     * @return 支付信息
+     */
+    public Map<String, Object> getPaymentInfo(String reimbursementItemId);
+
+}  

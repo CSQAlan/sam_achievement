@@ -226,5 +226,49 @@ public TableDataInfo list(Sam_rem_Product sam_rem_Product)
         }
     }
 
+    /**
+     * 批量更新报销状态
+     */
+    @PreAuthorize("@ss.hasPermi('system:Reimbursement:edit')")
+    @Log(title = "批量更新报销状态", businessType = BusinessType.UPDATE)
+    @PostMapping("/updateTransferStatus")
+    public AjaxResult updateTransferStatus(@RequestBody Map<String, Object> params) {
+        try {
+            @SuppressWarnings("unchecked")
+            List<String> achievementIds = (List<String>) params.get("achievementIds");
+            String reimbursementItemId = (String) params.get("reimbursementItemId");
+            
+            if (achievementIds == null || achievementIds.isEmpty()) {
+                return AjaxResult.error("请选择要报销的成果");
+            }
+            if (reimbursementItemId == null || reimbursementItemId.isEmpty()) {
+                return AjaxResult.error("报销项目ID不能为空");
+            }
+            
+            Map<String, Object> result = sam_rem_ProductService.updateTransferStatus(achievementIds, reimbursementItemId);
+            return AjaxResult.success("成功报销 " + result.get("successCount") + " 个成果", result);
+        } catch (Exception e) {
+            return AjaxResult.error(e.getMessage());
+        }
+    }
+
+    /**
+     * 获取支付信息
+     */
+    @PreAuthorize("@ss.hasPermi('system:Reimbursement:query')")
+    @GetMapping("/getPaymentInfo")
+    public AjaxResult getPaymentInfo(@RequestParam String reimbursementItemId) {
+        try {
+            if (reimbursementItemId == null || reimbursementItemId.isEmpty()) {
+                return AjaxResult.error("报销项目ID不能为空");
+            }
+            
+            Map<String, Object> paymentInfo = sam_rem_ProductService.getPaymentInfo(reimbursementItemId);
+            return AjaxResult.success("获取支付信息成功", paymentInfo);
+        } catch (Exception e) {
+            return AjaxResult.error(e.getMessage());
+        }
+    }
+
 }
 

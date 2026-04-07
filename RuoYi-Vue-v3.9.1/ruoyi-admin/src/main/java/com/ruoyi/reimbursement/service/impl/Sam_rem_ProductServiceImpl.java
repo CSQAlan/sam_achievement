@@ -320,7 +320,12 @@ public class Sam_rem_ProductServiceImpl implements ISam_rem_ProductService
             throw new RuntimeException("成果未关联到当前报销项目");
         }
         
-        // 3. 执行取消关联
+        // 3. 检查是否已报销（有报销时间）
+        if (product.getReimbursementDate() != null) {
+            throw new RuntimeException("已报销的成果无法取消关联");
+        }
+        
+        // 4. 执行取消关联
         int updated = sam_rem_ProductMapper.cancelAssociation(achievementId);
         
         // 4. 更新报销项目的统计信息
@@ -402,7 +407,65 @@ public class Sam_rem_ProductServiceImpl implements ISam_rem_ProductService
         samReimbursementItemsMapper.updateSamReimbursementItems(updateProject);
     }
 
+    @Override
+    @Transactional
+    public Map<String, Object> updateTransferStatus(List<String> achievementIds, String reimbursementItemId) {
+        Map<String, Object> result = new HashMap<>();
+        
+        // 1. 验证报销项目存在
+        SamReimbursementItems project = samReimbursementItemsMapper.selectSamReimbursementItemsById(Long.valueOf(reimbursementItemId));
+        if (project == null) {
+            throw new RuntimeException("报销项目不存在");
+        }
+        
+        // 2. 验证所有成果都关联到当前项目
+        for (String achievementId : achievementIds) {
+            Sam_rem_Product product = sam_rem_ProductMapper.selectSam_rem_ProductByAchievementId(achievementId);
+            if (product == null) {
+                throw new RuntimeException("成果ID " + achievementId + " 不存在");
+            }
+            if (!reimbursementItemId.equals(product.getReimbursementItemId())) {
+                throw new RuntimeException("成果【" + product.getName() + "】未关联到当前报销项目");
+            }
+            // 检查是否已报销（通过报销时间判断）
+            if (product.getReimbursementDate() != null) {
+                throw new RuntimeException("成果【" + product.getName() + "】已经报销，无法重复报销");
+            }
+        }
+        
+        // 3. 执行批量更新报销状态
+        int updated = sam_rem_ProductMapper.batchUpdateTransferStatus(achievementIds);
+        
+        // 4. 更新报销项目的统计信息
+        updateProjectStatistics(reimbursementItemId);
+        
+        result.put("successCount", updated);
+        result.put("totalCount", achievementIds.size());
+        
+        return result;
+    }
 
-} 
+    @Override
+    public Map<String, Object> getPaymentInfo(String reimbursementItemId) {
+        // 1. 验证报销项目存在
+        SamReimbursementItems project = samReimbursementItemsMapper.selectSamReimbursementItemsById(Long.valueOf(reimbursementItemId));
+        if (project == null) {
+            throw new RuntimeException("报销项目不存在");
+        }
+        
+        // 2. 查询支付信息
+        Map<String, Object> paymentInfo = sam_rem_ProductMapper.getPaymentInfo(reimbursementItemId);
+        if (paymentInfo == null) {
+            paymentInfo = new HashMap<>();
+            paymentInfo.put("projectName", project.getName());
+            paymentInfo.put("reimbursementTime", project.getReimbursementTime());
+            paymentInfo.put("totalAmount", 0);
+            paymentInfo.put("totalCount", 0);
+        }
+        
+        return paymentInfo;
+    }
+
+}  
 
 

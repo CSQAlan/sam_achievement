@@ -105,3 +105,21 @@ export function updateProjectStatus(id, status) {
     data: { id, status }
   })
 }
+
+// 批量更新报销状态
+export function updateTransferStatus(achievementIds, reimbursementItemId) {
+  return request({
+    url: '/system/Reimbursement/updateTransferStatus',
+    method: 'post',
+    data: { achievementIds, reimbursementItemId }
+  })
+}
+
+// 获取支付信息
+export function getPaymentInfo(reimbursementItemId) {
+  return request({
+    url: '/system/Reimbursement/getPaymentInfo',
+    method: 'get',
+    params: { reimbursementItemId }
+  })
+}

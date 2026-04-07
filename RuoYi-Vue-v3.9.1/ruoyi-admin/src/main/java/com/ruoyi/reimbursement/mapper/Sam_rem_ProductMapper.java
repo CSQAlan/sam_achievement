@@ -1,6 +1,7 @@
 package com.ruoyi.reimbursement.mapper;
 
 import java.util.List;
+import java.util.Map;
 
 import com.ruoyi.reimbursement.domain.SamReimbursementItems;
 import com.ruoyi.reimbursement.domain.Sam_rem_Product;
@@ -148,6 +149,21 @@ public interface Sam_rem_ProductMapper
      */
     public int batchCancelAssociation(@Param("list") List<String> achievementIds);
 
+    /**
+     * 批量更新报销状态
+     * 
+     * @param achievementIds 成果ID列表
+     * @return 结果
+     */
+    public int batchUpdateTransferStatus(@Param("list") List<String> achievementIds);
 
-} 
+    /**
+     * 查询支付信息
+     * 
+     * @param reimbursementItemId 报销项目ID
+     * @return 支付信息
+     */
+    public Map<String, Object> getPaymentInfo(String reimbursementItemId);
+
+}  
 

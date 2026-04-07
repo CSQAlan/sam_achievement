@@ -238,7 +238,7 @@
       </el-col>
       <el-col :span="1.5" v-if="reimbursementItemId">
         <el-tooltip 
-          :content="currentProjectStatus === '1' ? '项目已确认，清单已锁定' : '确认后清单将被锁定，不可再修改'" 
+          :content="currentProjectStatus === '1' ? '项目已确认，清单已锁定' : '确认后清单将被锁定，不可再修改' " 
           placement="top"
         >
           <el-button
@@ -252,6 +252,16 @@
             {{ currentProjectStatus === '1' ? '已确认报销清单' : '确认报销清单' }}
           </el-button>
         </el-tooltip>
+      </el-col>
+      <el-col :span="1.5" v-if="reimbursementItemId">
+        <el-button
+          type="success"
+          plain
+          icon="Check"
+          :disabled="isProjectConfirmed || !reimbursementItemId || ids.length === 0"
+          @click="handleOpenReimburseDialog"
+          v-hasPermi="['system:Reimbursement:edit']"
+        >批量报销</el-button>
       </el-col>
       <right-toolbar v-model:showSearch="showSearch" @queryTable="getList"></right-toolbar>
     </el-row>
@@ -317,12 +327,25 @@
     </template>
   </el-table-column>
 
-  <!-- 是否报销 -->
-  <el-table-column label="是否报销" align="center" width="100">
+  <!-- 报销状态列 -->
+  <el-table-column label="报销状态" align="center" width="120">
     <template #default="scope">
-      <!-- 兼容 isReimburse 和 is_reimburse -->
-      <el-tag v-if="scope.row.isReimburse === 1 || scope.row.is_reimburse === 1" type="success">已报销</el-tag>
-      <el-tag v-else-if="scope.row.isReimburse === 0 || scope.row.is_reimburse === 0" type="info">未报销</el-tag>
+      <!-- 优先使用 is_reimburse 字段判断 -->
+      <el-tag v-if="scope.row.is_reimburse === 1 || scope.row.isReimburse === 1" type="success">
+        已报销
+      </el-tag>
+      <!-- 有报销时间 -->
+      <el-tag v-else-if="scope.row.reimbursementDate || scope.row.reimbursement_date" type="success">
+        已报销
+      </el-tag>
+      <!-- 需报销：有报销金额且大于0 -->
+      <el-tag
+        v-else-if="(scope.row.reimbursementFee || scope.row.reimbursement_fee || 0) > 0"
+        type="warning"
+      >
+        需报销
+      </el-tag>
+      <!-- 不需要报销 -->
       <span v-else>-</span>
     </template>
   </el-table-column>
@@ -352,9 +375,9 @@
             @click="handleDelete(scope.row)" 
             v-hasPermi="['system:Reimbursement:remove']"
           >删除</el-button>
-          <!-- 取消关联按钮 - 仅当项目未确认时显示 -->
+          <!-- 取消关联按钮 - 仅当项目未确认且未报销时显示 -->
           <el-button 
-            v-if="!isProjectConfirmed"
+            v-if="!isProjectConfirmed && (!scope.row.reimbursementDate)"
             link 
             type="warning" 
             icon="Link" 
@@ -676,12 +699,84 @@
       :show-submit="false"
       cancel-text="关闭"
     />
+
+    <!-- 报销弹窗 -->
+    <el-dialog 
+      title="批量报销" 
+      v-model="reimburseDialogVisible" 
+      width="600px" 
+      append-to-body
+      :close-on-click-modal="false"
+      @close="handleCloseReimburseDialog"
+    >
+      <!-- 支付信息 -->
+      <div v-if="paymentInfo" class="payment-info">
+        <el-alert
+          :title="'报销项目：' + paymentInfo.projectName"
+          type="info"
+          :closable="false"
+          class="mb-4"
+        />
+        <el-form :model="paymentInfo" label-width="120px">
+          <el-form-item label="报销时间">
+            <span>{{ paymentInfo.reimbursementTime ? parseTime(paymentInfo.reimbursementTime, '{y}-{m}-{d}') : '-' }}</span>
+          </el-form-item>
+          <el-form-item label="成果数量">
+            <span>{{ paymentInfo.totalCount || 0 }} 个</span>
+          </el-form-item>
+          <el-form-item label="报销总金额">
+            <span class="amount-text">¥{{ formatMoney(paymentInfo.totalAmount || 0) }}</span>
+          </el-form-item>
+        </el-form>
+      </div>
+
+      <!-- 报销进度 -->
+      <div v-if="reimburseProgress.show" class="reimburse-progress">
+        <el-progress 
+          :percentage="reimburseProgress.percentage" 
+          :status="reimburseProgress.status"
+          :format="() => `${reimburseProgress.current}/${reimburseProgress.total} 个成果`"
+          class="mb-4"
+        />
+        <div class="progress-status" v-if="reimburseProgress.message">
+          {{ reimburseProgress.message }}
+        </div>
+        <div class="error-list" v-if="reimburseProgress.errors.length > 0">
+          <el-divider content-position="left">报销失败</el-divider>
+          <el-alert
+            v-for="(error, index) in reimburseProgress.errors"
+            :key="index"
+            :title="error"
+            type="error"
+            :closable="false"
+            class="mb-2"
+          />
+        </div>
+      </div>
+
+      <template #footer>
+        <div class="dialog-footer">
+          <el-button 
+            :disabled="reimburseProgress.show"
+            @click="reimburseDialogVisible = false"
+          >取 消</el-button>
+          <el-button 
+            type="primary" 
+            :loading="reimburseLoading"
+            :disabled="reimburseProgress.show || !canReimburse"
+            @click="handleSubmitReimburse"
+          >
+            {{ reimburseProgress.show ? '报销中...' : '确认报销' }}
+          </el-button>
+        </div>
+      </template>
+    </el-dialog>
   </div>
 </template>
 
 <script setup name="Reimbursement">
 import { ref, reactive, toRefs, getCurrentInstance, onMounted, computed } from 'vue'
-import { listReimbursement, getReimbursement, delReimbursement, addReimbursement, updateReimbursement, recalculateReimbursementAmount, listUnassociatedProduct, associateAchievements, cancelAssociation, batchCancelAssociation, getReimbursementProjectInfo, updateProjectStatus } from "@/api/system/Reimbursement"
+import { listReimbursement, getReimbursement, delReimbursement, addReimbursement, updateReimbursement, recalculateReimbursementAmount, listUnassociatedProduct, associateAchievements, cancelAssociation, batchCancelAssociation, getReimbursementProjectInfo, updateProjectStatus, updateTransferStatus, getPaymentInfo } from "@/api/system/Reimbursement"
 // 导入图标
 import { View, Link, Lock, Edit } from '@element-plus/icons-vue'
 import { useRoute } from 'vue-router'
@@ -749,6 +844,25 @@ const calculateDisabled = computed(() => {
 
 // 详情组件引用
 const achievementFormRef = ref(null)
+
+// 报销相关变量
+const reimburseDialogVisible = ref(false)      // 报销弹窗显示状态
+const paymentInfo = ref(null)                 // 支付信息
+const reimburseLoading = ref(false)           // 报销加载状态
+const reimburseProgress = ref({
+  show: false,                               // 是否显示进度
+  percentage: 0,                             // 进度百分比
+  current: 0,                                // 当前处理数量
+  total: 0,                                  // 总数量
+  message: '',                               // 进度消息
+  status: '',                                // 进度状态
+  errors: []                                 // 错误信息
+})
+
+// 是否可以报销
+const canReimburse = computed(() => {
+  return ids.value.length > 0 && !isProjectConfirmed.value
+})
 
 /**
  * 查看成果详情
@@ -1325,15 +1439,13 @@ const updateStatsFromList = (list) => {
   let paidAmount = 0
   
   list.forEach(item => {
-    // 获取需报销金额（报名费）或实际报销金额
-    // 根据业务，总金额应该是需报销金额的总和
-    const fee = parseFloat(item.fee) || 0  // 需报销金额（报名费）
-    totalAmount += fee
+    // 总金额 = 实际报销金额的总和
+    const reimbursementFee = parseFloat(item.reimbursementFee) || parseFloat(item.reimbursement_fee) || 0
+    totalAmount += reimbursementFee
     
-    // 已发放金额：已报销的成果的实际报销金额
-    const isReimburse = item.isReimburse === '1' || item.is_reimburse === '1'
-    if (isReimburse) {
-      const reimbursementFee = parseFloat(item.reimbursementFee) || parseFloat(item.reimbursement_fee) || 0
+    // 已发放金额：有报销时间的成果才算已发放
+    const isPaid = item.reimbursementDate !== null && item.reimbursementDate !== ''
+    if (isPaid) {
       paidAmount += reimbursementFee
     }
   })
@@ -1425,6 +1537,153 @@ const handleBatchCancelAssociation = async () => {
   }
 }
 
+/**
+ * 打开报销弹窗
+ */
+const handleOpenReimburseDialog = async () => {
+  if (ids.value.length === 0) {
+    proxy.$modal.msgWarning("请选择要报销的成果")
+    return
+  }
+  
+  // 重置进度状态
+  reimburseProgress.value = {
+    show: false,
+    percentage: 0,
+    current: 0,
+    total: 0,
+    message: '',
+    status: '',
+    errors: []
+  }
+  
+  try {
+    // 获取支付信息
+    const paymentRes = await getPaymentInfo(reimbursementItemId.value)
+    if (paymentRes.code === 200) {
+      paymentInfo.value = paymentRes.data
+    }
+  } catch (error) {
+    console.error("获取支付信息失败:", error)
+  }
+  
+  // 打开弹窗
+  reimburseDialogVisible.value = true
+}
+
+/**
+ * 关闭报销弹窗
+ */
+const handleCloseReimburseDialog = () => {
+  // 重置状态
+  reimburseProgress.value = {
+    show: false,
+    percentage: 0,
+    current: 0,
+    total: 0,
+    message: '',
+    status: '',
+    errors: []
+  }
+  paymentInfo.value = null
+}
+
+/**
+ * 提交报销
+ */
+const handleSubmitReimburse = async () => {
+  if (ids.value.length === 0) {
+    proxy.$modal.msgWarning("请选择要报销的成果")
+    return
+  }
+  
+  // 获取选中的需报销成果（有报销金额且没有报销时间）
+  const selectedProducts = ReimbursementList.value.filter(item => 
+    ids.value.includes(item.achievementId) && 
+    !item.reimbursementDate &&  // 没有报销时间
+    ((item.reimbursementFee || item.reimbursement_fee || 0) > 0)  // 有报销金额
+  )
+  
+  if (selectedProducts.length === 0) {
+    proxy.$modal.msgWarning("请选择需报销且未报销的成果")
+    return
+  }
+  
+  try {
+    await proxy.$modal.confirm(
+      `确定要对选中的 ${selectedProducts.length} 个成果进行报销吗？`,
+      '报销确认',
+      {
+        confirmButtonText: '确定',
+        cancelButtonText: '取消',
+        type: 'success'
+      }
+    )
+  } catch {
+    return
+  }
+  
+  reimburseLoading.value = true
+  reimburseProgress.value = {
+    show: true,
+    percentage: 0,
+    current: 0,
+    total: selectedProducts.length,
+    message: '准备开始报销...',
+    status: '',
+    errors: []
+  }
+  
+  try {
+    // 模拟队列处理
+    const selectedIds = selectedProducts.map(item => item.achievementId)
+    for (let i = 0; i < selectedIds.length; i++) {
+      const achievementId = selectedIds[i]
+      reimburseProgress.value.current = i + 1
+      reimburseProgress.value.percentage = Math.round((i + 1) / selectedIds.length * 100)
+      reimburseProgress.value.message = `正在处理第 ${i + 1} 个成果...`
+      
+      // 模拟处理延迟
+      await new Promise(resolve => setTimeout(resolve, 500))
+    }
+    
+    // 调用后端报销接口
+    const res = await updateTransferStatus(selectedIds, reimbursementItemId.value)
+    
+    if (res.code === 200) {
+      reimburseProgress.value.message = '报销完成！'
+      reimburseProgress.value.status = 'success'
+      
+      // 显示成功消息
+      proxy.$modal.msgSuccess(`成功报销 ${res.data?.successCount || ids.value.length} 个成果`)
+      
+      // 清空选中
+      ids.value = []
+      
+      // 刷新列表和统计
+      await loadDetailByReimbursementItemId()
+      await handleRecalculate()
+      
+      // 关闭弹窗
+      setTimeout(() => {
+        reimburseDialogVisible.value = false
+      }, 1000)
+    } else {
+      throw new Error(res.msg || "报销失败")
+    }
+  } catch (error) {
+    console.error("报销失败:", error)
+    reimburseProgress.value.message = '报销失败'
+    reimburseProgress.value.status = 'exception'
+    reimburseProgress.value.errors.push(error.message || "报销失败，请稍后重试")
+    
+    // 显示错误消息
+    proxy.$modal.msgError(error.message || "报销失败，请稍后重试")
+  } finally {
+    reimburseLoading.value = false
+  }
+}
+
 // 初始化加载数据
 getList()
 </script>
@@ -1506,5 +1765,57 @@ getList()
   padding: 20px 0;
   border-top: 1px solid #e4e7ed;
   margin-top: 20px;
+}
+
+/* 报销相关样式 */
+.payment-info {
+  margin-bottom: 20px;
+}
+
+.amount-text {
+  font-size: 18px;
+  font-weight: bold;
+  color: #409eff;
+}
+
+.reimburse-progress {
+  margin-top: 20px;
+}
+
+.progress-status {
+  text-align: center;
+  margin: 10px 0;
+  color: #606266;
+}
+
+.error-list {
+  margin-top: 20px;
+}
+
+/* 统计卡片样式 */
+.statistics-card {
+  transition: all 0.3s ease;
+}
+
+.statistics-card:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+}
+
+.card-content {
+  text-align: center;
+  padding: 10px 0;
+}
+
+.card-label {
+  font-size: 14px;
+  color: #909399;
+  margin-bottom: 8px;
+}
+
+.card-value {
+  font-size: 24px;
+  font-weight: bold;
+  color: #303133;
 }
 </style>

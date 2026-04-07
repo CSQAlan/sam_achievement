@@ -445,4 +445,29 @@ PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
           AND del_flag = '0'
         ORDER BY upload_time DESC
     </select>
+
+    <!-- 批量更新报销状态 -->
+    <update id="batchUpdateTransferStatus">
+        UPDATE sam_achievement
+        SET is_reimburse = 1,
+            reimbursement_date = NOW(),
+            update_time = NOW()
+        WHERE achievement_id IN
+        <foreach collection="list" item="achievementId" open="(" separator="," close=")">
+            #{achievementId}
+        </foreach>
+        AND del_flag = '0'
+    </update>
+
+    <!-- 查询支付信息 -->
+    <select id="getPaymentInfo" resultType="java.util.HashMap">
+        SELECT 
+            s.name AS projectName,
+            s.reimbursement_time AS reimbursementTime,
+            (SELECT SUM(reimbursement_fee) FROM sam_achievement WHERE reimbursement_item_id = s.id AND del_flag = '0') AS totalAmount,
+            (SELECT COUNT(*) FROM sam_achievement WHERE reimbursement_item_id = s.id AND del_flag = '0') AS totalCount
+        FROM sam_reimbursement_items s
+        WHERE s.id = #{reimbursementItemId}
+          AND s.del_flag = '0'
+    </select>
 </mapper>
