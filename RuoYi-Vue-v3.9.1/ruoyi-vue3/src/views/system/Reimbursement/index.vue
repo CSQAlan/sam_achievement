@@ -330,23 +330,31 @@
   <!-- 报销状态列 -->
   <el-table-column label="报销状态" align="center" width="120">
     <template #default="scope">
-      <!-- 优先使用 is_reimburse 字段判断 -->
-      <el-tag v-if="scope.row.is_reimburse === 1 || scope.row.isReimburse === 1" type="success">
-        已报销
-      </el-tag>
-      <!-- 有报销时间 -->
-      <el-tag v-else-if="scope.row.reimbursementDate || scope.row.reimbursement_date" type="success">
-        已报销
-      </el-tag>
-      <!-- 需报销：有报销金额且大于0 -->
-      <el-tag
-        v-else-if="(scope.row.reimbursementFee || scope.row.reimbursement_fee || 0) > 0"
-        type="warning"
-      >
-        需报销
-      </el-tag>
-      <!-- 不需要报销 -->
-      <span v-else>-</span>
+      <template v-if="scope.row">
+        <!-- 情况1：已报销（有报销时间） -->
+        <el-tag
+          v-if="scope.row.reimbursementDate || scope.row.reimbursement_date"
+          type="success"
+        >
+          已报销
+        </el-tag>
+        <!-- 情况2：需要报销（is_reimburse = 1 但没有报销时间） -->
+        <el-tag
+          v-else-if="scope.row.is_reimburse === 1 || scope.row.isReimburse === 1"
+          type="warning"
+        >
+          需报销
+        </el-tag>
+        <!-- 情况3：需要报销（有报销金额但未报销） -->
+        <el-tag
+          v-else-if="(scope.row.reimbursementFee || scope.row.reimbursement_fee || 0) > 0"
+          type="warning"
+        >
+          需报销
+        </el-tag>
+        <!-- 情况4：未报销 -->
+        <span v-else class="unreimbursed-status">未报销</span>
+      </template>
     </template>
   </el-table-column>
 
@@ -710,25 +718,39 @@
       @close="handleCloseReimburseDialog"
     >
       <!-- 支付信息 -->
-      <div v-if="paymentInfo" class="payment-info">
-        <el-alert
-          :title="'报销项目：' + paymentInfo.projectName"
-          type="info"
-          :closable="false"
-          class="mb-4"
-        />
-        <el-form :model="paymentInfo" label-width="120px">
-          <el-form-item label="报销时间">
-            <span>{{ paymentInfo.reimbursementTime ? parseTime(paymentInfo.reimbursementTime, '{y}-{m}-{d}') : '-' }}</span>
-          </el-form-item>
-          <el-form-item label="成果数量">
-            <span>{{ paymentInfo.totalCount || 0 }} 个</span>
-          </el-form-item>
-          <el-form-item label="报销总金额">
-            <span class="amount-text">¥{{ formatMoney(paymentInfo.totalAmount || 0) }}</span>
-          </el-form-item>
-        </el-form>
-      </div>
+        <div v-if="paymentInfo" class="payment-info">
+          <el-alert
+            :title="'报销项目：' + paymentInfo.projectName"
+            type="info"
+            :closable="false"
+            class="mb-4"
+          />
+          <el-form :model="paymentInfo" label-width="120px">
+            <el-form-item label="报销时间">
+              <span>{{ paymentInfo.reimbursementTime ? parseTime(paymentInfo.reimbursementTime, '{y}-{m}-{d}') : '-' }}</span>
+            </el-form-item>
+            <el-form-item label="成果数量">
+              <span>{{ paymentInfo.totalCount || 0 }} 个</span>
+            </el-form-item>
+            <el-form-item label="报销总金额">
+              <span class="amount-text">¥{{ formatMoney(paymentInfo.totalAmount || 0) }}</span>
+            </el-form-item>
+          </el-form>
+          
+          <!-- 收款码区域 -->
+          <div class="qrcode-section">
+            <div class="qrcode-title">请扫描下方收款码完成转账</div>
+            <div class="qrcode-wrapper">
+              <iframe v-if="paymentInfo.qrCodeUrl && paymentInfo.qrCodeUrl !== 'default_qrcode'" :src="'/attachment/download?resource=' + paymentInfo.qrCodeUrl" class="qrcode-pdf" frameborder="0"></iframe>
+              <div v-else class="qrcode-placeholder">
+                <el-icon><Picture /></el-icon>
+                <span>收款码未设置</span>
+                <div style="font-size: 12px; margin-top: 5px;">请在成果提交界面上传收款码</div>
+              </div>
+            </div>
+            <div class="qrcode-tip">转账完成后，请点击"确认报销"按钮</div>
+          </div>
+        </div>
 
       <!-- 报销进度 -->
       <div v-if="reimburseProgress.show" class="reimburse-progress">
@@ -1100,13 +1122,6 @@ function reset() {
     isSupplement: null,
     year: null,
     ownerDepId: null,
-    isReimburse: null,
-    isSupplement: null,
-    fee: null,
-    reimbursementFee: null,
-    reimbursementRatio: null,
-    reimbursementItemId: null,
-    reimbursementDate: null,
     itemIndex: null,
     qualityIndex: null,
     submittedAt: null,
@@ -1443,8 +1458,9 @@ const updateStatsFromList = (list) => {
     const reimbursementFee = parseFloat(item.reimbursementFee) || parseFloat(item.reimbursement_fee) || 0
     totalAmount += reimbursementFee
     
-    // 已发放金额：有报销时间的成果才算已发放
-    const isPaid = item.reimbursementDate !== null && item.reimbursementDate !== ''
+    // 已发放金额：有报销时间的才算已发放
+    const isPaid = (item.reimbursementDate || item.reimbursement_date) !== null && 
+                   (item.reimbursementDate || item.reimbursement_date) !== ''
     if (isPaid) {
       paidAmount += reimbursementFee
     }
@@ -1597,21 +1613,23 @@ const handleSubmitReimburse = async () => {
     return
   }
   
-  // 获取选中的需报销成果（有报销金额且没有报销时间）
-  const selectedProducts = ReimbursementList.value.filter(item => 
+  // 获取选中的需报销成果
+  // 条件：is_reimburse = 1 且 没有报销时间 或者 有报销金额
+  const needReimburseProducts = ReimbursementList.value.filter(item => 
     ids.value.includes(item.achievementId) && 
-    !item.reimbursementDate &&  // 没有报销时间
-    ((item.reimbursementFee || item.reimbursement_fee || 0) > 0)  // 有报销金额
+    !item.reimbursementDate && !item.reimbursement_date &&  // 没有报销时间
+    (item.is_reimburse === 1 || item.isReimburse === 1 ||   // is_reimburse = 1
+     (item.reimbursementFee || item.reimbursement_fee || 0) > 0)  // 或者有报销金额
   )
   
-  if (selectedProducts.length === 0) {
-    proxy.$modal.msgWarning("请选择需报销且未报销的成果")
+  if (needReimburseProducts.length === 0) {
+    proxy.$modal.msgWarning("请选择需报销的成果（is_reimburse=1且未报销）")
     return
   }
   
   try {
     await proxy.$modal.confirm(
-      `确定要对选中的 ${selectedProducts.length} 个成果进行报销吗？`,
+      `确定要对选中的 ${needReimburseProducts.length} 个成果进行报销吗？`,
       '报销确认',
       {
         confirmButtonText: '确定',
@@ -1628,7 +1646,7 @@ const handleSubmitReimburse = async () => {
     show: true,
     percentage: 0,
     current: 0,
-    total: selectedProducts.length,
+    total: needReimburseProducts.length,
     message: '准备开始报销...',
     status: '',
     errors: []
@@ -1636,7 +1654,7 @@ const handleSubmitReimburse = async () => {
   
   try {
     // 模拟队列处理
-    const selectedIds = selectedProducts.map(item => item.achievementId)
+    const selectedIds = needReimburseProducts.map(item => item.achievementId)
     for (let i = 0; i < selectedIds.length; i++) {
       const achievementId = selectedIds[i]
       reimburseProgress.value.current = i + 1
@@ -1767,6 +1785,12 @@ getList()
   margin-top: 20px;
 }
 
+/* 未报销状态样式 */
+.unreimbursed-status {
+  color: #909399;
+  font-size: 12px;
+}
+
 /* 报销相关样式 */
 .payment-info {
   margin-bottom: 20px;
@@ -1817,5 +1841,55 @@ getList()
   font-size: 24px;
   font-weight: bold;
   color: #303133;
+}
+
+/* 收款码样式 */
+.qrcode-section {
+  text-align: center;
+  margin-top: 20px;
+  padding: 15px;
+  background: #f5f7fa;
+  border-radius: 8px;
+}
+
+.qrcode-title {
+  font-size: 14px;
+  color: #606266;
+  margin-bottom: 15px;
+}
+
+.qrcode-wrapper {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  min-height: 200px;
+}
+
+.qrcode-img {
+  width: 200px;
+  height: 200px;
+  border: 1px solid #dcdfe6;
+  border-radius: 8px;
+}
+
+.qrcode-pdf {
+  width: 250px;
+  height: 250px;
+  border: 1px solid #dcdfe6;
+  border-radius: 8px;
+}
+
+.qrcode-placeholder {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 10px;
+  color: #909399;
+}
+
+.qrcode-tip {
+  font-size: 12px;
+  color: #909399;
+  margin-top: 10px;
 }
 </style>

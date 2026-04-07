@@ -17,6 +17,9 @@ import com.ruoyi.reimbursement.domain.Sam_rem_Product;
 import com.ruoyi.reimbursement.service.ISam_rem_ProductService;
 import com.ruoyi.reimbursement.mapper.SamReimbursementRatioMapper;
 import com.ruoyi.reimbursement.mapper.SamReimbursementItemsMapper;
+import org.springframework.jdbc.core.JdbcTemplate;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 /**
  * 报销项目详情Service业务层处理
@@ -27,6 +30,11 @@ import com.ruoyi.reimbursement.mapper.SamReimbursementItemsMapper;
 @Service
 public class Sam_rem_ProductServiceImpl implements ISam_rem_ProductService 
 {
+    private static final Logger log = LoggerFactory.getLogger(Sam_rem_ProductServiceImpl.class);
+
+    @Autowired
+    private JdbcTemplate jdbcTemplate;
+
     @Autowired
     private Sam_rem_ProductMapper sam_rem_ProductMapper;
     
@@ -461,6 +469,34 @@ public class Sam_rem_ProductServiceImpl implements ISam_rem_ProductService
             paymentInfo.put("reimbursementTime", project.getReimbursementTime());
             paymentInfo.put("totalAmount", 0);
             paymentInfo.put("totalCount", 0);
+        }
+        
+        // 3. 从附件表查询收款码
+        String sql = "SELECT id, file_url, store_name, origin_name FROM sam_attachment " +
+                     "WHERE achievement_id IN (SELECT achievement_id FROM sam_achievement " +
+                     "WHERE reimbursement_item_id = " + reimbursementItemId + " AND del_flag = '0') " +
+                     "AND type = 'receipt_code' AND del_flag = '0' LIMIT 1";
+        try {
+            List<Map<String, Object>> attachments = jdbcTemplate.queryForList(sql);
+            if (!attachments.isEmpty()) {
+                Map<String, Object> attachment = attachments.get(0);
+                String storeName = (String) attachment.get("store_name");
+                if (storeName != null && storeName.endsWith(".pdf")) {
+                    String uuid = storeName.replace(".pdf", "");
+                    paymentInfo.put("qrCodeUrl", "/common/previewByUuid/" + uuid);
+                } else {
+                    paymentInfo.put("qrCodeUrl", attachment.get("file_url"));
+                }
+                paymentInfo.put("hasReceiptCode", true);
+                paymentInfo.put("attachmentId", attachment.get("id"));
+            } else {
+                paymentInfo.put("qrCodeUrl", null);
+                paymentInfo.put("hasReceiptCode", false);
+            }
+        } catch (Exception e) {
+            log.error("查询收款码失败", e);
+            paymentInfo.put("qrCodeUrl", null);
+            paymentInfo.put("hasReceiptCode", false);
         }
         
         return paymentInfo;

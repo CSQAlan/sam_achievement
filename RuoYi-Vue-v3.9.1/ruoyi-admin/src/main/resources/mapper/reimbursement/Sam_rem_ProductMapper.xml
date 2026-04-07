@@ -464,7 +464,7 @@ PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
         SELECT 
             s.name AS projectName,
             s.reimbursement_time AS reimbursementTime,
-            (SELECT SUM(reimbursement_fee) FROM sam_achievement WHERE reimbursement_item_id = s.id AND del_flag = '0') AS totalAmount,
+            (SELECT COALESCE(SUM(reimbursement_fee), 0) FROM sam_achievement WHERE reimbursement_item_id = s.id AND del_flag = '0') AS totalAmount,
             (SELECT COUNT(*) FROM sam_achievement WHERE reimbursement_item_id = s.id AND del_flag = '0') AS totalCount
         FROM sam_reimbursement_items s
         WHERE s.id = #{reimbursementItemId}

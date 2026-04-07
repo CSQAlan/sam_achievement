@@ -99,6 +99,9 @@ public class Sam_rem_Product extends BaseEntity
     /** 素质提升序号 */
     private Long qualityIndex;
 
+    /** 收款码 */
+    private String fileReceiptCode;
+
     /** 提交时间 */
     private Date submittedAt;
 
@@ -352,6 +355,16 @@ public class Sam_rem_Product extends BaseEntity
         return qualityIndex;
     }
 
+    public void setFileReceiptCode(String fileReceiptCode) 
+    {
+        this.fileReceiptCode = fileReceiptCode;
+    }
+
+    public String getFileReceiptCode() 
+    {
+        return fileReceiptCode;
+    }
+
     public void setSubmittedAt(Date submittedAt) 
     {
         this.submittedAt = submittedAt;
@@ -488,6 +501,7 @@ public class Sam_rem_Product extends BaseEntity
             .append("reimbursementDate", getReimbursementDate())
             .append("itemIndex", getItemIndex())
             .append("qualityIndex", getQualityIndex())
+            .append("fileReceiptCode", getFileReceiptCode())
             .append("submittedAt", getSubmittedAt())
             .append("reviewedAt", getReviewedAt())
             .append("schoolReviewedAt", getSchoolReviewedAt())
