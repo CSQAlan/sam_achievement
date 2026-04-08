@@ -251,6 +251,7 @@ public class Sam_rem_ProductServiceImpl implements ISam_rem_ProductService
 
     @Override
     public List<Sam_rem_Product> selectUnassociatedProductList(Sam_rem_Product queryParams) {
+
         return sam_rem_ProductMapper.selectUnassociatedProductList(queryParams);
     }
 

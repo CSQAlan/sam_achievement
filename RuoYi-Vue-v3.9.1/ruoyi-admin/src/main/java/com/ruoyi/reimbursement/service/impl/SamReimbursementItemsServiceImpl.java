@@ -1,12 +1,18 @@
 package com.ruoyi.reimbursement.service.impl;
 
 import java.util.List;
+import java.util.Map;
+import java.util.ArrayList;
+import java.util.HashMap;
 import java.io.IOException;
 import java.io.OutputStream;
 import java.net.URLEncoder;
 import java.text.SimpleDateFormat;
 import javax.servlet.http.HttpServletResponse;
 import com.ruoyi.common.utils.DateUtils;
+import com.ruoyi.achievement.mapper.SamAchievementMapper;
+import com.ruoyi.achievement.mapper.FileUuidMapper;
+import com.ruoyi.achievement.domain.FileUuid;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import com.ruoyi.reimbursement.mapper.SamReimbursementItemsMapper;
@@ -27,6 +33,12 @@ public class SamReimbursementItemsServiceImpl implements ISamReimbursementItemsS
 {
     @Autowired
     private SamReimbursementItemsMapper samReimbursementItemsMapper;
+
+    @Autowired
+    private SamAchievementMapper samAchievementMapper;
+
+    @Autowired
+    private FileUuidMapper fileUuidMapper;
 
     /**
      * 查询报销项目
@@ -228,5 +240,60 @@ public class SamReimbursementItemsServiceImpl implements ISamReimbursementItemsS
             return "¥0.00";
         }
         return String.format("¥%.2f", money);
+    }
+
+    /**
+     * 获取批量报销支付信息
+     * 
+     * @param achievementIds 成果ID列表，逗号分隔
+     * @return 支付信息列表
+     */
+    @Override
+    public List<Map<String, Object>> getPaymentInfo(String achievementIds) {
+        List<Map<String, Object>> paymentInfoList = new ArrayList<>();
+        
+        if (achievementIds == null || achievementIds.isEmpty()) {
+            return paymentInfoList;
+        }
+        
+        // 解析成果ID列表
+        String[] ids = achievementIds.split(",");
+        
+        for (String achievementId : ids) {
+            if (achievementId == null || achievementId.trim().isEmpty()) {
+                continue;
+            }
+            
+            Map<String, Object> paymentInfo = new HashMap<>();
+            paymentInfo.put("achievementId", achievementId.trim());
+            
+            // 查询成果的收款码附件（type=6表示收款码）
+            List<String> qrCodeUuids = samAchievementMapper.selectAttachmentUuidByAchievementIdAndType(
+                achievementId.trim(), 6);
+            
+            if (qrCodeUuids != null && !qrCodeUuids.isEmpty()) {
+                // 获取第一个收款码的UUID
+                String qrCodeUuid = qrCodeUuids.get(0);
+                paymentInfo.put("qrCodeUuid", qrCodeUuid);
+                
+                // 查询文件真实路径
+                FileUuid fileUuid = fileUuidMapper.selectFileUuidById(qrCodeUuid);
+                if (fileUuid != null) {
+                    paymentInfo.put("qrCodeUrl", qrCodeUuid);
+                    paymentInfo.put("originName", fileUuid.getOriginName());
+                } else {
+                    paymentInfo.put("qrCodeUrl", null);
+                    paymentInfo.put("originName", null);
+                }
+            } else {
+                paymentInfo.put("qrCodeUuid", null);
+                paymentInfo.put("qrCodeUrl", null);
+                paymentInfo.put("originName", null);
+            }
+            
+            paymentInfoList.add(paymentInfo);
+        }
+        
+        return paymentInfoList;
     }
 }

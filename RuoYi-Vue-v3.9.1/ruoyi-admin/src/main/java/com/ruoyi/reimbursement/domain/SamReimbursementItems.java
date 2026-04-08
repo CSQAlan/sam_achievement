@@ -24,6 +24,14 @@ public class SamReimbursementItems extends BaseEntity
     @Excel(name = "报销项目名称")
     private String name;
 
+    /** 届次ID */
+    @Excel(name = "届次")
+    private Long sessionId;
+
+    /** 届次名称（用于展示，非数据库字段） */
+    @Excel(name = "届次名称")
+    private String sessionName;
+
     /** 报销时间 */
     @JsonFormat(pattern = "yyyy-MM-dd")
     @Excel(name = "报销时间", width = 30, dateFormat = "yyyy-MM-dd")
@@ -116,6 +124,22 @@ public class SamReimbursementItems extends BaseEntity
         return name;
     }
 
+    public Long getSessionId() {
+        return sessionId;
+    }
+
+    public void setSessionId(Long sessionId) {
+        this.sessionId = sessionId;
+    }
+
+    public String getSessionName() {
+        return sessionName;
+    }
+
+    public void setSessionName(String sessionName) {
+        this.sessionName = sessionName;
+    }
+
     public void setReimbursementTime(Date reimbursementTime) 
     {
         this.reimbursementTime = reimbursementTime;
@@ -191,6 +215,8 @@ public class SamReimbursementItems extends BaseEntity
         return new ToStringBuilder(this,ToStringStyle.MULTI_LINE_STYLE)
             .append("id", getId())
             .append("name", getName())
+            .append("sessionId", getSessionId())
+            .append("sessionName", getSessionName())
             .append("reimbursementTime", getReimbursementTime())
             .append("totalFee", getTotalFee())
             .append("paidFee", getPaidFee())

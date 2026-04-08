@@ -1,10 +1,10 @@
 <template>
   <div class="app-container">
     <el-form :model="queryParams" ref="queryRef" :inline="true" v-show="showSearch" label-width="68px">
-      <el-form-item label="成果ID" prop="achievementId">
+      <el-form-item label="成果编号" prop="achievementId">
         <el-input
           v-model="queryParams.achievementId"
-          placeholder="请输入成果ID"
+          placeholder="请输入成果编号"
           clearable
           @keyup.enter="handleQuery"
         />
@@ -145,6 +145,13 @@
       </el-form-item>
     </el-form>
 
+    <!-- 届次信息 -->
+    <el-alert type="info" :closable="false" v-if="reimbursementItemId && sessionId">
+      <template #title>
+        当前项目所属届次：{{ sessionId }}
+      </template>
+    </el-alert>
+
     <!-- 统计卡片 -->
     <el-row :gutter="10" class="mb8" v-if="reimbursementItemId">
       <el-col :span="6">
@@ -175,7 +182,7 @@
         <el-card shadow="hover" class="statistics-card">
           <div class="card-content">
             <div class="card-label">待发放金额</div>
-            <div class="card-value">¥{{ (stats.totalAmount || 0) - (stats.paidAmount || 0) }}</div>
+            <div class="card-value">¥{{ stats.unpaidAmount || 0 }}</div>
           </div>
         </el-card>
       </el-col>
@@ -268,7 +275,7 @@
 
     <el-table v-loading="loading" :data="ReimbursementList" @selection-change="handleSelectionChange">
       <el-table-column type="selection" width="55" align="center" />
-      <el-table-column label="成果ID" align="center" prop="achievementId" />
+      <el-table-column label="成果编号" align="center" prop="achievementId" />
       <el-table-column label="届次 " align="center" prop="sessionId" />
       <el-table-column label="类别" align="center" prop="category">
         <template #default="scope">
@@ -652,7 +659,7 @@
         stripe
       >
         <el-table-column type="selection" width="55" align="center" />
-        <el-table-column label="成果ID" align="center" prop="achievementId" width="100" />
+        <el-table-column label="成果编号" align="center" prop="achievementId" width="100" />
         <el-table-column label="作品名称" align="center" prop="name" min-width="180" show-overflow-tooltip />
         <el-table-column label="类别" align="center" prop="category" width="100">
           <template #default="scope">
@@ -718,37 +725,51 @@
       @close="handleCloseReimburseDialog"
     >
       <!-- 支付信息 -->
-        <div v-if="paymentInfo" class="payment-info">
+        <div v-if="paymentInfo && paymentInfo.length > 0" class="payment-info">
           <el-alert
-            :title="'报销项目：' + paymentInfo.projectName"
+            :title="'批量报销：' + paymentInfo.length + ' 个成果'"
             type="info"
             :closable="false"
             class="mb-4"
           />
-          <el-form :model="paymentInfo" label-width="120px">
-            <el-form-item label="报销时间">
-              <span>{{ paymentInfo.reimbursementTime ? parseTime(paymentInfo.reimbursementTime, '{y}-{m}-{d}') : '-' }}</span>
-            </el-form-item>
-            <el-form-item label="成果数量">
-              <span>{{ paymentInfo.totalCount || 0 }} 个</span>
-            </el-form-item>
-            <el-form-item label="报销总金额">
-              <span class="amount-text">¥{{ formatMoney(paymentInfo.totalAmount || 0) }}</span>
-            </el-form-item>
-          </el-form>
           
           <!-- 收款码区域 -->
           <div class="qrcode-section">
             <div class="qrcode-title">请扫描下方收款码完成转账</div>
-            <div class="qrcode-wrapper">
-              <iframe v-if="paymentInfo.qrCodeUrl && paymentInfo.qrCodeUrl !== 'default_qrcode'" :src="'/attachment/download?resource=' + paymentInfo.qrCodeUrl" class="qrcode-pdf" frameborder="0"></iframe>
-              <div v-else class="qrcode-placeholder">
-                <el-icon><Picture /></el-icon>
-                <span>收款码未设置</span>
-                <div style="font-size: 12px; margin-top: 5px;">请在成果提交界面上传收款码</div>
+            <div class="qrcode-list">
+              <div v-for="(item, index) in paymentInfo" :key="item.achievementId" class="qrcode-item">
+                <div class="qrcode-item-header">
+                  <span class="qrcode-item-index">成果 {{ index + 1 }}</span>
+                  <span class="qrcode-item-id">ID: {{ item.achievementId }}</span>
+                </div>
+                <div class="qrcode-wrapper">
+                  <iframe v-if="item.qrCodeUuid && qrCodePreviewUrls[item.qrCodeUuid]" :src="qrCodePreviewUrls[item.qrCodeUuid]" class="qrcode-pdf" frameborder="0"></iframe>
+                  <div v-else-if="item.qrCodeUuid" class="qrcode-placeholder">
+                    <el-icon><Loading /></el-icon>
+                    <span>加载中...</span>
+                  </div>
+                  <div v-else class="qrcode-placeholder">
+                    <el-icon><Picture /></el-icon>
+                    <span>收款码未设置</span>
+                    <div style="font-size: 12px; margin-top: 5px;">请在成果提交界面上传收款码</div>
+                  </div>
+                </div>
+                <div v-if="item.originName" class="qrcode-item-name">{{ item.originName }}</div>
               </div>
             </div>
             <div class="qrcode-tip">转账完成后，请点击"确认报销"按钮</div>
+          </div>
+        </div>
+        <div v-else-if="paymentInfo && paymentInfo.length === 0" class="payment-info">
+          <el-alert
+            title="未找到收款码信息"
+            type="warning"
+            :closable="false"
+            class="mb-4"
+          />
+          <div class="no-qrcode">
+            <el-icon><Warning /></el-icon>
+            <span>选中的成果中没有设置收款码</span>
           </div>
         </div>
 
@@ -800,10 +821,11 @@
 import { ref, reactive, toRefs, getCurrentInstance, onMounted, computed } from 'vue'
 import { listReimbursement, getReimbursement, delReimbursement, addReimbursement, updateReimbursement, recalculateReimbursementAmount, listUnassociatedProduct, associateAchievements, cancelAssociation, batchCancelAssociation, getReimbursementProjectInfo, updateProjectStatus, updateTransferStatus, getPaymentInfo } from "@/api/system/Reimbursement"
 // 导入图标
-import { View, Link, Lock, Edit } from '@element-plus/icons-vue'
+import { View, Link, Lock, Edit, Picture, Warning, Loading } from '@element-plus/icons-vue'
 import { useRoute } from 'vue-router'
 import AchievementForm from '@/views/achievement/component/AchievementForm.vue'
 import { getManage } from '@/api/achievement/manage'
+import request from '@/utils/request'
 
 
 const route = useRoute()
@@ -812,6 +834,7 @@ const { proxy } = getCurrentInstance()
 // 接收从报销项目列表传来的参数
 const reimbursementItemId = ref(null)
 const projectName = ref('')
+const sessionId = ref(null)
 
 
 const ReimbursementList = ref([])
@@ -829,7 +852,8 @@ const title = ref("")
 const stats = ref({
   productCount: 0,
   totalAmount: 0,
-  paidAmount: 0
+  paidAmount: 0,
+  unpaidAmount: 0
 })
 
 // 关联成果相关变量
@@ -880,6 +904,9 @@ const reimburseProgress = ref({
   status: '',                                // 进度状态
   errors: []                                 // 错误信息
 })
+
+// 收款码预览URL
+const qrCodePreviewUrls = ref({})
 
 // 是否可以报销
 const canReimburse = computed(() => {
@@ -947,7 +974,8 @@ const associateQueryParams = reactive({
   category: null,
   level: null,
   grade: null,
-  ownerDepId: null
+  ownerDepId: null,
+  sessionId:sessionId,
 })
 
 
@@ -974,7 +1002,7 @@ const data = reactive({
   },
   rules: {
     achievementId: [
-      { required: true, message: "成果ID不能为空", trigger: "blur" }
+      { required: true, message: "成果编号不能为空", trigger: "blur" }
     ],
     sessionId: [
       { required: true, message: "届次不能为空", trigger: "blur" }
@@ -1013,6 +1041,7 @@ onMounted(() => {
   // 获取URL参数
   reimbursementItemId.value = route.query.reimbursementItemId
   projectName.value = route.query.name || '报销项目详情'
+  sessionId.value = route.query.sessionId
   
   // 从路由state获取项目状态（如果有）
   if (route.query.status) {
@@ -1022,6 +1051,7 @@ onMounted(() => {
   console.log('接收到的项目ID:', reimbursementItemId.value)
   console.log('项目名称:', projectName.value)
   console.log('项目状态:', currentProjectStatus.value)
+  console.log('届次ID:', sessionId.value)
   
   if (reimbursementItemId.value) {
     // 如果有项目ID，只加载该项目的详情
@@ -1049,6 +1079,7 @@ const loadDetailByReimbursementItemId = async () => {
     // 获取成果列表
     const listRes = await listReimbursement({
       reimbursementItemId: reimbursementItemId.value,
+      sessionId:sessionId.value,
       pageNum: queryParams.value.pageNum,
       pageSize: queryParams.value.pageSize
     })
@@ -1304,7 +1335,8 @@ async function handleRecalculate() {
       stats.value = {
         productCount: data?.productCount || 0,
         totalAmount: (data?.totalAmount || 0).toFixed(2),
-        paidAmount: (data?.paidAmount || 0).toFixed(2)
+        paidAmount: (data?.paidAmount || 0).toFixed(2),
+        unpaidAmount: ((data?.totalAmount || 0) - (data?.paidAmount || 0)).toFixed(2)
       }
       
       // 重新加载列表
@@ -1437,6 +1469,41 @@ const formatMoney = (value) => {
   return parseFloat(value).toFixed(2)
 }
 
+// 加载收款码预览
+const loadQrCodePreview = (uuid, achievementId) => {
+  if (!uuid || qrCodePreviewUrls.value[uuid]) return
+  
+  request({
+    url: '/attachment/download',
+    method: 'get',
+    params: { resource: uuid },
+    responseType: 'blob'
+  }).then(blob => {
+    const blobData = blob.data || blob
+    let mimeType = 'application/pdf'
+    
+    if (blobData.type && blobData.type.startsWith('image/')) {
+      mimeType = blobData.type
+    }
+    
+    const blobWithMime = new Blob([blobData], { type: mimeType })
+    const url = window.URL.createObjectURL(blobWithMime)
+    qrCodePreviewUrls.value[uuid] = url
+  }).catch(err => {
+    console.error(`收款码预览加载失败: ${uuid}`, err)
+  })
+}
+
+// 清理收款码预览URL
+const clearQrCodePreviews = () => {
+  Object.values(qrCodePreviewUrls.value).forEach(url => {
+    if (url) {
+      window.URL.revokeObjectURL(url)
+    }
+  })
+  qrCodePreviewUrls.value = {}
+}
+
 /**
  * 从成果列表计算统计信息
  */
@@ -1445,31 +1512,42 @@ const updateStatsFromList = (list) => {
     stats.value = {
       productCount: 0,
       totalAmount: 0,
-      paidAmount: 0
+      paidAmount: 0,
+      unpaidAmount: 0
     }
     return
   }
   
   let totalAmount = 0
   let paidAmount = 0
+  let unpaidAmount = 0
   
   list.forEach(item => {
-    // 总金额 = 实际报销金额的总和
-    const reimbursementFee = parseFloat(item.reimbursementFee) || parseFloat(item.reimbursement_fee) || 0
-    totalAmount += reimbursementFee
+    // 需报销金额，使用 fee 字段
+    const fee = parseFloat(item.fee) || 0
     
-    // 已发放金额：有报销时间的才算已发放
-    const isPaid = (item.reimbursementDate || item.reimbursement_date) !== null && 
-                   (item.reimbursementDate || item.reimbursement_date) !== ''
-    if (isPaid) {
-      paidAmount += reimbursementFee
+    // 判断报销状态
+    const hasReimbursementDate = (item.reimbursementDate || item.reimbursement_date) !== null &&
+                                 (item.reimbursementDate || item.reimbursement_date) !== ''
+    
+    // 已报销：有报销时间
+    if (hasReimbursementDate) {
+      paidAmount += fee
+      totalAmount += fee
     }
+    // 需报销：没有报销时间，且（is_reimburse === 1 或 reimbursementFee > 0）
+    else if (item.is_reimburse === 1 || item.isReimburse === 1 || (item.reimbursementFee || item.reimbursement_fee || 0) > 0) {
+      unpaidAmount += fee
+      totalAmount += fee
+    }
+    // 未报销：不计入任何金额
   })
   
   stats.value = {
     productCount: list.length,
     totalAmount: totalAmount.toFixed(2),
-    paidAmount: paidAmount.toFixed(2)
+    paidAmount: paidAmount.toFixed(2),
+    unpaidAmount: unpaidAmount.toFixed(2)
   }
   
   console.log('统计已更新:', stats.value)
@@ -1574,10 +1652,22 @@ const handleOpenReimburseDialog = async () => {
   }
   
   try {
+    // 清理之前的预览
+    clearQrCodePreviews()
+    
     // 获取支付信息
-    const paymentRes = await getPaymentInfo(reimbursementItemId.value)
+    const paymentRes = await getPaymentInfo(ids.value.join(','))
     if (paymentRes.code === 200) {
       paymentInfo.value = paymentRes.data
+      
+      // 加载收款码预览
+      if (paymentInfo.value && paymentInfo.value.length > 0) {
+        paymentInfo.value.forEach(item => {
+          if (item.qrCodeUuid) {
+            loadQrCodePreview(item.qrCodeUuid, item.achievementId)
+          }
+        })
+      }
     }
   } catch (error) {
     console.error("获取支付信息失败:", error)
@@ -1602,6 +1692,9 @@ const handleCloseReimburseDialog = () => {
     errors: []
   }
   paymentInfo.value = null
+  
+  // 清理收款码预览
+  clearQrCodePreviews()
 }
 
 /**
@@ -1788,7 +1881,148 @@ getList()
 /* 未报销状态样式 */
 .unreimbursed-status {
   color: #909399;
+}
+
+/* 收款码区域样式 */
+.qrcode-section {
+  margin-top: 20px;
+  padding: 20px;
+  background-color: #f8f9fa;
+  border-radius: 8px;
+  border: 1px solid #e9ecef;
+}
+
+.qrcode-title {
+  font-size: 16px;
+  font-weight: bold;
+  margin-bottom: 15px;
+  text-align: center;
+  color: #333;
+}
+
+.qrcode-list {
+  display: flex;
+  gap: 20px;
+  overflow-x: auto;
+  padding-bottom: 10px;
+  margin-bottom: 15px;
+}
+
+.qrcode-item {
+  flex: 0 0 auto;
+  width: 300px;
+  background-color: #fff;
+  border: 1px solid #e9ecef;
+  border-radius: 8px;
+  padding: 15px;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+}
+
+.qrcode-item-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 10px;
+  padding-bottom: 10px;
+  border-bottom: 1px solid #f0f0f0;
+}
+
+.qrcode-item-index {
+  font-weight: bold;
+  color: #333;
+}
+
+.qrcode-item-id {
   font-size: 12px;
+  color: #999;
+}
+
+.qrcode-wrapper {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  margin-bottom: 15px;
+  min-height: 200px;
+}
+
+.qrcode-pdf {
+  width: 100%;
+  height: 200px;
+  border: 1px solid #ddd;
+  border-radius: 4px;
+}
+
+.qrcode-placeholder {
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  align-items: center;
+  width: 100%;
+  height: 200px;
+  background-color: #f0f0f0;
+  border: 1px dashed #ddd;
+  border-radius: 4px;
+  color: #999;
+}
+
+.qrcode-placeholder el-icon {
+  font-size: 48px;
+  margin-bottom: 10px;
+}
+
+.qrcode-item-name {
+  text-align: center;
+  font-size: 12px;
+  color: #666;
+  margin-top: 10px;
+  word-break: break-all;
+}
+
+.qrcode-tip {
+  text-align: center;
+  font-size: 14px;
+  color: #666;
+  margin-top: 10px;
+}
+
+/* 无收款码提示样式 */
+.no-qrcode {
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  align-items: center;
+  padding: 40px;
+  background-color: #fff3cd;
+  border: 1px solid #ffeaa7;
+  border-radius: 8px;
+  color: #856404;
+}
+
+.no-qrcode el-icon {
+  font-size: 48px;
+  margin-bottom: 15px;
+}
+
+/* 金额文本样式 */
+.amount-text {
+  font-size: 18px;
+  font-weight: bold;
+  color: #dc3545;
+}
+
+/* 报销进度样式 */
+.reimburse-progress {
+  margin-top: 20px;
+}
+
+.progress-status {
+  margin-top: 10px;
+  text-align: center;
+  color: #666;
+}
+
+.error-list {
+  margin-top: 15px;
 }
 
 /* 报销相关样式 */

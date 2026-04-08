@@ -140,4 +140,13 @@ public interface SamAchievementMapper
      * 批量删除附件关联
      */
     public int deleteSamAchievementAttachmentByAchievementIds(String[] achievementIds);
+
+    /**
+     * 根据成果ID和附件类型查询附件UUID列表
+     * 
+     * @param achievementId 成果ID
+     * @param type 附件类型
+     * @return 附件UUID列表
+     */
+    public List<String> selectAttachmentUuidByAchievementIdAndType(@Param("achievementId") String achievementId, @Param("type") Integer type);
 }

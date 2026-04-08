@@ -7,6 +7,7 @@ PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
     <resultMap type="SamReimbursementItems" id="SamReimbursementItemsResult">
         <result property="id"    column="id"    />
         <result property="name"    column="name"    />
+        <result property="sessionId"    column="session_id"    />
         <result property="reimbursementTime"    column="reimbursement_time"    />
         <result property="totalFee"    column="total_fee"    />
         <result property="paidFee"    column="paid_fee"    />
@@ -21,7 +22,6 @@ PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
         <result property="delFlag"    column="del_flag"    />
         <result property="actualAmount"    column="actual_amount"    />
         <result property="actualTotalFee"    column="actual_total_fee"    />
-        <result property="actualReimbursementFee"    column="actual_reimbursement_fee"    />
         <result property="actualPaidFee"    column="actual_paid_fee"    />
     </resultMap>
 
@@ -33,6 +33,7 @@ PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
         SELECT 
             i.id,
             i.name,
+            i.session_id,
             i.reimbursement_time,
             i.total_fee,
             i.paid_fee,
@@ -45,17 +46,17 @@ PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
             i.update_time,
             i.remark,
             i.del_flag,
-            COALESCE(stats.actual_total_fee, 0) AS actual_total_fee,
-            COALESCE(stats.actual_reimbursement_fee, 0) AS actual_reimbursement_fee,
-            COALESCE(stats.actual_paid_fee, 0) AS actual_paid_fee,
-            COALESCE(stats.actual_amount, 0) AS actual_amount
+            COALESCE(stats.actual_amount, 0) as actual_amount,
+            COALESCE(stats.actual_total_fee, 0) as actual_total_fee,
+            COALESCE(stats.actual_reimbursement_fee, 0) as actual_reimbursement_fee,
+            COALESCE(stats.actual_paid_fee, 0) as actual_paid_fee
         FROM sam_reimbursement_items i
         LEFT JOIN (
             SELECT 
                 reimbursement_item_id,
-                SUM(fee) AS actual_total_fee,
-                SUM(reimbursement_fee) AS actual_reimbursement_fee,
-                SUM(CASE WHEN is_reimburse = '1' THEN reimbursement_fee ELSE 0 END) AS actual_paid_fee,
+                SUM(COALESCE(fee, 0)) AS actual_total_fee,
+                SUM(COALESCE(reimbursement_fee, 0)) AS actual_reimbursement_fee,
+                SUM(CASE WHEN is_reimburse = '1' THEN COALESCE(reimbursement_fee, 0) ELSE 0 END) AS actual_paid_fee,
                 COUNT(*) AS actual_amount
             FROM sam_achievement
             WHERE del_flag = '0'
@@ -64,6 +65,9 @@ PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
         WHERE i.del_flag = '0'
         <if test="name != null and name != ''">
             AND i.name LIKE CONCAT('%', #{name}, '%')
+        </if>
+        <if test="sessionId != null">
+            AND i.session_id = #{sessionId}
         </if>
         <if test="ownerDepId != null">
             AND i.owner_dep_id = #{ownerDepId}
@@ -75,14 +79,31 @@ PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
     </select>
     
     <select id="selectSamReimbursementItemsById" parameterType="Long" resultMap="SamReimbursementItemsResult">
-        <include refid="selectSamReimbursementItemsVo"/>
-        where id = #{id}
+        SELECT 
+            i.id,
+            i.name,
+            i.session_id,
+            i.reimbursement_time,
+            i.total_fee,
+            i.paid_fee,
+            i.amount,
+            i.owner_dep_id,
+            i.status,
+            i.create_by,
+            i.create_time,
+            i.update_by,
+            i.update_time,
+            i.remark,
+            i.del_flag
+        FROM sam_reimbursement_items i
+        WHERE i.id = #{id} AND i.del_flag = '0'
     </select>
 
     <insert id="insertSamReimbursementItems" parameterType="SamReimbursementItems" useGeneratedKeys="true" keyProperty="id">
         insert into sam_reimbursement_items
         <trim prefix="(" suffix=")" suffixOverrides=",">
             <if test="name != null and name != ''">name,</if>
+            <if test="sessionId != null">session_id,</if>
             <if test="reimbursementTime != null">reimbursement_time,</if>
             <if test="totalFee != null">total_fee,</if>
             <if test="paidFee != null">paid_fee,</if>
@@ -98,6 +119,7 @@ PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
          </trim>
         <trim prefix="values (" suffix=")" suffixOverrides=",">
             <if test="name != null and name != ''">#{name},</if>
+            <if test="sessionId != null">#{sessionId},</if>
             <if test="reimbursementTime != null">#{reimbursementTime},</if>
             <if test="totalFee != null">#{totalFee},</if>
             <if test="paidFee != null">#{paidFee},</if>
@@ -117,6 +139,7 @@ PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
         update sam_reimbursement_items
         <trim prefix="SET" suffixOverrides=",">
             <if test="name != null and name != ''">name = #{name},</if>
+            <if test="sessionId != null">session_id = #{sessionId},</if>
             <if test="reimbursementTime != null">reimbursement_time = #{reimbursementTime},</if>
             <if test="totalFee != null">total_fee = #{totalFee},</if>
             <if test="paidFee != null">paid_fee = #{paidFee},</if>

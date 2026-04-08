@@ -1,6 +1,16 @@
 <template>
   <div class="app-container">
     <el-form :model="queryParams" ref="queryFormRef" size="small" :inline="true" v-show="showSearch" label-width="68px">
+      <el-form-item label="届次" prop="sessionId">
+        <el-select v-model="queryParams.sessionId" placeholder="请选择届次" clearable>
+          <el-option
+            v-for="item in sessionOptions"
+            :key="item.id"
+            :label="item.label"
+            :value="item.id"
+          />
+        </el-select>
+      </el-form-item>
       <el-form-item label="报销项目名称" prop="name">
         <el-input
             v-model="queryParams.name"
@@ -105,6 +115,11 @@
     </el-link>
   </template>
 </el-table-column>
+      <el-table-column label="届次" align="center" prop="sessionId" width="120">
+        <template #default="scope">
+          <span>{{ scope.row.sessionId || '-' }}</span>
+        </template>
+      </el-table-column>
       <el-table-column label="报销时间" align="center" prop="reimbursementTime" width="180">
         <template #default="scope">
           <span>{{ parseTime(scope.row.reimbursementTime, '{y}-{m}-{d}') }}</span>
@@ -183,6 +198,16 @@
         <el-form-item label="报销项目名称" prop="name">
           <el-input v-model="form.name" placeholder="请输入报销项目名称" />
         </el-form-item>
+        <el-form-item label="所属届次" prop="sessionId">
+          <el-select v-model="form.sessionId" placeholder="请选择届次">
+            <el-option
+              v-for="item in sessionOptions"
+              :key="item.id"
+              :label="item.label"
+              :value="item.id"
+            />
+          </el-select>
+        </el-form-item>
         <el-form-item label="报销时间" prop="reimbursementTime">
   <el-date-picker
     v-model="form.reimbursementTime"
@@ -249,6 +274,7 @@ import {
 import Treeselect from "vue3-treeselect"
 import "vue3-treeselect/dist/vue3-treeselect.css"
 import { listDept } from "@/api/system/dept"
+import { listSession } from "@/api/session/session"
 import useUserStore from '@/store/modules/user'
 
 
@@ -267,6 +293,9 @@ const router = useRouter()  // 需要创建实例
 
 // 字典选项
 const reimbursementStatusOptions = ref([])
+
+// 届次选项
+const sessionOptions = ref([])
 
 // 日期范围处理
 const reimbursementTimeRange = ref([])
@@ -290,6 +319,7 @@ const queryParams = reactive({
   pageNum: 1,
   pageSize: 10,
   name: null,
+  sessionId: null,
   ownerDepId: null,
   status: null,
   beginReimbursementTime: null,
@@ -300,6 +330,7 @@ const queryParams = reactive({
 const form = reactive({
   id: null,
   name: null,
+  sessionId: null,
   reimbursementTime: null,
   totalFee: null,
   paidFee: null,
@@ -321,6 +352,9 @@ const deptOptions = ref([])
 const rules = reactive({
   name: [
     { required: true, message: "报销项目名称不能为空", trigger: "blur" }
+  ],
+  sessionId: [
+    { required: true, message: "所属届次不能为空", trigger: "blur" }
   ],
   reimbursementTime: [
     { required: true, message: "报销时间不能为空", trigger: "blur" }
@@ -380,6 +414,36 @@ const getDeptTree = async () => {
     console.error('获取部门树失败:', error)
     ElMessage.error('获取部门列表失败')
     deptOptions.value = []
+  }
+}
+
+/** 获取届次列表 */
+const getSessionList = async () => {
+  try {
+    const response = await listSession()
+    console.log('届次列表数据:', response)
+    
+    // 处理可能的数据结构
+    let sessionData = []
+    if (response.data) {
+      sessionData = response.data
+    } else if (response.rows) {
+      sessionData = response.rows
+    } else if (Array.isArray(response)) {
+      sessionData = response
+    }
+    
+    // 转换为下拉选项格式
+    sessionOptions.value = sessionData.map(item => ({
+      id: item.id,
+      label: item.session
+    }))
+    console.log('处理后的sessionOptions:', sessionOptions.value)
+    
+  } catch (error) {
+    console.error('获取届次列表失败:', error)
+    ElMessage.error('获取届次列表失败')
+    sessionOptions.value = []
   }
 }
 
@@ -460,6 +524,7 @@ const cancel = () => {
 const reset = () => {
   form.id = null
   form.name = null
+  form.sessionId = null
   form.reimbursementTime = null
   form.totalFee = null
   form.paidFee = null
@@ -664,12 +729,13 @@ const handleViewDetail = (row) => {
     return;
   }
   
-  // 跳转时传递ID
+  // 跳转时传递ID和届次ID
   router.push({
     path: '/reimbursement/Reimbursement',
     query: {
       reimbursementItemId: projectId,
-      name: row.name
+      name: row.name,
+      sessionId: row.sessionId
     }
   });
 }
@@ -696,6 +762,7 @@ const getDictData = async () => {
 onMounted(() => {
   getList()
   getDeptTree()
+  getSessionList()
   getDictData()
 })
 

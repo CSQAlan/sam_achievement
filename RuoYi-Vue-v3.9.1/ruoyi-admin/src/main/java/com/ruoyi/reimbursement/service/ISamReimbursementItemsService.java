@@ -2,6 +2,7 @@ package com.ruoyi.reimbursement.service;
 
 import java.util.List;
 import java.io.IOException;
+import java.util.Map;
 import javax.servlet.http.HttpServletResponse;
 import com.ruoyi.reimbursement.domain.SamReimbursementItems;
 
@@ -69,4 +70,12 @@ public interface ISamReimbursementItemsService
      * @throws IOException IO异常
      */
     public void exportReimbursementPdf(Long id, HttpServletResponse response) throws IOException;
+
+    /**
+     * 获取批量报销支付信息
+     * 
+     * @param achievementIds 成果ID列表，逗号分隔
+     * @return 支付信息列表
+     */
+    public List<Map<String, Object>> getPaymentInfo(String achievementIds);
 }

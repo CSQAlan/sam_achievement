@@ -116,10 +116,10 @@ export function updateTransferStatus(achievementIds, reimbursementItemId) {
 }
 
 // 获取支付信息
-export function getPaymentInfo(reimbursementItemId) {
+export function getPaymentInfo(achievementIds) {
   return request({
-    url: '/system/Reimbursement/getPaymentInfo',
+    url: '/system/SamReimbursementItems/paymentInfo',
     method: 'get',
-    params: { reimbursementItemId }
+    params: { achievementIds }
   })
 }

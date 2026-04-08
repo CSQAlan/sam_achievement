@@ -415,4 +415,12 @@
             #{achievementId}
         </foreach>
     </delete>
+
+    <select id="selectAttachmentUuidByAchievementIdAndType" resultType="String">
+        select file_uuid
+        from sam_achievement_attachment
+        where achievement_id = #{achievementId}
+        and type = #{type}
+        and del_flag = 0
+    </select>
 </mapper>
