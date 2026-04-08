@@ -15,9 +15,16 @@ export function getStudentInfoByNo(no) {
 export function updateStudentInfo(data) {
   const no = data?.no || data?.userName;
   if (!no) {
+    if (data?.studentId) {
+      return request({
+        url: "/student/student",
+        method: "put",
+        data,
+      });
+    }
     return request({
       url: "/student/student",
-      method: "put",
+      method: "post",
       data,
     });
   }
@@ -37,7 +44,7 @@ export function updateStudentInfo(data) {
     }
     return request({
       url: "/student/student",
-      method: "put",
+      method: "post",
       data,
     });
   });

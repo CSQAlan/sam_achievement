@@ -11,7 +11,9 @@ import com.ruoyi.common.utils.bean.BeanValidators;
 import com.ruoyi.achievement.mapper.SamTeacherMapper;
 import com.ruoyi.achievement.domain.SamTeacher;
 import com.ruoyi.achievement.service.ISamTeacherService;
+import com.ruoyi.common.utils.StringUtils;
 import javax.validation.Validator;
+import com.ruoyi.common.utils.StringUtils;
 
 /**
  * 教师档案Service业务层处理
@@ -78,6 +80,20 @@ public class SamTeacherServiceImpl implements ISamTeacherService
     @Override
     public int updateSamTeacher(SamTeacher samTeacher)
     {
+        if (samTeacher.getId() == null && StringUtils.isNotBlank(samTeacher.getNo()))
+        {
+            SamTeacher query = new SamTeacher();
+            query.setNo(samTeacher.getNo());
+            List<SamTeacher> exists = samTeacherMapper.selectSamTeacherList(query);
+            if (exists != null && !exists.isEmpty())
+            {
+                samTeacher.setId(exists.get(0).getId());
+            }
+            else
+            {
+                return samTeacherMapper.insertSamTeacher(samTeacher);
+            }
+        }
         return samTeacherMapper.updateSamTeacher(samTeacher);
     }
 

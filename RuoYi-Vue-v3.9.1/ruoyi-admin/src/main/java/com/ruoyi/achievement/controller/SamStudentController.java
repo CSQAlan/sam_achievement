@@ -13,14 +13,21 @@ import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 import org.springframework.web.multipart.MultipartFile;
+import com.ruoyi.common.annotation.BizAudit;
 import com.ruoyi.common.annotation.Log;
 import com.ruoyi.common.core.controller.BaseController;
 import com.ruoyi.common.core.domain.AjaxResult;
+import com.ruoyi.common.core.domain.model.LoginUser;
+import com.ruoyi.common.enums.BizAuditOpType;
 import com.ruoyi.common.enums.BusinessType;
+import com.ruoyi.common.utils.SecurityUtils;
+import com.ruoyi.common.utils.StringUtils;
 import com.ruoyi.achievement.domain.SamStudent;
 import com.ruoyi.achievement.service.ISamStudentService;
 import com.ruoyi.common.utils.poi.ExcelUtil;
 import com.ruoyi.common.core.page.TableDataInfo;
+import com.ruoyi.framework.web.service.TokenService;
+import com.ruoyi.web.service.ProfileCompletionService;
 
 /**
  * 学生档案Controller
@@ -34,6 +41,12 @@ public class SamStudentController extends BaseController
 {
     @Autowired
     private ISamStudentService samStudentService;
+
+    @Autowired
+    private ProfileCompletionService profileCompletionService;
+
+    @Autowired
+    private TokenService tokenService;
 
     /**
      * 查询学生档案列表
@@ -52,6 +65,7 @@ public class SamStudentController extends BaseController
      */
     @PreAuthorize("@ss.hasPermi('student:student:export')")
     @Log(title = "学生档案", businessType = BusinessType.EXPORT)
+    @BizAudit(bizType = "student_archive", bizName = "导出学生档案", opType = BizAuditOpType.EXPORT, handler = "studentBizAuditHandler")
     @PostMapping("/export")
     public void export(HttpServletResponse response, SamStudent samStudent)
     {
@@ -62,6 +76,7 @@ public class SamStudentController extends BaseController
 
     @Log(title = "学生管理", businessType = BusinessType.IMPORT)
     @PreAuthorize("@ss.hasPermi('student:student:import')")
+    @BizAudit(bizType = "student_archive", bizName = "导入学生档案", opType = BizAuditOpType.IMPORT, handler = "studentBizAuditHandler", async = false)
     @PostMapping("/importData")
     public AjaxResult importData(MultipartFile file, boolean updateSupport) throws Exception
     {
@@ -94,21 +109,43 @@ public class SamStudentController extends BaseController
      */
     @PreAuthorize("@ss.hasAnyPermi('student:student:add,achievement:manage:list,achievement:manage:participated:list,achievement:manage:guided:list')")
     @Log(title = "学生档案", businessType = BusinessType.INSERT)
+    @BizAudit(bizType = "student_archive", bizName = "新增学生档案", opType = BizAuditOpType.ADD, handler = "studentBizAuditHandler", async = false)
     @PostMapping
     public AjaxResult add(@RequestBody SamStudent samStudent)
     {
-        return toAjax(samStudentService.insertSamStudent(samStudent));
+        int rows = samStudentService.insertSamStudent(samStudent);
+        if (rows > 0 && StringUtils.isNotBlank(samStudent.getNo()))
+        {
+            LoginUser loginUser = SecurityUtils.getLoginUser();
+            if (loginUser != null && StringUtils.equals(loginUser.getUsername(), samStudent.getNo()))
+            {
+                profileCompletionService.refreshProfileCompletion(loginUser);
+                tokenService.setLoginUser(loginUser);
+            }
+        }
+        return toAjax(rows);
     }
 
     /**
      * 修改学生档案
      */
-    @PreAuthorize("@ss.hasPermi('student:student:edit')")
+    @PreAuthorize("@ss.hasAnyPermi('student:student:edit,achievement:manage:list,achievement:manage:participated:list,achievement:manage:guided:list')")
     @Log(title = "学生档案", businessType = BusinessType.UPDATE)
+    @BizAudit(bizType = "student_archive", bizName = "修改学生档案", opType = BizAuditOpType.UPDATE, handler = "studentBizAuditHandler", async = false)
     @PutMapping
     public AjaxResult edit(@RequestBody SamStudent samStudent)
     {
-        return toAjax(samStudentService.updateSamStudent(samStudent));
+        int rows = samStudentService.updateSamStudent(samStudent);
+        if (rows > 0 && StringUtils.isNotBlank(samStudent.getNo()))
+        {
+            LoginUser loginUser = SecurityUtils.getLoginUser();
+            if (loginUser != null && StringUtils.equals(loginUser.getUsername(), samStudent.getNo()))
+            {
+                profileCompletionService.refreshProfileCompletion(loginUser);
+                tokenService.setLoginUser(loginUser);
+            }
+        }
+        return toAjax(rows);
     }
 
     /**
@@ -116,6 +153,7 @@ public class SamStudentController extends BaseController
      */
     @PreAuthorize("@ss.hasPermi('student:student:remove')")
     @Log(title = "学生档案", businessType = BusinessType.DELETE)
+    @BizAudit(bizType = "student_archive", bizName = "删除学生档案", opType = BizAuditOpType.DELETE, handler = "studentBizAuditHandler", async = false)
 	@DeleteMapping("/{studentIds}")
     public AjaxResult remove(@PathVariable Long[] studentIds)
     {

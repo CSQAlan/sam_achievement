@@ -15,9 +15,16 @@ export function getTeacherInfoByNo(no) {
 export function updateTeacherInfo(data) {
   const no = data?.no || data?.userName;
   if (!no) {
+    if (data?.id) {
+      return request({
+        url: "/achievement/teacher",
+        method: "put",
+        data,
+      });
+    }
     return request({
       url: "/achievement/teacher",
-      method: "put",
+      method: "post",
       data,
     });
   }
@@ -37,7 +44,7 @@ export function updateTeacherInfo(data) {
     }
     return request({
       url: "/achievement/teacher",
-      method: "put",
+      method: "post",
       data,
     });
   });

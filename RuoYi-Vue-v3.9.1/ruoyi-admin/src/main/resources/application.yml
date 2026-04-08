@@ -7,11 +7,15 @@ ruoyi:
   # 版权年份
   copyrightYear: 2025
   # 文件路径 示例（ Windows配置D:/ruoyi/uploadPath，Linux配置 /home/ruoyi/uploadPath）
-  profile: D:/ruoyi/uploadPath
+  profile: D\ruoyi\uploadPath
   # 获取ip地址开关
   addressEnabled: false
   # 验证码类型 math 数字计算 char 字符验证
   captchaType: math
+# 统一认证配置
+cas:
+  casServerUrlPrefix: https://csxrz.cqnu.edu.cn/cas   # 统一认证平台
+  serverName: http://localhost:8080           # 浏览器能访问到 admin 的地址
 
 # 开发环境配置
 server:

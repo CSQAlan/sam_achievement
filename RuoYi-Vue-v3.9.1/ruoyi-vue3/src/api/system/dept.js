@@ -1,6 +1,6 @@
 import request from '@/utils/request'
 
-// 查询部门列表
+// List departments
 export function listDept(query) {
   return request({
     url: '/system/dept/list',
@@ -9,7 +9,7 @@ export function listDept(query) {
   })
 }
 
-// 查询部门列表（排除节点）
+// List departments excluding child nodes
 export function listDeptExcludeChild(deptId) {
   return request({
     url: '/system/dept/list/exclude/' + deptId,
@@ -17,7 +17,7 @@ export function listDeptExcludeChild(deptId) {
   })
 }
 
-// 查询部门详细
+// Get department detail
 export function getDept(deptId) {
   return request({
     url: '/system/dept/' + deptId,
@@ -25,28 +25,68 @@ export function getDept(deptId) {
   })
 }
 
-// 新增部门
+// Add department
 export function addDept(data) {
   return request({
     url: '/system/dept',
     method: 'post',
-    data: data
+    data
   })
 }
 
-// 修改部门
+// Update department
 export function updateDept(data) {
   return request({
     url: '/system/dept',
     method: 'put',
-    data: data
+    data
   })
 }
 
-// 删除部门
+// Delete department
 export function delDept(deptId) {
   return request({
     url: '/system/dept/' + deptId,
     method: 'delete'
+  })
+}
+
+// Import department data
+export function importDeptData(data, updateSupport) {
+  return request({
+    url: '/system/dept/importData?updateSupport=' + updateSupport,
+    method: 'post',
+    data,
+    headers: { 'Content-Type': 'multipart/form-data' }
+  })
+}
+
+// Validate import data before importing
+export function checkDeptImport(data, updateSupport) {
+  return request({
+    url: '/system/dept/importCheck?updateSupport=' + updateSupport,
+    method: 'post',
+    data,
+    headers: { 'Content-Type': 'multipart/form-data' }
+  })
+}
+
+// Export failed import details
+export function exportDeptImportFailDetails(data, updateSupport) {
+  return request({
+    url: '/system/dept/importFailDetails?updateSupport=' + updateSupport,
+    method: 'post',
+    data,
+    headers: { 'Content-Type': 'multipart/form-data' },
+    responseType: 'blob'
+  })
+}
+
+// Download department import template
+export function importDeptTemplate() {
+  return request({
+    url: '/system/dept/importTemplate',
+    method: 'post',
+    responseType: 'blob'
   })
 }

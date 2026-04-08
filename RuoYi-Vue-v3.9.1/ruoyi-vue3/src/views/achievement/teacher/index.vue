@@ -134,7 +134,7 @@
   <el-cascader
     v-model="deptCascaderValue"
     :options="deptOptions"
-    :props="{ value: 'deptId', label: 'deptName', children: 'children' }"
+    :props="{ value: 'deptName', label: 'deptName', children: 'children' }"
     placeholder="请选择学院/院系"
     clearable
     filterable
@@ -350,8 +350,8 @@ function handleUpdate(row) {
     form.value = response.data
     // 回填级联选择器
     const values = [];
-    if (form.value.school) values.push(Number(form.value.school));
-    if (form.value.department) values.push(Number(form.value.department));
+    if (form.value.school) values.push(form.value.school);
+    if (form.value.department) values.push(form.value.department);
     deptCascaderValue.value = values;
 
     open.value = true

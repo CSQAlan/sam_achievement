@@ -8,6 +8,9 @@ import javax.validation.constraints.NotNull;
 import javax.validation.constraints.Size;
 import org.apache.commons.lang3.builder.ToStringBuilder;
 import org.apache.commons.lang3.builder.ToStringStyle;
+import com.ruoyi.common.annotation.Excel;
+import com.ruoyi.common.annotation.Excel.ColumnType;
+import com.ruoyi.common.annotation.Excel.Type;
 import com.ruoyi.common.core.domain.BaseEntity;
 
 /**
@@ -29,28 +32,39 @@ public class SysDept extends BaseEntity
     private String ancestors;
 
     /** 部门名称 */
+    @Excel(name = "部门名称", prompt = "填写当前部门名称；如填写“部门全路径”，最后一级应与此列一致；若此列留空，可由路径最后一级自动识别")
     private String deptName;
 
     /** 显示顺序 */
+    @Excel(name = "显示顺序", cellType = ColumnType.NUMERIC, prompt = "填写显示顺序数字；可留空，默认按0导入；数字越小越靠前")
     private Integer orderNum;
 
     /** 负责人 */
+    @Excel(name = "负责人", prompt = "填写部门负责人姓名；选填")
     private String leader;
 
     /** 联系电话 */
+    @Excel(name = "联系电话", cellType = ColumnType.TEXT, prompt = "填写部门联系电话；选填，建议填写11位手机号或固定电话")
     private String phone;
 
     /** 邮箱 */
+    @Excel(name = "邮箱", prompt = "填写部门联系邮箱；选填，需符合邮箱格式")
     private String email;
 
-    /** 部门状态:0正常,1停用 */
+    /** 部门状态 0正常 1停用 */
+    @Excel(name = "状态", readConverterExp = "0=正常,1=停用", combo = { "0", "1" }, prompt = "填写部门状态：0=正常，1=停用；留空默认0")
     private String status;
 
     /** 删除标志（0代表存在 2代表删除） */
     private String delFlag;
 
-    /** 父部门名称 */
+    /** 上级部门名称 */
+    @Excel(name = "上级部门名称", type = Type.IMPORT, prompt = "填写直接上级部门名称；如存在同名上级，建议改填“部门全路径”；留空时仅在系统存在唯一根部门时自动挂到根部门下")
     private String parentName;
+
+    /** 部门全路径（导入用） */
+    @Excel(name = "部门全路径", type = Type.IMPORT, prompt = "推荐填写完整层级路径，如：学校/信息工程学院/计算机系；支持“/”或“\\”分隔；填写后系统优先按路径识别层级，并以最后一级作为部门名称")
+    private String deptPath;
     
     /** 子部门 */
     private List<SysDept> children = new ArrayList<SysDept>();
@@ -169,6 +183,16 @@ public class SysDept extends BaseEntity
     public void setParentName(String parentName)
     {
         this.parentName = parentName;
+    }
+
+    public String getDeptPath()
+    {
+        return deptPath;
+    }
+
+    public void setDeptPath(String deptPath)
+    {
+        this.deptPath = deptPath;
     }
 
     public List<SysDept> getChildren()

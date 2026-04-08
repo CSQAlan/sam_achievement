@@ -7,6 +7,7 @@ import com.fasterxml.jackson.annotation.JsonFormat;
 import org.apache.commons.lang3.builder.ToStringBuilder;
 import org.apache.commons.lang3.builder.ToStringStyle;
 import com.ruoyi.common.annotation.Excel;
+import com.ruoyi.common.annotation.Excel.Type;
 import com.ruoyi.common.core.domain.BaseEntity;
 
 /**
@@ -27,10 +28,15 @@ public class SamAchievement extends BaseEntity
     @Excel(name = "届次 ")
     private String sessionId;
 
+    /** 届次名称（前端展示用） */
+    @Excel(name = "届次", type = Type.EXPORT)
+    private String sessionName;
+
     /** derived from session relation for frontend display */
     private String competitionId;
 
     /** derived from session relation for frontend display */
+    @Excel(name = "比赛", type = Type.EXPORT)
     private String competitionName;
 
     /** 类别 */
@@ -44,6 +50,12 @@ public class SamAchievement extends BaseEntity
     /** 团队名称 */
     @Excel(name = "团队名称")
     private String teamName;
+
+    /** 列表展示用：参赛选手（姓名+学号） */
+    private String contestant;
+
+    /** 列表展示用：指导老师（姓名+工号） */
+    private String instructor;
 
     /** 获奖级别 */
     @Excel(name = "获奖级别", dictType = "award_level_type")
@@ -71,6 +83,7 @@ public class SamAchievement extends BaseEntity
     private Date awardTime;
 
     /** 年份 */
+    @Excel(name = "\u5e74\u4efd")
     private Long year;
 
     /** 部门 */
@@ -79,7 +92,12 @@ public class SamAchievement extends BaseEntity
     /** 是否报销 */
     private Integer isReimburse;
 
+    /** 审核状态 */
+    private String reimbursementStatus;
+
+
     /** 是否补录 */
+    @Excel(name = "\u662f\u5426\u8865\u5f55", readConverterExp = "0=\u5426,1=\u662f")
     private Integer isSupplement;
 
     /** 报名费金额 */
@@ -88,8 +106,8 @@ public class SamAchievement extends BaseEntity
     /** 实际报销金额 */
     private BigDecimal reimbursementFee;
 
-    /** 报销状态（0进行中 1已完成） */
-    private String reimbursementStatus;
+//    /** 报销状态（0进行中 1已完成） */
+//    private String reimbursementStatus;
 
     /** 报销百分比（0-100） */
     private String reimbursementRatio;
@@ -141,7 +159,7 @@ public class SamAchievement extends BaseEntity
 
     private List<SamAchievementAdvisor> samAchievementAdvisorList;
 
-    private List<java.util.Map<String, Object>> samAchievementAttachmentList;
+    private List<SamAchievementAttachment> samAchievementAttachmentList;
 
     public void setAchievementId(String achievementId) 
     {
@@ -161,6 +179,16 @@ public class SamAchievement extends BaseEntity
     public String getSessionId() 
     {
         return sessionId;
+    }
+
+    public void setSessionName(String sessionName)
+    {
+        this.sessionName = sessionName;
+    }
+
+    public String getSessionName()
+    {
+        return sessionName;
     }
 
     public void setCompetitionId(String competitionId)
@@ -213,7 +241,27 @@ public class SamAchievement extends BaseEntity
         return teamName;
     }
 
-    public void setLevel(String level) 
+    public void setContestant(String contestant)
+    {
+        this.contestant = contestant;
+    }
+
+    public String getContestant()
+    {
+        return contestant;
+    }
+
+    public void setInstructor(String instructor)
+    {
+        this.instructor = instructor;
+    }
+
+    public String getInstructor()
+    {
+        return instructor;
+    }
+
+    public void setLevel(String level)
     {
         this.level = level;
     }
@@ -513,12 +561,12 @@ public class SamAchievement extends BaseEntity
         this.samAchievementAdvisorList = samAchievementAdvisorList;
     }
 
-    public List<java.util.Map<String, Object>> getSamAchievementAttachmentList()
+    public List<SamAchievementAttachment> getSamAchievementAttachmentList()
     {
         return samAchievementAttachmentList;
     }
 
-    public void setSamAchievementAttachmentList(List<java.util.Map<String, Object>> samAchievementAttachmentList)
+    public void setSamAchievementAttachmentList(List<SamAchievementAttachment> samAchievementAttachmentList)
     {
         this.samAchievementAttachmentList = samAchievementAttachmentList;
     }
@@ -528,11 +576,14 @@ public class SamAchievement extends BaseEntity
         return new ToStringBuilder(this,ToStringStyle.MULTI_LINE_STYLE)
             .append("achievementId", getAchievementId())
             .append("sessionId", getSessionId())
+            .append("sessionName", getSessionName())
             .append("competitionId", getCompetitionId())
             .append("competitionName", getCompetitionName())
             .append("category", getCategory())
             .append("name", getName())
             .append("teamName", getTeamName())
+            .append("contestant", getContestant())
+            .append("instructor", getInstructor())
             .append("level", getLevel())
             .append("grade", getGrade())
             .append("track", getTrack())

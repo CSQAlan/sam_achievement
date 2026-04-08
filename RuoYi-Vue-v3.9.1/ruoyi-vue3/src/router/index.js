@@ -146,6 +146,20 @@ export const dynamicRoutes = [
     ]
   },
   {
+    path: '/monitor/biz-audit',
+    component: Layout,
+    hidden: true,
+    permissions: ['monitor:bizaudit:query'],
+    children: [
+      {
+        path: 'detail/:id(\\d+)',
+        component: () => import('@/views/monitor/bizAudit/detail'),
+        name: 'BizAuditDetail',
+        meta: { title: '业务审计详情', activeMenu: '/monitor/biz-audit' }
+      }
+    ]
+  },
+  {
     path: '/tool/gen-edit',
     component: Layout,
     hidden: true,
@@ -156,6 +170,20 @@ export const dynamicRoutes = [
         component: () => import('@/views/tool/gen/editTable'),
         name: 'GenEdit',
         meta: { title: '修改生成配置', activeMenu: '/tool/gen' }
+      }
+    ]
+  },
+
+  {
+    path: '/achievement',
+    component: Layout,
+    hidden: true,
+    children: [
+      {
+        path: 'reviewPage',
+        component: () => import('@/views/achievement/component/reviewPage'),
+        name: 'AchievementReviewPage',
+        meta: { title: '成果审核' }
       }
     ]
   },

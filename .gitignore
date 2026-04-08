@@ -44,6 +44,8 @@ coverage/
 # 打包文件
 *.tgz
 *.tar.gz
+RuoYi-Vue-v3.9.1.zip
+RuoYi-Vue-v3.9.1 (2).zip
 
 # 本地数据库
 *.sqlite

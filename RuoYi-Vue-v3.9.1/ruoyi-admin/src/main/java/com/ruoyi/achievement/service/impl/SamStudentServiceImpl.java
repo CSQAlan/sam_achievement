@@ -11,7 +11,9 @@ import com.ruoyi.common.utils.bean.BeanValidators;
 import com.ruoyi.achievement.mapper.SamStudentMapper;
 import com.ruoyi.achievement.domain.SamStudent;
 import com.ruoyi.achievement.service.ISamStudentService;
+import com.ruoyi.common.utils.StringUtils;
 import javax.validation.Validator;
+import com.ruoyi.common.utils.StringUtils;
 
 /**
  * 学生档案Service业务层处理
@@ -78,6 +80,20 @@ public class SamStudentServiceImpl implements ISamStudentService
     @Override
     public int updateSamStudent(SamStudent samStudent)
     {
+        if (samStudent.getStudentId() == null && StringUtils.isNotBlank(samStudent.getNo()))
+        {
+            SamStudent query = new SamStudent();
+            query.setNo(samStudent.getNo());
+            List<SamStudent> exists = samStudentMapper.selectSamStudentList(query);
+            if (exists != null && !exists.isEmpty())
+            {
+                samStudent.setStudentId(exists.get(0).getStudentId());
+            }
+            else
+            {
+                return samStudentMapper.insertSamStudent(samStudent);
+            }
+        }
         return samStudentMapper.updateSamStudent(samStudent);
     }
 
@@ -135,28 +151,28 @@ public class SamStudentServiceImpl implements ISamStudentService
                 }
 
                 // 2. 严谨的层级机构匹配逻辑 (根节点 ID 默认为 100)
-                Long rootId = 100L; 
-                
+                Long rootId = 100L;
+
                 // 匹配学院
                 com.ruoyi.common.core.domain.entity.SysDept schoolDept = sysDeptMapper.checkDeptNameUnique(student.getSchoolName(), rootId);
                 if (schoolDept == null) {
                     throw new Exception("找不到名为 [" + student.getSchoolName() + "] 的学院，请检查名称是否正确");
                 }
-                student.setSchool(schoolDept.getDeptId().toString());
+                student.setSchool(schoolDept.getDeptName());
 
                 // 匹配院系 (在学院下找)
                 com.ruoyi.common.core.domain.entity.SysDept deptDept = sysDeptMapper.checkDeptNameUnique(student.getDepartmentName(), schoolDept.getDeptId());
                 if (deptDept == null) {
                     throw new Exception("在 " + student.getSchoolName() + " 下找不到名为 [" + student.getDepartmentName() + "] 的院系");
                 }
-                student.setDepartment(deptDept.getDeptId().toString());
+                student.setDepartment(deptDept.getDeptName());
 
                 // 匹配专业 (在院系下找)
                 com.ruoyi.common.core.domain.entity.SysDept majorDept = sysDeptMapper.checkDeptNameUnique(student.getMajorName(), deptDept.getDeptId());
                 if (majorDept == null) {
                     throw new Exception("在 " + student.getDepartmentName() + " 下找不到名为 [" + student.getMajorName() + "] 的专业");
                 }
-                student.setMajor(majorDept.getDeptId().toString());
+                student.setMajor(majorDept.getDeptName());
 
                 // 3. 验证业务主键 (学号) 是否已存在
                 SamStudent s = samStudentMapper.selectSamStudentByNo(student.getNo());
@@ -189,7 +205,7 @@ public class SamStudentServiceImpl implements ISamStudentService
                 log.error(msg, e);
             }
         }
-        
+
         if (failureNum > 0)
         {
             failureMsg.insert(0, "很抱歉，导入过程中出现错误！共失败 " + failureNum + " 条数据，成功 " + successNum + " 条，错误明细如下：");
