@@ -55,15 +55,18 @@
             <artifactId>ruoyi-quartz</artifactId>
         </dependency>
 
-        <!-- 代码生成-->
         <dependency>
             <groupId>com.ruoyi</groupId>
             <artifactId>ruoyi-generator</artifactId>
         </dependency>
         <dependency>
-            <groupId>org.apereo.cas.client</groupId>
+            <groupId>org.jasig.cas.client</groupId>
             <artifactId>cas-client-core</artifactId>
-            <version>4.0.4</version>
+            <version>3.6.4</version>
+        </dependency>
+        <dependency>
+            <groupId>junit</groupId>
+            <artifactId>junit</artifactId>
         </dependency>
     </dependencies>
 

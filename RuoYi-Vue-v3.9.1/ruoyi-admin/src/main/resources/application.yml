@@ -12,6 +12,10 @@ ruoyi:
   addressEnabled: false
   # 验证码类型 math 数字计算 char 字符验证
   captchaType: math
+# 统一认证配置
+cas:
+  casServerUrlPrefix: https://csxrz.cqnu.edu.cn/cas   # 统一认证平台
+  serverName: http://localhost:8080           # 浏览器能访问到 admin 的地址
 
 # 开发环境配置
 server:

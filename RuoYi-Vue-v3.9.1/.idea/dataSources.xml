@@ -57,7 +57,6 @@
     <data-source source="LOCAL" name="@localhost" uuid="276f271f-cd1c-4b1c-8d03-d918264c87c3">
       <driver-ref>mysql_aurora.aws_wrapper</driver-ref>
       <synchronize>true</synchronize>
-      <jdbc-driver>software.amazon.jdbc.Driver</jdbc-driver>
       <jdbc-url>jdbc:aws-wrapper:mysql://localhost:13306</jdbc-url>
       <jdbc-additional-properties>
         <property name="com.intellij.clouds.kubernetes.db.host.port" />
@@ -69,7 +68,6 @@
     <data-source source="LOCAL" name="@localhost [2]" uuid="b9f954e2-92cc-4bcd-9a6b-5f649f02b11f">
       <driver-ref>mysql_aurora.aws_wrapper</driver-ref>
       <synchronize>true</synchronize>
-      <jdbc-driver>software.amazon.jdbc.Driver</jdbc-driver>
       <jdbc-url>jdbc:aws-wrapper:mysql://localhost:13306</jdbc-url>
       <jdbc-additional-properties>
         <property name="com.intellij.clouds.kubernetes.db.host.port" />
