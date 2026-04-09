@@ -7,7 +7,6 @@ spring:
             # 主库数据源（已修改为本地数据库）
             master:
                 url: jdbc:mysql://121.36.231.106:3306/ruoyi?useUnicode=true&characterEncoding=utf8&serverTimezone=Asia/Shanghai&useSSL=false
-
                 username: ruoyi1
                 password: Ruoyi@123456
             # 从库数据源（保持默认关闭）

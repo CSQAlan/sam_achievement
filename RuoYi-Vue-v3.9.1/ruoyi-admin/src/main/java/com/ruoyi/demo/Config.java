@@ -115,8 +115,18 @@ public class Config {
      */
     // @Bean
     // public FilterRegistrationBean AuthenticationFilter() {
-    //     ...
+    //     final FilterRegistrationBean registration = new FilterRegistrationBean();
+    //     registration.setFilter(new AuthenticationFilter());
+    //     // 设定匹配的路径
+    //     registration.addUrlPatterns("/*");
+    //     java.util.Map<String, String> initParameters = new HashMap<>();
+    //     initParameters.put("casServerLoginUrl", casServerUrlPrefix + "/login");
+    //     initParameters.put("serverName", serverName);
+    //     initParameters.put("ignorePattern", "/hello"); // 放行路径
+    //     registration.setInitParameters(initParameters);
+    //     // 设定加载的顺序
+    //     registration.setOrder(6);
+    //     return registration;
     // }
-
 
 }

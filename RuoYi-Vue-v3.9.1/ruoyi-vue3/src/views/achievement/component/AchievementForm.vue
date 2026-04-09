@@ -769,7 +769,7 @@
 
       <template v-if="isParticipantNew">
         <el-alert v-if="editingParticipantIndex === -1" title="未匹配到该学号，请完善下方信息完成录入" type="warning" show-icon :closable="false" style="margin-bottom: 15px;" />
-        <el-form-item label="所属机构" prop="school">
+        <el-form-item label="所属院系" prop="school">
           <el-cascader
             ref="participantCascader"
             v-model="participantDeptCascaderValue"
@@ -2066,7 +2066,7 @@ function getSessionList(competitionId) {
   request({
     url: '/session/session/list',
     method: 'get',
-    params: { competitionId: competitionId, pageNum: 1, pageSize: 100 }
+    params: { competitionId: competitionId, pageNum: 1, pageSize: 1000 }
   }).then(response => {
     sessionOptions.value = response.rows || [];
     // 列表加载完成后，尝试自动匹配一次
@@ -2093,10 +2093,9 @@ function autoMatchSession() {
 
   // 2. 设定搜索年份窗口 (解决跨年问题)
   // 修复：将 year.getTime() 改为 !isNaN(date.getTime()) 来判断是否是合法日期
-  const targetYears = month <= 4
-    ? [!isNaN(date.getTime()) ? year.toString() : "", (year - 1).toString()]
-    : [year.toString()];
-
+ const targetYears = month <= 4
+  ? [(year - 1).toString(), !isNaN(date.getTime()) ? year.toString() : ""]
+  : [year.toString()];
   // 3. 在候选列表中筛选
   const matched = sessionOptions.value.filter(item => {
     // A. 级别必须一致 (注意类型转换或弱等于)
