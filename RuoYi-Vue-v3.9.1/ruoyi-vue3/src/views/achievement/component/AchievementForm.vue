@@ -933,6 +933,7 @@ const props = defineProps({
   showSubmit: { type: Boolean, default: true },
   titleAdd: { type: String, default: "新增成果" },
   titleEdit: { type: String, default: "修改成果" },
+  titleDetail: { type: String, default: "成果详情" },
   submitText: { type: String, default: "" },
   cancelText: { type: String, default: "取 消" },
   userRole: { type: String, default: "student" },
@@ -2155,7 +2156,7 @@ function open(id) {
   
   activeAttachmentTab.value = 'award';
   if (id) {
-    title.value = props.titleEdit;
+    title.value = props.readOnly ? props.titleDetail : props.titleEdit;
     detailLoading.value = true;
     loadDetail(id);
   } else {

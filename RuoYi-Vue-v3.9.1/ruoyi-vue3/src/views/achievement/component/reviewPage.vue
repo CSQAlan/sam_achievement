@@ -13,6 +13,7 @@
       cancelText="返回"
       :titleAdd="reviewPageTitle"
       :titleEdit="reviewPageTitle"
+      :titleDetail="reviewPageTitle"
       @cancel="handleBack"
       @ok="handleFormSaved"
     />
