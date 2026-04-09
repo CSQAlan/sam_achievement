@@ -132,4 +132,13 @@ public class SamReimbursementItemsController extends BaseController
     public AjaxResult getPaymentInfo(@RequestParam("achievementIds") String achievementIds) {
         return success(samReimbursementItemsService.getPaymentInfo(achievementIds));
     }
+
+    /**
+     * 获取报销比例规则
+     */
+    @PreAuthorize("@ss.hasPermi('system:SamReimbursementItems:query')")
+    @GetMapping("/reimbursementRules")
+    public AjaxResult getReimbursementRules(@RequestParam("ownerDepId") Long ownerDepId) {
+        return success(samReimbursementItemsService.getReimbursementRules(ownerDepId));
+    }
 }

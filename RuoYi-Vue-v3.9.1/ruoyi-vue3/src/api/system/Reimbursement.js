@@ -123,3 +123,12 @@ export function getPaymentInfo(achievementIds) {
     params: { achievementIds }
   })
 }
+
+// 获取报销比例规则
+export function getReimbursementRules(ownerDepId) {
+  return request({
+    url: '/system/SamReimbursementItems/reimbursementRules',
+    method: 'get',
+    params: { ownerDepId }
+  })
+}

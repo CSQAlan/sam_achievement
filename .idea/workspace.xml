@@ -6,9 +6,7 @@
   <component name="ChangeListManager">
     <list default="true" id="b204d056-52b8-4d02-915a-97d1bc9b8c13" name="Changes" comment="">
       <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/RuoYi-Vue-v3.9.1/ruoyi-admin/src/main/java/com/ruoyi/demo/Config.java" beforeDir="false" afterPath="$PROJECT_DIR$/RuoYi-Vue-v3.9.1/ruoyi-admin/src/main/java/com/ruoyi/demo/Config.java" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/RuoYi-Vue-v3.9.1/ruoyi-admin/src/main/java/com/ruoyi/reimbursement/controller/SamReimbursementAchievementViewController.java" beforeDir="false" afterPath="$PROJECT_DIR$/RuoYi-Vue-v3.9.1/ruoyi-admin/src/main/java/com/ruoyi/reimbursement/controller/SamReimbursementAchievementViewController.java" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/RuoYi-Vue-v3.9.1/ruoyi-vue3/src/permission.js" beforeDir="false" afterPath="$PROJECT_DIR$/RuoYi-Vue-v3.9.1/ruoyi-vue3/src/permission.js" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/RuoYi-Vue-v3.9.1/ruoyi-vue3/src/views/system/Reimbursement/index.vue" beforeDir="false" afterPath="$PROJECT_DIR$/RuoYi-Vue-v3.9.1/ruoyi-vue3/src/views/system/Reimbursement/index.vue" afterDir="false" />
     </list>
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
@@ -85,7 +83,7 @@
       <workItem from="1774680542906" duration="170000" />
       <workItem from="1774759913252" duration="3063000" />
       <workItem from="1775540128235" duration="15443000" />
-      <workItem from="1775662317949" duration="5634000" />
+      <workItem from="1775662317949" duration="7689000" />
     </task>
     <servers />
   </component>

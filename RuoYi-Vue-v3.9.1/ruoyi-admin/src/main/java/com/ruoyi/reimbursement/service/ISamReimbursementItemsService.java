@@ -78,4 +78,12 @@ public interface ISamReimbursementItemsService
      * @return 支付信息列表
      */
     public List<Map<String, Object>> getPaymentInfo(String achievementIds);
+
+    /**
+     * 获取报销比例规则
+     * 
+     * @param ownerDepId 归属学院ID
+     * @return 报销比例规则列表
+     */
+    public List<Map<String, Object>> getReimbursementRules(Long ownerDepId);
 }
