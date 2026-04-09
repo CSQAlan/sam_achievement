@@ -83,15 +83,15 @@ router.beforeEach((to, from, next) => {
   } else {
     // 没有token
     if (isWhiteList(to.path)) {
-      redirectToCas(to)   // 让 /login 也跳 CAS
+      // redirectToCas(to)   // 让 /login 也跳 CAS
       NProgress.done()
 
       // 在免登录白名单，直接进入
       next()
     } else {
       // 重定向到CAS登录页
-      redirectToCas(to)
-      // next(`/login?redirect=${to.fullPath}`) // 否则全部重定向到登录页
+      // redirectToCas(to)
+      next(`/login?redirect=${to.fullPath}`) // 否则全部重定向到登录页
       NProgress.done()
     }
   }
