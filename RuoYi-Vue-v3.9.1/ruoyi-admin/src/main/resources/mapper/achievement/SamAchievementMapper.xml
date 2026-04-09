@@ -123,7 +123,7 @@
             a.is_supplement,
             a.fee,
             a.reimbursement_fee,
-            v.reimbursement_status,
+            (CASE WHEN a.reimbursement_date IS NOT NULL THEN '1' ELSE '0' END) AS reimbursement_status,
             a.reimbursement_ratio,
             a.reimbursement_item_id,
             a.reimbursement_date,

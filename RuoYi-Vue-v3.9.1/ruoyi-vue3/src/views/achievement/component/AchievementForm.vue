@@ -175,7 +175,7 @@
                       <div v-if="form.isReimburse === 1 && form.achievementId" style="margin-left: 15px; display: flex; align-items: center;">
                         <span style="font-size: 12px; color: #909399; margin-right: 8px;">报销状态:</span>
                       <div style="transform: scale(1.5); transform-origin: left center;">
-  <dict-tag :options="reimbursement_status" :value="form.reimbursementStatus ?? 0" />
+  <dict-tag :options="reimbursement_status" :value="actualReimbursementStatus" />
 </div>
                       </div>
                     </div>
@@ -516,7 +516,7 @@
                   <div v-if="form.isReimburse === 1 && form.achievementId" style="margin-left: 15px; display: flex; align-items: center;">
                     <span style="font-size: 12px; color: #909399; margin-right: 8px;">报销状态:</span>
                   <div style="transform: scale(1.5); transform-origin: left center;">
-  <dict-tag :options="reimbursement_status" :value="form.reimbursementStatus ?? 0" />
+  <dict-tag :options="reimbursement_status" :value="actualReimbursementStatus" />
 </div>
                   </div>
                 </div>
@@ -1166,6 +1166,16 @@ const data = reactive({
   }
 });
 const { form, formSnapshot, rules } = toRefs(data);
+
+const actualReimbursementStatus = computed(() => {
+  // 有报销时间内容才是已报销 (字典标签中 1 通常对应已报销，0 对应进行中/未报销)
+  if (form.value.reimbursementDate) {
+    const alreadyReimbursed = (reimbursement_status.value || []).find(d => d.label === '已报销');
+    return alreadyReimbursed ? alreadyReimbursed.value : '1';
+  }
+  const inProgress = (reimbursement_status.value || []).find(d => d.label === '进行中' || d.label === '未报销');
+  return inProgress ? inProgress.value : '0';
+});
 
 const displayAchievementId = computed(() => {
   const formId = form.value?.achievementId;
