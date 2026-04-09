@@ -110,20 +110,20 @@ public class Config {
      * 用于检测用户是否需要进行身份验证 构建登录地址
      * ps:前后端分离项目可忽略此过滤器，自己构建访问认证地址
      */
-    @Bean
-    public FilterRegistrationBean AuthenticationFilter() {
-        final FilterRegistrationBean registration = new FilterRegistrationBean();
-        registration.setFilter(new AuthenticationFilter());
-        // 设定匹配的路径
-        registration.addUrlPatterns("/*");
-        java.util.Map<String, String> initParameters = new HashMap<>();
-        initParameters.put("casServerLoginUrl", casServerUrlPrefix + "/login");
-        initParameters.put("serverName", serverName);
-        initParameters.put("ignorePattern", "/hello"); // 放行路径
-        registration.setInitParameters(initParameters);
-        // 设定加载的顺序
-        registration.setOrder(6);
-        return registration;
-    }
+    // @Bean
+    // public FilterRegistrationBean AuthenticationFilter() {
+    //     final FilterRegistrationBean registration = new FilterRegistrationBean();
+    //     registration.setFilter(new AuthenticationFilter());
+    //     // 设定匹配的路径
+    //     registration.addUrlPatterns("/*");
+    //     java.util.Map<String, String> initParameters = new HashMap<>();
+    //     initParameters.put("casServerLoginUrl", casServerUrlPrefix + "/login");
+    //     initParameters.put("serverName", serverName);
+    //     initParameters.put("ignorePattern", "/hello"); // 放行路径
+    //     registration.setInitParameters(initParameters);
+    //     // 设定加载的顺序
+    //     registration.setOrder(6);
+    //     return registration;
+    // }
 
 }
