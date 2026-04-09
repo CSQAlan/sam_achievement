@@ -1,15 +1,17 @@
-package com.ruoyi.system.mapper;
+package com.ruoyi.reimbursement.service;
 
 import java.util.List;
-import com.ruoyi.system.domain.SamReimbursementItems;
+import java.io.IOException;
+import javax.servlet.http.HttpServletResponse;
+import com.ruoyi.reimbursement.domain.SamReimbursementItems;
 
 /**
- * 报销项目Mapper接口
+ * 报销项目Service接口
  * 
  * @author ruoyi
  * @date 2026-02-07
  */
-public interface SamReimbursementItemsMapper 
+public interface ISamReimbursementItemsService 
 {
     /**
      * 查询报销项目
@@ -44,7 +46,15 @@ public interface SamReimbursementItemsMapper
     public int updateSamReimbursementItems(SamReimbursementItems samReimbursementItems);
 
     /**
-     * 删除报销项目
+     * 批量删除报销项目
+     * 
+     * @param ids 需要删除的报销项目主键集合
+     * @return 结果
+     */
+    public int deleteSamReimbursementItemsByIds(Long[] ids);
+
+    /**
+     * 删除报销项目信息
      * 
      * @param id 报销项目主键
      * @return 结果
@@ -52,10 +62,11 @@ public interface SamReimbursementItemsMapper
     public int deleteSamReimbursementItemsById(Long id);
 
     /**
-     * 批量删除报销项目
+     * 导出报销项目PDF清单
      * 
-     * @param ids 需要删除的数据主键集合
-     * @return 结果
+     * @param id 报销项目主键
+     * @param response HTTP响应
+     * @throws IOException IO异常
      */
-    public int deleteSamReimbursementItemsByIds(Long[] ids);
+    public void exportReimbursementPdf(Long id, HttpServletResponse response) throws IOException;
 }

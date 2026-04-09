@@ -1,7 +1,7 @@
-package com.ruoyi.system.service;
+package com.ruoyi.reimbursement.service;
 
 import java.util.List;
-import com.ruoyi.system.domain.SamQualityDevelopmentForm;
+import com.ruoyi.reimbursement.domain.SamQualityDevelopmentForm;
 
 /**
  * 素质提升Service接口

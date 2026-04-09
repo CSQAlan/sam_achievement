@@ -186,8 +186,19 @@ public class SysProfileController extends BaseController
     public AjaxResult profile()
     {
         LoginUser loginUser = getLoginUser();
+        
+        // 健壮性改造：使用 selectUserById 或 selectUserByUserName 的列表获取方式，防止多角色导致 selectOne 报错
+        SysUser user = userService.selectUserById(loginUser.getUserId());
+        if (user == null) {
+            user = userService.selectUserByUserName(loginUser.getUsername());
+        }
+        
+        if (user != null) {
+            loginUser.setUser(user);
+        }
+        
         profileCompletionService.refreshProfileCompletion(loginUser);
-        SysUser user = loginUser.getUser();
+        
         AjaxResult ajax = AjaxResult.success(user);
         ajax.put("roleGroup", userService.selectUserRoleGroup(loginUser.getUsername()));
         ajax.put("postGroup", userService.selectUserPostGroup(loginUser.getUsername()));
@@ -210,7 +221,8 @@ public class SysProfileController extends BaseController
     public AjaxResult studentDetail()
     {
         LoginUser loginUser = getLoginUser();
-        SysUser currentUser = loginUser.getUser();
+        // 同样使用 selectUserById 确保获取到角色列表且不报错
+        SysUser currentUser = userService.selectUserById(loginUser.getUserId());
         if (!hasRole(currentUser, "student"))
         {
             return success(null);
@@ -230,7 +242,7 @@ public class SysProfileController extends BaseController
     public AjaxResult teacherDetail()
     {
         LoginUser loginUser = getLoginUser();
-        SysUser currentUser = loginUser.getUser();
+        SysUser currentUser = userService.selectUserById(loginUser.getUserId());
         if (!hasRole(currentUser, "teacher"))
         {
             return success(null);
