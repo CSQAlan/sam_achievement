@@ -101,7 +101,7 @@ function logout() {
     type: 'warning'
   }).then(() => {
     userStore.logOut().then(() => {
-      location.href = '/index'
+      location.href = import.meta.env.VITE_APP_BASE_API + '/cas/logout'
     })
   }).catch(() => { })
 }
