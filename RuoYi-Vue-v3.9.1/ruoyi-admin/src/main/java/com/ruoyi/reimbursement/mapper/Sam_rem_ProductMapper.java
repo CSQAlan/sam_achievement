@@ -1,11 +1,11 @@
-package com.ruoyi.system.mapper;
+package com.ruoyi.reimbursement.mapper;
 
 import java.util.List;
 
 import org.apache.ibatis.annotations.Mapper;
 
-import com.ruoyi.system.domain.SamReimbursementItems;
-import com.ruoyi.system.domain.Sam_rem_Product;
+import com.ruoyi.reimbursement.domain.SamReimbursementItems;
+import com.ruoyi.reimbursement.domain.Sam_rem_Product;
 
 /**
  * 报销项目详情Mapper接口

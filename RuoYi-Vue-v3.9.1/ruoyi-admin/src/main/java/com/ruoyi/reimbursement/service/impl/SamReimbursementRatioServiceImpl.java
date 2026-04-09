@@ -1,12 +1,12 @@
-package com.ruoyi.system.service.impl;
+package com.ruoyi.reimbursement.service.impl;
 
 import java.util.List;
 import com.ruoyi.common.utils.DateUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
-import com.ruoyi.system.mapper.SamReimbursementRatioMapper;
-import com.ruoyi.system.domain.SamReimbursementRatio;
-import com.ruoyi.system.service.ISamReimbursementRatioService;
+import com.ruoyi.reimbursement.mapper.SamReimbursementRatioMapper;
+import com.ruoyi.reimbursement.domain.SamReimbursementRatio;
+import com.ruoyi.reimbursement.service.ISamReimbursementRatioService;
 
 /**
  * 报销比例Service业务层处理

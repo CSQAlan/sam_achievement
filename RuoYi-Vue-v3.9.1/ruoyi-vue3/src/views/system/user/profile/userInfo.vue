@@ -640,17 +640,13 @@ async function refreshProfileCompletionState() {
 
 function redirectAfterProfileCompleted() {
   const redirectTarget = route.query.redirect;
-  const resolved = redirectTarget
-      ? router.resolve(redirectTarget)
-      : null;
-  // 清除地址栏中的 redirect，避免刷新后仍然携带旧跳转
-  router.replace({ path: route.path, query: {} }).finally(() => {
-    if (resolved && resolved.matched.length) {
-      router.replace(redirectTarget);
-    } else {
-      router.replace("/"); // 或 router.back()
-    }
-  });
+  // 完成资料后，因为首次登录时拦截了路由生成（没有构建左侧菜单），
+  // 所以这里使用 location.href 进行硬跳转（刷新页面），强制重新走一遍完整路由和权限拉取逻辑
+  if (redirectTarget) {
+    window.location.href = redirectTarget;
+  } else {
+    window.location.href = "/";
+  }
 }
 
 /** 提交按钮 */

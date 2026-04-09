@@ -1,15 +1,15 @@
-package com.ruoyi.system.mapper;
+package com.ruoyi.reimbursement.service;
 
 import java.util.List;
-import com.ruoyi.system.domain.SamReimbursementRatio;
+import com.ruoyi.reimbursement.domain.SamReimbursementRatio;
 
 /**
- * 报销比例Mapper接口
+ * 报销比例Service接口
  * 
  * @author ruoyi
  * @date 2026-02-07
  */
-public interface SamReimbursementRatioMapper 
+public interface ISamReimbursementRatioService 
 {
     /**
      * 查询报销比例
@@ -44,18 +44,18 @@ public interface SamReimbursementRatioMapper
     public int updateSamReimbursementRatio(SamReimbursementRatio samReimbursementRatio);
 
     /**
-     * 删除报销比例
+     * 批量删除报销比例
+     * 
+     * @param ids 需要删除的报销比例主键集合
+     * @return 结果
+     */
+    public int deleteSamReimbursementRatioByIds(Long[] ids);
+
+    /**
+     * 删除报销比例信息
      * 
      * @param id 报销比例主键
      * @return 结果
      */
     public int deleteSamReimbursementRatioById(Long id);
-
-    /**
-     * 批量删除报销比例
-     * 
-     * @param ids 需要删除的数据主键集合
-     * @return 结果
-     */
-    public int deleteSamReimbursementRatioByIds(Long[] ids);
 }

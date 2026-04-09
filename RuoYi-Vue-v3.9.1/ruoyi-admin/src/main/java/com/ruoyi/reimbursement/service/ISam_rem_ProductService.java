@@ -1,8 +1,8 @@
-package com.ruoyi.system.service;
+package com.ruoyi.reimbursement.service;
 
 import java.util.List;
 
-import com.ruoyi.system.domain.Sam_rem_Product;
+import com.ruoyi.reimbursement.domain.Sam_rem_Product;
 
 /**
  * 报销项目详情Service接口
