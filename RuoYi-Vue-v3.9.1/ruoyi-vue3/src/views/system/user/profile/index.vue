@@ -27,7 +27,7 @@
               </li>
               <li class="list-group-item">
                 <svg-icon icon-class="tree" />&#25152;&#23646;&#37096;&#38376;
-                <div v-if="state.user.dept" class="pull-right">{{ state.user.dept.deptName }} / {{ state.postGroup }}</div>
+                <div v-if="state.user.dept" class="pull-right">{{ state.user.dept.deptName }} </div>
               </li>
               <li class="list-group-item">
                 <svg-icon icon-class="peoples" />&#25152;&#23646;&#35282;&#33394;

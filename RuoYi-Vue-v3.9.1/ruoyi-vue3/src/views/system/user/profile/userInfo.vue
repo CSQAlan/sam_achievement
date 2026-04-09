@@ -601,10 +601,18 @@ function resolveSelectedDeptLabels() {
   const departmentOption = findDepartmentOption(schoolOption, form.value.department);
   const majorOption = findMajorOption(departmentOption, form.value.major);
 
+  let deptId = null;
+  if (isStudent.value) {
+    deptId = majorOption ? majorOption.id : (departmentOption ? departmentOption.id : (schoolOption ? schoolOption.id : null));
+  } else if (isTeacher.value) {
+    deptId = departmentOption ? departmentOption.id : (schoolOption ? schoolOption.id : null);
+  }
+
   return {
     school: schoolOption ? schoolOption.label : form.value.school,
     department: departmentOption ? departmentOption.label : form.value.department,
     major: majorOption ? majorOption.label : form.value.major,
+    deptId: deptId
   };
 }
 
@@ -624,13 +632,7 @@ function syncLocalProfile(partial = {}) {
 async function refreshProfileCompletionState() {
   const response = await getUserProfile();
   if (response.code === 200 && response.data) {
-    syncLocalProfile({
-      nickName: response.data.nickName,
-      phonenumber: response.data.phonenumber,
-      email: response.data.email,
-      sex: response.data.sex,
-      profileInitialized: Number(response.data.profileInitialized || 0),
-    });
+    syncLocalProfile(response.data);
     return Number(response.data.profileInitialized || 0) === 1;
   }
   return Number(userStore.profileInitialized || 0) === 1;
@@ -666,6 +668,7 @@ function submit() {
         const selectedDeptLabels = resolveSelectedDeptLabels();
         const payload = {
           ...userData,
+          deptId: selectedDeptLabels.deptId
         };
 
         if (isStudent.value) {
@@ -688,12 +691,11 @@ function submit() {
           return;
         }
 
-        syncLocalProfile({
-          nickName: form.value.nickName,
-          phonenumber: form.value.phonenumber,
-          email: form.value.email,
-          sex: form.value.sex,
-        });
+        // 使用后端返回的最新数据（包含更新后的 dept 对象）同步本地状态
+        if (response.data) {
+          syncLocalProfile(response.data);
+        }
+
         const profileCompleted = await refreshProfileCompletionState();
 
         if (profileCompleted) {

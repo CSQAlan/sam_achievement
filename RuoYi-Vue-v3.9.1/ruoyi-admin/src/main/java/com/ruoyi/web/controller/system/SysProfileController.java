@@ -77,6 +77,7 @@ public class SysProfileController extends BaseController
         private String classYear;
         private String className;
         private String name;
+        private Long deptId;
 
         public String getNickName()
         {
@@ -176,6 +177,16 @@ public class SysProfileController extends BaseController
         public void setName(String name)
         {
             this.name = name;
+        }
+
+        public Long getDeptId()
+        {
+            return deptId;
+        }
+
+        public void setDeptId(Long deptId)
+        {
+            this.deptId = deptId;
         }
     }
 
@@ -296,6 +307,12 @@ public class SysProfileController extends BaseController
         currentUser.setEmail(request.getEmail());
         currentUser.setPhonenumber(request.getPhonenumber());
         currentUser.setSex(request.getSex());
+
+        if (request.getDeptId() != null && request.getDeptId() != 0)
+        {
+            currentUser.setDeptId(request.getDeptId());
+            currentUser.setDept(deptService.selectDeptById(request.getDeptId()));
+        }
 
         if (StringUtils.isNotEmpty(request.getPhonenumber()) && !userService.checkPhoneUnique(currentUser))
         {
