@@ -6,20 +6,9 @@
   <component name="ChangeListManager">
     <list default="true" id="b204d056-52b8-4d02-915a-97d1bc9b8c13" name="Changes" comment="">
       <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/RuoYi-Vue-v3.9.1/ruoyi-admin/src/main/java/com/ruoyi/achievement/controller/SamAchievementController.java" beforeDir="false" afterPath="$PROJECT_DIR$/RuoYi-Vue-v3.9.1/ruoyi-admin/src/main/java/com/ruoyi/achievement/controller/SamAchievementController.java" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/RuoYi-Vue-v3.9.1/ruoyi-admin/src/main/java/com/ruoyi/achievement/mapper/SamAchievementMapper.java" beforeDir="false" afterPath="$PROJECT_DIR$/RuoYi-Vue-v3.9.1/ruoyi-admin/src/main/java/com/ruoyi/achievement/mapper/SamAchievementMapper.java" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/RuoYi-Vue-v3.9.1/ruoyi-admin/src/main/java/com/ruoyi/reimbursement/controller/SamReimbursementItemsController.java" beforeDir="false" afterPath="$PROJECT_DIR$/RuoYi-Vue-v3.9.1/ruoyi-admin/src/main/java/com/ruoyi/reimbursement/controller/SamReimbursementItemsController.java" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/RuoYi-Vue-v3.9.1/ruoyi-admin/src/main/java/com/ruoyi/reimbursement/domain/SamReimbursementItems.java" beforeDir="false" afterPath="$PROJECT_DIR$/RuoYi-Vue-v3.9.1/ruoyi-admin/src/main/java/com/ruoyi/reimbursement/domain/SamReimbursementItems.java" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/RuoYi-Vue-v3.9.1/ruoyi-admin/src/main/java/com/ruoyi/reimbursement/domain/Sam_rem_Product.java" beforeDir="false" afterPath="$PROJECT_DIR$/RuoYi-Vue-v3.9.1/ruoyi-admin/src/main/java/com/ruoyi/reimbursement/domain/Sam_rem_Product.java" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/RuoYi-Vue-v3.9.1/ruoyi-admin/src/main/java/com/ruoyi/reimbursement/service/ISamReimbursementItemsService.java" beforeDir="false" afterPath="$PROJECT_DIR$/RuoYi-Vue-v3.9.1/ruoyi-admin/src/main/java/com/ruoyi/reimbursement/service/ISamReimbursementItemsService.java" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/RuoYi-Vue-v3.9.1/ruoyi-admin/src/main/java/com/ruoyi/reimbursement/service/impl/SamReimbursementItemsServiceImpl.java" beforeDir="false" afterPath="$PROJECT_DIR$/RuoYi-Vue-v3.9.1/ruoyi-admin/src/main/java/com/ruoyi/reimbursement/service/impl/SamReimbursementItemsServiceImpl.java" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/RuoYi-Vue-v3.9.1/ruoyi-admin/src/main/java/com/ruoyi/reimbursement/service/impl/Sam_rem_ProductServiceImpl.java" beforeDir="false" afterPath="$PROJECT_DIR$/RuoYi-Vue-v3.9.1/ruoyi-admin/src/main/java/com/ruoyi/reimbursement/service/impl/Sam_rem_ProductServiceImpl.java" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/RuoYi-Vue-v3.9.1/ruoyi-admin/src/main/resources/mapper/achievement/SamAchievementMapper.xml" beforeDir="false" afterPath="$PROJECT_DIR$/RuoYi-Vue-v3.9.1/ruoyi-admin/src/main/resources/mapper/achievement/SamAchievementMapper.xml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/RuoYi-Vue-v3.9.1/ruoyi-admin/src/main/resources/mapper/reimbursement/SamReimbursementItemsMapper.xml" beforeDir="false" afterPath="$PROJECT_DIR$/RuoYi-Vue-v3.9.1/ruoyi-admin/src/main/resources/mapper/reimbursement/SamReimbursementItemsMapper.xml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/RuoYi-Vue-v3.9.1/ruoyi-admin/src/main/resources/mapper/reimbursement/Sam_rem_ProductMapper.xml" beforeDir="false" afterPath="$PROJECT_DIR$/RuoYi-Vue-v3.9.1/ruoyi-admin/src/main/resources/mapper/reimbursement/Sam_rem_ProductMapper.xml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/RuoYi-Vue-v3.9.1/ruoyi-vue3/src/api/system/Reimbursement.js" beforeDir="false" afterPath="$PROJECT_DIR$/RuoYi-Vue-v3.9.1/ruoyi-vue3/src/api/system/Reimbursement.js" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/RuoYi-Vue-v3.9.1/ruoyi-vue3/src/views/system/Reimbursement/index.vue" beforeDir="false" afterPath="$PROJECT_DIR$/RuoYi-Vue-v3.9.1/ruoyi-vue3/src/views/system/Reimbursement/index.vue" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/RuoYi-Vue-v3.9.1/ruoyi-vue3/src/views/system/SamReimbursementItems/index.vue" beforeDir="false" afterPath="$PROJECT_DIR$/RuoYi-Vue-v3.9.1/ruoyi-vue3/src/views/system/SamReimbursementItems/index.vue" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/RuoYi-Vue-v3.9.1/ruoyi-admin/src/main/java/com/ruoyi/demo/Config.java" beforeDir="false" afterPath="$PROJECT_DIR$/RuoYi-Vue-v3.9.1/ruoyi-admin/src/main/java/com/ruoyi/demo/Config.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/RuoYi-Vue-v3.9.1/ruoyi-admin/src/main/java/com/ruoyi/reimbursement/controller/SamReimbursementAchievementViewController.java" beforeDir="false" afterPath="$PROJECT_DIR$/RuoYi-Vue-v3.9.1/ruoyi-admin/src/main/java/com/ruoyi/reimbursement/controller/SamReimbursementAchievementViewController.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/RuoYi-Vue-v3.9.1/ruoyi-vue3/src/permission.js" beforeDir="false" afterPath="$PROJECT_DIR$/RuoYi-Vue-v3.9.1/ruoyi-vue3/src/permission.js" afterDir="false" />
     </list>
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
@@ -48,7 +37,7 @@
     &quot;RunOnceActivity.TerminalTabsStorage.copyFrom.TerminalArrangementManager&quot;: &quot;true&quot;,
     &quot;RunOnceActivity.git.unshallow&quot;: &quot;true&quot;,
     &quot;Spring Boot.RuoYiApplication.executor&quot;: &quot;Run&quot;,
-    &quot;git-widget-placeholder&quot;: &quot;luo&quot;,
+    &quot;git-widget-placeholder&quot;: &quot;lwz__dev&quot;,
     &quot;ignore.virus.scanning.warn.message&quot;: &quot;true&quot;,
     &quot;last_opened_file_path&quot;: &quot;D:/各种作业/ruo&quot;,
     &quot;node.js.detected.package.eslint&quot;: &quot;true&quot;,
@@ -96,6 +85,7 @@
       <workItem from="1774680542906" duration="170000" />
       <workItem from="1774759913252" duration="3063000" />
       <workItem from="1775540128235" duration="15443000" />
+      <workItem from="1775662317949" duration="5634000" />
     </task>
     <servers />
   </component>
