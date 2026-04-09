@@ -447,14 +447,14 @@ PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
     </delete>
     
     <delete id="deleteSamAchievementParticipantByParticipantIds" parameterType="String">
-        delete from sam_achievement_participant where participant_id in
-        <foreach item="participantId" collection="array" open="(" separator="," close=")">
+        delete from sam_achievement_participant where achievement_id in
+        <foreach item="achievementId" collection="array" open="(" separator="," close=")">
             #{achievementId}
         </foreach>
     </delete>
 
     <delete id="deleteSamAchievementParticipantByParticipantId" parameterType="String">
-        delete from sam_achievement_participant where participant_id = #{participantId}
+        delete from sam_achievement_participant where achievement_id = #{achievementId}
     </delete>
 
     <insert id="batchSamAchievementParticipant">

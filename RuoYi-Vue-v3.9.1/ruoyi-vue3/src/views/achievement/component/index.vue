@@ -289,7 +289,6 @@
               icon="Edit"
               class="toolbar-fixed-button"
               :loading="batchReviewLoading"
-              :disabled="batchReviewLoading || multiple || batchReviewStatus === null || batchReviewStatus === undefined || batchReviewStatus === ''"
               @click="handleBatchReviewStatus"
               v-hasPermi="permEdit"
           >
