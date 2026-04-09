@@ -1,5 +1,16 @@
 <template>
   <div class="app-container">
+    <!-- 项目名称和届次信息 -->
+    <div v-if="reimbursementItemId && projectInfo" class="project-header">
+      <h2 class="project-name">{{ projectInfo.name }}</h2>
+      <div class="project-session" v-if="projectInfo.sessionName || projectInfo.sessionId">
+        <el-tag type="info" size="medium">
+          <el-icon><Calendar /></el-icon>
+          <span class="session-text">届次：{{ projectInfo.sessionName || projectInfo.sessionId }}</span>
+        </el-tag>
+      </div>
+    </div>
+    
     <el-form :model="queryParams" ref="queryRef" :inline="true" v-show="showSearch" label-width="68px">
       <el-form-item label="成果编号" prop="achievementId">
         <el-input
@@ -145,12 +156,7 @@
       </el-form-item>
     </el-form>
 
-    <!-- 届次信息 -->
-    <el-alert type="info" :closable="false" v-if="reimbursementItemId && sessionId">
-      <template #title>
-        当前项目所属届次：{{ sessionId }}
-      </template>
-    </el-alert>
+
 
     <!-- 统计卡片 -->
     <el-row :gutter="10" class="mb8" v-if="reimbursementItemId">
@@ -891,7 +897,7 @@
 import { ref, reactive, toRefs, getCurrentInstance, onMounted, computed } from 'vue'
 import { listReimbursement, getReimbursement, delReimbursement, addReimbursement, updateReimbursement, recalculateReimbursementAmount, listUnassociatedProduct, associateAchievements, cancelAssociation, batchCancelAssociation, getReimbursementProjectInfo, updateProjectStatus, updateTransferStatus, getPaymentInfo, getReimbursementRules } from "@/api/system/Reimbursement"
 // 导入图标
-import { View, Link, Lock, Edit, Picture, Warning, Loading, Document } from '@element-plus/icons-vue'
+import { View, Link, Lock, Edit, Picture, Warning, Loading, Document, Calendar } from '@element-plus/icons-vue'
 import { useRoute } from 'vue-router'
 import AchievementForm from '@/views/achievement/component/AchievementForm.vue'
 import { getManage } from '@/api/achievement/manage'
@@ -1968,6 +1974,43 @@ getList()
 </script>
 
 <style scoped>
+/* 项目信息样式 */
+.project-header {
+  margin-bottom: 20px;
+  padding: 15px;
+  background-color: #f5f7fa;
+  border-radius: 8px;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+}
+
+.project-name {
+  font-size: 24px;
+  font-weight: bold;
+  margin-bottom: 10px;
+  color: #303133;
+}
+
+.project-session {
+  margin-top: 10px;
+}
+
+.session-text {
+  font-size: 18px;
+  font-weight: 500;
+  margin-left: 5px;
+}
+
+/* 调整届次标签样式 */
+.el-tag--medium {
+  font-size: 18px;
+  padding: 6px 12px;
+}
+
+/* 调整届次图标大小 */
+.el-icon {
+  font-size: 18px;
+}
+
 .dialog-footer {
   display: flex;
   justify-content: flex-end;

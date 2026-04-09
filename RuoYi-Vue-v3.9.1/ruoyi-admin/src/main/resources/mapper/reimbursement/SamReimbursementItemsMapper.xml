@@ -8,6 +8,7 @@ PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
         <result property="id"    column="id"    />
         <result property="name"    column="name"    />
         <result property="sessionId"    column="session_id"    />
+        <result property="sessionName"    column="session_name"    />
         <result property="reimbursementTime"    column="reimbursement_time"    />
         <result property="totalFee"    column="total_fee"    />
         <result property="paidFee"    column="paid_fee"    />
@@ -34,6 +35,7 @@ PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
             i.id,
             i.name,
             i.session_id,
+            s.session as session_name,
             i.reimbursement_time,
             i.total_fee,
             i.paid_fee,
@@ -51,6 +53,7 @@ PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
             COALESCE(stats.actual_reimbursement_fee, 0) as actual_reimbursement_fee,
             COALESCE(stats.actual_paid_fee, 0) as actual_paid_fee
         FROM sam_reimbursement_items i
+        LEFT JOIN sam_competition_session s ON i.session_id = s.session_id
         LEFT JOIN (
             SELECT 
                 reimbursement_item_id,
@@ -83,6 +86,7 @@ PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
             i.id,
             i.name,
             i.session_id,
+            s.session as session_name,
             i.reimbursement_time,
             i.total_fee,
             i.paid_fee,
@@ -96,6 +100,7 @@ PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
             i.remark,
             i.del_flag
         FROM sam_reimbursement_items i
+        LEFT JOIN sam_competition_session s ON i.session_id = s.session_id
         WHERE i.id = #{id} AND i.del_flag = '0'
     </select>
 

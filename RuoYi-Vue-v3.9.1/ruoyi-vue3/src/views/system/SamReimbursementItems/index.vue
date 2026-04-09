@@ -1,16 +1,6 @@
 <template>
   <div class="app-container">
     <el-form :model="queryParams" ref="queryFormRef" size="small" :inline="true" v-show="showSearch" label-width="68px">
-      <el-form-item label="届次" prop="sessionId">
-        <el-select v-model="queryParams.sessionId" placeholder="请选择届次" clearable>
-          <el-option
-            v-for="item in sessionOptions"
-            :key="item.id"
-            :label="item.label"
-            :value="item.id"
-          />
-        </el-select>
-      </el-form-item>
       <el-form-item label="报销项目名称" prop="name">
         <el-input
             v-model="queryParams.name"
@@ -115,9 +105,9 @@
     </el-link>
   </template>
 </el-table-column>
-      <el-table-column label="届次" align="center" prop="sessionId" width="120">
+      <el-table-column label="届次" align="center" prop="sessionName" width="150">
         <template #default="scope">
-          <span>{{ scope.row.sessionId || '-' }}</span>
+          <span>{{ scope.row.sessionName || scope.row.sessionId || '-' }}</span>
         </template>
       </el-table-column>
       <el-table-column label="报销时间" align="center" prop="reimbursementTime" width="180">
@@ -263,7 +253,7 @@
 import { ref, reactive, onMounted } from 'vue'
 import { useRouter } from 'vue-router'
 import { ElMessage, ElMessageBox } from 'element-plus'
-import { Search, Refresh, Plus, Edit, Delete, Download, Document } from '@element-plus/icons-vue'
+import { Search, Refresh, Plus, Edit, Delete, Download, Document, Calendar } from '@element-plus/icons-vue'
 import {
   listSamReimbursementItems,
   getSamReimbursementItems,
@@ -347,6 +337,14 @@ const form = reactive({
 
 // 部门树选项
 const deptOptions = ref([])
+
+// 选中的比赛和届次信息
+const selectedCompetition = ref({
+  name: '中国大学生计算机设计大赛'
+})
+const selectedSession = ref({
+  session: '2026届'
+})
 
 // 表单校验规则
 const rules = reactive({
@@ -782,3 +780,42 @@ const handleTree = (data, id) => {
   return convertToTreeSelect(data)
 }
 </script>
+
+<style scoped>
+/* 比赛信息样式 */
+.competition-info {
+  margin-bottom: 20px;
+  padding: 15px;
+  background-color: #f5f7fa;
+  border-radius: 8px;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+}
+
+.competition-name {
+  font-size: 24px;
+  font-weight: bold;
+  margin-bottom: 10px;
+  color: #303133;
+}
+
+.session-info {
+  margin-top: 10px;
+}
+
+.session-text {
+  font-size: 18px;
+  font-weight: 500;
+  margin-left: 5px;
+}
+
+/* 调整届次标签样式 */
+.el-tag--medium {
+  font-size: 18px;
+  padding: 6px 12px;
+}
+
+/* 调整届次图标大小 */
+.el-icon {
+  font-size: 18px;
+}
+</style>
