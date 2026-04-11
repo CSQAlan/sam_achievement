@@ -285,9 +285,8 @@
                           </el-alert>
 
                           <el-form-item label-width="0" :prop="item.prop">
-                            <!-- 【修改】：参赛作品/照片有图时直接显示上传，无需解锁 -->
                             <file-upload
-                              v-if="!readOnly && (uploadUnlocked[item.name] || ((item.name === 'work' || item.name === 'photo') && form[item.name === 'work' ? 'hasFileWork' : 'hasFilePhoto'] === 1)) && (item.isMultiple || !form[item.prop])"
+                              v-if="!readOnly && uploadUnlocked[item.name] && (item.isMultiple || !form[item.prop])"
                               v-model="form[item.prop]"
                               :limit="item.limit || 1"
                               :fileSize="10"
@@ -296,7 +295,7 @@
                               :upload-url="uploadUrl"
                             />
 
-                            <div v-if="!readOnly && !form[item.prop] && !uploadUnlocked[item.name] && !((item.name === 'work' || item.name === 'photo') && form[item.name === 'work' ? 'hasFileWork' : 'hasFilePhoto'] === 1)" class="fake-upload-box" @click="handlePreUpload(item.name)">
+                            <div v-if="!readOnly && (item.isMultiple || !form[item.prop]) && !uploadUnlocked[item.name]" class="fake-upload-box" @click="handlePreUpload(item.name)">
                                <el-icon :size="30" color="#C0C4CC"><UploadFilled /></el-icon>
                                <div style="color: #606266; margin-top: 10px">点击上传文件</div>
                                <div style="font-size: 12px; color: #E6A23C; margin-top: 5px">(点击后需先阅读示例)</div>
@@ -625,9 +624,8 @@
                     </el-alert>
                       
                       <el-form-item label-width="0" :prop="item.prop">
-                        <!-- 参赛作品/照片有图时直接显示上传，无需解锁 -->
                         <file-upload 
-                          v-if="!readOnly && (uploadUnlocked[item.name] || ((item.name === 'work' || item.name === 'photo') && form[item.name === 'work' ? 'hasFileWork' : 'hasFilePhoto'] === 1)) && (item.isMultiple || !form[item.prop])"
+                          v-if="!readOnly && uploadUnlocked[item.name] && (item.isMultiple || !form[item.prop])"
                           v-model="form[item.prop]" 
                           :limit="item.limit || 1" 
                           :fileSize="10" 
@@ -635,7 +633,7 @@
                           class="hide-file-list" 
                           :upload-url="uploadUrl" 
                         />
-                        <div v-if="!readOnly && !form[item.prop] && !uploadUnlocked[item.name] && !((item.name === 'work' || item.name === 'photo') && form[item.name === 'work' ? 'hasFileWork' : 'hasFilePhoto'] === 1)" class="fake-upload-box" @click="handlePreUpload(item.name)">
+                        <div v-if="!readOnly && (item.isMultiple || !form[item.prop]) && !uploadUnlocked[item.name]" class="fake-upload-box" @click="handlePreUpload(item.name)">
                            <el-icon :size="30" color="#C0C4CC"><UploadFilled /></el-icon>
                            <div style="color: #606266; margin-top: 10px">点击上传文件</div>
                            <div style="font-size: 12px; color: #E6A23C; margin-top: 5px">(点击后需先阅读示例)</div>
@@ -714,14 +712,23 @@
 
   <el-dialog
     v-model="exampleVisible"
-    title="上传文件要求与示例"
-    width="900px"
+    :fullscreen="isFullscreen"
+    :width="isFullscreen ? '100%' : '1200px'"
     append-to-body
     destroy-on-close
     :close-on-click-modal="false"
     :close-on-press-escape="false"
   >
-    <div style="height: 650px; display: flex; flex-direction: column;">
+    <template #header>
+      <div style="display: flex; justify-content: space-between; align-items: center; padding-right: 30px;">
+        <span class="el-dialog__title">上传文件要求与示例</span>
+        <el-button link @click="isFullscreen = !isFullscreen">
+          <el-icon><component :is="isFullscreen ? 'BottomLeft' : 'FullScreen'" /></el-icon>
+          <span style="margin-left: 5px;">{{ isFullscreen ? '缩小' : '全屏' }}</span>
+        </el-button>
+      </div>
+    </template>
+    <div :style="{ height: isFullscreen ? 'calc(100vh - 150px)' : '650px', display: 'flex', flexDirection: 'column' }">
       <el-alert title="请务必参考以下示例整理您的文件，确认无误后点击下方按钮解锁上传功能。" type="error" :closable="false" class="mb10" show-icon />
       
       <div style="flex: 1; border: 1px solid #dcdfe6; background: #f5f7fa; overflow: hidden; position: relative;">
@@ -905,6 +912,8 @@ import {
   Edit,
   Search,
   CircleCheck,
+  FullScreen,
+  BottomLeft,
 } from "@element-plus/icons-vue";
 import{
   listStudent,
@@ -1892,15 +1901,24 @@ const exampleMap = {
   'photo': '/image/cansaizhaopian.pdf',
 };
 
+const isFullscreen = ref(true);
+
+watch(activeAttachmentTab, (newVal) => {
+  if (newVal) {
+    uploadUnlocked[newVal] = false;
+  }
+});
+
 function handlePreUpload(type) {
   currentUploadType.value = type;
   const fileName = exampleMap[type];
   if (fileName) {
     currentExampleUrl.value = fileName;
+    isFullscreen.value = true;
     exampleVisible.value = true;
   } else {
     uploadUnlocked[type] = true;
-    proxy.$modal.msgSuccess("准备上传...");
+    confirmExampleKnown();
   }
 }
 
@@ -1908,7 +1926,18 @@ function confirmExampleKnown() {
   if (currentUploadType.value) {
     uploadUnlocked[currentUploadType.value] = true;
     exampleVisible.value = false;
-    proxy.$modal.msgSuccess("已解锁，请点击按钮选择文件上传");
+    
+    nextTick(() => {
+      // 查找当前激活的标签页内容
+      const activePane = document.querySelector('.attach-card .el-tabs__content .el-tab-pane:not([style*="display: none"])');
+      if (activePane) {
+        // 查找上传按钮并触发点击
+        const uploadBtn = activePane.querySelector('.el-upload button') || activePane.querySelector('.el-upload input');
+        if (uploadBtn) {
+          uploadBtn.click();
+        }
+      }
+    });
   }
 }
 
