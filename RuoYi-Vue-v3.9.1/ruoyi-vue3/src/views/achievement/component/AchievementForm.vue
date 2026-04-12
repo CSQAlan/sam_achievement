@@ -929,6 +929,7 @@ import{
 } from "@/api/achievement/student";
 import { listTracks } from "@/api/achievement/manage";
 import { listTeacher, addTeacher, updateTeacher } from "@/api/achievement/teacher";
+import { updateSession } from "@/api/session/session";
 import { listDept } from "@/api/system/dept";
 import { handleTree, blobValidate } from "@/utils/ruoyi";
 import request from "@/utils/request";
@@ -1189,6 +1190,15 @@ const actualReimbursementStatus = computed(() => {
   }
   const inProgress = (reimbursement_status.value || []).find(d => d.label === '进行中' || d.label === '未报销');
   return inProgress ? inProgress.value : '0';
+});
+
+const currentSession = computed(() => {
+  if (!form.value.sessionId || !sessionOptions.value.length) return null;
+  return sessionOptions.value.find(s => s.id === form.value.sessionId);
+});
+
+const isNoticeFromSession = computed(() => {
+  return !!(currentSession.value && currentSession.value.uuid);
 });
 
 const displayAchievementId = computed(() => {
@@ -1956,7 +1966,6 @@ const attachmentConfig = computed(() => {
 
   return [
     { label: findDictLabel('1') || '获奖证书', name: 'award', prop: 'fileAward', alert: `请上传${findDictLabel('1') || '获奖证书'} (PDF)`, fileType: ['pdf'], limit: 1 },
-    { label: findDictLabel('2') || '比赛通知', name: 'notice', prop: 'fileNotice', alert: `请上传${findDictLabel('2') || '比赛通知'} (PDF)`, fileType: ['pdf'], limit: 1 },
     {
       label: findDictLabel('3') || '参赛作品',
       name: 'work',
@@ -2647,6 +2656,17 @@ function submitForm() {
       if (apiFn) {
         apiFn(form.value).then(response => {
           proxy.$modal.msgSuccess(isEdit ? "修改成功" : "新增成功");
+
+          // 如果用户上传了比赛通知，且届次原本没有比赛通知，则同步更新届次信息
+          if (form.value.fileNotice && !isNoticeFromSession.value && form.value.sessionId) {
+            updateSession({
+              id: form.value.sessionId,
+              uuid: form.value.fileNotice
+            }).catch(err => {
+              console.error("同步更新届次比赛通知失败:", err);
+            });
+          }
+
           // 提交成功清除草稿
           clearDraft();
           updateSnapshot();
