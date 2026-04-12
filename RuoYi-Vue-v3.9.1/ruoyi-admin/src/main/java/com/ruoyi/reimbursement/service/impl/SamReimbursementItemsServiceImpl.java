@@ -276,6 +276,14 @@ public class SamReimbursementItemsServiceImpl implements ISamReimbursementItemsS
             Map<String, Object> paymentInfo = new HashMap<>();
             paymentInfo.put("achievementId", achievementId.trim());
             
+            // 查询成果的基本信息
+            Map<String, Object> achievementInfo = samAchievementMapper.selectAchievementInfoById(achievementId.trim());
+            if (achievementInfo != null) {
+                paymentInfo.put("name", achievementInfo.get("name"));
+                paymentInfo.put("contactName", achievementInfo.get("contact_name"));
+                paymentInfo.put("studentId", achievementInfo.get("student_id"));
+            }
+            
             // 查询成果的收款码附件（type=6表示收款码）
             List<String> qrCodeUuids = samAchievementMapper.selectAttachmentUuidByAchievementIdAndType(
                 achievementId.trim(), 6);

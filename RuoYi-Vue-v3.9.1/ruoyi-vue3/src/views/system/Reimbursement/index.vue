@@ -738,10 +738,11 @@
     <el-dialog 
       title="项目报销" 
       v-model="reimburseDialogVisible" 
-      width="900px" 
+      width="1400px"
       append-to-body
       :close-on-click-modal="false"
       @close="handleCloseReimburseDialog"
+      custom-class="reimburse-dialog"
     >
       <!-- 支付信息 -->
         <div v-if="paymentInfo && paymentInfo.length > 0" class="payment-info">
@@ -779,6 +780,10 @@
                 <div class="reimburse-qrcode-header">
                   <span class="reimburse-qrcode-name">{{ selectedReimburseItem.name || '未命名成果' }}</span>
                   <span class="reimburse-qrcode-id">ID: {{ selectedReimburseItem.achievementId }}</span>
+                </div>
+                <div class="reimburse-contact-info">
+                  <div class="contact-item"><span class="contact-label">负责人：</span><span>{{ selectedReimburseItem.contactName || '未设置' }}</span></div>
+                  <div class="contact-item"><span class="contact-label">学号：</span><span>{{ selectedReimburseItem.studentId || '未设置' }}</span></div>
                 </div>
                 <div class="qrcode-wrapper">
                   <iframe v-if="selectedReimburseItem.qrCodeUuid && qrCodePreviewUrls[selectedReimburseItem.qrCodeUuid]" :src="qrCodePreviewUrls[selectedReimburseItem.qrCodeUuid]" class="qrcode-pdf" frameborder="0"></iframe>
@@ -1746,6 +1751,20 @@ const handleOpenReimburseDialog = async () => {
   
   // 打开弹窗
   reimburseDialogVisible.value = true
+  
+  // 延迟设置弹窗高度，确保弹窗已经渲染
+  setTimeout(() => {
+    const dialogWrapper = document.querySelector('.el-dialog.reimburse-dialog');
+    if (dialogWrapper) {
+      dialogWrapper.style.height = '1600px';
+      dialogWrapper.style.maxHeight = '1600px';
+      const dialogBody = dialogWrapper.querySelector('.el-dialog__body');
+      if (dialogBody) {
+        dialogBody.style.height = '1500px';
+        dialogBody.style.overflow = 'auto';
+      }
+    }
+  }, 100);
 }
 
 /**
@@ -2120,12 +2139,12 @@ getList()
   justify-content: center;
   align-items: center;
   margin-bottom: 15px;
-  min-height: 200px;
+  min-height: 400px;
 }
 
 .qrcode-pdf {
   width: 100%;
-  height: 200px;
+  height: 400px;
   border: 1px solid #ddd;
   border-radius: 4px;
 }
@@ -2161,6 +2180,42 @@ getList()
   font-size: 14px;
   color: #666;
   margin-top: 10px;
+}
+
+/* 负责人信息样式 */
+.reimburse-contact-info {
+  margin: 15px 0;
+  padding: 15px;
+  background-color: #f8f9fa;
+  border-radius: 8px;
+  border: 1px solid #e9ecef;
+}
+
+.contact-item {
+  margin-bottom: 8px;
+  font-size: 14px;
+}
+
+.contact-label {
+  font-weight: 500;
+  color: #303133;
+  margin-right: 10px;
+  width: 60px;
+  display: inline-block;
+}
+
+.contact-item span:last-child {
+  color: #606266;
+}
+
+/* 报销弹窗样式 */
+.el-dialog.reimburse-dialog .el-dialog__wrapper {
+  min-height: 1600px !important;
+}
+
+.el-dialog.reimburse-dialog .el-dialog__body {
+  min-height: 1500px !important;
+  overflow: auto;
 }
 
 /* 项目信息卡片样式 */

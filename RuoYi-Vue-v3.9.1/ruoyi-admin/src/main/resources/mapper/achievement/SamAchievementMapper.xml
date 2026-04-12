@@ -1,4 +1,4 @@
-﻿<?xml version="1.0" encoding="UTF-8" ?>
+<?xml version="1.0" encoding="UTF-8" ?>
 <!DOCTYPE mapper
         PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
         "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
@@ -591,5 +591,23 @@
         where achievement_id = #{achievementId}
         and type = #{type}
         and del_flag = 0
+    </select>
+
+    <select id="selectAchievementInfoById" parameterType="String" resultType="java.util.HashMap">
+        select 
+            a.name,
+            s.name as contact_name,
+            s.no as student_id
+        from sam_achievement a
+        left join (
+            select p.achievement_id, p.student_id
+            from sam_achievement_participant p
+            where p.achievement_id = #{achievementId}
+            and (p.manager = '1' or p.order_no = 1)
+            order by p.manager desc, p.order_no asc
+            limit 1
+        ) p on p.achievement_id = a.achievement_id
+        left join sam_student s on s.no = p.student_id
+        where a.achievement_id = #{achievementId}
     </select>
 </mapper>

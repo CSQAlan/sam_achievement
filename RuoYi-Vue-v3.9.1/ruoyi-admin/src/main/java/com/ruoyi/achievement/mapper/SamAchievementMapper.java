@@ -29,6 +29,14 @@ public interface SamAchievementMapper
     public SamAchievement selectSamAchievementByAchievementId(String achievementId);
 
     /**
+     * 查询成果基本信息，包括名称和负责人信息
+     *
+     * @param achievementId 成果录入主键
+     * @return 成果基本信息
+     */
+    public Map<String, Object> selectAchievementInfoById(String achievementId);
+
+    /**
      * 查询成果录入列表
      *
      * @param samAchievement 成果录入
