@@ -198,11 +198,11 @@
             />
           </el-select>
         </el-form-item>
-        <el-form-item label="报销时间" prop="reimbursementTime">
+        <el-form-item label="创建时间" prop="reimbursementTime">
   <el-date-picker
     v-model="form.reimbursementTime"
     type="date"
-    placeholder="请选择报销时间"
+    placeholder="请选择创建时间"
     format="yyyy-MM-dd"
     value-format="yyyy-MM-dd"
     :clearable="false">

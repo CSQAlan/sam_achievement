@@ -1,16 +1,5 @@
 <template>
   <div class="app-container">
-    <!-- 项目名称和届次信息 -->
-    <div v-if="reimbursementItemId && projectInfo" class="project-header">
-      <h2 class="project-name">{{ projectInfo.name }}</h2>
-      <div class="project-session" v-if="projectInfo.sessionName || projectInfo.sessionId">
-        <el-tag type="info" size="medium">
-          <el-icon><Calendar /></el-icon>
-          <span class="session-text">届次：{{ projectInfo.sessionName || projectInfo.sessionId }}</span>
-        </el-tag>
-      </div>
-    </div>
-    
     <el-form :model="queryParams" ref="queryRef" :inline="true" v-show="showSearch" label-width="68px">
       <el-form-item label="成果编号" prop="achievementId">
         <el-input
@@ -20,12 +9,12 @@
           @keyup.enter="handleQuery"
         />
       </el-form-item>
-      <el-form-item label="届次 " prop="sessionId">
+      <el-form-item label="届次" prop="sessionId">
         <el-input
-          v-model="queryParams.sessionId"
-          placeholder="请输入届次 "
-          clearable
-          @keyup.enter="handleQuery"
+            v-model="queryParams.sessionId"
+            placeholder="请输入届次"
+            clearable
+            @keyup.enter="handleQuery"
         />
       </el-form-item>
       <el-form-item label="类别" prop="category">
@@ -156,8 +145,7 @@
       </el-form-item>
     </el-form>
 
-
-
+  
     <!-- 统计卡片 -->
     <el-row :gutter="10" class="mb8" v-if="reimbursementItemId">
       <el-col :span="6">
@@ -234,16 +222,7 @@
     <el-row :gutter="10" class="mb8">
       
       
-      <el-col :span="1.5">
-        <el-button
-          type="danger"
-          plain
-          icon="Delete"
-          :disabled="multiple"
-          @click="handleDelete"
-          v-hasPermi="['system:Reimbursement:remove']"
-        >删除</el-button>
-      </el-col>
+
       <el-col :span="1.5">
         <el-button
           type="warning"
@@ -362,20 +341,20 @@
       <span>{{ scope.row.reimbursementDate ? parseTime(scope.row.reimbursementDate, '{y}-{m}-{d}') : '-' }}</span>
     </template>
   </el-table-column>
-  <el-table-column label="报销比例" align="center" prop="reimbursementRatio" width="100">
-    <template #default="scope">
-      <span>{{ scope.row.reimbursementRatio ? scope.row.reimbursementRatio + '%' : '-' }}</span>
-    </template>
-  </el-table-column>
-  <!-- 实际报销金额 -->
-  <el-table-column label="实际报销金额" align="center" width="120">
-    <template #default="scope">
-      <span v-if="scope.row.reimbursementFee || scope.row.reimbursement_fee">
-        ¥{{ formatMoney(scope.row.reimbursementFee || scope.row.reimbursement_fee) }}
-      </span>
-      <span v-else>-</span>
-    </template>
-  </el-table-column>
+<!--  <el-table-column label="报销比例" align="center" prop="reimbursementRatio" width="100">-->
+<!--    <template #default="scope">-->
+<!--      <span>{{ scope.row.reimbursementRatio ? scope.row.reimbursementRatio + '%' : '-' }}</span>-->
+<!--    </template>-->
+<!--  </el-table-column>-->
+<!--  &lt;!&ndash; 实际报销金额 &ndash;&gt;-->
+<!--  <el-table-column label="实际报销金额" align="center" width="120">-->
+<!--    <template #default="scope">-->
+<!--      <span v-if="scope.row.reimbursementFee || scope.row.reimbursement_fee">-->
+<!--        ¥{{ formatMoney(scope.row.reimbursementFee || scope.row.reimbursement_fee) }}-->
+<!--      </span>-->
+<!--      <span v-else>-</span>-->
+<!--    </template>-->
+<!--  </el-table-column>-->
 
   <!-- 报销状态列 -->
   <el-table-column label="报销状态" align="center" width="120">
@@ -421,18 +400,11 @@
 
 
 
-      <el-table-column label="操作" align="center" width="380" class-name="small-padding fixed-width">
+      <el-table-column label="操作" align="center" width="280" class-name="small-padding fixed-width">
         <template #default="scope">
           <el-button link type="primary" icon="View" @click="handleViewDetail(scope.row)">详情</el-button>
           
-          <el-button 
-            link 
-            type="danger" 
-            icon="Delete" 
-            :disabled="isProjectConfirmed"
-            @click="handleDelete(scope.row)" 
-            v-hasPermi="['system:Reimbursement:remove']"
-          >删除</el-button>
+
           <!-- 取消关联按钮 - 仅当项目未确认且未报销时显示 -->
           <el-button 
             v-if="!isProjectConfirmed && (!scope.row.reimbursementDate)"
@@ -2194,6 +2166,28 @@ getList()
   font-size: 14px;
   color: #666;
   margin-top: 10px;
+}
+
+/* 项目信息卡片样式 */
+.project-info-card {
+  margin-bottom: 16px;
+}
+
+.project-info-content {
+  display: flex;
+  align-items: center;
+  gap: 20px;
+}
+
+.project-name {
+  font-size: 20px;
+  font-weight: 600;
+  color: #303133;
+}
+
+.project-session {
+  font-size: 20px;
+  color: #606266;
 }
 
 /* 报销布局样式 */
