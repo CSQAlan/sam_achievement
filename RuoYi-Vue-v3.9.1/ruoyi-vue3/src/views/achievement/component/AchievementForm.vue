@@ -103,24 +103,26 @@
                       <el-form-item label="比赛届次" prop="sessionId">
                         <el-select
                           v-model="form.sessionId"
-                          placeholder="系统将根据前三步自动匹配，也可手动修改"
+                          placeholder="系统将根据前三步自动匹配锁定"
                           filterable
                           clearable
                           style="width: 100%"
-                          :disabled="readOnly || !form.competitionId"
-                          @change="isAutoMatched = false"
+                          :disabled="readOnly || !!form.competitionId"
                         >
                           <el-option v-for="item in sessionOptions" :key="item.id" :label="item.session" :value="item.id" />
                         </el-select>
                         <div v-if="isAutoMatched" style="color: #67C23A; font-size: 12px; margin-top: 5px;">
                           <el-icon style="vertical-align: middle;"><CircleCheck /></el-icon> 已根据时间与级别自动锁定届次
                         </div>
+                        <div v-else-if="form.competitionId && form.level && form.awardTime" style="color: #F56C6C; font-size: 12px; margin-top: 5px;">
+                          <el-icon style="vertical-align: middle;"><Warning /></el-icon> 未找到匹配的届次，请核对获奖时间与级别
+                        </div>
                       </el-form-item>
                     </el-col>
 
                     <el-col :span="24">
                       <el-form-item label="奖项等级" prop="grade">
-                        <el-select v-model="form.grade" placeholder="请选择奖项等级（一等奖/二等奖等）" style="width: 100%">
+                        <el-select v-model="form.grade" placeholder="请选择奖项等级（特等奖/一等奖等）" style="width: 100%">
                           <el-option v-for="dict in award_rank" :key="dict.value" :label="dict.label" :value="dict.value" />
                         </el-select>
                         <div style="color: #909399; font-size: 12px; margin-top: 5px; line-height: 1.2;">如果比赛或者表彰没有区分等级，请选择一等奖。</div>
@@ -441,26 +443,28 @@
 
                 <el-col :span="24">
                   <el-form-item label="比赛届次" prop="sessionId">
-                    <el-select 
-                      v-model="form.sessionId" 
-                      placeholder="系统将根据前三步自动匹配，也可手动修改" 
-                      filterable 
-                      clearable 
+                    <el-select
+                      v-model="form.sessionId"
+                      placeholder="系统将根据前三步自动匹配锁定"
+                      filterable
+                      clearable
                       style="width: 100%"
-                      :disabled="readOnly || !form.competitionId"
-                      @change="isAutoMatched = false"
+                      :disabled="readOnly || !!form.competitionId"
                     >
                       <el-option v-for="item in sessionOptions" :key="item.id" :label="item.session" :value="item.id" />
                     </el-select>
                     <div v-if="isAutoMatched" style="color: #67C23A; font-size: 12px; margin-top: 5px;">
                       <el-icon style="vertical-align: middle;"><CircleCheck /></el-icon> 已根据时间与级别自动锁定届次
                     </div>
+                    <div v-else-if="form.competitionId && form.level && form.awardTime" style="color: #F56C6C; font-size: 12px; margin-top: 5px;">
+                      <el-icon style="vertical-align: middle;"><Warning /></el-icon> 未找到匹配的届次，请核对获奖时间与级别
+                    </div>
                   </el-form-item>
                 </el-col>
 
                 <el-col :span="24">
                   <el-form-item label="奖项等级" prop="grade">
-                    <el-select v-model="form.grade" placeholder="请选择奖项等级（一等奖/二等奖等）" style="width: 100%">
+                    <el-select v-model="form.grade" placeholder="请选择奖项等级（特等奖/一等奖等）" style="width: 100%">
                       <el-option v-for="dict in award_rank" :key="dict.value" :label="dict.label" :value="dict.value" />
                     </el-select>
                     <div style="color: #909399; font-size: 12px; margin-top: 5px; line-height: 1.2;">如果比赛或者表彰没有区分等级，请选择一等奖。</div>
@@ -909,6 +913,7 @@ import {
   UploadFilled,
   Rank,
   InfoFilled,
+  Warning,
   Edit,
   Search,
   CircleCheck,
@@ -2128,38 +2133,27 @@ function autoMatchSession() {
 
   // 1. 解析时间
   const date = new Date(awardTime);
-  const year = date.getFullYear();
-  const month = date.getMonth() + 1; // getMonth 是 0-11
+  if (isNaN(date.getTime())) return;
+  const targetYear = date.getFullYear().toString();
 
-  // 2. 设定搜索年份窗口 (解决跨年问题)
-  // 修复：将 year.getTime() 改为 !isNaN(date.getTime()) 来判断是否是合法日期
-  const targetYears = month <= 4
-    ? [!isNaN(date.getTime()) ? year.toString() : "", (year - 1).toString()]
-    : [year.toString()];
-
-  // 3. 在候选列表中筛选
+  // 2. 在候选列表中筛选
   const matched = sessionOptions.value.filter(item => {
-    // A. 级别必须一致 (注意类型转换或弱等于)
+    // A. 级别必须一致
     const isLevelMatch = item.level == level;
 
-    // B. 规范化年份匹配：优先匹配独立的 year 字段，若无则回退到名称模糊匹配
-    const isYearMatch = targetYears.some(y => {
-      if (!y) return false;
-      // 1. 优先匹配届次对象中的 year 字段 (规范做法)
-      const sessionYear = item.year || item.sessionYear; // 兼容不同可能的字段名
-      if (sessionYear && String(sessionYear) === y) return true;
-      // 2. 兜底匹配：匹配名称字符串 (如 "2026第十八届")
-      return item.session && String(item.session).includes(y);
-    });
+    // B. 年份严格匹配 (要求 session 对象的 year 字段必须与获奖年份一致)
+    const sessionYear = item.year;
+    const isYearMatch = sessionYear && String(sessionYear) === targetYear;
 
     return isLevelMatch && isYearMatch;
   });
 
-  // 4. 自动赋值：只有当推断结果唯一时才自动勾选，避免歧义
-  if (matched.length === 1) {
+  // 3. 自动赋值并锁定
+  if (matched.length >= 1) {
     form.value.sessionId = matched[0].id;
     isAutoMatched.value = true;
   } else {
+    form.value.sessionId = null;
     isAutoMatched.value = false;
   }
 }
