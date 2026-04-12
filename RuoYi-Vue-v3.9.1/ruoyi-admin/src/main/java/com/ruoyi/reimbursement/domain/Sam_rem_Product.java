@@ -41,6 +41,18 @@ public class Sam_rem_Product extends BaseEntity
     @Excel(name = "团队名称")
     private String teamName;
 
+    /** 比赛名称 */
+    @Excel(name = "比赛名称")
+    private String competitionName;
+
+    /** 参赛选手 */
+    @Excel(name = "参赛选手")
+    private String contestants;
+
+    /** 指导老师 */
+    @Excel(name = "指导老师")
+    private String instructors;
+
     /** 获奖级别 */
     @Excel(name = "获奖级别")
     private String level;
@@ -180,6 +192,36 @@ public class Sam_rem_Product extends BaseEntity
     public String getTeamName() 
     {
         return teamName;
+    }
+
+    public void setCompetitionName(String competitionName) 
+    {
+        this.competitionName = competitionName;
+    }
+
+    public String getCompetitionName() 
+    {
+        return competitionName;
+    }
+
+    public void setContestants(String contestants) 
+    {
+        this.contestants = contestants;
+    }
+
+    public String getContestants() 
+    {
+        return contestants;
+    }
+
+    public void setInstructors(String instructors) 
+    {
+        this.instructors = instructors;
+    }
+
+    public String getInstructors() 
+    {
+        return instructors;
     }
 
     public void setLevel(String level) 
@@ -471,6 +513,9 @@ public class Sam_rem_Product extends BaseEntity
             .append("category", getCategory())
             .append("name", getName())
             .append("teamName", getTeamName())
+            .append("competitionName", getCompetitionName())
+            .append("contestants", getContestants())
+            .append("instructors", getInstructors())
             .append("level", getLevel())
             .append("grade", getGrade())
             .append("track", getTrack())

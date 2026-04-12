@@ -304,8 +304,10 @@
           <dict-tag :options="achievement_category" :value="scope.row.category"/>
         </template>
       </el-table-column>
+      <el-table-column label="比赛名称" align="center" prop="competitionName" />
       <el-table-column label="作品名称" align="center" prop="name" />
-      <el-table-column label="团队名称" align="center" prop="teamName" />
+      <el-table-column label="参赛选手" align="center" prop="contestants" />
+      <el-table-column label="指导老师" align="center" prop="instructors" />
       <el-table-column label="获奖级别" align="center" prop="level">
         <template #default="scope">
           <dict-tag :options="award_level_type" :value="scope.row.level"/>
@@ -314,13 +316,6 @@
       <el-table-column label="获奖等级" align="center" prop="grade">
         <template #default="scope">
           <dict-tag :options="award_rank" :value="scope.row.grade"/>
-        </template>
-      </el-table-column>
-      <el-table-column label="赛道" align="center" prop="track" />
-      <el-table-column label="证书编号" align="center" prop="certificateNo" />
-      <el-table-column label="组别" align="center" prop="groupId">
-        <template #default="scope">
-          <dict-tag :options="group_type" :value="scope.row.groupId"/>
         </template>
       </el-table-column>
       <el-table-column label="获奖时间" align="center" prop="awardTime" width="180">

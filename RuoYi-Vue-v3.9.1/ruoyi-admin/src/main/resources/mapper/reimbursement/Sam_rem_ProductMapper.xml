@@ -10,6 +10,9 @@ PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
         <result property="category"    column="category"    />
         <result property="name"    column="name"    />
         <result property="teamName"    column="team_name"    />
+        <result property="competitionName"    column="competition_name"    />
+        <result property="contestants"    column="contestants"    />
+        <result property="instructors"    column="instructors"    />
         <result property="level"    column="level"    />
         <result property="grade"    column="grade"    />
         <result property="track"    column="track"    />
@@ -64,7 +67,66 @@ PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
 
 
     <sql id="selectSam_rem_ProductVo">
-        select achievement_id, session_id, category, name, team_name, level, grade, track, certificate_no, group_id, award_time, year, owner_dep_id, is_reimburse, is_supplement, fee, reimbursement_fee, reimbursement_ratio, reimbursement_item_id, reimbursement_date, item_index, quality_index, submitted_at, reviewed_at, school_reviewed_at, review_result, schooi_review_result, review_reason, school_review_reason, audit_by, school_audit_by, create_by, update_by, create_time, update_time, del_flag, remark from sam_achievement
+        select 
+            a.achievement_id, 
+            a.session_id, 
+            a.category, 
+            a.name, 
+            a.team_name, 
+            c.name as competition_name, 
+            p_view.contestants, 
+            ad_view.instructors, 
+            a.level, 
+            a.grade, 
+            a.track, 
+            a.certificate_no, 
+            a.group_id, 
+            a.award_time, 
+            a.year, 
+            a.owner_dep_id, 
+            a.is_reimburse, 
+            a.is_supplement, 
+            a.fee, 
+            a.reimbursement_fee, 
+            a.reimbursement_ratio, 
+            a.reimbursement_item_id, 
+            a.reimbursement_date, 
+            a.item_index, 
+            a.quality_index, 
+            a.submitted_at, 
+            a.reviewed_at, 
+            a.school_reviewed_at, 
+            a.review_result, 
+            a.schooi_review_result, 
+            a.review_reason, 
+            a.school_review_reason, 
+            a.audit_by, 
+            a.school_audit_by, 
+            a.create_by, 
+            a.update_by, 
+            a.create_time, 
+            a.update_time, 
+            a.del_flag, 
+            a.remark 
+        from sam_achievement a
+        left join sam_competition_session s on a.session_id = s.session_id
+        left join sam_competition c on s.competition_id = c.id
+        left join (
+            select 
+                p.achievement_id, 
+                group_concat(concat(ifnull(s.name, '-'), '(', ifnull(p.student_id, '-'), ')') order by p.order_no separator '，') as contestants
+            from sam_achievement_participant p
+            left join sam_student s on p.student_id = s.no
+            group by p.achievement_id
+        ) p_view on p_view.achievement_id = a.achievement_id
+        left join (
+            select 
+                ad.achievement_id, 
+                group_concat(concat(ifnull(t.teacher_name, '-'), '(', ifnull(ad.teacher_id, '-'), ')') order by ad.order_no separator '，') as instructors
+            from sam_achievement_advisor ad
+            left join sam_teacher t on ad.teacher_id = t.no
+            group by ad.achievement_id
+        ) ad_view on ad_view.achievement_id = a.achievement_id
     </sql>
 
    <!-- 根据竞赛ID查询成果列表 -->
@@ -129,29 +191,21 @@ PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
             <if test="groupId != null "> and group_id = #{groupId}</if>
             <if test="awardTime != null "> and award_time = #{awardTime}</if>
             <if test="ownerDepId != null "> and owner_dep_id = #{ownerDepId}</if>
-            and del_flag = '0'
+            and a.del_flag = '0'
         </where>
     </select>
     
 
     <select id="selectSam_rem_ProductByAchievementId" parameterType="String" resultMap="Sam_rem_ProductResult">
         <include refid="selectSam_rem_ProductVo"/>
-        where achievement_id = #{achievementId} and del_flag = '0'
+        where a.achievement_id = #{achievementId} and a.del_flag = '0'
     </select>
 
     <!-- 根据报销项目ID查询成果列表 -->
     <select id="selectSam_rem_ProductByReimbursementItemId" parameterType="String" resultMap="Sam_rem_ProductResult">
-        SELECT 
-            achievement_id, session_id, category, name, team_name, level, grade, track, 
-            certificate_no, group_id, award_time, year, owner_dep_id, is_reimburse, 
-            is_supplement, fee, reimbursement_fee, reimbursement_ratio, reimbursement_item_id, 
-            reimbursement_date, item_index, quality_index, submitted_at, reviewed_at, 
-            school_reviewed_at, review_result, schooi_review_result, review_reason, 
-            school_review_reason, audit_by, school_audit_by, create_by, update_by, 
-            create_time, update_time, del_flag, remark
-        FROM sam_achievement
-        WHERE reimbursement_item_id = #{reimbursementItemId}
-          AND del_flag = '0'
+        <include refid="selectSam_rem_ProductVo"/>
+        WHERE a.reimbursement_item_id = #{reimbursementItemId}
+          AND a.del_flag = '0'
     </select>
 
     <insert id="insertSam_rem_Product" parameterType="Sam_rem_Product" useGeneratedKeys="true" keyProperty="achievementId">
@@ -330,7 +384,7 @@ PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
         <include refid="selectSam_rem_ProductVo"/>
         <where>
             (reimbursement_item_id IS NULL OR reimbursement_item_id = '')
-            AND del_flag = '0'
+            AND a.del_flag = '0'
             <if test="ownerDepId != null and ownerDepId != ''">
               AND owner_dep_id = #{ownerDepId}
             </if>
@@ -367,9 +421,9 @@ PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
 
     <!-- 统计关联成果数量 -->
     <select id="countByReimbursementItemId" resultType="java.lang.Integer">
-        SELECT COUNT(*) FROM sam_achievement
-        WHERE reimbursement_item_id = #{reimbursementItemId}
-          AND del_flag = '0'
+        SELECT COUNT(*) FROM sam_achievement a
+        WHERE a.reimbursement_item_id = #{reimbursementItemId}
+          AND a.del_flag = '0'
     </select>
 
     <!-- 取消单个关联 -->
