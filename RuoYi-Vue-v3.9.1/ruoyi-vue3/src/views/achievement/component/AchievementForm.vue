@@ -103,24 +103,26 @@
                       <el-form-item label="比赛届次" prop="sessionId">
                         <el-select
                           v-model="form.sessionId"
-                          placeholder="系统将根据前三步自动匹配，也可手动修改"
+                          placeholder="系统将根据前三步自动匹配锁定"
                           filterable
                           clearable
                           style="width: 100%"
-                          :disabled="readOnly || !form.competitionId"
-                          @change="isAutoMatched = false"
+                          :disabled="readOnly || !!form.competitionId"
                         >
                           <el-option v-for="item in sessionOptions" :key="item.id" :label="item.session" :value="item.id" />
                         </el-select>
                         <div v-if="isAutoMatched" style="color: #67C23A; font-size: 12px; margin-top: 5px;">
                           <el-icon style="vertical-align: middle;"><CircleCheck /></el-icon> 已根据时间与级别自动锁定届次
                         </div>
+                        <div v-else-if="form.competitionId && form.level && form.awardTime" style="color: #F56C6C; font-size: 12px; margin-top: 5px;">
+                          <el-icon style="vertical-align: middle;"><Warning /></el-icon> 未找到匹配的届次，请核对获奖时间与级别
+                        </div>
                       </el-form-item>
                     </el-col>
 
                     <el-col :span="24">
                       <el-form-item label="奖项等级" prop="grade">
-                        <el-select v-model="form.grade" placeholder="请选择奖项等级（一等奖/二等奖等）" style="width: 100%">
+                        <el-select v-model="form.grade" placeholder="请选择奖项等级（特等奖/一等奖等）" style="width: 100%">
                           <el-option v-for="dict in award_rank" :key="dict.value" :label="dict.label" :value="dict.value" />
                         </el-select>
                         <div style="color: #909399; font-size: 12px; margin-top: 5px; line-height: 1.2;">如果比赛或者表彰没有区分等级，请选择一等奖。</div>
@@ -285,9 +287,8 @@
                           </el-alert>
 
                           <el-form-item label-width="0" :prop="item.prop">
-                            <!-- 【修改】：参赛作品/照片有图时直接显示上传，无需解锁 -->
                             <file-upload
-                              v-if="!readOnly && (uploadUnlocked[item.name] || ((item.name === 'work' || item.name === 'photo') && form[item.name === 'work' ? 'hasFileWork' : 'hasFilePhoto'] === 1)) && (item.isMultiple || !form[item.prop])"
+                              v-if="!readOnly && uploadUnlocked[item.name] && (item.isMultiple || !form[item.prop])"
                               v-model="form[item.prop]"
                               :limit="item.limit || 1"
                               :fileSize="10"
@@ -296,7 +297,7 @@
                               :upload-url="uploadUrl"
                             />
 
-                            <div v-if="!readOnly && !form[item.prop] && !uploadUnlocked[item.name] && !((item.name === 'work' || item.name === 'photo') && form[item.name === 'work' ? 'hasFileWork' : 'hasFilePhoto'] === 1)" class="fake-upload-box" @click="handlePreUpload(item.name)">
+                            <div v-if="!readOnly && (item.isMultiple || !form[item.prop]) && !uploadUnlocked[item.name]" class="fake-upload-box" @click="handlePreUpload(item.name)">
                                <el-icon :size="30" color="#C0C4CC"><UploadFilled /></el-icon>
                                <div style="color: #606266; margin-top: 10px">点击上传文件</div>
                                <div style="font-size: 12px; color: #E6A23C; margin-top: 5px">(点击后需先阅读示例)</div>
@@ -442,26 +443,28 @@
 
                 <el-col :span="24">
                   <el-form-item label="比赛届次" prop="sessionId">
-                    <el-select 
-                      v-model="form.sessionId" 
-                      placeholder="系统将根据前三步自动匹配，也可手动修改" 
-                      filterable 
-                      clearable 
+                    <el-select
+                      v-model="form.sessionId"
+                      placeholder="系统将根据前三步自动匹配锁定"
+                      filterable
+                      clearable
                       style="width: 100%"
-                      :disabled="readOnly || !form.competitionId"
-                      @change="isAutoMatched = false"
+                      :disabled="readOnly || !!form.competitionId"
                     >
                       <el-option v-for="item in sessionOptions" :key="item.id" :label="item.session" :value="item.id" />
                     </el-select>
                     <div v-if="isAutoMatched" style="color: #67C23A; font-size: 12px; margin-top: 5px;">
                       <el-icon style="vertical-align: middle;"><CircleCheck /></el-icon> 已根据时间与级别自动锁定届次
                     </div>
+                    <div v-else-if="form.competitionId && form.level && form.awardTime" style="color: #F56C6C; font-size: 12px; margin-top: 5px;">
+                      <el-icon style="vertical-align: middle;"><Warning /></el-icon> 未找到匹配的届次，请核对获奖时间与级别
+                    </div>
                   </el-form-item>
                 </el-col>
 
                 <el-col :span="24">
                   <el-form-item label="奖项等级" prop="grade">
-                    <el-select v-model="form.grade" placeholder="请选择奖项等级（一等奖/二等奖等）" style="width: 100%">
+                    <el-select v-model="form.grade" placeholder="请选择奖项等级（特等奖/一等奖等）" style="width: 100%">
                       <el-option v-for="dict in award_rank" :key="dict.value" :label="dict.label" :value="dict.value" />
                     </el-select>
                     <div style="color: #909399; font-size: 12px; margin-top: 5px; line-height: 1.2;">如果比赛或者表彰没有区分等级，请选择一等奖。</div>
@@ -625,9 +628,8 @@
                     </el-alert>
                       
                       <el-form-item label-width="0" :prop="item.prop">
-                        <!-- 参赛作品/照片有图时直接显示上传，无需解锁 -->
                         <file-upload 
-                          v-if="!readOnly && (uploadUnlocked[item.name] || ((item.name === 'work' || item.name === 'photo') && form[item.name === 'work' ? 'hasFileWork' : 'hasFilePhoto'] === 1)) && (item.isMultiple || !form[item.prop])"
+                          v-if="!readOnly && uploadUnlocked[item.name] && (item.isMultiple || !form[item.prop])"
                           v-model="form[item.prop]" 
                           :limit="item.limit || 1" 
                           :fileSize="10" 
@@ -635,7 +637,7 @@
                           class="hide-file-list" 
                           :upload-url="uploadUrl" 
                         />
-                        <div v-if="!readOnly && !form[item.prop] && !uploadUnlocked[item.name] && !((item.name === 'work' || item.name === 'photo') && form[item.name === 'work' ? 'hasFileWork' : 'hasFilePhoto'] === 1)" class="fake-upload-box" @click="handlePreUpload(item.name)">
+                        <div v-if="!readOnly && (item.isMultiple || !form[item.prop]) && !uploadUnlocked[item.name]" class="fake-upload-box" @click="handlePreUpload(item.name)">
                            <el-icon :size="30" color="#C0C4CC"><UploadFilled /></el-icon>
                            <div style="color: #606266; margin-top: 10px">点击上传文件</div>
                            <div style="font-size: 12px; color: #E6A23C; margin-top: 5px">(点击后需先阅读示例)</div>
@@ -714,14 +716,23 @@
 
   <el-dialog
     v-model="exampleVisible"
-    title="上传文件要求与示例"
-    width="900px"
+    :fullscreen="isFullscreen"
+    :width="isFullscreen ? '100%' : '1200px'"
     append-to-body
     destroy-on-close
     :close-on-click-modal="false"
     :close-on-press-escape="false"
   >
-    <div style="height: 650px; display: flex; flex-direction: column;">
+    <template #header>
+      <div style="display: flex; justify-content: space-between; align-items: center; padding-right: 30px;">
+        <span class="el-dialog__title">上传文件要求与示例</span>
+        <el-button link @click="isFullscreen = !isFullscreen">
+          <el-icon><component :is="isFullscreen ? 'BottomLeft' : 'FullScreen'" /></el-icon>
+          <span style="margin-left: 5px;">{{ isFullscreen ? '缩小' : '全屏' }}</span>
+        </el-button>
+      </div>
+    </template>
+    <div :style="{ height: isFullscreen ? 'calc(100vh - 150px)' : '650px', display: 'flex', flexDirection: 'column' }">
       <el-alert title="请务必参考以下示例整理您的文件，确认无误后点击下方按钮解锁上传功能。" type="error" :closable="false" class="mb10" show-icon />
       
       <div style="flex: 1; border: 1px solid #dcdfe6; background: #f5f7fa; overflow: hidden; position: relative;">
@@ -769,7 +780,7 @@
 
       <template v-if="isParticipantNew">
         <el-alert v-if="editingParticipantIndex === -1" title="未匹配到该学号，请完善下方信息完成录入" type="warning" show-icon :closable="false" style="margin-bottom: 15px;" />
-        <el-form-item label="所属院系" prop="school">
+        <el-form-item label="所属机构" prop="school">
           <el-cascader
             ref="participantCascader"
             v-model="participantDeptCascaderValue"
@@ -902,9 +913,12 @@ import {
   UploadFilled,
   Rank,
   InfoFilled,
+  Warning,
   Edit,
   Search,
   CircleCheck,
+  FullScreen,
+  BottomLeft,
 } from "@element-plus/icons-vue";
 import{
   listStudent,
@@ -915,6 +929,7 @@ import{
 } from "@/api/achievement/student";
 import { listTracks } from "@/api/achievement/manage";
 import { listTeacher, addTeacher, updateTeacher } from "@/api/achievement/teacher";
+import { updateSession } from "@/api/session/session";
 import { listDept } from "@/api/system/dept";
 import { handleTree, blobValidate } from "@/utils/ruoyi";
 import request from "@/utils/request";
@@ -1175,6 +1190,15 @@ const actualReimbursementStatus = computed(() => {
   }
   const inProgress = (reimbursement_status.value || []).find(d => d.label === '进行中' || d.label === '未报销');
   return inProgress ? inProgress.value : '0';
+});
+
+const currentSession = computed(() => {
+  if (!form.value.sessionId || !sessionOptions.value.length) return null;
+  return sessionOptions.value.find(s => s.id === form.value.sessionId);
+});
+
+const isNoticeFromSession = computed(() => {
+  return !!(currentSession.value && currentSession.value.uuid);
 });
 
 const displayAchievementId = computed(() => {
@@ -1892,15 +1916,24 @@ const exampleMap = {
   'photo': '/image/cansaizhaopian.pdf',
 };
 
+const isFullscreen = ref(true);
+
+watch(activeAttachmentTab, (newVal) => {
+  if (newVal) {
+    uploadUnlocked[newVal] = false;
+  }
+});
+
 function handlePreUpload(type) {
   currentUploadType.value = type;
   const fileName = exampleMap[type];
   if (fileName) {
     currentExampleUrl.value = fileName;
+    isFullscreen.value = true;
     exampleVisible.value = true;
   } else {
     uploadUnlocked[type] = true;
-    proxy.$modal.msgSuccess("准备上传...");
+    confirmExampleKnown();
   }
 }
 
@@ -1908,7 +1941,18 @@ function confirmExampleKnown() {
   if (currentUploadType.value) {
     uploadUnlocked[currentUploadType.value] = true;
     exampleVisible.value = false;
-    proxy.$modal.msgSuccess("已解锁，请点击按钮选择文件上传");
+    
+    nextTick(() => {
+      // 查找当前激活的标签页内容
+      const activePane = document.querySelector('.attach-card .el-tabs__content .el-tab-pane:not([style*="display: none"])');
+      if (activePane) {
+        // 查找上传按钮并触发点击
+        const uploadBtn = activePane.querySelector('.el-upload button') || activePane.querySelector('.el-upload input');
+        if (uploadBtn) {
+          uploadBtn.click();
+        }
+      }
+    });
   }
 }
 
@@ -1922,7 +1966,6 @@ const attachmentConfig = computed(() => {
 
   return [
     { label: findDictLabel('1') || '获奖证书', name: 'award', prop: 'fileAward', alert: `请上传${findDictLabel('1') || '获奖证书'} (PDF)`, fileType: ['pdf'], limit: 1 },
-    { label: findDictLabel('2') || '比赛通知', name: 'notice', prop: 'fileNotice', alert: `请上传${findDictLabel('2') || '比赛通知'} (PDF)`, fileType: ['pdf'], limit: 1 },
     {
       label: findDictLabel('3') || '参赛作品',
       name: 'work',
@@ -2077,7 +2120,7 @@ function getSessionList(competitionId) {
   request({
     url: '/session/session/list',
     method: 'get',
-    params: { competitionId: competitionId, pageNum: 1, pageSize: 1000 }
+    params: { competitionId: competitionId, pageNum: 1, pageSize: 100 }
   }).then(response => {
     sessionOptions.value = response.rows || [];
     // 列表加载完成后，尝试自动匹配一次
@@ -2099,37 +2142,27 @@ function autoMatchSession() {
 
   // 1. 解析时间
   const date = new Date(awardTime);
-  const year = date.getFullYear();
-  const month = date.getMonth() + 1; // getMonth 是 0-11
+  if (isNaN(date.getTime())) return;
+  const targetYear = date.getFullYear().toString();
 
-  // 2. 设定搜索年份窗口 (解决跨年问题)
-  // 修复：将 year.getTime() 改为 !isNaN(date.getTime()) 来判断是否是合法日期
- const targetYears = month <= 4
-  ? [(year - 1).toString(), !isNaN(date.getTime()) ? year.toString() : ""]
-  : [year.toString()];
-  // 3. 在候选列表中筛选
+  // 2. 在候选列表中筛选
   const matched = sessionOptions.value.filter(item => {
-    // A. 级别必须一致 (注意类型转换或弱等于)
+    // A. 级别必须一致
     const isLevelMatch = item.level == level;
 
-    // B. 规范化年份匹配：优先匹配独立的 year 字段，若无则回退到名称模糊匹配
-    const isYearMatch = targetYears.some(y => {
-      if (!y) return false;
-      // 1. 优先匹配届次对象中的 year 字段 (规范做法)
-      const sessionYear = item.year || item.sessionYear; // 兼容不同可能的字段名
-      if (sessionYear && String(sessionYear) === y) return true;
-      // 2. 兜底匹配：匹配名称字符串 (如 "2026第十八届")
-      return item.session && String(item.session).includes(y);
-    });
+    // B. 年份严格匹配 (要求 session 对象的 year 字段必须与获奖年份一致)
+    const sessionYear = item.year;
+    const isYearMatch = sessionYear && String(sessionYear) === targetYear;
 
     return isLevelMatch && isYearMatch;
   });
 
-  // 4. 自动赋值：只有当推断结果唯一时才自动勾选，避免歧义
-  if (matched.length === 1) {
+  // 3. 自动赋值并锁定
+  if (matched.length >= 1) {
     form.value.sessionId = matched[0].id;
     isAutoMatched.value = true;
   } else {
+    form.value.sessionId = null;
     isAutoMatched.value = false;
   }
 }
@@ -2623,6 +2656,17 @@ function submitForm() {
       if (apiFn) {
         apiFn(form.value).then(response => {
           proxy.$modal.msgSuccess(isEdit ? "修改成功" : "新增成功");
+
+          // 如果用户上传了比赛通知，且届次原本没有比赛通知，则同步更新届次信息
+          if (form.value.fileNotice && !isNoticeFromSession.value && form.value.sessionId) {
+            updateSession({
+              id: form.value.sessionId,
+              uuid: form.value.fileNotice
+            }).catch(err => {
+              console.error("同步更新届次比赛通知失败:", err);
+            });
+          }
+
           // 提交成功清除草稿
           clearDraft();
           updateSnapshot();
