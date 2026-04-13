@@ -1,4 +1,4 @@
-package com.ruoyi.system.controller;
+package com.ruoyi.reimbursement.controller;
 
 import java.util.List;
 import javax.servlet.http.HttpServletResponse;
@@ -16,8 +16,8 @@ import com.ruoyi.common.annotation.Log;
 import com.ruoyi.common.core.controller.BaseController;
 import com.ruoyi.common.core.domain.AjaxResult;
 import com.ruoyi.common.enums.BusinessType;
-import com.ruoyi.system.domain.SamReimbursementRatio;
-import com.ruoyi.system.service.ISamReimbursementRatioService;
+import com.ruoyi.reimbursement.domain.SamReimbursementRatio;
+import com.ruoyi.reimbursement.service.ISamReimbursementRatioService;
 import com.ruoyi.common.utils.poi.ExcelUtil;
 import com.ruoyi.common.core.page.TableDataInfo;
 

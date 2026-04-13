@@ -1,4 +1,4 @@
-﻿<template>
+<template>
   <div class="achievement-manage-root">
     <div v-show="!pageModeActive" class="app-container">
       <!-- 搜索表单 -->
@@ -240,6 +240,15 @@
           >导出</el-button>
           <el-button
               v-if="showAttachmentExport"
+              type="primary"
+              plain
+              icon="Download"
+              :loading="exportCompetitionLoading"
+              @click="openCompetitionExportDialog"
+              v-hasPermi="permExport"
+          >赛事附件批量导出</el-button>
+          <el-button
+              v-if="showAttachmentExport"
               type="warning"
               plain
               icon="Download"
@@ -247,7 +256,7 @@
               :loading="exportAttachmentLoading"
               @click="openExportAttachmentDialog"
               v-hasPermi="permExport"
-          >导出附件</el-button>
+          >导出选中的附件</el-button>
         </div>
       </el-row>
 
@@ -513,6 +522,49 @@
         </el-button>
       </template>
     </el-dialog>
+
+    <el-dialog
+        v-model="exportCompetitionDialogVisible"
+        title="按赛事批量导出所有附件"
+        width="450px"
+    >
+      <el-form label-width="80px">
+        <el-form-item label="比赛名称" style="margin-bottom: 20px;">
+            <el-select
+                  v-model="exportCompetitionId"
+                  placeholder="请输入关键字搜索比赛"
+                  clearable
+                  filterable
+                  remote
+                  reserve-keyword
+                  :remote-method="remoteSearchCompetition"
+                  :loading="competitionLoading"
+                  style="width: 100%;"
+                  @visible-change="handleCompetitionDropdownVisible"
+              >
+                <el-option
+                    v-for="item in competitionOptions"
+                    :key="item.id"
+                    :label="item.name"
+                    :value="item.id"
+                />
+            </el-select>
+        </el-form-item>
+      </el-form>
+      <div style="font-size:12px; line-height:1.6; color:#999; margin: 0 10px 0 10px; background: #f4f4f5; padding: 10px; border-radius: 4px;">
+        <span style="color:#e6a23c; font-weight:bold;">提示：</span>此功能<strong>无视列表分页</strong>，系统将一次性把当前选择赛事下的<strong>所有通过审核的成果</strong>打包为ZIP。
+        <br/><br/>
+        内部目录将自动命名为：<strong>赛事名称 / 成果编号_负责人姓名 / 附件文件.pdf</strong>。
+        <div style="margin-top: 5px; color:#f56c6c;">* 若赛事产生的数据量极大（数千个作品文件），打包操作可能需要一分钟以上，请耐心等待浏览器下载提示。</div>
+      </div>
+
+      <template #footer>
+        <el-button @click="exportCompetitionDialogVisible = false">取消</el-button>
+        <el-button type="primary" :loading="exportCompetitionLoading" @click="submitCompetitionExportAttachment">
+          全量导出
+        </el-button>
+      </template>
+    </el-dialog>
   </div>
 </template>
 
@@ -670,6 +722,9 @@ const openingReviewPageId = ref('');
 const currentId = ref(null);
 const exportAttachmentDialogVisible = ref(false);
 const exportAttachmentLoading = ref(false);
+const exportCompetitionDialogVisible = ref(false);
+const exportCompetitionLoading = ref(false);
+const exportCompetitionId = ref(null);
 const selectedAttachmentTypes = ref([]);
 const attachmentTypeOptions = [
   { label: '奖状(证书)', value: 1 },
@@ -1346,6 +1401,44 @@ async function submitExportAttachment() {
     proxy.$modal?.msgError?.(e?.message || '导出附件失败');
   } finally {
     exportAttachmentLoading.value = false;
+  }
+}
+
+function openCompetitionExportDialog() {
+  exportCompetitionId.value = null;
+  exportCompetitionDialogVisible.value = true;
+}
+
+async function submitCompetitionExportAttachment() {
+  if (!exportCompetitionId.value) {
+    proxy.$modal?.msgWarning?.('请先选择需要打包的比赛');
+    return;
+  }
+
+  exportCompetitionLoading.value = true;
+  try {
+    const data = await exportAttachmentZip({
+      achievementIds: [],
+      types: [1, 2, 3, 4, 5, 6, 8],
+      sourceMode: props.sourceMode || '',
+      groupByCompetition: true,
+      competitionId: exportCompetitionId.value
+    });
+
+    if (!blobValidate(data)) {
+      throw new Error(await parseBlobError(data, '批量打包导出附件失败'));
+    }
+
+    const blob = new Blob([data], { type: 'application/zip' });
+    const targetComp = competitionOptions.value.find(item => item.id === exportCompetitionId.value);
+    const compName = targetComp ? targetComp.name : '参赛附件批量打包';
+    saveAs(blob, `${compName}_全量附件导出_${new Date().getTime()}.zip`);
+    exportCompetitionDialogVisible.value = false;
+    proxy.$modal?.msgSuccess?.('打包导出成功');
+  } catch (e) {
+    proxy.$modal?.msgError?.(e?.message || '批量打包导出失败');
+  } finally {
+    exportCompetitionLoading.value = false;
   }
 }
 

@@ -1,7 +1,7 @@
 <template>
   <div>
     <el-form ref="userRef" :model="form" :rules="rules" label-width="80px">
-      <el-form-item label="用户昵称" prop="nickName">
+      <el-form-item label="姓名" prop="nickName" readonly>
         <el-input v-model="form.nickName" maxlength="30" />
       </el-form-item>
       <el-form-item label="手机号码" prop="phonenumber">
@@ -629,6 +629,7 @@ async function refreshProfileCompletionState() {
       phonenumber: response.data.phonenumber,
       email: response.data.email,
       sex: response.data.sex,
+      dept: response.data.dept,
       profileInitialized: Number(response.data.profileInitialized || 0),
     });
     return Number(response.data.profileInitialized || 0) === 1;
@@ -675,11 +676,20 @@ function submit() {
           payload.classYear = form.value.classYear;
           payload.className = form.value.className;
           payload.name = form.value.name || form.value.nickName || userStore.nickName;
+
+          const schoolOpt = findSchoolOption(form.value.school);
+          const deptOpt = findDepartmentOption(schoolOpt, form.value.department);
+          const majorOpt = findMajorOption(deptOpt, form.value.major);
+          payload.deptId = majorOpt ? majorOpt.id : (deptOpt ? deptOpt.id : (schoolOpt ? schoolOpt.id : null));
         }
 
         if (isTeacher.value) {
           payload.school = selectedDeptLabels.school;
           payload.department = selectedDeptLabels.department;
+
+          const schoolOpt = findSchoolOption(form.value.school);
+          const deptOpt = findDepartmentOption(schoolOpt, form.value.department);
+          payload.deptId = deptOpt ? deptOpt.id : (schoolOpt ? schoolOpt.id : null);
         }
 
         const response = await saveFullUserProfile(payload);

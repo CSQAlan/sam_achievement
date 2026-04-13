@@ -1,7 +1,7 @@
-package com.ruoyi.system.mapper;
+package com.ruoyi.reimbursement.mapper;
 
 import java.util.List;
-import com.ruoyi.system.domain.SamQualityDevelopmentForm;
+import com.ruoyi.reimbursement.domain.SamQualityDevelopmentForm;
 
 /**
  * 素质提升Mapper接口

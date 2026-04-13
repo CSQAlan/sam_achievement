@@ -51,8 +51,10 @@
                         >
                           <el-option v-for="item in competitionOptions" :key="item.competitionId" :label="item.competitionName" :value="item.competitionId" />
                         </el-select>
-                        <div style="margin-top: 5px; line-height: 1.2;">
-                          <el-link type="primary" @click="goToCompetitionApply">比赛找不到？点击这里申请赛事！</el-link>
+                        <div style="width: 100%; display: flex; flex-direction: column;">
+                          <div style="margin-top: 5px; line-height: 1.2;">
+                            <el-link type="primary" :disabled="false" @click="goToCompetitionApply">比赛找不到？点击这里申请赛事！</el-link>
+                          </div>
                         </div>
                       </el-form-item>
                     </el-col>
@@ -112,8 +114,13 @@
                         >
                           <el-option v-for="item in sessionOptions" :key="item.id" :label="item.session" :value="item.id" />
                         </el-select>
-                        <div v-if="isAutoMatched" style="color: #67C23A; font-size: 12px; margin-top: 5px;">
-                          <el-icon style="vertical-align: middle;"><CircleCheck /></el-icon> 已根据时间与级别自动锁定届次
+                        <div style="width: 100%; display: flex; flex-direction: column;">
+                          <div v-if="isAutoMatched" style="color: #67C23A; font-size: 12px; margin-top: 5px;">
+                            <el-icon style="vertical-align: middle;"><CircleCheck /></el-icon> 已根据时间与级别自动锁定届次
+                          </div>
+                          <div style="margin-top: 5px; line-height: 1.2;">
+                            <el-link type="primary" :disabled="false" @click="goToCompetitionApply">届次找不到？点击这里申请赛事届次！</el-link>
+                          </div>
                         </div>
                       </el-form-item>
                     </el-col>
@@ -392,8 +399,10 @@
                     >
                       <el-option v-for="item in competitionOptions" :key="item.competitionId" :label="item.competitionName" :value="item.competitionId" />
                     </el-select>
-                    <div style="margin-top: 5px; line-height: 1.2;">
-                      <el-link type="primary" @click="goToCompetitionApply">比赛找不到？点击这里申请赛事！</el-link>
+                    <div style="width: 100%; display: flex; flex-direction: column;">
+                      <div style="margin-top: 5px; line-height: 1.2;">
+                        <el-link type="primary" :disabled="false" @click="goToCompetitionApply">比赛找不到？点击这里申请赛事！</el-link>
+                      </div>
                     </div>
                   </el-form-item>
                 </el-col>
@@ -453,8 +462,13 @@
                     >
                       <el-option v-for="item in sessionOptions" :key="item.id" :label="item.session" :value="item.id" />
                     </el-select>
-                    <div v-if="isAutoMatched" style="color: #67C23A; font-size: 12px; margin-top: 5px;">
-                      <el-icon style="vertical-align: middle;"><CircleCheck /></el-icon> 已根据时间与级别自动锁定届次
+                    <div style="width: 100%; display: flex; flex-direction: column;">
+                      <div v-if="isAutoMatched" style="color: #67C23A; font-size: 12px; margin-top: 5px;">
+                        <el-icon style="vertical-align: middle;"><CircleCheck /></el-icon> 已根据时间与级别自动锁定届次
+                      </div>
+                      <div style="margin-top: 5px; line-height: 1.2;">
+                        <el-link type="primary" :disabled="false" @click="goToCompetitionApply">届次找不到？点击这里申请赛事届次！</el-link>
+                      </div>
                     </div>
                   </el-form-item>
                 </el-col>
@@ -521,7 +535,7 @@
                   </div>
                 </div>
                 <div style="color: #F56C6C; font-size: 12px;font-weight: bold;">
-                  如果报名者没有通过其他途径报销，请上传发票（PDF）和填写报名金额。注意：同一张发票只能报销一次
+                  如果报名者没有通过其他途径报销，请上传发票（PDF）和填写报名金额。注意：同一张发票只能报销一次且是否报销要按规定最终决定。
                 </div>
               </el-form-item>
 

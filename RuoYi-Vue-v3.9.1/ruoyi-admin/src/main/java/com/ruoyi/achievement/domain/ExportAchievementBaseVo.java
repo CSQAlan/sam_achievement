@@ -4,6 +4,7 @@ public class ExportAchievementBaseVo
 {
     private String achievementId;
     private String ownerName;
+    private String competitionName;
 
     public String getAchievementId()
     {
@@ -23,5 +24,15 @@ public class ExportAchievementBaseVo
     public void setOwnerName(String ownerName)
     {
         this.ownerName = ownerName;
+    }
+
+    public String getCompetitionName()
+    {
+        return competitionName;
+    }
+
+    public void setCompetitionName(String competitionName)
+    {
+        this.competitionName = competitionName;
     }
 }
