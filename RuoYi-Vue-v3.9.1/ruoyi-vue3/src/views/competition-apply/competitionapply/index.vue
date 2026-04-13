@@ -230,7 +230,21 @@
             label-width="100px"
           >
             <el-form-item label="赛事名称" prop="name">
-              <el-input v-model="form.name" placeholder="请输入赛事名称" />
+              <el-select
+                v-model="form.name"
+                filterable
+                allow-create
+                default-first-option
+                placeholder="请选择已有赛事或直接输入新的赛事名称"
+                style="width: 100%"
+              >
+                <el-option
+                  v-for="item in competitionOptions"
+                  :key="item.id"
+                  :label="item.name"
+                  :value="item.name"
+                />
+              </el-select>
             </el-form-item>
             <el-form-item label="年份" prop="year">
               <el-input-number
@@ -245,53 +259,8 @@
             <el-form-item label="届次" prop="session">
               <el-input v-model="form.session" placeholder="例如：2025、十二届" />
             </el-form-item>
-            <el-form-item label="赛事类别" prop="category">
-              <el-radio-group v-model="form.category">
-                <el-radio
-                  v-for="dict in sys_competition_category"
-                  :key="dict.value"
-                  :label="dict.value"
-                >
-                  {{ dict.label }}
-                </el-radio>
-              </el-radio-group>
-            </el-form-item>
-            <el-form-item label="盖章单位" prop="organizations">
-              <el-input
-                v-model="form.organizations"
-                placeholder="请输入盖章单位"
-              />
-            </el-form-item>
-            <el-form-item label="赛事级别" prop="level">
-              <el-radio-group v-model="form.level">
-                <el-radio
-                  v-for="dict in sys_competition_level"
-                  :key="dict.value"
-                  :label="dict.value"
-                >
-                  {{ dict.label }}
-                </el-radio>
-              </el-radio-group>
-            </el-form-item>
-            <el-form-item label="标签" prop="tags">
-              <el-checkbox-group v-model="form.tags">
-                <el-checkbox
-                  v-for="dict in sys_competition_tag"
-                  :key="dict.value"
-                  :label="dict.value"
-                >
-                  {{ dict.label }}
-                </el-checkbox>
-              </el-checkbox-group>
-            </el-form-item>
-            <el-form-item label="赛事说明" prop="memo">
-              <el-input
-                v-model="form.memo"
-                type="textarea"
-                :rows="6"
-                placeholder="请输入赛事说明"
-              />
-            </el-form-item>
+
+
           </el-form>
         </el-col>
 
@@ -505,6 +474,16 @@ const canEditSelection = ref(false);
 const canDeleteSelection = ref(false);
 const activeAttachmentTab = ref("certificate");
 const routePreviewUrl = ref("");
+const competitionOptions = ref([]);
+
+function fetchCompetitionOptions() {
+  request({
+    url: '/competition/competition/optionList',
+    method: 'get'
+  }).then(res => {
+    competitionOptions.value = res.data || [];
+  });
+}
 
 const queryParams = ref({
   pageNum: 1,
@@ -521,13 +500,6 @@ const rules = {
   name: [{ required: true, message: "赛事名称不能为空", trigger: "blur" }],
   year: [{ required: true, message: "年份不能为空", trigger: "change" }],
   session: [{ required: true, message: "届次不能为空", trigger: "blur" }],
-  category: [
-    { required: true, message: "赛事类别不能为空", trigger: "change" },
-  ],
-  organizations: [
-    { required: true, message: "盖章单位不能为空", trigger: "blur" },
-  ],
-  level: [{ required: true, message: "赛事级别不能为空", trigger: "change" }],
 };
 
 const previewUrls = reactive({
@@ -975,6 +947,7 @@ onBeforeUnmount(() => {
   revokeRoutePreview();
 });
 
+fetchCompetitionOptions();
 getList();
 </script>
 

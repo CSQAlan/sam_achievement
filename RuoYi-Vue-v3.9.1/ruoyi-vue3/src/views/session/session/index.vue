@@ -190,7 +190,7 @@
                   <iframe :src="templatePreviewUrl" width="100%" height="240px" frameborder="0"></iframe>
                 </div>
 
-                <el-divider content-position="left">新参赛通知（必须重新上传）</el-divider>
+                <el-divider content-position="left">新参赛通知文件</el-divider>
               </div>
 
               <el-form-item label-width="0" prop="uuid">
@@ -253,27 +253,17 @@
       </template>
     </el-dialog>
 
-    <!-- 新增：批量复制（勾选多条模板；每条必须上传新通知PDF） -->
-    <el-dialog title="批量复制（所选模板）" v-model="batchOpen" width="90vw" top="5vh" append-to-body class="batch-copy-dialog">
+    <el-dialog title="批量启用预录（必须补齐参赛通知）" v-model="batchOpen" width="90vw" top="5vh" append-to-body class="batch-copy-dialog">
       <el-row :gutter="20">
         <el-col :span="14">
           <el-table :data="batchItems" highlight-current-row @row-click="handleBatchRowClick" max-height="520px">
             <el-table-column type="index" width="55" align="center" label="#" />
             <el-table-column label="赛事" min-width="160" align="center" prop="competitionName" />
-            <el-table-column label="模板届次" min-width="140" align="center" prop="templateSession" />
-            <el-table-column label="年份" width="140" align="center">
+            <el-table-column label="年份" width="100" align="center" prop="year" />
+            <el-table-column label="届次" min-width="160" align="center" prop="session" />
+            <el-table-column label="新参赛通知(必传PDF)" min-width="260" align="center">
               <template #default="scope">
-                <el-input-number v-model="scope.row.year" :min="2000" :max="2100" controls-position="right" style="width: 120px" />
-              </template>
-            </el-table-column>
-            <el-table-column label="届次" min-width="180" align="center">
-              <template #default="scope">
-                <el-input v-model="scope.row.session" placeholder="请输入届次" />
-              </template>
-            </el-table-column>
-            <el-table-column label="参赛通知(PDF)" min-width="260" align="center">
-              <template #default="scope">
-                <el-tag v-if="!scope.row.uuid" type="info">未上传</el-tag>
+                <el-tag v-if="!scope.row.uuid" type="danger">尚未上传(必须上传)</el-tag>
                 <span v-else class="ellipsis">{{ scope.row.uuid }}</span>
               </template>
             </el-table-column>
@@ -282,27 +272,12 @@
 
         <el-col :span="10">
           <div class="attach-card batch-attach">
-            <el-divider content-position="left">当前行模板通知（只读）</el-divider>
-            <div v-if="activeBatchItem?.templateUuid" class="custom-file-row">
-              <div class="file-name">
-                <el-icon class="mr5"><Document /></el-icon>
-                <span>{{ activeBatchItem.templateUuid }}</span>
-              </div>
-              <div class="file-action">
-                <el-button link type="primary" :icon="View" @click="handleOpenNoticeDetail(activeBatchItem.templateUuid)">预览</el-button>
-                <el-button link type="primary" :icon="Download" @click="handleDownloadNotice(activeBatchItem.templateUuid)">下载</el-button>
-              </div>
-            </div>
-            <div v-if="batchTemplatePreviewUrl" class="preview-box template-preview">
-              <iframe :src="batchTemplatePreviewUrl" width="100%" height="220px" frameborder="0"></iframe>
-            </div>
-
-            <el-divider content-position="left">当前行新通知（必传PDF）</el-divider>
+            <el-divider content-position="left">当前选中记录：新通知（必传PDF）</el-divider>
             <div v-if="activeBatchItem && !activeBatchItem.uuid" class="batch-upload">
               <upload-file v-model="batchItems[batchActiveIndex].uuid" :limit="1" :fileSize="50" :fileType="['pdf']"
                 :isShowTip="false" buttonText="上传PDF" class="hide-file-list"
                 @update:modelValue="val => handleBatchItemUuidChange(batchActiveIndex, val)" />
-              <div class="text-muted">上传成功后即可在下方预览，并允许提交批量复制</div>
+              <div class="text-muted">成功上传后需点击下方提交以完成启用</div>
             </div>
 
             <div v-if="activeBatchItem?.uuid" class="custom-file-row">
@@ -328,7 +303,7 @@
       <template #footer>
         <div class="dialog-footer">
           <el-button @click="handleBatchCancel">取 消</el-button>
-          <el-button type="primary" @click="handleBatchSubmit">确 定 批 量 复 制</el-button>
+          <el-button type="primary" @click="handleBatchSubmit">保 存 并 批 量 开 启</el-button>
         </div>
       </template>
     </el-dialog>
@@ -396,7 +371,16 @@ const data = reactive({
       { required: true, message: "年份不能为空", trigger: "change" }
     ],
     uuid: [
-      { required: true, message: "参赛通知不能为空（仅PDF）", trigger: "change" }
+      {
+        validator: (rule, value, callback) => {
+          if (data.form.status === '1' && !value) {
+            callback(new Error("启用状态下参赛通知不能为空（仅PDF）"))
+          } else {
+            callback()
+          }
+        },
+        trigger: "change"
+      }
     ],
     category: [
       { required: true, message: "赛事类别不能为空", trigger: "change" }
@@ -420,12 +404,12 @@ const templateUuid = ref("")
 const templatePreviewUrl = ref("")
 
 const batchOpen = ref(false)
-const batchTemplatePreviewUrl = ref("")
 const batchItems = ref([])
 const batchActiveIndex = ref(0)
 const batchPreviewUrl = ref("")
 
 const activeBatchItem = computed(() => batchItems.value?.[batchActiveIndex.value] || null)
+
 
 function normalizeUuid(value) {
   if (Array.isArray(value)) return normalizeUuid(value[0])
@@ -446,13 +430,6 @@ function revokeTemplatePreview() {
   if (templatePreviewUrl.value) {
     window.URL.revokeObjectURL(templatePreviewUrl.value)
     templatePreviewUrl.value = ""
-  }
-}
-
-function revokeBatchTemplatePreview() {
-  if (batchTemplatePreviewUrl.value) {
-    window.URL.revokeObjectURL(batchTemplatePreviewUrl.value)
-    batchTemplatePreviewUrl.value = ""
   }
 }
 
@@ -498,18 +475,6 @@ async function loadTemplatePreview(uuid) {
   }
 }
 
-async function loadBatchTemplatePreview(uuid) {
-  revokeBatchTemplatePreview()
-  const normalizedUuid = normalizeUuid(uuid)
-  if (!normalizedUuid) return
-  try {
-    batchTemplatePreviewUrl.value = await fetchPdfObjectUrl(normalizedUuid)
-  } catch (e) {
-    console.error("批量复制-模板通知预览加载失败", e)
-    batchTemplatePreviewUrl.value = ""
-  }
-}
-
 async function loadBatchPreview(uuid) {
   revokeBatchPreview()
   const normalizedUuid = normalizeUuid(uuid)
@@ -517,7 +482,7 @@ async function loadBatchPreview(uuid) {
   try {
     batchPreviewUrl.value = await fetchPdfObjectUrl(normalizedUuid)
   } catch (e) {
-    console.error("批量复制-通知预览加载失败", e)
+    console.error("加载通知预览失败", e)
     batchPreviewUrl.value = ""
   }
 }
@@ -676,22 +641,49 @@ function handleSelectionChange(selection) {
   multiple.value = !selection.length
 }
 
-function handleEnablePreRecord() {
-  const preRecordIds = selectedRows.value
-    .filter(item => String(item?.status) === "2")
-    .map(item => item.id)
+function resetBatchCopyState() {
+  batchItems.value = []
+  batchActiveIndex.value = 0
+  revokeBatchPreview()
+}
 
-  if (!preRecordIds.length) {
+async function handleEnablePreRecord() {
+  const preRecordRows = selectedRows.value.filter(item => String(item?.status) === "2")
+  if (!preRecordRows.length) {
     proxy.$modal.msgWarning("请先选择状态为“预录”的届次")
     return
   }
 
-  proxy.$modal.confirm(`确认将选中的${preRecordIds.length}条“预录”届次批量启用？`).then(() => {
-    return updateSessionStatusByIds({ ids: preRecordIds, status: "1" })
-  }).then(() => {
-    proxy.$modal.msgSuccess("已批量启用")
-    getList()
-  }).catch(() => { })
+  resetBatchCopyState()
+  batchOpen.value = true
+
+  proxy.$modal.loading("正在加载届次数据...")
+  try {
+    const ids = preRecordRows.map(r => r.id).filter(Boolean)
+    const details = await Promise.all(ids.map(id => getSession(id)))
+    const items = details.map((resp) => {
+      const row = resp?.data || {}
+      return {
+        ...row, // Preserve full row properties for full payload submission
+        competitionName: row.competitionName || getCompetitionName(row.competitionId) || "",
+        year: row.year,
+        session: row.session,
+        uuid: normalizeUuid(row.uuid) || null,
+      }
+    })
+
+    batchItems.value = items
+    batchActiveIndex.value = 0
+    if (activeBatchItem.value?.uuid) {
+      await loadBatchPreview(activeBatchItem.value.uuid)
+    }
+  } catch (e) {
+    console.error("加载届次数据失败", e)
+    proxy.$modal.msgError("加载失败，请重试")
+    batchOpen.value = false
+  } finally {
+    proxy.$modal.closeLoading()
+  }
 }
 
 function chineseToNumber(text) {
@@ -787,7 +779,7 @@ function incrementSessionText(text) {
     }
   }
 
-  return raw
+  return raw + " (新)"
 }
 
 async function handleCopyTemplate(row) {
@@ -847,14 +839,7 @@ function incrementSessionTextBy(text, steps) {
   return value
 }
 
-function resetBatchCopyState() {
-  revokeBatchTemplatePreview()
-  batchItems.value = []
-  batchActiveIndex.value = 0
-  revokeBatchPreview()
-}
-
-async function handleBatchCopySelected() {
+function handleBatchCopySelected() {
   if (!selectedRows.value.length) {
     proxy.$modal.msgWarning("请先勾选要复制的届次模板")
     return
@@ -864,54 +849,44 @@ async function handleBatchCopySelected() {
     return
   }
 
-  resetBatchCopyState()
-  batchOpen.value = true
+  proxy.$modal.confirm(`将基于您选中的 ${selectedRows.value.length} 条模板自动进行批量复制（生成+1届的新记录）。\n复制产出的届次默认都是“预录”状态，确定执行吗？`).then(async () => {
+    proxy.$modal.loading("正在自动复制并生成届次...")
+    try {
+      const idsToCopy = selectedRows.value.map(r => r.id).filter(Boolean)
+      const details = await Promise.all(idsToCopy.map(id => getSession(id)))
+      
+      const items = details.map((resp, idx) => {
+        const template = resp?.data || {}
+        const templateYear = Number(template.year)
+        const year = Number.isFinite(templateYear) && templateYear > 0 ? templateYear + 1 : new Date().getFullYear()
+        const templateSession = template.session || ""
 
-  proxy.$modal.loading("正在加载所选模板...")
-  try {
-    const ids = selectedRows.value.map(r => r.id).filter(Boolean)
-    const details = await Promise.all(ids.map(id => getSession(id)))
-    const items = details.map((resp, idx) => {
-      const template = resp?.data || {}
-      const templateYear = Number(template.year)
-      const year = Number.isFinite(templateYear) && templateYear > 0 ? templateYear + 1 : new Date().getFullYear()
-      const templateSession = template.session || ""
-
-      return {
-        templateSessionId: template.id || ids[idx],
-        competitionName: template.competitionName || getCompetitionName(template.competitionId) || selectedRows.value[idx]?.competitionName || "",
-        templateSession: templateSession,
-        templateUuid: normalizeUuid(template.uuid),
-        year,
-        session: incrementSessionText(templateSession) || templateSession || "",
-        uuid: null,
-      }
-    })
-
-    batchItems.value = items
-    batchActiveIndex.value = 0
-    if (activeBatchItem.value?.templateUuid) {
-      await loadBatchTemplatePreview(activeBatchItem.value.templateUuid)
+        return {
+          templateSessionId: template.id || idsToCopy[idx],
+          year,
+          session: incrementSessionText(templateSession) || templateSession || "",
+          uuid: null,
+        }
+      })
+      
+      return batchCopySession({ items })
+    } catch (e) {
+      console.error(e)
+      throw e
     }
-  } catch (e) {
-    console.error("批量复制所选模板失败", e)
-    proxy.$modal.msgError("批量复制失败，请稍后重试")
-    batchOpen.value = false
-    resetBatchCopyState()
-  } finally {
+  }).then(resp => {
     proxy.$modal.closeLoading()
-  }
+    proxy.$modal.msgSuccess(resp?.msg || "批量复制完成，状态已设为预录！")
+    getList()
+  }).catch(() => {
+    proxy.$modal.closeLoading()
+  })
 }
 
 function handleBatchRowClick(row) {
   const idx = batchItems.value.indexOf(row)
   if (idx >= 0) {
     batchActiveIndex.value = idx
-    if (row?.templateUuid) {
-      loadBatchTemplatePreview(row.templateUuid)
-    } else {
-      revokeBatchTemplatePreview()
-    }
     if (row?.uuid) {
       loadBatchPreview(row.uuid)
     } else {
@@ -954,47 +929,49 @@ function handleBatchCancel() {
   resetBatchCopyState()
 }
 
-function handleBatchSubmit() {
+async function handleBatchSubmit() {
   if (!batchItems.value.length) {
-    proxy.$modal.msgError("请至少生成一条待复制记录")
+    proxy.$modal.msgError("当前列表为空")
     return
   }
 
   for (let i = 0; i < batchItems.value.length; i++) {
     const rowNo = i + 1
     const item = batchItems.value[i]
-    if (!item?.year) {
-      proxy.$modal.msgError(`第${rowNo}行：年份不能为空`)
-      return
-    }
-    if (!String(item?.session || "").trim()) {
-      proxy.$modal.msgError(`第${rowNo}行：届次不能为空`)
-      return
-    }
     if (!String(item?.uuid || "").trim()) {
-      proxy.$modal.msgError(`第${rowNo}行：参赛通知不能为空（仅PDF）`)
+      proxy.$modal.msgError(`第${rowNo}行：尚未上传新参赛通知（必传PDF）`)
       return
     }
   }
 
-  proxy.$modal.confirm(`确认批量复制${batchItems.value.length}条届次？（每条将生成“预录”状态）`).then(() => {
-    proxy.$modal.loading("正在提交...")
-    return batchCopySession({
-      items: batchItems.value.map(item => ({
-        templateSessionId: item.templateSessionId,
-        year: item.year,
-        session: String(item.session || "").trim(),
-        uuid: String(item.uuid || "").trim(),
-      }))
-    })
-  }).then(resp => {
-    proxy.$modal.msgSuccess(resp?.msg || "批量复制成功")
+  try {
+    await proxy.$modal.confirm(`确认将这${batchItems.value.length}条届次全部补充通知文件，并立刻启用？`)
+    proxy.$modal.loading("正在逐条保存并开启...")
+    
+    // We will update each session and then trigger batch status update
+    // Update uuid for each first
+    await Promise.all(batchItems.value.map(item => {
+      const updateData = { ...item }
+      updateData.status = "1" // Set target status
+      // make sure tags is properly transformed just like regular submitForm
+      if (Array.isArray(updateData.tags)) {
+        updateData.tags = updateData.tags.join(",")
+      }
+      return updateSession(updateData)
+    }))
+
+    proxy.$modal.msgSuccess("已全部成功开启！")
     batchOpen.value = false
     resetBatchCopyState()
     getList()
-  }).catch(() => { }).finally(() => {
+  } catch (e) {
+    console.error(e)
+    if (e !== 'cancel') {
+      proxy.$modal.msgError("执行过程中出错，请刷新列表重试")
+    }
+  } finally {
     proxy.$modal.closeLoading()
-  })
+  }
 }
 
 /** 新增按钮操作 */
