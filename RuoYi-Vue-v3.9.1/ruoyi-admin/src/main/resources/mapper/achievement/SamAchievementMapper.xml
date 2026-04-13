@@ -481,6 +481,10 @@
         <result property="achievementId" column="achievement_id"/>
         <result property="ownerName" column="owner_name"/>
         <result property="competitionName" column="competition_name"/>
+        <result property="awardGrade" column="grade"/>
+        <result property="awardLevel" column="level"/>
+        <result property="year" column="year"/>
+        <result property="track" column="track"/>
     </resultMap>
 
     <resultMap id="ExportAttachmentFileVoResult"
@@ -496,7 +500,11 @@
         select
         a.achievement_id,
         coalesce(s_manager.name, s_first.name, '未知负责人') as owner_name,
-        c.name as competition_name
+        c.name as competition_name,
+        a.grade,
+        a.level,
+        a.year,
+        a.track
         from sam_achievement a
         left join sam_competition_session s on a.session_id = s.session_id
         left join sam_competition c on s.competition_id = c.id

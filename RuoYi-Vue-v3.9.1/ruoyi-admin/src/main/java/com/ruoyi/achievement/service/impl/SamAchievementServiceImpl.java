@@ -32,6 +32,7 @@ import com.ruoyi.common.annotation.BizAudit;
 import com.ruoyi.common.core.domain.entity.SysDept;
 import com.ruoyi.common.enums.BizAuditOpType;
 import com.ruoyi.common.utils.DateUtils;
+import com.ruoyi.common.utils.DictUtils;
 import com.ruoyi.common.utils.SecurityUtils;
 import com.ruoyi.common.utils.StringUtils;
 import com.ruoyi.common.utils.file.FileUtils;
@@ -893,6 +894,8 @@ public class SamAchievementServiceImpl implements ISamAchievementService {
             throw new ServiceException("当前没有可导出的成果");
         }
 
+        String filenameTemplate = req.getFilenameTemplate();
+
         List<ExportAttachmentFileVo> attachmentFiles = samAchievementMapper.selectExportAttachmentFiles(
                 achievementMap.keySet().toArray(new String[0]),
                 typeList.toArray(new Integer[0]));
@@ -944,10 +947,12 @@ public class SamAchievementServiceImpl implements ISamAchievementService {
                     continue;
                 }
 
-                String baseFileName = buildAttachmentExportBaseName(
+                String baseFileName = resolveAttachmentExportFileName(
+                        filenameTemplate,
                         attachmentFile.getAchievementId(),
                         ownerName,
-                        typeName);
+                        typeName,
+                        baseVo);
 
                 String folderPath;
                 if (isGroupByCompetition) {
@@ -1089,6 +1094,28 @@ public class SamAchievementServiceImpl implements ISamAchievementService {
             return new File(RuoYiConfig.getProfile() + StringUtils.substringAfter(realPath, Constants.RESOURCE_PREFIX));
         }
         return new File(realPath);
+    }
+
+    private String resolveAttachmentExportFileName(String template, String achievementId, String ownerName, String typeName, ExportAchievementBaseVo baseVo) {
+        if (StringUtils.isEmpty(template)) {
+            return buildAttachmentExportBaseName(achievementId, ownerName, typeName);
+        }
+
+        // Translate codes to labels
+        String gradeLabel = DictUtils.getDictLabel("award_rank", baseVo.getAwardGrade());
+        String levelLabel = DictUtils.getDictLabel("award_level_type", baseVo.getAwardLevel());
+
+        String result = template;
+        result = result.replace("{id}", defaultFileNamePart(achievementId, "未知成果"));
+        result = result.replace("{manager}", defaultFileNamePart(ownerName, "未知负责人"));
+        result = result.replace("{competition}", defaultFileNamePart(baseVo.getCompetitionName(), "未知赛事"));
+        result = result.replace("{grade}", defaultFileNamePart(gradeLabel, "未知等级"));
+        result = result.replace("{type}", defaultFileNamePart(typeName, "未知类别"));
+        result = result.replace("{level}", defaultFileNamePart(levelLabel, "未知级别"));
+        result = result.replace("{year}", defaultFileNamePart(String.valueOf(baseVo.getYear()), "未知年份"));
+        result = result.replace("{track}", defaultFileNamePart(baseVo.getTrack(), "未知赛道"));
+
+        return defaultFileNamePart(result, "未命名附件");
     }
 
     private String buildAttachmentExportBaseName(String achievementId, String ownerName, String typeName) {

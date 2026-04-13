@@ -8,6 +8,7 @@ public class ExportAttachmentZipReq
     private String sourceMode;
     private Boolean groupByCompetition;
     private String competitionId;
+    private String filenameTemplate;
 
     public List<String> getAchievementIds()
     {
@@ -57,5 +58,15 @@ public class ExportAttachmentZipReq
     public void setCompetitionId(String competitionId)
     {
         this.competitionId = competitionId;
+    }
+
+    public String getFilenameTemplate()
+    {
+        return filenameTemplate;
+    }
+
+    public void setFilenameTemplate(String filenameTemplate)
+    {
+        this.filenameTemplate = filenameTemplate;
     }
 }

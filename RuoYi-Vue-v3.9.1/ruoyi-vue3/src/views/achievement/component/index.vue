@@ -1,4 +1,4 @@
-<template>
+﻿<template>
   <div class="achievement-manage-root">
     <div v-show="!pageModeActive" class="app-container">
       <!-- 搜索表单 -->
@@ -550,12 +550,79 @@
                 />
             </el-select>
         </el-form-item>
+        <el-form-item label="附件类型" style="margin-top: 10px; margin-bottom: 10px;">
+            <el-checkbox-group v-model="exportCompetitionAttachmentTypes" class="attachment-export-group">
+                <el-checkbox
+                    v-for="item in attachmentTypeOptions"
+                    :key="item.value"
+                    :label="item.value"
+                >
+                    {{ item.label }}
+                </el-checkbox>
+            </el-checkbox-group>
+        </el-form-item>
       </el-form>
       <div style="font-size:12px; line-height:1.6; color:#999; margin: 0 10px 0 10px; background: #f4f4f5; padding: 10px; border-radius: 4px;">
         <span style="color:#e6a23c; font-weight:bold;">提示：</span>此功能<strong>无视列表分页</strong>，系统将一次性把当前选择赛事下的<strong>所有通过审核的成果</strong>打包为ZIP。
-        <br/><br/>
-        内部目录将自动命名为：<strong>赛事名称 / 成果编号_负责人姓名 / 附件文件.pdf</strong>。
-        <div style="margin-top: 5px; color:#f56c6c;">* 若赛事产生的数据量极大（数千个作品文件），打包操作可能需要一分钟以上，请耐心等待浏览器下载提示。</div>
+      </div>
+
+      <div class="export-config-container">
+        <el-form label-position="top">
+          <el-form-item label="选择附件命名格式">
+            <el-radio-group v-model="namingPreset" class="modern-radio-group" @change="handleNamingPresetChange">
+              <el-radio-button label="default" style="width: 80px;">编号 + 姓名</el-radio-button>
+              <el-radio-button label="comp_id_name" style="width: 80px;">赛事 + 编号 + 姓名</el-radio-button>
+              <el-radio-button label="name_grade" style="width: 80px;">姓名 + 获奖等级</el-radio-button>
+              <el-radio-button label="custom" style="width: 80px;">自定义</el-radio-button>
+            </el-radio-group>
+          </el-form-item>
+
+        <!-- HTML 结构改进 -->
+<transition name="el-zoom-in-top">
+  <div v-if="namingPreset === 'custom'" class="custom-helper-box">
+    <!-- 标题不再是孤立的行，而是作为盒子的一部分 -->
+    <div class="helper-header">
+      <el-icon><Pointer /></el-icon>
+      <span>点击插入可用字段</span>
+    </div>
+    
+    <div class="naming-tag-container">
+      <el-button
+        v-for="tag in availableNamingTags"
+        :key="tag.key"
+        size="small"
+        class="token-button"
+        @click="insertNamingTag(tag.key)"
+      >
+        {{ tag.label }}
+      </el-button>
+    </div>
+
+    <!-- 输入框与上方紧密贴合 -->
+    <el-input
+      v-model="customNamingTemplate"
+      placeholder="在此构造您的文件名格式..."
+      class="template-input"
+    >
+      <template #prepend><span class="input-prefix">格式</span></template>
+    </el-input>
+  </div>
+</transition>
+
+
+          <div class="preview-section">
+            <div class="preview-header">
+              <span class="preview-title"><el-icon><View /></el-icon> 文件名实时预览</span>
+            </div>
+            <div class="preview-content-box">
+              <span class="preview-text">{{ namingPreview }}.pdf</span>
+            </div>
+          </div>
+        </el-form>
+      </div>
+
+      <div style="font-size:11px; line-height:1.6; color:#f56c6c; margin: 10px 10px 0 10px; padding: 5px 10px; border-left: 3px solid #f56c6c; background: #fff5f5;">
+        * 若赛事量大，打包耗时可能较长，请耐心等待。
       </div>
 
       <template #footer>
@@ -575,7 +642,7 @@ import { useDict } from '@/utils/dict';
 import { blobValidate } from '@/utils/ruoyi';
 import useUserStore from '@/store/modules/user';
 import auth from '@/plugins/auth';
-import { Warning } from '@element-plus/icons-vue';
+import { Warning, Pointer, Edit, View } from '@element-plus/icons-vue';
 import { saveAs } from 'file-saver';
 import AchievementForm from '../component/AchievementForm.vue';
 import { listManage, getManage, addManage, updateManage, delManage, exportAttachmentZip } from '@/api/achievement/manage';
@@ -725,6 +792,7 @@ const exportAttachmentLoading = ref(false);
 const exportCompetitionDialogVisible = ref(false);
 const exportCompetitionLoading = ref(false);
 const exportCompetitionId = ref(null);
+const exportCompetitionAttachmentTypes = ref([1, 2, 3, 4, 5, 6, 8]);
 const selectedAttachmentTypes = ref([]);
 const attachmentTypeOptions = [
   { label: '奖状(证书)', value: 1 },
@@ -736,6 +804,49 @@ const attachmentTypeOptions = [
   { label: '收款码', value: 6 }
 ];
 const hasBatchSelection = computed(() => ids.value.length > 0);
+const namingPreset = ref('default');
+const customNamingTemplate = ref('{id}_{manager}_{type}');
+const availableNamingTags = [
+  { label: '[+ 成果编号]', key: '{id}' },
+  { label: '[+ 负责人]', key: '{manager}' },
+  { label: '[+ 获奖等级]', key: '{grade}' },
+  { label: '[+ 赛事名称]', key: '{competition}' },
+  { label: '[+ 附件类型]', key: '{type}' }
+];
+const namingPreviewData = {
+  id: '202404130001',
+  manager: '张三',
+  grade: '一等奖',
+  competition: '挑战杯全国大学生课外学术科技作品竞赛',
+  type: '奖状(证书)'
+};
+
+const namingPreview = computed(() => {
+  let template = '';
+  if (namingPreset.value === 'default') template = '{id}_{manager}';
+  else if (namingPreset.value === 'comp_id_name') template = '{competition}_{id}_{manager}';
+  else if (namingPreset.value === 'name_grade') template = '{manager}_{grade}';
+  else template = customNamingTemplate.value;
+
+  if (!template) return '未命名';
+
+  return template
+    .replace(/{id}/g, namingPreviewData.id)
+    .replace(/{manager}/g, namingPreviewData.manager)
+    .replace(/{grade}/g, namingPreviewData.grade)
+    .replace(/{competition}/g, namingPreviewData.competition)
+    .replace(/{type}/g, namingPreviewData.type);
+});
+
+function handleNamingPresetChange(val) {
+  if (val === 'default') customNamingTemplate.value = '{id}_{manager}';
+  else if (val === 'comp_id_name') customNamingTemplate.value = '{competition}_{id}_{manager}';
+  else if (val === 'name_grade') customNamingTemplate.value = '{manager}_{grade}';
+}
+
+function insertNamingTag(tag) {
+  customNamingTemplate.value += tag;
+}
 
 function normalizeLooseText(value) {
   if (value === null || value === undefined) return '';
@@ -1414,15 +1525,20 @@ async function submitCompetitionExportAttachment() {
     proxy.$modal?.msgWarning?.('请先选择需要打包的比赛');
     return;
   }
+  if (!exportCompetitionAttachmentTypes.value.length) {
+    proxy.$modal?.msgWarning?.('请至少选择一个附件类别');
+    return;
+  }
 
   exportCompetitionLoading.value = true;
   try {
     const data = await exportAttachmentZip({
       achievementIds: [],
-      types: [1, 2, 3, 4, 5, 6, 8],
+      types: exportCompetitionAttachmentTypes.value,
       sourceMode: props.sourceMode || '',
       groupByCompetition: true,
-      competitionId: exportCompetitionId.value
+      competitionId: exportCompetitionId.value,
+      filenameTemplate: namingPreset.value === 'custom' ? customNamingTemplate.value : (namingPreset.value === 'default' ? '{id}_{manager}' : (namingPreset.value === 'comp_id_name' ? '{competition}_{id}_{manager}' : '{manager}_{grade}'))
     });
 
     if (!blobValidate(data)) {
@@ -1845,5 +1961,130 @@ export default {
   cursor: pointer;
 }
 
-</style>
+/* 导出配置容器 */
+.export-config-container {
+  padding: 10px 15px;
+  background: #fbfbfc;
+  border-radius: 8px;
+  margin-top: 10px;
+  border: 1px solid #f2f4f7;
+}
 
+.attachment-export-group {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 5px 10px;
+  width: 100%;
+}
+
+/* 现代按钮组 */
+.modern-radio-group {
+  display: flex;
+  flex-wrap: wrap;
+}
+
+.modern-radio-group :deep(.el-radio-button__inner) {
+  padding: 8px 12px;
+  font-size: 13px;
+}
+
+
+/* 自定义辅助箱 - 整合风格 */
+.custom-helper-box {
+  margin: 10px 0;
+  padding: 12px;
+  background: #f8f9fb;
+  border: 1px solid #e4e7ed;
+  border-radius: 8px;
+}
+
+.helper-header {
+  font-size: 12px;
+  color: #a8abb2;
+  margin-bottom: 12px;
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.naming-tag-container {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  margin-bottom: 15px;
+}
+
+/* 令牌化按钮 */
+.token-button {
+  background: #ffffff !important;
+  border: 1px solid #dcdfe6 !important;
+  color: #606266 !important;
+  font-weight: normal;
+  transition: all 0.2s;
+  box-shadow: 0 1px 2px rgba(0,0,0,0.05);
+  border-radius: 4px;
+}
+
+.token-button:hover {
+  border-color: var(--el-color-primary) !important;
+  color: var(--el-color-primary) !important;
+  transform: translateY(-1px);
+}
+
+/* 输入框与隔离条 */
+.template-input :deep(.el-input-group__prepend) {
+  background-color: #f1f3f7;
+  color: #909399;
+  font-size: 12px;
+  padding: 0 12px;
+}
+
+.template-input :deep(.el-input__wrapper) {
+  background-color: #ffffff;
+}
+
+.input-prefix {
+  font-weight: 600;
+}
+
+/* 预览区域核心样式 */
+.preview-section {
+  margin-top: 12px;
+}
+
+.preview-header {
+  margin-bottom: 8px;
+  font-size: 13px;
+  font-weight: 600;
+  color: #606266;
+  display: flex;
+  align-items: center;
+}
+
+.preview-header .el-icon {
+  margin-right: 5px;
+}
+
+.preview-content-box {
+  background: linear-gradient(135deg, #f5f7fa 0%, #eef1f6 100%);
+  padding: 15px;
+  border-radius: 8px;
+  border: 1px solid #dfe4ed;
+  position: relative;
+}
+
+.preview-text {
+  display: block;
+  font-family: "Monaco", "Menlo", "Ubuntu Mono", "Consolas", monospace;
+  font-size: 13px;
+  color: #34495e;
+  line-height: 1.6;
+  word-break: break-all;
+  white-space: pre-wrap;
+  text-shadow: 0 1px 0 rgba(255,255,255,0.5);
+}
+
+.mt10 {
+  margin-top: 10px;
+}
+</style>
