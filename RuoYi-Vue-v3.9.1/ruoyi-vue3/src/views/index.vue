@@ -103,10 +103,10 @@
         <el-card shadow="hover">
           <template #header><div class="card-header"><span>快速入口</span></div></template>
           <div class="link-grid">
-            <el-button type="primary" icon="Plus" plain @click="$router.push('/achievement/apply')">成果申报</el-button>
-            <el-button v-if="isReviewer" type="success" icon="Checked" plain @click="$router.push('/achievement/audit')">成果审核</el-button>
-            <el-button type="info" icon="Document" plain @click="$router.push('/achievement/my')">我的申请</el-button>
-            <el-button v-if="isAdmin" type="warning" icon="PieChart" plain @click="$router.push('/achievement/stats')">统计分析</el-button>
+            <el-button type="primary" icon="Plus" plain @click="handleAchievementApply">成果申请</el-button>
+            <el-button type="warning" icon="UserFilled" plain @click="handleMyAchievement">我的成果</el-button>
+            <el-button v-if="isReviewer" type="success" icon="Checked" plain @click="$router.push('/achievement/college_level_unreviewed')">成果审核</el-button>
+            <el-button type="info" icon="Document" plain @click="$router.push('/competitions/competitionapply')">赛事申请</el-button>
           </div>
         </el-card>
       </el-col>
@@ -117,12 +117,14 @@
 <script setup name="Index">
 import * as echarts from 'echarts';
 import useUserStore from '@/store/modules/user';
+import { useRouter } from 'vue-router';
 import { onMounted, ref, computed, onUnmounted } from 'vue';
 import { listManage } from "@/api/achievement/manage";
 import { listStudent } from "@/api/achievement/student";
 import { listCollege_level_unreviewed } from "@/api/achievement/college_level_unreviewed";
 import { listSchool_level_unreviewed } from "@/api/achievement/school_level_unreviewed";
 
+const router = useRouter();
 const userStore = useUserStore();
 const trendChartRef = ref(null);
 const pieChartRef = ref(null);
@@ -142,6 +144,20 @@ const isCollegeReviewer = computed(() => permissions.value.includes('achievement
 const isSchoolReviewer = computed(() => permissions.value.includes('achievement:school_level_unreviewed:list'));
 const isReviewer = computed(() => isCollegeReviewer.value || isSchoolReviewer.value || isAdmin.value);
 const isOnlyStudent = computed(() => (isStudent.value || isTeacher.value) && !isReviewer.value);
+
+const handleAchievementApply = () => {
+  if (isTeacher.value) {
+    router.push({ path: '/achievement/teacher', 
+    query: { sourceMode: 'guided' } });
+  } else if (isStudent.value) {
+     router.push('/achievement/manage');
+    ;
+  } 
+};
+const handleMyAchievement = () => {
+  router.push({ path: '/achievement/participated', 
+  query: { sourceMode: 'participated' } });
+};
 
 const getStats = async () => {
   if (isStudent.value || isTeacher.value) {
