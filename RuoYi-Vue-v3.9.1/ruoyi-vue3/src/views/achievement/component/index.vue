@@ -1,11 +1,11 @@
-﻿<template>
+<template>
   <div class="achievement-manage-root">
     <div v-show="!pageModeActive" class="app-container">
       <!-- 搜索表单 -->
       <el-form :model="queryParams" ref="queryRef" v-show="showSearch" label-width="68px" class="achievement-search-form">
         <el-row :gutter="10" class="search-row search-row-primary">
 
-          <el-col :span="5">
+          <el-col :span="4">
             <el-form-item label="比赛" prop="competitionId" class="search-item" label-width="40px">
               <el-select
                   v-model="queryParams.competitionId"
@@ -29,7 +29,7 @@
               </el-select>
             </el-form-item>
           </el-col>
-          <el-col :span="4">
+          <el-col :span="3">
             <el-form-item label="届次" prop="sessionId" class="search-item" label-width="40px">
               <el-select
                   v-model="queryParams.sessionId"
@@ -50,6 +50,18 @@
             </el-form-item>
           </el-col>
 
+          <el-col v-if="reviewSource" :span="3">
+            <el-form-item label="年份" prop="year" class="search-item" label-width="40px">
+              <el-input
+                  v-model.number="queryParams.year"
+                  placeholder="年份"
+                  clearable
+                  @keyup.enter="handleQuery"
+                  @change="handleQuery"
+              />
+            </el-form-item>
+          </el-col>
+
           <el-col :span="4">
             <el-form-item label="证书编号" prop="certificateNo" class="search-item">
               <el-input
@@ -60,7 +72,7 @@
               />
             </el-form-item>
           </el-col>
-          <el-col :span="9" class="search-action-col">
+          <el-col :span="10" class="search-action-col">
             <el-form-item class="search-item search-action-item">
               <div class="search-action-row">
                 <el-button type="primary" icon="Search" @click="handleQuery">搜索</el-button>
@@ -162,16 +174,6 @@
                   range-separator="至"
                   start-placeholder="开始时间"
                   end-placeholder="结束时间"
-              />
-            </el-form-item>
-          </el-col>
-          <el-col v-if="reviewSource" :span="4">
-            <el-form-item label="年份" prop="year" class="search-item" >
-              <el-input
-                  v-model="queryParams.year"
-                  placeholder="请输入年份"
-                  clearable
-                  @keyup.enter="handleQuery"
               />
             </el-form-item>
           </el-col>
@@ -1714,8 +1716,14 @@ function refreshFromRoute() {
   formShowSubmit.value = true;
   normalizeReviewStatusBySource();
   applyRoutePageState();
+
+  // 管理员审核页面默认当前年份筛选
+  if (reviewSource.value && !route.query.year && !queryParams.year) {
+    queryParams.year = new Date().getFullYear();
+  }
+
   nextTick(() => {
-    getList();
+    handleQuery();
   });
 }
 
@@ -1727,6 +1735,8 @@ onMounted(() => {
   if (typeof window !== 'undefined') {
     window.addEventListener(REVIEW_RESULT_APPLIED_EVENT, handleReviewResultApplied);
   }
+  // 页面初次挂载或 F5 刷新时执行初始化
+  refreshFromRoute();
 });
 
 onActivated(() => {
