@@ -89,19 +89,36 @@
 
     <!-- 4. 底部功能区 -->
     <el-row :gutter="20">
-      <el-col :sm="24" :lg="16">
-        <el-card shadow="hover" style="height: 100%">
-          <template #header><div class="card-header"><span>最新通知公告</span></div></template>
-          <el-timeline>
-            <el-timeline-item timestamp="2026-04-12" type="primary">2026年度上半年成果统计工作正式启动</el-timeline-item>
-            <el-timeline-item timestamp="2026-04-10">各二级学院成果认定标准及操作指南</el-timeline-item>
-            <el-timeline-item timestamp="2026-04-05">系统功能优化：支持附件批量下载</el-timeline-item>
-          </el-timeline>
+      <el-col :sm="24" :lg="14">
+        <el-card shadow="hover" class="notice-card">
+          <template #header>
+            <div class="card-header">
+              <span class="title-with-icon"><el-icon><Notification /></el-icon> 最新通知公告</span>
+              <el-link type="primary" :underline="false" @click="$router.push('/system/notice')">查看更多 <el-icon><ArrowRight /></el-icon></el-link>
+            </div>
+          </template>
+          <div class="notice-body">
+            <el-timeline v-if="noticeList.length > 0">
+              <el-timeline-item 
+                v-for="(item, index) in noticeList" 
+                :key="item.noticeId"
+                :timestamp="proxy.parseTime(item.createTime, '{y}-{m}-{d}')" 
+                :type="index === 0 ? 'primary' : ''"
+                :hollow="index !== 0"
+              >
+                <div class="notice-item-title" @click="handleNoticeClick(item)">
+                  <el-tag size="small" :type="getNoticeTag(item.noticeType)" class="mr5">{{ getNoticeTypeName(item.noticeType) }}</el-tag>
+                  <span class="text-main">{{ item.noticeTitle }}</span>
+                </div>
+              </el-timeline-item>
+            </el-timeline>
+            <el-empty v-else description="暂无通知公告" :image-size="80" />
+          </div>
         </el-card>
       </el-col>
-      <el-col :sm="24" :lg="8">
-        <el-card shadow="hover">
-          <template #header><div class="card-header"><span>快速入口</span></div></template>
+      <el-col :sm="24" :lg="10">
+        <el-card shadow="hover" class="quick-card">
+          <template #header><div class="card-header"><span><el-icon><Menu /></el-icon> 快速入口</span></div></template>
           <div class="link-grid">
             <el-button type="primary" icon="Plus" plain @click="handleAchievementApply">成果申请</el-button>
             <el-button type="warning" icon="UserFilled" plain @click="handleMyAchievement">我的成果</el-button>
@@ -118,12 +135,14 @@
 import * as echarts from 'echarts';
 import useUserStore from '@/store/modules/user';
 import { useRouter } from 'vue-router';
-import { onMounted, ref, computed, onUnmounted } from 'vue';
+import { onMounted, ref, computed, onUnmounted, getCurrentInstance } from 'vue';
 import { listManage } from "@/api/achievement/manage";
 import { listStudent } from "@/api/achievement/student";
 import { listCollege_level_unreviewed } from "@/api/achievement/college_level_unreviewed";
 import { listSchool_level_unreviewed } from "@/api/achievement/school_level_unreviewed";
+import { listNotice } from "@/api/system/notice";
 
+const { proxy } = getCurrentInstance();
 const router = useRouter();
 const userStore = useUserStore();
 const trendChartRef = ref(null);
@@ -134,6 +153,7 @@ let pieChart = null;
 const studentStats = ref({ certified: 0, pending: 0, rejected: 0 });
 const reviewerStats = ref({ totalCount: 0, monthCount: 0, studentCount: 0, pendingCount: 0 });
 const chartData = ref({ years: [], yearCounts: [], levels: [] });
+const noticeList = ref([]);
 
 const roles = computed(() => userStore.roles || []);
 const permissions = computed(() => userStore.permissions || []);
@@ -147,16 +167,16 @@ const isOnlyStudent = computed(() => (isStudent.value || isTeacher.value) && !is
 
 const handleAchievementApply = () => {
   if (isTeacher.value) {
-    router.push({ path: '/achievement/teacher', 
-    query: { sourceMode: 'guided' } });
+    router.push({ path: '/achievement/teacher', query: { sourceMode: 'guided' } });
   } else if (isStudent.value) {
-     router.push('/achievement/manage');
-    ;
-  } 
+    router.push('/achievement/student');
+  } else {
+    router.push('/achievement/manage');
+  }
 };
+
 const handleMyAchievement = () => {
-  router.push({ path: '/achievement/participated', 
-  query: { sourceMode: 'participated' } });
+  router.push({ path: '/achievement/participated', query: { sourceMode: 'participated' } });
 };
 
 const getStats = async () => {
@@ -213,6 +233,32 @@ const getChartsData = async () => {
   } catch (e) { console.error(e); }
 };
 
+const getNoticeList = async () => {
+  try {
+    const res = await listNotice({ 
+      pageNum: 1, 
+      pageSize: 6,
+      orderByColumn: 'createTime',
+      isAsc: 'descending'
+    });
+    noticeList.value = res.rows || [];
+  } catch (e) { console.error(e); }
+};
+
+const getNoticeTag = (type) => {
+  const map = { '1': 'success', '2': 'warning', '3': 'danger' };
+  return map[type] || 'info';
+};
+
+const getNoticeTypeName = (type) => {
+  const map = { '1': '通知', '2': '公告', '3': '紧急' };
+  return map[type] || '其他';
+};
+
+const handleNoticeClick = (notice) => {
+  router.push(`/system/notice`); // 实际项目中通常跳转到详情页
+};
+
 const greetingText = computed(() => {
   const hour = new Date().getHours();
   if (hour < 6) return '凌晨好'; if (hour < 9) return '早上好'; if (hour < 12) return '上午好';
@@ -240,7 +286,12 @@ const initCharts = () => {
   });
 };
 
-onMounted(() => { getStats(); getChartsData(); window.addEventListener('resize', () => { trendChart && trendChart.resize(); pieChart && pieChart.resize(); }); });
+onMounted(() => { 
+  getStats(); 
+  getChartsData(); 
+  getNoticeList();
+  window.addEventListener('resize', () => { trendChart && trendChart.resize(); pieChart && pieChart.resize(); }); 
+});
 onUnmounted(() => { if (trendChart) trendChart.dispose(); if (pieChart) pieChart.dispose(); });
 </script>
 
@@ -248,6 +299,7 @@ onUnmounted(() => { if (trendChart) trendChart.dispose(); if (pieChart) pieChart
 .home {
   background-color: #f5f7f9; padding: 20px; min-height: calc(100vh - 84px);
   .mb20 { margin-bottom: 20px; }
+  .mr5 { margin-right: 5px; }
   .welcome-card {
     background: linear-gradient(135deg, #1890ff 0%, #36cfc9 100%); color: #fff; border: none;
     .welcome-header { display: flex; justify-content: space-between; align-items: center;
@@ -260,6 +312,15 @@ onUnmounted(() => { if (trendChart) trendChart.dispose(); if (pieChart) pieChart
     .stat-body { padding: 15px 0; .number { font-size: 36px; font-weight: bold; color: #303133; } .label { margin-left: 10px; color: #909399; font-size: 16px; } }
     &.blue { border-top: 4px solid #1890ff; } &.green { border-top: 4px solid #52c41a; } &.orange { border-top: 4px solid #e6a23c; } &.red { border-top: 4px solid #f56c6c; } &.purple { border-top: 4px solid #722ed1; }
   }
+  .notice-card {
+    height: 100%;
+    .notice-body { padding: 5px 0; min-height: 250px; }
+    .notice-item-title { cursor: pointer; display: inline-flex; align-items: center; transition: all 0.2s; &:hover { color: #1890ff; transform: translateX(5px); } }
+  }
+  .quick-card { height: 100%; }
   .link-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 15px; .el-button { margin: 0; height: 80px; font-size: 16px; display: flex; flex-direction: column; gap: 10px; &:hover { transform: scale(1.02); } } }
+  .card-header { display: flex; justify-content: space-between; align-items: center; font-weight: bold;
+    .title-with-icon { display: flex; align-items: center; gap: 8px; }
+  }
 }
 </style>
