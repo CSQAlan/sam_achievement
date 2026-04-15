@@ -34,7 +34,7 @@
               </el-select>
             </el-form-item>
           </el-col>
-          <el-col :span="3">
+          <el-col :span="4">
             <el-form-item label="届次" prop="sessionId" class="search-item" label-width="40px">
               <el-select
                   v-model="queryParams.sessionId"
@@ -67,7 +67,7 @@
             </el-form-item>
           </el-col>
 
-          <el-col :span="4">
+          <el-col :span="5">
             <el-form-item label="证书编号" prop="certificateNo" class="search-item">
               <el-input
                   v-model="queryParams.certificateNo"
@@ -77,7 +77,7 @@
               />
             </el-form-item>
           </el-col>
-          <el-col :span="10" class="search-action-col">
+          <el-col :span="7" class="search-action-col">
             <el-form-item class="search-item search-action-item">
               <div class="search-action-row">
                 <el-button type="primary" icon="Search" @click="handleQuery">搜索</el-button>
@@ -357,7 +357,7 @@
       <el-table ref="tableRef" v-loading="loading" :data="listData" @selection-change="handleSelectionChange" border stripe>
         <el-table-column type="selection" width="55" align="center" />
         <el-table-column label="成果编号" width="77" align="center" prop="achievementId" />
-        <el-table-column label="比赛" width="120" align="center" prop="competitionName">
+        <el-table-column label="比赛" width="80" align="center" prop="competitionName">
           <template #default="scope">
             <span>{{ scope.row.competitionName || scope.row.competition_name || '-' }}</span>
           </template>
@@ -654,7 +654,7 @@
       </template>
     </el-dialog>
   </div>
-  </div>
+    </div>
 </template>
 
 <script setup>
@@ -1443,7 +1443,8 @@ function clearSelectionState() {
   tableRef.value?.clearSelection?.();
 }
 function handleAdd() {
-  openPageForm();
+  // 新增统一改为弹窗模式
+  openDialog();
 }
 
 async function handleUpdate() {
@@ -1979,7 +1980,7 @@ export default {
 }
 
 .toolbar-status-select {
-  width: 130px !important;
+  width: 200px !important;
 }
 
 .batch-reason-wrapper {
