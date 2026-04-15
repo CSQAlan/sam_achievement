@@ -1,9 +1,14 @@
 <template>
   <div class="achievement-manage-root">
-    <div v-show="!pageModeActive" class="app-container">
-      <!-- 搜索表单 -->
-      <el-form :model="queryParams" ref="queryRef" v-show="showSearch" label-width="68px" class="achievement-search-form">
-        <el-row :gutter="10" class="search-row search-row-primary">
+    <div v-show="!pageModeActive" class="app-container achievement-app-container">
+      <!-- 1. 搜索区域 -->
+      <div class="search-section" v-show="showSearch">
+        <div class="section-title">
+          <el-icon><Search /></el-icon>
+          <span>筛选查询</span>
+        </div>
+        <el-form :model="queryParams" ref="queryRef" label-width="68px" class="achievement-search-form">
+          <el-row :gutter="10" class="search-row search-row-primary">
 
           <el-col :span="4">
             <el-form-item label="比赛" prop="competitionId" class="search-item" label-width="40px">
@@ -203,8 +208,11 @@
           </el-col>
         </el-row>
       </el-form>
+    </div>
 
-      <el-row class="mb8 toolbar-primary-row">
+    <!-- 2. 工具栏与操作区域 -->
+    <div class="action-section">
+      <el-row class="toolbar-row">
         <div class="toolbar-left">
           <el-button
               v-if="showAdd"
@@ -214,6 +222,16 @@
               @click="handleAdd"
               v-hasPermi="permAdd"
           >新增</el-button>
+          <el-button
+              v-if="canBatchReview"
+              type="warning"
+              plain
+              class="toolbar-fixed-button"
+              :loading="selectAllLoading"
+              @click="handleSelectAllResults"
+          >
+            {{ allResultsSelected ? '取消全选' : '全选全部' }}
+          </el-button>
           <el-button
               v-if="showEdit && canUseEditAction"
               type="success"
@@ -260,30 +278,27 @@
               v-hasPermi="permExport"
           >导出选中的附件</el-button>
         </div>
+        <div class="toolbar-right">
+          <el-button icon="Refresh" circle @click="getList" title="刷新列表" />
+        </div>
       </el-row>
 
-      <el-row v-if="canBatchReview" class="mb8 batch-toolbar-row">
-        <div class="batch-toolbar-panel">
-          <el-button
-              type="warning"
-              plain
-              class="toolbar-fixed-button"
-              :loading="selectAllLoading"
-              @click="handleSelectAllResults"
-          >
-            {{ allResultsSelected ? '取消全选' : '全选全部' }}
-          </el-button>
-
-          <div v-if="allResultsSelected" class="toolbar-selection-slot">
-            <el-tag type="warning">
-              已选全部 {{ allResultsCount }} 条
-            </el-tag>
-          </div>
+      <!-- 批量审核面板 - 仅在选中且有权限时显示 -->
+      <transition name="el-zoom-in-top">
+        <el-row v-if="canBatchReview && ids.length > 0" class="batch-toolbar-row">
+          <div class="batch-toolbar-panel">
+            <div class="batch-panel-header">
+              <el-tag type="warning" effect="dark" class="selection-count-tag">
+                {{ allResultsSelected ? '已选全部' : '已选' }} {{ allResultsSelected ? allResultsCount : ids.length }} 项
+              </el-tag>
+              <div class="divider-vertical"></div>
+            </div>
 
           <el-select
               v-model="batchReviewStatus"
               class="toolbar-status-select"
               placeholder="请选择批量状态"
+              style="width: 500px;"
               clearable
           >
             <el-option
@@ -308,6 +323,7 @@
 
           <div class="batch-reason-inline" :class="{ 'is-active': showBatchRejectReason }">
             <el-input
+                style="width: 500px;"
                 v-model="batchRejectReasonCustom"
                 class="batch-reason-input"
                 clearable
@@ -330,11 +346,15 @@
                 </el-dropdown>
               </template>
             </el-input>
+            </div>
           </div>
-        </div>
-      </el-row>
+        </el-row>
+      </transition>
+    </div>
 
-      <el-table ref="tableRef" v-loading="loading" :data="listData" @selection-change="handleSelectionChange">
+    <!-- 3. 数据表格区域 -->
+    <div class="table-section">
+      <el-table ref="tableRef" v-loading="loading" :data="listData" @selection-change="handleSelectionChange" border stripe>
         <el-table-column type="selection" width="55" align="center" />
         <el-table-column label="成果编号" width="77" align="center" prop="achievementId" />
         <el-table-column label="比赛" width="120" align="center" prop="competitionName">
@@ -470,7 +490,6 @@
           v-model:limit="queryParams.pageSize"
           @pagination="getList"
       />
-
     </div>
 
     <AchievementForm
@@ -635,6 +654,7 @@
       </template>
     </el-dialog>
   </div>
+  </div>
 </template>
 
 <script setup>
@@ -644,7 +664,7 @@ import { useDict } from '@/utils/dict';
 import { blobValidate } from '@/utils/ruoyi';
 import useUserStore from '@/store/modules/user';
 import auth from '@/plugins/auth';
-import { Warning, Pointer, Edit, View } from '@element-plus/icons-vue';
+import { Warning, Pointer, Edit, View, Search } from '@element-plus/icons-vue';
 import { saveAs } from 'file-saver';
 import AchievementForm from '../component/AchievementForm.vue';
 import { listManage, getManage, addManage, updateManage, delManage, exportAttachmentZip } from '@/api/achievement/manage';
@@ -1868,91 +1888,132 @@ export default {
   white-space: nowrap;
 }
 
-.search-item :deep(.el-input),
-.search-item :deep(.el-select),
-.search-item :deep(.el-date-editor) {
-  width: 100%;
-}
-
-.attachment-export-group {
+/* 核心布局优化 */
+.achievement-app-container {
+  padding: 16px;
+  background-color: #f0f2f5;
+  min-height: calc(100vh - 84px);
   display: flex;
   flex-direction: column;
-  gap: 10px;
+  gap: 16px;
 }
 
-.toolbar-primary-row {
+.search-section {
+  background: #fff;
+  padding: 16px 20px 4px 20px;
+  border-radius: 4px;
+  box-shadow: 0 1px 4px rgba(0,21,41,0.08);
+}
+
+.section-title {
   display: flex;
   align-items: center;
+  gap: 8px;
+  margin-bottom: 20px;
+  font-size: 14px;
+  font-weight: 600;
+  color: #303133;
+  border-bottom: 1px solid #f0f0f0;
+  padding-bottom: 12px;
 }
 
-.toolbar-left {
+.section-title .el-icon {
+  color: var(--el-color-primary);
+}
+
+.action-section {
+  background: #fff;
+  padding: 16px 20px;
+  border-radius: 4px;
+  box-shadow: 0 1px 4px rgba(0,21,41,0.08);
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.toolbar-row {
   display: flex;
   align-items: center;
-  flex-wrap: nowrap;
-  gap: 10px;
-  flex: 0 0 auto;
+  justify-content: space-between;
 }
 
+.table-section {
+  background: #fff;
+  padding: 12px 20px 20px 20px;
+  border-radius: 4px;
+  box-shadow: 0 1px 4px rgba(0,21,41,0.08);
+  flex: 1;
+}
+
+/* 批量操作面板样式强化 */
 .batch-toolbar-row {
-  display: flex;
-  align-items: center;
+  background-color: var(--el-color-primary-light-9, #f0f9eb);
+  border: 1px solid var(--el-color-primary-light-7, #e1f3d8);
+  border-radius: 4px;
+  margin-top: 8px;
+  padding: 10px 20px;
+  animation: slideInDown 0.3s ease-out;
 }
 
 .batch-toolbar-panel {
   width: 100%;
   display: flex;
   align-items: center;
-  gap: 10px;
-  padding: 0;
-  overflow-x: auto;
-  overflow-y: hidden;
+  gap: 15px;
+  flex-wrap: wrap;
 }
 
-.toolbar-fixed-button {
-  flex: 0 0 auto;
+@keyframes slideInDown {
+  from { opacity: 0; transform: translateY(-10px); }
+  to { opacity: 1; transform: translateY(0); }
 }
 
-.toolbar-selection-slot {
+.batch-panel-header {
   display: flex;
   align-items: center;
-  flex: 0 0 auto;
+}
+
+.selection-count-tag {
+  font-weight: bold;
+  font-size: 13px;
 }
 
 .toolbar-status-select {
-  flex: 0 0 150px;
-  width: 150px;
+  width: 130px !important;
 }
 
-.batch-reason-inline {
-  flex: 1 0 430px;
-  min-width: 430px;
-  display: flex;
-  align-items: center;
-  gap: 10px;
-  visibility: hidden;
-  pointer-events: none;
+.batch-reason-wrapper {
+  flex: 1;
+  min-width: 300px;
 }
 
-.batch-reason-inline.is-active {
-  visibility: visible;
-  pointer-events: auto;
+.batch-submit-btn {
+  margin-left: auto;
+  font-weight: 600;
 }
 
-.batch-reason-input {
-  flex: 1 1 auto;
-  min-width: 0;
+.divider-vertical {
+  width: 1px;
+  height: 18px;
+  background-color: var(--el-color-primary-light-7, #dcdfe6);
+  margin: 0 16px;
 }
 
-.batch-reason-dropdown-link {
-  display: inline-flex;
-  align-items: center;
-  cursor: pointer;
-  white-space: nowrap;
-  color: var(--el-text-color-regular);
+.achievement-search-form {
+  margin-bottom: 0;
 }
 
-.batch-toolbar-panel :deep(.el-tag) {
-  white-space: nowrap;
+.search-row-advanced {
+  border-top: 1px dashed #ebeef5;
+  padding-top: 16px;
+  margin-top: 8px;
+}
+
+/* 表格表头美化 */
+.table-section :deep(.el-table__header-wrapper) th {
+  background-color: #f8f9fb !important;
+  color: #606266;
+  font-weight: 600;
 }
 
 .ellipsis-cell {
