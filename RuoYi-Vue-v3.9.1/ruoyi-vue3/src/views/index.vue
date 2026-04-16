@@ -1,7 +1,7 @@
 <template>
   <div class="app-container home">
     <!-- 1. 顶部个性化欢迎语 -->
-    <el-row :gutter="20" class="mb20">
+    <el-row :gutter="20" class="row-welcome mb10">
       <el-col :span="24">
         <el-card shadow="hover" class="welcome-card">
           <div class="welcome-header">
@@ -22,7 +22,7 @@
     </el-row>
 
     <!-- 2. 动态统计卡片 -->
-    <el-row :gutter="20" class="mb20">
+    <el-row :gutter="20" class="row-stats mb10">
       <template v-if="isOnlyStudent">
         <el-col :sm="24" :lg="8">
           <el-card shadow="hover" class="stat-card blue">
@@ -72,23 +72,27 @@
     </el-row>
 
     <!-- 3. 数据图表区 -->
-    <el-row :gutter="20" class="mb20">
+    <el-row :gutter="20" class="row-charts mb10">
       <el-col :sm="24" :lg="14">
-        <el-card shadow="hover">
+        <el-card shadow="hover" class="chart-card">
           <template #header><div class="card-header"><span>年度成果产出趋势</span></div></template>
-          <div ref="trendChartRef" style="height: 350px;"></div>
+          <div class="chart-wrapper">
+            <div ref="trendChartRef" style="height: 100%; width: 100%;"></div>
+          </div>
         </el-card>
       </el-col>
       <el-col :sm="24" :lg="10">
-        <el-card shadow="hover">
+        <el-card shadow="hover" class="chart-card">
           <template #header><div class="card-header"><span>获奖级别分布占比</span></div></template>
-          <div ref="pieChartRef" style="height: 350px;"></div>
+          <div class="chart-wrapper">
+            <div ref="pieChartRef" style="height: 100%; width: 100%;"></div>
+          </div>
         </el-card>
       </el-col>
     </el-row>
 
     <!-- 4. 底部功能区 -->
-    <el-row :gutter="20">
+    <el-row :gutter="20" class="row-bottom">
       <el-col :sm="24" :lg="14">
         <el-card shadow="hover" class="notice-card">
           <template #header>
@@ -112,7 +116,7 @@
                 </div>
               </el-timeline-item>
             </el-timeline>
-            <el-empty v-else description="暂无通知公告" :image-size="80" />
+            <el-empty v-else description="暂无通知公告" :image-size="60" />
           </div>
         </el-card>
       </el-col>
@@ -135,7 +139,7 @@
 import * as echarts from 'echarts';
 import useUserStore from '@/store/modules/user';
 import { useRouter } from 'vue-router';
-import { onMounted, ref, computed, onUnmounted, getCurrentInstance } from 'vue';
+import { onMounted, ref, computed, onUnmounted, getCurrentInstance, nextTick } from 'vue';
 import { listManage } from "@/api/achievement/manage";
 import { listStudent } from "@/api/achievement/student";
 import { listCollege_level_unreviewed } from "@/api/achievement/college_level_unreviewed";
@@ -229,7 +233,9 @@ const getChartsData = async () => {
     const levelRes = await Promise.all(levelConfigs.map(c => listManage({ pageNum: 1, pageSize: 1, level: c.value })));
     chartData.value.levels = levelConfigs.map((c, i) => ({ name: c.label, value: levelRes[i].total || 0, itemStyle: { color: c.color } })).filter(item => item.value > 0);
     if (chartData.value.levels.length === 0) chartData.value.levels = [{ name: '暂无数据', value: 0, itemStyle: { color: '#eee' } }];
-    initCharts();
+    nextTick(() => {
+      initCharts();
+    });
   } catch (e) { console.error(e); }
 };
 
@@ -297,30 +303,113 @@ onUnmounted(() => { if (trendChart) trendChart.dispose(); if (pieChart) pieChart
 
 <style scoped lang="scss">
 .home {
-  background-color: #f5f7f9; padding: 20px; min-height: calc(100vh - 84px);
-  .mb20 { margin-bottom: 20px; }
+  background-color: #f5f7f9; 
+  padding: 10px; 
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  box-sizing: border-box;
+
+  .mb10 { margin-bottom: 10px; }
   .mr5 { margin-right: 5px; }
-  .welcome-card {
-    background: linear-gradient(135deg, #1890ff 0%, #36cfc9 100%); color: #fff; border: none;
-    .welcome-header { display: flex; justify-content: space-between; align-items: center;
-      .user-greeting { h2 { font-size: 26px; margin: 0 0 10px 0; font-weight: 600; } .sub-text { opacity: 0.9; font-size: 15px; } .warning-text { background: rgba(255, 255, 255, 0.2); padding: 4px 12px; border-radius: 4px; margin-top: 5px; display: inline-flex; align-items: center; gap: 5px; } }
-      .date-box { text-align: right; .date { display: block; font-size: 18px; font-weight: bold; } .week { font-size: 14px; opacity: 0.8; } }
+
+  .row-welcome { flex: 0 0 auto; margin-bottom: 10px; }
+  .row-stats { flex: 0 0 auto; margin-bottom: 10px; }
+  .row-charts { 
+    flex: 5 1 0%; 
+    min-height: 0;
+    display: flex;
+    margin-bottom: 10px;
+    .el-col { 
+      display: flex; 
+      flex-direction: column;
+      height: 100%;
+      .el-card { 
+        flex: 1; 
+        display: flex; 
+        flex-direction: column;
+        overflow: hidden;
+        :deep(.el-card__header) { padding: 8px 12px; border-bottom: 1px solid #f0f0f0; }
+        :deep(.el-card__body) { 
+          flex: 1; 
+          padding: 8px;
+          overflow: hidden;
+          display: flex;
+          flex-direction: column;
+          .chart-wrapper { flex: 1; width: 100%; min-height: 0; }
+        }
+      }
     }
   }
+  .row-bottom { 
+    flex: 4 1 0%; 
+    min-height: 0;
+    display: flex;
+    .el-col { 
+      display: flex; 
+      flex-direction: column;
+      height: 100%;
+      .el-card { 
+        flex: 1; 
+        display: flex; 
+        flex-direction: column;
+        overflow: hidden;
+        :deep(.el-card__header) { padding: 8px 12px; border-bottom: 1px solid #f0f0f0; }
+        :deep(.el-card__body) { 
+          flex: 1; 
+          padding: 8px;
+          overflow: hidden;
+        }
+      }
+    }
+  }
+
+  .welcome-card {
+    background: linear-gradient(135deg, #1890ff 0%, #36cfc9 100%); color: #fff; border: none;
+    :deep(.el-card__body) { padding: 10px 15px; }
+    .welcome-header { display: flex; justify-content: space-between; align-items: center;
+      .user-greeting { h2 { font-size: 18px; margin: 0 0 2px 0; font-weight: 600; } .sub-text { opacity: 0.9; font-size: 12px; } .warning-text { background: rgba(255, 255, 255, 0.2); padding: 2px 8px; border-radius: 4px; margin-top: 2px; display: inline-flex; align-items: center; gap: 5px; } }
+      .date-box { text-align: right; .date { display: block; font-size: 14px; font-weight: bold; } .week { font-size: 11px; opacity: 0.8; } }
+    }
+  }
+
   .stat-card {
-    .card-header { display: flex; justify-content: space-between; align-items: center; font-weight: bold; }
-    .stat-body { padding: 15px 0; .number { font-size: 36px; font-weight: bold; color: #303133; } .label { margin-left: 10px; color: #909399; font-size: 16px; } }
-    &.blue { border-top: 4px solid #1890ff; } &.green { border-top: 4px solid #52c41a; } &.orange { border-top: 4px solid #e6a23c; } &.red { border-top: 4px solid #f56c6c; } &.purple { border-top: 4px solid #722ed1; }
+    :deep(.el-card__header) { padding: 6px 12px; border-bottom: 1px solid #f0f0f0; }
+    :deep(.el-card__body) { padding: 8px 12px; }
+    .card-header { display: flex; justify-content: space-between; align-items: center; font-weight: bold; font-size: 12px; }
+    .stat-body { padding: 2px 0; .number { font-size: 22px; font-weight: bold; color: #303133; } .label { margin-left: 4px; color: #909399; font-size: 12px; } }
+    &.blue { border-top: 3px solid #1890ff; } &.green { border-top: 3px solid #52c41a; } &.orange { border-top: 3px solid #e6a23c; } &.red { border-top: 3px solid #f56c6c; } &.purple { border-top: 3px solid #722ed1; }
   }
+
   .notice-card {
-    height: 100%;
-    .notice-body { padding: 5px 0; min-height: 250px; }
-    .notice-item-title { cursor: pointer; display: inline-flex; align-items: center; transition: all 0.2s; &:hover { color: #1890ff; transform: translateX(5px); } }
+    .notice-body { height: 100%; overflow-y: auto; padding-right: 5px; 
+      &::-webkit-scrollbar { width: 3px; }
+      &::-webkit-scrollbar-thumb { background: #e8e8e8; border-radius: 10px; }
+    }
+    .notice-item-title { cursor: pointer; display: inline-flex; align-items: center; transition: all 0.2s; font-size: 13px; &:hover { color: #1890ff; transform: translateX(3px); } }
   }
-  .quick-card { height: 100%; }
-  .link-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 15px; .el-button { margin: 0; height: 80px; font-size: 16px; display: flex; flex-direction: column; gap: 10px; &:hover { transform: scale(1.02); } } }
-  .card-header { display: flex; justify-content: space-between; align-items: center; font-weight: bold;
-    .title-with-icon { display: flex; align-items: center; gap: 8px; }
+
+  .quick-card {
+    .link-grid { 
+      display: grid; grid-template-columns: repeat(2, 1fr); gap: 8px; height: 100%;
+      .el-button { margin: 0; height: 100%; font-size: 14px; display: flex; flex-direction: column; gap: 4px; padding: 6px; &:hover { transform: scale(1.02); } } 
+    }
+  }
+
+  .card-header { display: flex; justify-content: space-between; align-items: center; font-weight: bold; font-size: 13px;
+    .title-with-icon { display: flex; align-items: center; gap: 4px; }
+  }
+}
+
+// 针对小屏幕进一步优化
+@media (max-height: 700px) {
+  .home {
+    padding: 8px;
+    .mb10 { margin-bottom: 8px; }
+    .row-welcome, .row-stats, .row-charts { margin-bottom: 8px; }
+    .welcome-card :deep(.el-card__body) { padding: 8px 12px; }
+    .stat-body .number { font-size: 20px; }
   }
 }
 </style>
