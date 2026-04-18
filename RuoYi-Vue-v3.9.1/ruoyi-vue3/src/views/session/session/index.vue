@@ -211,7 +211,7 @@
                 </div>
 
                 <div v-if="templatePreviewUrl" class="preview-box template-preview">
-                  <iframe :src="templatePreviewUrl" width="100%" height="240px" frameborder="0"></iframe>
+                  <iframe :src="`${templatePreviewUrl}#toolbar=0&navpanes=0&zoom=70`" width="100%" height="240px" frameborder="0"></iframe>
                 </div>
 
                 <el-divider content-position="left">新参赛通知文件</el-divider>
@@ -234,8 +234,17 @@
                 </div>
               </div>
 
+              <div v-if="noticePreviewUrl" class="preview-ctrl-row">
+                <el-button-group>
+                  <el-button :icon="Minus" @click="noticeZoom = Math.max(50, noticeZoom - 20)" size="small">缩小</el-button>
+                  <el-button size="small" style="width: 60px">{{ noticeZoom }}%</el-button>
+                  <el-button :icon="Plus" @click="noticeZoom = Math.min(300, noticeZoom + 20)" size="small">放大</el-button>
+                </el-button-group>
+                <el-button :icon="Refresh" @click="noticeZoom = 100" size="small" style="margin-left: 8px">重置</el-button>
+              </div>
+
               <div v-if="noticePreviewUrl" class="preview-box">
-                <iframe :src="noticePreviewUrl" width="100%" height="520px" frameborder="0"></iframe>
+                <iframe :key="`notice-${noticeZoom}`" :src="`${noticePreviewUrl}#toolbar=0&navpanes=0&scrollbar=1&zoom=${noticeZoom}`" width="100%" height="520px" frameborder="0"></iframe>
               </div>
             </div>
           </el-col>
@@ -293,7 +302,6 @@
             </el-table-column>
           </el-table>
         </el-col>
-
         <el-col :span="10">
           <div class="attach-card batch-attach">
             <el-divider content-position="left">当前选中记录：新通知（必传PDF）</el-divider>
@@ -316,8 +324,16 @@
               </div>
             </div>
 
+            <div v-if="batchPreviewUrl" class="preview-ctrl-row">
+              <el-button-group>
+                <el-button :icon="Minus" @click="batchZoom = Math.max(50, batchZoom - 20)" size="small" />
+                <el-button size="small" style="width: 55px">{{ batchZoom }}%</el-button>
+                <el-button :icon="Plus" @click="batchZoom = Math.min(300, batchZoom + 20)" size="small" />
+              </el-button-group>
+            </div>
+
             <div v-if="batchPreviewUrl" class="preview-box">
-              <iframe :src="batchPreviewUrl" width="100%" height="300px" frameborder="0"></iframe>
+              <iframe :key="`batch-${batchZoom}`" :src="`${batchPreviewUrl}#toolbar=0&navpanes=0&scrollbar=1&zoom=${batchZoom}`" width="100%" height="300px" frameborder="0"></iframe>
             </div>
             <div v-else class="text-muted">点击左侧表格行切换当前行</div>
           </div>
@@ -353,7 +369,7 @@ import { listSession, getSession, delSession, addSession, updateSession, exportT
 import { listCompetition } from "@/api/competition/competition"
 import request from "@/utils/request"
 import UploadFile from "@/components/FileUpload"
-import { Delete, Document, Download, View, QuestionFilled, Checked, Calendar } from "@element-plus/icons-vue"
+import { Delete, Document, Download, View, QuestionFilled, Checked, Calendar, Plus, Minus, ZoomIn, ZoomOut, Refresh } from "@element-plus/icons-vue"
 
 const { proxy } = getCurrentInstance()
 const { sys_competition_tag, sys_competition_status, sys_competition_del_flag, sys_competition_category, sys_competition_level } = proxy.useDict('sys_competition_tag', 'sys_competition_status', 'sys_competition_del_flag', 'sys_competition_category', 'sys_competition_level')
@@ -442,6 +458,7 @@ const data = reactive({
 const { queryParams, form, rules } = toRefs(data)
 
 const noticePreviewUrl = ref("")
+const noticeZoom = ref(100)
 const templateUuid = ref("")
 const templatePreviewUrl = ref("")
 
@@ -449,6 +466,7 @@ const batchOpen = ref(false)
 const batchItems = ref([])
 const batchActiveIndex = ref(0)
 const batchPreviewUrl = ref("")
+const batchZoom = ref(100)
 
 const activeBatchItem = computed(() => batchItems.value?.[batchActiveIndex.value] || null)
 
@@ -1309,6 +1327,14 @@ getCompetitionList()
   border: 1px solid #e5e7eb;
   border-radius: 8px;
   background: #f9fafb;
+}
+
+.preview-ctrl-row {
+  margin-top: 10px;
+  margin-bottom: 5px;
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
 }
 
 .preview-box {
