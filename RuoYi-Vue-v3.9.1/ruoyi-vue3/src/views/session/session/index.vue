@@ -74,11 +74,29 @@
         <el-button type="primary" plain icon="CopyDocument" :disabled="!selectedRows.length" @click="handleBatchCopySelected"
           v-hasPermi="['session:session:add']">批量复制（所选）</el-button>
       </el-col>
+      <el-col :span="1.8">
+        <el-button type="info" plain icon="Checked" @click="handleSelectAllFiltered"
+          v-hasPermi="['session:session:list']">全选当前结果</el-button>
+      </el-col>
+      <el-col :span="1.8">
+        <el-button type="info" plain icon="Calendar" @click="handleSelectByYear"
+          v-hasPermi="['session:session:list']">按年份全选</el-button>
+      </el-col>
       <right-toolbar v-model:showSearch="showSearch" @queryTable="getList"></right-toolbar>
     </el-row>
 
-    <el-table v-loading="loading" :data="sessionList" @selection-change="handleSelectionChange">
-      <el-table-column type="selection" width="55" align="center" />
+    <el-alert v-if="isAllSelected" type="info" show-icon :closable="false" class="mb10">
+      <template #title>
+        已全选所有符合条件的记录（共 {{ ids.length }} 条）
+        <el-button link type="primary" @click="toggleReviewMode" style="margin-left: 10px">
+          {{ queryParams.ids ? '显示全部' : '查看已选' }}
+        </el-button>
+        <el-button link type="danger" @click="handleClearSelection" style="margin-left: 10px">取消全选</el-button>
+      </template>
+    </el-alert>
+
+    <el-table v-loading="loading" :data="sessionList" @selection-change="handleSelectionChange" row-key="id" ref="sessionTableRef">
+      <el-table-column type="selection" width="55" align="center" reserve-selection />
       <el-table-column label="赛事名称" align="center" prop="competitionName">
         <template #default="scope">
           {{ scope.row.competitionName || getCompetitionName(scope.row.competitionId) || scope.row.competitionId }}
@@ -146,7 +164,13 @@
               </el-radio-group>
             </el-form-item>
             <el-form-item label="盖章单位" prop="organizations">
-              <el-input v-model="form.organizations" placeholder="请输入盖章单位" />
+              <el-input v-model="form.organizations" placeholder="请输入盖章单位">
+                <template #append>
+                  <el-tooltip content="多个单位请使用英文逗号(,)或中文逗号(，)隔开" placement="top">
+                    <el-icon><QuestionFilled /></el-icon>
+                  </el-tooltip>
+                </template>
+              </el-input>
             </el-form-item>
             <el-form-item label="赛事级别" prop="level">
               <el-radio-group v-model="form.level">
@@ -307,15 +331,29 @@
         </div>
       </template>
     </el-dialog>
+
+    <!-- 新增：年份选择弹窗（带加减器） -->
+    <el-dialog title="按年份一键选择" v-model="yearSelectOpen" width="400px" append-to-body>
+      <div style="text-align: center; padding: 20px 0;">
+        <span style="margin-right: 15px;">选择年份:</span>
+        <el-input-number v-model="quickYear" :min="2000" :max="2100" controls-position="right" placeholder="年份" style="width: 180px" />
+      </div>
+      <template #footer>
+        <div class="dialog-footer">
+          <el-button @click="yearSelectOpen = false">取消</el-button>
+          <el-button type="primary" @click="executeSelectByYear">确认全选</el-button>
+        </div>
+      </template>
+    </el-dialog>
   </div>
 </template>
 
 <script setup name="Session">
-import { listSession, getSession, delSession, addSession, updateSession, exportTemplateSession, importDataSession, updateSessionStatusByIds, batchCopySession } from "@/api/session/session"
+import { listSession, getSession, delSession, addSession, updateSession, exportTemplateSession, importDataSession, updateSessionStatusByIds, batchCopySession, allIdsSession } from "@/api/session/session"
 import { listCompetition } from "@/api/competition/competition"
 import request from "@/utils/request"
 import UploadFile from "@/components/FileUpload"
-import { Delete, Document, Download, View } from "@element-plus/icons-vue"
+import { Delete, Document, Download, View, QuestionFilled, Checked, Calendar } from "@element-plus/icons-vue"
 
 const { proxy } = getCurrentInstance()
 const { sys_competition_tag, sys_competition_status, sys_competition_del_flag, sys_competition_category, sys_competition_level } = proxy.useDict('sys_competition_tag', 'sys_competition_status', 'sys_competition_del_flag', 'sys_competition_category', 'sys_competition_level')
@@ -333,6 +371,10 @@ const single = ref(true)
 const multiple = ref(true)
 const total = ref(0)
 const title = ref("")
+const isAllSelected = ref(false)
+const sessionTableRef = ref(null)
+const yearSelectOpen = ref(false)
+const quickYear = ref(new Date().getFullYear())
 
 const hasPreRecordSelection = computed(() => selectedRows.value.some(item => String(item?.status) === "2"))
 
@@ -584,6 +626,15 @@ function getList() {
     sessionList.value = response.rows
     total.value = response.total
     loading.value = false
+    
+    // 如果处于全选模式，加载数据后自动勾选当前页
+    if (isAllSelected.value) {
+      nextTick(() => {
+        sessionList.value.forEach(row => {
+          sessionTableRef.value.toggleRowSelection(row, true)
+        })
+      })
+    }
   })
 }
 
@@ -630,6 +681,8 @@ function handleQuery() {
 /** 重置按钮操作 */
 function resetQuery() {
   proxy.resetForm("queryRef")
+  isAllSelected.value = false
+  queryParams.value.ids = null
   handleQuery()
 }
 
@@ -639,6 +692,109 @@ function handleSelectionChange(selection) {
   ids.value = selection.map(item => item.id)
   single.value = selection.length != 1
   multiple.value = !selection.length
+  
+  // 如果手动取消勾选了某些项，则关闭“全选模式”的状态，改为普通多选状态
+  if (isAllSelected.value && selection.length < ids.value.length) {
+    // 这里其实不需要特别处理，因为 ids.value 已经由 map 得到了
+  }
+}
+
+/** 全选当前筛选条件下的所有ID */
+async function handleSelectAllFiltered() {
+  // 1. 先清空已选，避免混合
+  handleClearSelection()
+  
+  proxy.$modal.loading("正在获取符合条件的全部数据...")
+  try {
+    const res = await allIdsSession(queryParams.value)
+    const allIds = res.data || []
+    if (allIds.length === 0) {
+      proxy.$modal.msgWarning("当前筛选条件下无数据")
+      return
+    }
+    
+    proxy.$modal.confirm(`确认要选择当前条件下全部 ${allIds.length} 条记录进行批量操作吗？`).then(() => {
+      ids.value = allIds
+      isAllSelected.value = true
+      selectedRows.value = allIds.map(id => ({ id, status: '?' }))
+      multiple.value = false
+      
+      // 立即勾选当前页
+      sessionList.value.forEach(row => {
+        sessionTableRef.value.toggleRowSelection(row, true)
+      })
+      
+      proxy.$modal.msgSuccess(`已全选 ${allIds.length} 条记录`)
+    }).catch(() => {})
+  } catch (error) {
+    console.error(error)
+    proxy.$modal.msgError("获取数据失败")
+  } finally {
+    proxy.$modal.closeLoading()
+  }
+}
+
+/** 切换“查看已选”模式 */
+function toggleReviewMode() {
+  if (queryParams.value.ids) {
+    // 退出查看已选：清除 ids 过滤
+    queryParams.value.ids = null
+  } else {
+    // 进入查看已选：设置 ids 过滤
+    queryParams.value.ids = ids.value
+  }
+  handleQuery()
+}
+
+/** 取消全选 */
+function handleClearSelection() {
+  isAllSelected.value = false
+  queryParams.value.ids = null
+  ids.value = []
+  selectedRows.value = []
+  sessionTableRef.value.clearSelection()
+  multiple.value = true
+}
+
+/** 按年份快速全选 - 打开弹窗 */
+function handleSelectByYear() {
+  quickYear.value = new Date().getFullYear() // 默认当年
+  yearSelectOpen.value = true
+}
+
+/** 执行按年份全选逻辑 */
+function executeSelectByYear() {
+  const value = quickYear.value
+  if (!value) return
+  
+  // 1. 先清空已选，避免混合
+  handleClearSelection()
+  
+  yearSelectOpen.value = false
+  proxy.$modal.loading(`正在获取 ${value} 年的所有届次ID...`)
+  allIdsSession({ year: value }).then(res => {
+    const allIds = res.data || []
+    if (allIds.length === 0) {
+      proxy.$modal.msgWarning(`${value} 年暂无相关记录`)
+      return
+    }
+    ids.value = allIds
+    isAllSelected.value = true
+    selectedRows.value = allIds.map(id => ({ id, status: '?' }))
+    multiple.value = false
+    
+    // 立即勾选当前页（如果当前页确实是这个年份的）
+    sessionList.value.forEach(row => {
+      if (row.year == value) {
+        sessionTableRef.value.toggleRowSelection(row, true)
+      }
+    })
+    
+    proxy.$modal.msgSuccess(`已成功全选 ${value} 年共 ${allIds.length} 条记录`)
+  }).catch(() => {
+  }).finally(() => {
+    proxy.$modal.closeLoading()
+  })
 }
 
 function resetBatchCopyState() {

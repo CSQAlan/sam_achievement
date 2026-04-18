@@ -72,6 +72,13 @@ public class SessionServiceImpl implements ISessionService {
         fileUuidMapper.updateFileUuidStatus(new String[] { uuid }, 0);
     }
 
+    private String normalizeOrganizations(String organizations) {
+        if (StringUtils.isBlank(organizations)) {
+            return organizations;
+        }
+        return organizations.replaceAll("，", ",");
+    }
+
     private void syncTagsToSubTable(Long sessionId, String tagsCode, String operName) {
         sessionMapper.deleteTagBySessionId(sessionId);
         if (StringUtils.isBlank(tagsCode)) {
@@ -114,12 +121,19 @@ public class SessionServiceImpl implements ISessionService {
         return sessionMapper.selectSessionList(session);
     }
 
+    @Override
+    public Long[] selectSessionIds(Session session) {
+        return sessionMapper.selectSessionIds(session);
+    }
+
     @Transactional(rollbackFor = Exception.class)
     @Override
     @BizAudit(bizType = "session", bizName = "新增届次", opType = BizAuditOpType.ADD, handler = "sessionBizAuditHandler", async = false)
     public int insertSession(Session session) {
         // year：默认当前年
         session.setYear(resolveYear(session.getYear()));
+        // 规范化盖章单位
+        session.setOrganizations(normalizeOrganizations(session.getOrganizations()));
         // uuid：启用时必填且必须为PDF
         if ("1".equals(session.getStatus())) {
             validateAndFinalizeNoticeUuid(session.getUuid());
@@ -159,6 +173,8 @@ public class SessionServiceImpl implements ISessionService {
         }
         // year：为空则默认当前年（避免被更新成null）
         session.setYear(resolveYear(session.getYear()));
+        // 规范化盖章单位
+        session.setOrganizations(normalizeOrganizations(session.getOrganizations()));
         // uuid：启用时必填且必须为PDF
         if ("1".equals(session.getStatus())) {
             validateAndFinalizeNoticeUuid(session.getUuid());
@@ -500,6 +516,7 @@ public class SessionServiceImpl implements ISessionService {
         session.setCategory(categoryCode);
         session.setLevel(levelCode);
         session.setTags(tagsCode); // 届次表保留编码，用于导出
+        session.setOrganizations(normalizeOrganizations(session.getOrganizations()));
         session.setStatus("1");
         session.setDelFlag("0");
         session.setCreateBy(operName);

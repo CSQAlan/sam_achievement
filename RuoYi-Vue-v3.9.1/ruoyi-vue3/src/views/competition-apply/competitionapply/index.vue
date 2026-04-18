@@ -259,6 +259,13 @@
             <el-form-item label="届次" prop="session">
               <el-input v-model="form.session" placeholder="例如：2025、十二届" />
             </el-form-item>
+           
+            
+            <el-alert v-if="preRecordedNote" type="warning" show-icon :closable="false" class="mb20">
+              <template #title>
+                {{ preRecordedNote }}
+              </template>
+            </el-alert>
 
 
           </el-form>
@@ -426,11 +433,13 @@ import {
   reactive,
   ref,
   watch,
+  toRefs
 } from "vue";
 import { useRoute } from "vue-router";
-import { Delete, Document, Download, View } from "@element-plus/icons-vue";
+import { Delete, Document, Download, View, QuestionFilled } from "@element-plus/icons-vue";
 import request, { download } from "@/utils/request";
 import UploadFile from "@/components/FileUpload";
+import { listSession } from "@/api/session/session";
 import {
   addCompetitionapply,
   delCompetitionapply,
@@ -476,6 +485,8 @@ const activeAttachmentTab = ref("certificate");
 const routePreviewUrl = ref("");
 const competitionOptions = ref([]);
 
+const preRecordedNote = ref("");
+
 function fetchCompetitionOptions() {
   request({
     url: '/competition/competition/optionList',
@@ -504,35 +515,26 @@ const rules = {
 
 const previewUrls = reactive({
   certificate: "",
-  category: "",
   notice: "",
 });
 
 const attachmentNames = reactive({
   certificate: "",
-  category: "",
   notice: "",
 });
 
 const attachmentFieldMap = {
   certificate: "certificateFile",
-  category: "categoryFile",
   notice: "noticeFile",
 };
 
 const defaultAttachmentConfig = [
+// ...
   {
     name: "certificate",
     dictValue: "1",
     fallbackLabel: "奖状",
     alert: "请上传奖状 PDF 文件",
-  },
-  {
-    name: "category",
-    // 竞赛目录：按字典约定为 7
-    dictValue: "7",
-    fallbackLabel: "竞赛目录",
-    alert: "请上传竞赛目录 PDF 文件",
   },
   {
     name: "notice",
@@ -576,7 +578,6 @@ function createDefaultForm() {
     tags: [],
     memo: null,
     certificateFile: null,
-    categoryFile: null,
     noticeFile: null,
     competitionApplyAttachmentList: [],
     attachmentUrls: "",
@@ -949,6 +950,42 @@ onBeforeUnmount(() => {
 
 fetchCompetitionOptions();
 getList();
+// 监听名/年/届，检测预录状态
+watch([() => form.value.name, () => form.value.year, () => form.value.session], ([name, year, session]) => {
+  if (name && year && String(session).trim()) {
+    checkSessionStatus(name, year, session);
+  } else {
+    preRecordedNote.value = "";
+  }
+});
+
+async function checkSessionStatus(name, year, session) {
+  try {
+    const res = await listSession({ competitionName: name, year, session: String(session).trim() });
+    const list = res.rows || [];
+    if (list.length > 0) {
+      const s = list[0];
+      if (String(s.status) === '2') {
+        if (!s.uuid) {
+          preRecordedNote.value = "该比赛尚未上传正式通知，请您在“通知文件”页签中补齐官方 PDF 通知，以便管理员审核并通过。";
+          activeAttachmentTab.value = "notice";
+        } else {
+          preRecordedNote.value = "该比赛已有预设通知，如您有更准确的正式版本，欢迎在“通知文件”页签中更新。";
+        }
+        // 自动带入一些信息
+        if (s.category && !form.value.category) form.value.category = s.category;
+        if (s.level && !form.value.level) form.value.level = s.level;
+        if (s.organizations && !form.value.organizations) form.value.organizations = s.organizations;
+      } else {
+        preRecordedNote.value = "";
+      }
+    } else {
+      preRecordedNote.value = "";
+    }
+  } catch (e) {
+    preRecordedNote.value = "";
+  }
+}
 </script>
 
 <style scoped>
