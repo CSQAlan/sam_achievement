@@ -3,10 +3,7 @@
     <div v-show="!pageModeActive" class="app-container achievement-app-container">
       <!-- 1. 搜索区域 -->
       <div class="search-section" v-show="showSearch">
-        <div class="section-title">
-          <el-icon><Search /></el-icon>
-          <span>筛选查询</span>
-        </div>
+
         <el-form :model="queryParams" ref="queryRef" label-width="68px" class="achievement-search-form">
           <el-row :gutter="10" class="search-row search-row-primary">
 
@@ -283,9 +280,11 @@
         </div>
       </el-row>
 
-      <!-- 批量审核面板 - 仅在选中且有权限时显示 -->
+
+
+      <!-- 批量审核面板 -->
       <transition name="el-zoom-in-top">
-        <el-row v-if="canBatchReview && ids.length > 0" class="batch-toolbar-row">
+        <el-row v-if="canBatchReview" class="batch-toolbar-row">
           <div class="batch-toolbar-panel">
             <div class="batch-panel-header">
               <el-tag type="warning" effect="dark" class="selection-count-tag">
@@ -315,37 +314,43 @@
               icon="Edit"
               class="toolbar-fixed-button"
               :loading="batchReviewLoading"
+              :disabled="false"
               @click="handleBatchReviewStatus"
-              v-hasPermi="permEdit"
+              v-hasPermi="[...permEdit, ...permReview]"
           >
             批量审核
           </el-button>
 
-          <div class="batch-reason-inline" :class="{ 'is-active': showBatchRejectReason }">
-            <el-input
-                style="width: 500px;"
-                v-model="batchRejectReasonCustom"
-                class="batch-reason-input"
-                clearable
-                :placeholder="batchRejectReasonCustomPlaceholder"
+            <div
+                v-if="showBatchRejectReason"
+                class="audit-field reason-field"
             >
-              <template #append>
-                <el-dropdown trigger="click" @command="handleBatchRejectReasonCommand">
-                  <span class="batch-reason-dropdown-link">常用原因</span>
-                  <template #dropdown>
-                    <el-dropdown-menu>
-                      <el-dropdown-item
-                          v-for="opt in batchRejectReasonOptions"
-                          :key="opt.value"
-                          :command="opt.value"
-                      >
-                        {{ opt.label }}
-                      </el-dropdown-item>
-                    </el-dropdown-menu>
+              <div class="audit-reason-group">
+                <el-input
+                    style="width: 600px;"
+                    v-model="batchRejectReasonCustom"
+                    clearable
+                    class="audit-reason-input"
+                    :placeholder="batchRejectReasonCustomPlaceholder"
+                >
+                  <template #append>
+                    <el-dropdown trigger="click" @command="handleBatchRejectReasonCommand">
+                      <span class="audit-reason-dropdown-link">常用原因</span>
+                      <template #dropdown>
+                        <el-dropdown-menu>
+                          <el-dropdown-item
+                              v-for="opt in batchRejectReasonOptions"
+                              :key="opt.value"
+                              :command="opt.value"
+                          >
+                            {{ opt.label }}
+                          </el-dropdown-item>
+                        </el-dropdown-menu>
+                      </template>
+                    </el-dropdown>
                   </template>
-                </el-dropdown>
-              </template>
-            </el-input>
+                </el-input>
+              </div>
             </div>
           </div>
         </el-row>
@@ -719,6 +724,7 @@ const reviewRoute = computed(() => {
   return base.endsWith('/') ? `${base}reviewPage` : `${base}/reviewPage`;
 });
 const reviewSource = computed(() => (props.reviewSource || '').toLowerCase());
+
 
 const permissionPrefix = computed(() => props.permissionPrefix || 'achievement:manage');
 const permAdd = computed(() => [`${permissionPrefix.value}:add`]);
@@ -1932,6 +1938,11 @@ export default {
   gap: 12px;
 }
 
+.batch-guide-alert {
+  margin-top: 8px;
+  animation: slideInDown 0.3s ease-out;
+}
+
 .toolbar-row {
   display: flex;
   align-items: center;
@@ -1948,8 +1959,8 @@ export default {
 
 /* 批量操作面板样式强化 */
 .batch-toolbar-row {
-  background-color: var(--el-color-primary-light-9, #f0f9eb);
-  border: 1px solid var(--el-color-primary-light-7, #e1f3d8);
+  background-color: aliceblue;
+  border: 1px solid var(--el-color-primary-light-7);
   border-radius: 4px;
   margin-top: 8px;
   padding: 10px 20px;
