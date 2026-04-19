@@ -597,6 +597,9 @@
         select 
             a.name,
             a.fee,
+            a.reimbursement_date,
+            a.is_reimburse,
+            a.reimbursement_fee,
             s.name as contact_name,
             s.no as student_id
         from sam_achievement a

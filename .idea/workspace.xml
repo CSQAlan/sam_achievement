@@ -7,9 +7,7 @@
     <list default="true" id="b204d056-52b8-4d02-915a-97d1bc9b8c13" name="Changes" comment="">
       <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/RuoYi-Vue-v3.9.1/ruoyi-admin/src/main/java/com/ruoyi/reimbursement/service/impl/SamReimbursementItemsServiceImpl.java" beforeDir="false" afterPath="$PROJECT_DIR$/RuoYi-Vue-v3.9.1/ruoyi-admin/src/main/java/com/ruoyi/reimbursement/service/impl/SamReimbursementItemsServiceImpl.java" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/RuoYi-Vue-v3.9.1/ruoyi-admin/src/main/java/com/ruoyi/reimbursement/service/impl/Sam_rem_ProductServiceImpl.java" beforeDir="false" afterPath="$PROJECT_DIR$/RuoYi-Vue-v3.9.1/ruoyi-admin/src/main/java/com/ruoyi/reimbursement/service/impl/Sam_rem_ProductServiceImpl.java" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/RuoYi-Vue-v3.9.1/ruoyi-admin/src/main/resources/mapper/achievement/SamAchievementMapper.xml" beforeDir="false" afterPath="$PROJECT_DIR$/RuoYi-Vue-v3.9.1/ruoyi-admin/src/main/resources/mapper/achievement/SamAchievementMapper.xml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/RuoYi-Vue-v3.9.1/ruoyi-admin/src/main/resources/mapper/reimbursement/Sam_rem_ProductMapper.xml" beforeDir="false" afterPath="$PROJECT_DIR$/RuoYi-Vue-v3.9.1/ruoyi-admin/src/main/resources/mapper/reimbursement/Sam_rem_ProductMapper.xml" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/RuoYi-Vue-v3.9.1/ruoyi-vue3/src/views/system/Reimbursement/index.vue" beforeDir="false" afterPath="$PROJECT_DIR$/RuoYi-Vue-v3.9.1/ruoyi-vue3/src/views/system/Reimbursement/index.vue" afterDir="false" />
     </list>
     <option name="SHOW_DIALOG" value="false" />
@@ -90,7 +88,7 @@
       <workItem from="1775662317949" duration="13868000" />
       <workItem from="1775965866972" duration="4915000" />
       <workItem from="1776500108821" duration="37000" />
-      <workItem from="1776564924907" duration="2189000" />
+      <workItem from="1776564924907" duration="4078000" />
     </task>
     <servers />
   </component>
