@@ -283,14 +283,16 @@
         </el-tooltip>
       </el-col>
       <el-col :span="1.5" v-if="reimbursementItemId">
-        <el-button
-          type="success"
-          plain
-          icon="Check"
-          :disabled="isProjectConfirmed || !reimbursementItemId || ids.length === 0"
-          @click="handleOpenReimburseDialog"
-          v-hasPermi="['system:Reimbursement:edit']"
-        >批量报销</el-button>
+        <el-tooltip :content="!isProjectConfirmed ? '请先确认报销清单' : (ids.length === 0 ? '请选择要报销的成果' : '批量报销')" placement="top">
+          <el-button
+            type="success"
+            plain
+            icon="Check"
+            :disabled="!isProjectConfirmed || !reimbursementItemId || ids.length === 0"
+            @click="handleOpenReimburseDialog"
+            v-hasPermi="['system:Reimbursement:edit']"
+          >批量报销</el-button>
+        </el-tooltip>
       </el-col>
       <right-toolbar v-model:showSearch="showSearch" @queryTable="getList"></right-toolbar>
     </el-row>
@@ -304,10 +306,10 @@
           <dict-tag :options="achievement_category" :value="scope.row.category"/>
         </template>
       </el-table-column>
-      <el-table-column label="比赛名称" align="center" prop="competitionName" />
-      <el-table-column label="作品名称" align="center" prop="name" />
-      <el-table-column label="参赛选手" align="center" prop="contestants" />
-      <el-table-column label="指导老师" align="center" prop="instructors" />
+      <el-table-column label="比赛名称" align="center" prop="competitionName" min-width="150" />
+      <el-table-column label="作品名称" align="center" prop="name" min-width="180" />
+      <el-table-column label="参赛选手" align="center" prop="contestants" min-width="250" />
+      <el-table-column label="指导老师" align="center" prop="instructors" min-width="180" />
       <el-table-column label="获奖级别" align="center" prop="level">
         <template #default="scope">
           <dict-tag :options="award_level_type" :value="scope.row.level"/>
@@ -1723,6 +1725,11 @@ const handleBatchCancelAssociation = async () => {
  * 打开报销弹窗
  */
 const handleOpenReimburseDialog = async () => {
+  if (!isProjectConfirmed.value) {
+    proxy.$modal.msgWarning("请先确认报销清单")
+    return
+  }
+  
   if (ids.value.length === 0) {
     proxy.$modal.msgWarning("请选择要报销的成果")
     return
@@ -1808,6 +1815,11 @@ const handleCloseReimburseDialog = () => {
  * 提交报销
  */
 const handleSubmitReimburse = async () => {
+  if (!isProjectConfirmed.value) {
+    proxy.$modal.msgWarning("请先确认报销清单")
+    return
+  }
+  
   let selectedIds = []
   let needReimburseProducts = []
   
@@ -1926,6 +1938,11 @@ const handleSubmitReimburse = async () => {
  * 单个成果报销
  */
 const handleSingleReimburse = async (row) => {
+  if (!isProjectConfirmed.value) {
+    proxy.$modal.msgWarning("请先确认报销清单")
+    return
+  }
+  
   // 重置进度状态
   reimburseProgress.value = {
     show: false,
