@@ -13,6 +13,7 @@ const useUserStore = defineStore(
             id: '',
             name: '',
             nickName: '',
+            deptName: '',
             avatar: '',
             profileInitialized: 0,
             roles: [],
@@ -53,6 +54,7 @@ const useUserStore = defineStore(
                         this.id = user.userId
                         this.name = user.userName
                         this.nickName = user.nickName
+                        this.deptName = user.dept ? user.dept.deptName : ''
                         this.avatar = avatar
                         this.profileInitialized = Number(user.profileInitialized || 0)
                         // /* 初始密码提示 */
