@@ -900,7 +900,7 @@
           <el-button
             type="primary"
             :loading="reimburseLoading"
-            :disabled="reimburseProgress.show || !canReimburse"
+            :disabled="!canReimburse"
             @click="handleSubmitReimburse"
           >
             {{ getReimburseButtonText() }}
@@ -1011,12 +1011,19 @@ const qrCodePreviewUrls = ref({})
 // 当前选中的报销项目
 const selectedReimburseItem = ref(null)
 
-// 批量报销待处理列表
-const pendingReimburseProducts = ref([])
-const pendingReimburseIndex = ref(0)
+// 批量报销队列管理
+const batchReimburseQueue = ref([])  // 待报销的成果队列
+const currentQueueIndex = ref(0)      // 当前处理的队列索引
+const isBatchProcessing = ref(false)  // 是否正在批量处理
+const pollInterval = ref(null)        // 轮询定时器
 
 // 是否可以报销
 const canReimburse = computed(() => {
+  // 批量报销模式：batchReimburseQueue 有数据就允许报销
+  if (batchReimburseQueue.value.length > 0 && isProjectConfirmed.value) {
+    return true
+  }
+  // 普通模式：需要选择成果且项目已确认
   return ids.value.length > 0 && isProjectConfirmed.value
 })
 
@@ -1826,6 +1833,9 @@ const handleOpenReimburseDialog = async () => {
  * 关闭报销弹窗
  */
 const handleCloseReimburseDialog = () => {
+  // 停止轮询
+  stopPollingPaidFee()
+  
   // 重置状态
   reimburseProgress.value = {
     show: false,
@@ -1839,8 +1849,9 @@ const handleCloseReimburseDialog = () => {
   paymentInfo.value = null
   currentReimburseRow.value = null
   selectedReimburseItem.value = null
-  pendingReimburseProducts.value = []
-  pendingReimburseIndex.value = 0
+  batchReimburseQueue.value = []
+  currentQueueIndex.value = 0
+  isBatchProcessing.value = false
 
   // 清理收款码预览
   clearQrCodePreviews()
@@ -1887,31 +1898,49 @@ const handleSubmitReimburse = async () => {
     selectedIds = needReimburseProducts.map(item => item.achievementId)
   }
 
-  // 如果是批量报销且有多个成果，逐个处理
-  if (!currentReimburseRow.value && needReimburseProducts.length > 1) {
-    // 初始化待处理列表
-    pendingReimburseProducts.value = [...needReimburseProducts]
-    pendingReimburseIndex.value = 0
+  // 如果是批量报销且有多个成果，初始化批量处理队列
+  if (!currentReimburseRow.value && batchReimburseQueue.value.length === 0 && needReimburseProducts.length > 1) {
+    // 初始化批量报销队列
+    batchReimburseQueue.value = [...needReimburseProducts]
+    currentQueueIndex.value = 0
+    isBatchProcessing.value = true
 
-    // 显示进度条
-    reimburseLoading.value = true
+    // 显示进度条（初始状态：等待用户确认）
+    reimburseLoading.value = false  // 重要：设置为false，让按钮可以点击
     reimburseProgress.value = {
       show: true,
-      percentage: 0,
+      percentage: Math.round(1 / needReimburseProducts.length * 100),
       current: 1,
       total: needReimburseProducts.length,
-      message: `正在处理第 1 个成果...`,
+      message: `请扫码支付第 1 个成果，完成后点击"确认报销"`,
       status: '',
       errors: []
     }
 
-    // 自动选择第一个成果
-    selectedReimburseItem.value = pendingReimburseProducts.value[0]
-
-    // 自动开始处理第一个成果
-    setTimeout(() => {
-      handleNextReimburse()
-    }, 500)
+    // 选择第一个成果显示收款码
+    selectedReimburseItem.value = batchReimburseQueue.value[0]
+    
+    // 确保左边列表选中当前成果
+    if (paymentInfo.value && paymentInfo.value.length > 0) {
+      // 找到当前成果在paymentInfo中的索引
+      const currentIndex = paymentInfo.value.findIndex(item => 
+        item.achievementId === batchReimburseQueue.value[0].achievementId
+      )
+      if (currentIndex !== -1) {
+        // 选中当前成果
+        selectedReimburseItem.value = paymentInfo.value[currentIndex]
+      }
+    }
+    
+    // 不需要自动轮询，在报销完成后手动计算
+    
+    return  // 等待用户点击"确认报销"
+  }
+  
+  // 如果批量处理队列已经初始化，直接处理当前成果
+  if (!currentReimburseRow.value && batchReimburseQueue.value.length > 1) {
+    // 批量报销模式：处理当前成果
+    await handleCurrentReimburse()
     return
   }
 
@@ -1935,6 +1964,26 @@ const handleSubmitReimburse = async () => {
   }
 
   reimburseLoading.value = true
+
+  // 单个报销或批量但只有1个，直接处理
+  try {
+    const confirmMessage = currentReimburseRow.value
+      ? `确定要对成果"${currentReimburseRow.value.name}"进行报销吗？`
+      : `确定要对成果"${needReimburseProducts[0].name}"进行报销吗？`
+
+    await proxy.$modal.confirm(
+      confirmMessage,
+      '报销确认',
+      {
+        confirmButtonText: '确定',
+        cancelButtonText: '取消',
+        type: 'success'
+      }
+    )
+  } catch {
+    return
+  }
+
   reimburseProgress.value = {
     show: true,
     percentage: 0,
@@ -2004,8 +2053,8 @@ const handleSubmitReimburse = async () => {
  */
 const getReimburseButtonText = () => {
   if (reimburseProgress.show) {
-    if (pendingReimburseProducts.value.length > 1) {
-      return `处理中 (${reimburseProgress.current}/${reimburseProgress.total})`
+    if (batchReimburseQueue.value.length > 1) {
+      return `确认报销 (${reimburseProgress.current}/${reimburseProgress.total})`
     }
     return '报销中...'
   }
@@ -2013,78 +2062,260 @@ const getReimburseButtonText = () => {
 }
 
 /**
- * 处理下一个成果报销
+ * 处理当前成果报销（批量模式）
  */
-const handleNextReimburse = async () => {
-  if (pendingReimburseIndex.value >= pendingReimburseProducts.value.length - 1) {
-    // 所有成果都已处理完成
-    proxy.$modal.msgSuccess('所有成果报销完成！')
+const handleCurrentReimburse = async () => {
+  const currentProduct = batchReimburseQueue.value[currentQueueIndex.value]
 
-    // 清空选中
-    ids.value = []
-    currentReimburseRow.value = null
-    pendingReimburseProducts.value = []
-    pendingReimburseIndex.value = 0
-
-    // 刷新列表和统计
-    await loadDetailByReimbursementItemId()
-    await handleRecalculate()
-
-    // 关闭弹窗
-    setTimeout(() => {
-      reimburseDialogVisible.value = false
-      reimburseProgress.value.show = false
-    }, 1000)
-    return
+  reimburseProgress.value = {
+    show: true,
+    percentage: Math.round((currentQueueIndex.value + 1) / batchReimburseQueue.value.length * 100),
+    current: currentQueueIndex.value + 1,
+    total: batchReimburseQueue.value.length,
+    message: '正在处理...',
+    status: '',
+    errors: []
   }
-
-  // 移动到下一个成果
-  pendingReimburseIndex.value++
-
-  const currentProduct = pendingReimburseProducts.value[pendingReimburseIndex.value]
-  selectedReimburseItem.value = currentProduct
-
-  // 更新进度
-  reimburseProgress.value.current = pendingReimburseIndex.value + 1
-  reimburseProgress.value.percentage = Math.round((pendingReimburseIndex.value + 1) / pendingReimburseProducts.value.length * 100)
-  reimburseProgress.value.message = `正在处理第 ${pendingReimburseIndex.value + 1} 个成果...`
 
   try {
     // 调用后端报销接口
     const res = await updateTransferStatus([currentProduct.achievementId], reimbursementItemId.value)
 
     if (res.code === 200) {
-      reimburseProgress.value.message = `第 ${pendingReimburseIndex.value + 1} 个成果报销完成！`
-
       // 更新paymentInfo中对应成果的状态
       if (paymentInfo.value && paymentInfo.value.length > 0) {
         const idx = paymentInfo.value.findIndex(item => item.achievementId === currentProduct.achievementId)
         if (idx !== -1) {
-          // 添加报销时间标记为已报销
           paymentInfo.value[idx].reimbursementDate = new Date().toISOString()
         }
       }
 
-      // 刷新列表
+      // 刷新列表，更新已报销成果的状态
       await loadDetailByReimbursementItemId()
+      await handleRecalculate()
 
-      // 自动跳转到下一个
-      setTimeout(() => {
-        handleNextReimburse()
-      }, 500)
+      // 显示成功消息
+      proxy.$modal.msgSuccess(`第 ${currentQueueIndex.value + 1} 个成果报销成功！`)
+
+      // 检查是否还有下一个成果
+      if (currentQueueIndex.value >= batchReimburseQueue.value.length - 1) {
+        // 所有成果处理完成
+        await handleBatchReimburseComplete()
+      } else {
+        // 询问是否继续下一个
+        await askContinueNext()
+      }
     } else {
       throw new Error(res.msg || "报销失败")
     }
   } catch (error) {
     console.error("报销失败:", error)
-    proxy.$modal.msgError(error.message || "报销失败，请稍后重试")
+    reimburseProgress.value.message = '报销失败'
+    reimburseProgress.value.status = 'exception'
+    reimburseProgress.value.errors.push(error.message || "报销失败，请稍后重试")
 
-    // 即使失败也继续处理下一个
-    setTimeout(() => {
-      handleNextReimburse()
-    }, 1000)
+    // 显示错误消息
+    proxy.$modal.msgError(error.message || "报销失败，请稍后重试")
+    
+    // 询问是否继续下一个（即使当前失败）
+    await askContinueNext()
+  } finally {
+    reimburseLoading.value = false
   }
 }
+
+/**
+ * 询问是否继续处理下一个成果
+ */
+const askContinueNext = async () => {
+  try {
+    await proxy.$modal.confirm(
+      '报销成功，是否继续下一个？',
+      '提示',
+      {
+        confirmButtonText: '是',
+        cancelButtonText: '否',
+        type: 'info'
+      }
+    )
+    
+    // 继续下一个
+    await handleNextReimburse()
+  } catch {
+    // 用户选择否，结束报销
+    await handleBatchReimburseCancel()
+  }
+}
+
+/**
+ * 处理下一个成果
+ */
+const handleNextReimburse = async () => {
+  // 移动到下一个成果
+  currentQueueIndex.value++
+
+  const nextProduct = batchReimburseQueue.value[currentQueueIndex.value]
+  selectedReimburseItem.value = nextProduct
+
+  // 更新进度条，显示下一个成果的信息
+  reimburseProgress.value.percentage = Math.round((currentQueueIndex.value + 1) / batchReimburseQueue.value.length * 100)
+  reimburseProgress.value.current = currentQueueIndex.value + 1
+  reimburseProgress.value.message = `请扫码支付第 ${currentQueueIndex.value + 1} 个成果，完成后点击"确认报销"`
+  reimburseProgress.value.status = ''
+  reimburseProgress.value.errors = []
+  
+  // 重新获取支付信息（确保收款码是最新的）
+  await refreshPaymentInfo([nextProduct.achievementId])
+  
+  // 确保左边列表选中当前成果
+  if (paymentInfo.value && paymentInfo.value.length > 0) {
+    // 找到当前成果在paymentInfo中的索引
+    const currentIndex = paymentInfo.value.findIndex(item => 
+      item.achievementId === nextProduct.achievementId
+    )
+    if (currentIndex !== -1) {
+      // 选中当前成果
+      selectedReimburseItem.value = paymentInfo.value[currentIndex]
+    }
+  }
+}
+
+/**
+ * 刷新支付信息（保持所有成果，只更新当前成果的信息）
+ */
+const refreshPaymentInfo = async (achievementIds) => {
+  try {
+    const paymentRes = await getPaymentInfo(achievementIds.join(','))
+    if (paymentRes.code === 200) {
+      const newPaymentInfo = paymentRes.data
+      
+      if (newPaymentInfo && newPaymentInfo.length > 0) {
+        // 如果是第一次加载，直接设置
+        if (!paymentInfo.value || paymentInfo.value.length === 0) {
+          paymentInfo.value = newPaymentInfo
+        } else {
+          // 否则，只更新当前成果的信息
+          newPaymentInfo.forEach(newItem => {
+            const existingIndex = paymentInfo.value.findIndex(item => 
+              item.achievementId === newItem.achievementId
+            )
+            if (existingIndex !== -1) {
+              // 更新现有成果
+              paymentInfo.value[existingIndex] = newItem
+            } else {
+              // 添加新成果（如果有的话）
+              paymentInfo.value.push(newItem)
+            }
+          })
+        }
+        
+        // 加载收款码预览
+        newPaymentInfo.forEach(item => {
+          if (item.qrCodeUuid) {
+            loadQrCodePreview(item.qrCodeUuid, item.achievementId)
+          }
+        })
+      }
+    }
+  } catch (error) {
+    console.error("获取支付信息失败:", error)
+  }
+}
+
+/**
+ * 批量报销完成
+ */
+const handleBatchReimburseComplete = async () => {
+  // 停止轮询
+  stopPollingPaidFee()
+  
+  // 显示完成消息
+  proxy.$modal.msgSuccess('所有选中成果报销流程已完成！')
+
+  // 清空状态
+  ids.value = []
+  currentReimburseRow.value = null
+  batchReimburseQueue.value = []
+  currentQueueIndex.value = 0
+  isBatchProcessing.value = false
+
+  // 刷新列表和统计
+  await loadDetailByReimbursementItemId()
+  await handleRecalculate()
+
+  // 关闭弹窗
+  setTimeout(() => {
+    reimburseDialogVisible.value = false
+    reimburseProgress.value.show = false
+  }, 1500)
+}
+
+/**
+ * 取消批量报销
+ */
+const handleBatchReimburseCancel = async () => {
+  // 停止轮询
+  stopPollingPaidFee()
+  
+  // 显示取消消息
+  proxy.$modal.msgInfo('已暂时放弃剩余未报销的成果')
+
+  // 清空状态
+  ids.value = []
+  currentReimburseRow.value = null
+  batchReimburseQueue.value = []
+  currentQueueIndex.value = 0
+  isBatchProcessing.value = false
+
+  // 刷新列表和统计
+  await loadDetailByReimbursementItemId()
+  await handleRecalculate()
+
+  // 关闭弹窗
+  setTimeout(() => {
+    reimburseDialogVisible.value = false
+    reimburseProgress.value.show = false
+  }, 1000)
+}
+
+/**
+ * 开始轮询已发放金额
+ */
+const startPollingPaidFee = () => {
+  // 清除之前的定时器
+  if (pollInterval.value) {
+    clearInterval(pollInterval.value)
+  }
+  
+  // 每3秒轮询一次
+  pollInterval.value = setInterval(async () => {
+    try {
+      if (reimbursementItemId.value) {
+        const projectRes = await getReimbursementProjectInfo(reimbursementItemId.value)
+        if (projectRes.code === 200) {
+          // 更新项目信息，包括已发放金额
+          projectInfo.value = projectRes.data
+          // 重新计算统计信息
+          await handleRecalculate()
+        }
+      }
+    } catch (error) {
+      console.error("轮询已发放金额失败:", error)
+    }
+  }, 3000)
+}
+
+/**
+ * 停止轮询已发放金额
+ */
+const stopPollingPaidFee = () => {
+  if (pollInterval.value) {
+    clearInterval(pollInterval.value)
+    pollInterval.value = null
+  }
+}
+
+
 
 /**
  * 单个成果报销
