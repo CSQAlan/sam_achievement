@@ -121,10 +121,7 @@
                             <el-link type="primary" :disabled="false" @click="goToCompetitionApply">届次找不到？点击这里申请赛事届次！</el-link>
                           </div>
                         </div>
-                        <div v-if="form.competitionId && form.level && form.awardTime" style="color: #F56C6C; font-size: 12px; margin-top: 5px;">
-                          <el-icon style="vertical-align: middle;"><Warning /></el-icon> 未找到匹配的届次，请核对获奖时间与级别
-                        </div>
-                        <div v-else-if="form.competitionId && form.level && form.awardTime" style="color: #F56C6C; font-size: 12px; margin-top: 5px;">
+                        <div v-if="form.competitionId && form.level && form.awardTime && !form.sessionId" style="color: #F56C6C; font-size: 12px; margin-top: 5px;">
                           <el-icon style="vertical-align: middle;"><Warning /></el-icon> 未找到匹配的届次，请核对获奖时间与级别
                         </div>
                       </el-form-item>
@@ -473,10 +470,7 @@
                         <el-link type="primary" :disabled="false" @click="goToCompetitionApply">届次找不到？点击这里申请赛事届次！</el-link>
                       </div>
                     </div>
-                    <div v-if="form.competitionId && form.level && form.awardTime" style="color: #F56C6C; font-size: 12px; margin-top: 5px;">
-                      <el-icon style="vertical-align: middle;"><Warning /></el-icon> 未找到匹配的届次，请核对获奖时间与级别
-                    </div>
-                    <div v-else-if="form.competitionId && form.level && form.awardTime" style="color: #F56C6C; font-size: 12px; margin-top: 5px;">
+                    <div v-if="form.competitionId && form.level && form.awardTime && !form.sessionId" style="color: #F56C6C; font-size: 12px; margin-top: 5px;">
                       <el-icon style="vertical-align: middle;"><Warning /></el-icon> 未找到匹配的届次，请核对获奖时间与级别
                     </div>
                   </el-form-item>
