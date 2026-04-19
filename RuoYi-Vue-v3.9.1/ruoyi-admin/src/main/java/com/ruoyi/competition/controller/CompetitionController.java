@@ -29,8 +29,7 @@ import com.ruoyi.common.core.page.TableDataInfo;
  */
 @RestController
 @RequestMapping("/competition/competition")
-public class CompetitionController extends BaseController
-{
+public class CompetitionController extends BaseController {
     @Autowired
     private ICompetitionService competitionService;
 
@@ -39,8 +38,7 @@ public class CompetitionController extends BaseController
      */
     @PreAuthorize("@ss.hasPermi('competition:competition:list')")
     @GetMapping("/list")
-    public TableDataInfo list(Competition competition)
-    {
+    public TableDataInfo list(Competition competition) {
         startPage();
         List<Competition> list = competitionService.selectCompetitionList(competition);
         return getDataTable(list);
@@ -52,8 +50,7 @@ public class CompetitionController extends BaseController
     @PreAuthorize("@ss.hasPermi('competition:competition:export')")
     @Log(title = "总赛事", businessType = BusinessType.EXPORT)
     @PostMapping("/export")
-    public void export(HttpServletResponse response, Competition competition)
-    {
+    public void export(HttpServletResponse response, Competition competition) {
         List<Competition> list = competitionService.selectCompetitionList(competition);
         ExcelUtil<Competition> util = new ExcelUtil<Competition>(Competition.class);
         util.exportExcel(response, list, "总赛事数据");
@@ -64,8 +61,7 @@ public class CompetitionController extends BaseController
      */
     @PreAuthorize("@ss.hasPermi('competition:competition:query')")
     @GetMapping(value = "/{id}")
-    public AjaxResult getInfo(@PathVariable("id") Long id)
-    {
+    public AjaxResult getInfo(@PathVariable("id") Long id) {
         return success(competitionService.selectCompetitionById(id));
     }
 
@@ -75,8 +71,7 @@ public class CompetitionController extends BaseController
     @PreAuthorize("@ss.hasPermi('competition:competition:add')")
     @Log(title = "总赛事", businessType = BusinessType.INSERT)
     @PostMapping
-    public AjaxResult add(@RequestBody Competition competition)
-    {
+    public AjaxResult add(@RequestBody Competition competition) {
         return toAjax(competitionService.insertCompetition(competition));
     }
 
@@ -86,8 +81,7 @@ public class CompetitionController extends BaseController
     @PreAuthorize("@ss.hasPermi('competition:competition:edit')")
     @Log(title = "总赛事", businessType = BusinessType.UPDATE)
     @PutMapping
-    public AjaxResult edit(@RequestBody Competition competition)
-    {
+    public AjaxResult edit(@RequestBody Competition competition) {
         return toAjax(competitionService.updateCompetition(competition));
     }
 
@@ -96,9 +90,19 @@ public class CompetitionController extends BaseController
      */
     @PreAuthorize("@ss.hasPermi('competition:competition:remove')")
     @Log(title = "总赛事", businessType = BusinessType.DELETE)
-	@DeleteMapping("/{ids}")
-    public AjaxResult remove(@PathVariable Long[] ids)
-    {
+    @DeleteMapping("/{ids}")
+    public AjaxResult remove(@PathVariable Long[] ids) {
         return toAjax(competitionService.deleteCompetitionByIds(ids));
+    }
+
+    /**
+     * 获取总赛事列表选项（不拦截权限，供申请时下拉选择）
+     */
+    @GetMapping("/optionList")
+    public AjaxResult optionList() {
+        Competition query = new Competition();
+
+        List<Competition> list = competitionService.selectCompetitionList(query);
+        return AjaxResult.success(list);
     }
 }

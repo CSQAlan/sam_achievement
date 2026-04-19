@@ -8,6 +8,14 @@ export function listSession(query) {
   });
 }
 
+export function allIdsSession(query) {
+  return request({
+    url: "/session/session/query/allIds",
+    method: "get",
+    params: query,
+  });
+}
+
 export function getSession(id) {
   return request({
     url: `/session/session/${id}`,

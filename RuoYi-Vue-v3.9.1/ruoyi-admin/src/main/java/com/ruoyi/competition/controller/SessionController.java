@@ -96,6 +96,16 @@ public class SessionController extends BaseController
     }
 
     /**
+     * 获取所有匹配条件的届次ID集合（不分页）
+     */
+    @PreAuthorize("@ss.hasPermi('session:session:list')")
+    @GetMapping("/query/allIds")
+    public AjaxResult allIds(Session session)
+    {
+        return success(sessionService.selectSessionIds(session));
+    }
+
+    /**
      * 导出赛事届次列表
      */
     @PreAuthorize("@ss.hasPermi('session:session:export')")

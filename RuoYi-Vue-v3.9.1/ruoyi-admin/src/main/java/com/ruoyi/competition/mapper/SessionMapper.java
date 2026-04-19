@@ -32,6 +32,13 @@ public interface SessionMapper
     public List<Session> selectSessionList(Session session);
 
     /**
+     * 查询所有匹配条件的届次ID
+     * @param session 筛选条件
+     * @return ID集合
+     */
+    public Long[] selectSessionIds(Session session);
+
+    /**
      * 新增赛事届次
      *
      * @param session 赛事届次

@@ -297,7 +297,7 @@
               v-model="batchReviewStatus"
               class="toolbar-status-select"
               placeholder="请选择批量状态"
-              style="width: 500px;"
+              style="width: 200px;"
               clearable
           >
             <el-option
@@ -321,13 +321,11 @@
             批量审核
           </el-button>
 
-            <div
-                v-if="showBatchRejectReason"
-                class="audit-field reason-field"
-            >
+            <!-- 驳回原因输入区 - 修复内容显示 -->
+            <div v-if="showBatchRejectReason" class="audit-field reason-field">
               <div class="audit-reason-group">
                 <el-input
-                    style="width: 600px;"
+                    style="width: 300px;"
                     v-model="batchRejectReasonCustom"
                     clearable
                     class="audit-reason-input"
@@ -676,7 +674,6 @@ import { listManage, getManage, addManage, updateManage, delManage, exportAttach
 import { batchUpdateReviewStatus } from '@/api/achievement/review_batch';
 import { listCompetition } from '@/api/competition/competition';
 import { listSession } from '@/api/session/session';
-
 const props = defineProps({
   listFn: { type: Function, default: null },
   getFn: { type: Function, default: null },
@@ -1028,6 +1025,13 @@ function buildListParams() {
   normalizeReviewStatusBySource();
 
   const finalParams = { ...queryParams };
+
+  // 这里的 params 是为了配合 Mybatis XML 中的 #{params.contestant} 等
+  finalParams.params = {
+    contestant: queryParams.contestant,
+    instructor: queryParams.instructor,
+    competitionName: queryParams.competitionName // 虽然目前主要用 ID 过滤
+  };
 
   if (props.sourceMode === 'guided') {
     finalParams.firstInstructorId = userStore.name;
@@ -1923,9 +1927,9 @@ export default {
   border-bottom: 1px solid #f0f0f0;
   padding-bottom: 12px;
 }
-
 .section-title .el-icon {
-  color: var(--el-color-primary);
+  /* 增加回退值：如果变量不存在，使用默认的 Element 蓝色 */
+  color: var(--el-color-primary, #409eff);
 }
 
 .action-section {
@@ -1957,13 +1961,14 @@ export default {
   flex: 1;
 }
 
-/* 批量操作面板样式强化 */
+/* 批量操作面板样式强化 - 增加回退值与布局对齐 */
 .batch-toolbar-row {
   background-color: aliceblue;
-  border: 1px solid var(--el-color-primary-light-7);
+  border: 1px solid #d9ecff; /* 手动替换变量，解决解析报错 */
   border-radius: 4px;
   margin-top: 8px;
-  padding: 10px 20px;
+  padding: 12px 20px;
+  box-shadow: 0 2px 12px rgba(0, 0, 0, 0.04);
   animation: slideInDown 0.3s ease-out;
 }
 
@@ -1971,13 +1976,45 @@ export default {
   width: 100%;
   display: flex;
   align-items: center;
-  gap: 15px;
-  flex-wrap: wrap;
+  gap: 16px;
+  flex-wrap: nowrap; /* 强制不换行 */}
+
+/* 核心审核字段样式 - 对齐 reviewPage.vue */
+.audit-field {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  position: relative;
 }
 
-@keyframes slideInDown {
-  from { opacity: 0; transform: translateY(-10px); }
-  to { opacity: 1; transform: translateY(0); }
+.audit-label {
+  color: #4e5969;
+  font-size: 13px;
+  font-weight: 500;
+  white-space: nowrap;
+}
+
+.reason-field {
+  display: flex;
+  align-items: center;
+}
+
+.audit-reason-group {
+  display: flex;
+}
+
+.audit-reason-input {
+  width: 100%;
+}
+
+.audit-reason-dropdown-link {
+  display: inline-flex;
+  align-items: center;
+  cursor: pointer;
+  white-space: nowrap;
+  color: var(--el-color-primary, #409eff);
+  font-size: 12px;
+  font-weight: 500;
 }
 
 .batch-panel-header {
@@ -1990,25 +2027,11 @@ export default {
   font-size: 13px;
 }
 
-.toolbar-status-select {
-  width: 200px !important;
-}
-
-.batch-reason-wrapper {
-  flex: 1;
-  min-width: 300px;
-}
-
-.batch-submit-btn {
-  margin-left: auto;
-  font-weight: 600;
-}
-
 .divider-vertical {
   width: 1px;
   height: 18px;
-  background-color: var(--el-color-primary-light-7, #dcdfe6);
-  margin: 0 16px;
+  background-color: #dcdfe6;
+  margin: 0 8px; /* 缩小间距 */
 }
 
 .achievement-search-form {

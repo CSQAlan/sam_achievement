@@ -109,6 +109,9 @@ public class Config {
     /**
      * 用于检测用户是否需要进行身份验证 构建登录地址
      * ps:前后端分离项目可忽略此过滤器，自己构建访问认证地址
+     * 注意：因为若依是前后端分离架构，前端使用 Axios(Ajax) 通信。如果这个过滤器拦截 /* ，
+     * 所有的 API 未授权时都会被它强制 302 跨域重定向到 CAS，前端就会报 Network Error/后端接口连接异常。
+     * 因此在分离项目中，此过滤器必须禁用！由前端根据 401 报错主动跳 CAS。
      */
     // @Bean
     // public FilterRegistrationBean AuthenticationFilter() {

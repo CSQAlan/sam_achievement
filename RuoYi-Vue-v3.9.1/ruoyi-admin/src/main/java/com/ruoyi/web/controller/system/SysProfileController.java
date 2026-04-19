@@ -75,6 +75,7 @@ public class SysProfileController extends BaseController {
         private String classYear;
         private String className;
         private String name;
+        private Long deptId;
 
         public String getNickName() {
             return nickName;
@@ -88,7 +89,8 @@ public class SysProfileController extends BaseController {
             return phonenumber;
         }
 
-        public void setPhonenumber(String phonenumber) {
+        public void setPhonenumber(String phonenumber)
+        {
             this.phonenumber = phonenumber;
         }
 
@@ -96,73 +98,88 @@ public class SysProfileController extends BaseController {
             return email;
         }
 
-        public void setEmail(String email) {
+        public void setEmail(String email)
+        {
             this.email = email;
         }
 
-        public String getSex() {
+        public String getSex()
+        {
             return sex;
         }
 
-        public void setSex(String sex) {
+        public void setSex(String sex)
+        {
             this.sex = sex;
         }
 
-        public String getSchool() {
+        public String getSchool()
+        {
             return school;
         }
 
-        public void setSchool(String school) {
+        public void setSchool(String school)
+        {
             this.school = school;
         }
 
-        public String getDepartment() {
+        public String getDepartment()
+        {
             return department;
         }
 
-        public void setDepartment(String department) {
+        public void setDepartment(String department)
+        {
             this.department = department;
         }
 
-        public String getMajor() {
+        public String getMajor()
+        {
             return major;
         }
 
-        public void setMajor(String major) {
+        public void setMajor(String major)
+        {
             this.major = major;
         }
 
-        public String getClassYear() {
+        public String getClassYear()
+        {
             return classYear;
         }
 
-        public void setClassYear(String classYear) {
+        public void setClassYear(String classYear)
+        {
             this.classYear = classYear;
         }
 
-        public String getClassName() {
+        public String getClassName()
+        {
             return className;
         }
 
-        public void setClassName(String className) {
+        public void setClassName(String className)
+        {
             this.className = className;
         }
 
-        public String getName() {
+        public String getName()
+        {
             return name;
         }
 
-        public void setName(String name) {
+        public void setName(String name)
+        {
             this.name = name;
         }
 
-        private Long deptId;
-
-        public Long getDeptId() {
+        public Long getDeptId()
+        {
             return deptId;
         }
 
-        public void setDeptId(Long deptId) {
+        public void setDeptId(Long deptId)
+        {
             this.deptId = deptId;
         }
     }
@@ -171,10 +188,22 @@ public class SysProfileController extends BaseController {
      * 个人信息
      */
     @GetMapping
-    public AjaxResult profile() {
+    public AjaxResult profile()
+    {
         LoginUser loginUser = getLoginUser();
+
+        // 健壮性改造：使用 selectUserById 或 selectUserByUserName 的列表获取方式，防止多角色导致 selectOne 报错
+        SysUser user = userService.selectUserById(loginUser.getUserId());
+        if (user == null) {
+            user = userService.selectUserByUserName(loginUser.getUsername());
+        }
+
+        if (user != null) {
+            loginUser.setUser(user);
+        }
+
         profileCompletionService.refreshProfileCompletion(loginUser);
-        SysUser user = loginUser.getUser();
+
         AjaxResult ajax = AjaxResult.success(user);
         ajax.put("roleGroup", userService.selectUserRoleGroup(loginUser.getUsername()));
         ajax.put("postGroup", userService.selectUserPostGroup(loginUser.getUsername()));
@@ -185,7 +214,8 @@ public class SysProfileController extends BaseController {
      * 个人中心部门树
      */
     @GetMapping("/deptTree")
-    public AjaxResult deptTree() {
+    public AjaxResult deptTree()
+    {
         return success(deptService.selectDeptTreeList(new SysDept()));
     }
 
@@ -193,10 +223,13 @@ public class SysProfileController extends BaseController {
      * 查询当前登录人的学生档案
      */
     @GetMapping("/studentDetail")
-    public AjaxResult studentDetail() {
+    public AjaxResult studentDetail()
+    {
         LoginUser loginUser = getLoginUser();
-        SysUser currentUser = loginUser.getUser();
-        if (!hasRole(currentUser, "student")) {
+        // 同样使用 selectUserById 确保获取到角色列表且不报错
+        SysUser currentUser = userService.selectUserById(loginUser.getUserId());
+        if (!hasRole(currentUser, "student"))
+        {
             return success(null);
         }
 
@@ -211,10 +244,12 @@ public class SysProfileController extends BaseController {
      * 查询当前登录人的教师档案
      */
     @GetMapping("/teacherDetail")
-    public AjaxResult teacherDetail() {
+    public AjaxResult teacherDetail()
+    {
         LoginUser loginUser = getLoginUser();
-        SysUser currentUser = loginUser.getUser();
-        if (!hasRole(currentUser, "teacher")) {
+        SysUser currentUser = userService.selectUserById(loginUser.getUserId());
+        if (!hasRole(currentUser, "teacher"))
+        {
             return success(null);
         }
 
@@ -231,7 +266,8 @@ public class SysProfileController extends BaseController {
     @Log(title = "个人信息", businessType = BusinessType.UPDATE)
     @BizAudit(bizType = "profile", bizName = "修改个人资料", opType = BizAuditOpType.UPDATE, handler = "profileBizAuditHandler", async = false)
     @PutMapping
-    public AjaxResult updateProfile(@RequestBody SysUser user) {
+    public AjaxResult updateProfile(@RequestBody SysUser user)
+    {
         LoginUser loginUser = getLoginUser();
         SysUser currentUser = loginUser.getUser();
         currentUser.setNickName(user.getNickName());
@@ -240,13 +276,16 @@ public class SysProfileController extends BaseController {
         currentUser.setEmail(user.getEmail());
         currentUser.setPhonenumber(user.getPhonenumber());
         currentUser.setSex(user.getSex());
-        if (StringUtils.isNotEmpty(user.getPhonenumber()) && !userService.checkPhoneUnique(currentUser)) {
+        if (StringUtils.isNotEmpty(user.getPhonenumber()) && !userService.checkPhoneUnique(currentUser))
+        {
             return error("修改用户'" + loginUser.getUsername() + "'失败，手机号码已存在");
         }
-        if (StringUtils.isNotEmpty(user.getEmail()) && !userService.checkEmailUnique(currentUser)) {
+        if (StringUtils.isNotEmpty(user.getEmail()) && !userService.checkEmailUnique(currentUser))
+        {
             return error("修改用户'" + loginUser.getUsername() + "'失败，邮箱账号已存在");
         }
-        if (userService.updateUserProfile(currentUser) > 0) {
+        if (userService.updateUserProfile(currentUser) > 0)
+        {
             profileCompletionService.refreshProfileCompletion(loginUser);
             tokenService.setLoginUser(loginUser);
             return success();
@@ -261,8 +300,10 @@ public class SysProfileController extends BaseController {
     @Log(title = "个人信息", businessType = BusinessType.UPDATE)
     @BizAudit(bizType = "profile", bizName = "保存个人中心资料", opType = BizAuditOpType.UPDATE, handler = "profileBizAuditHandler", async = false)
     @PutMapping("/saveAll")
-    public AjaxResult saveAllProfile(@RequestBody ProfileSaveRequest request) {
-        if (request == null) {
+    public AjaxResult saveAllProfile(@RequestBody ProfileSaveRequest request)
+    {
+        if (request == null)
+        {
             return error("请求参数不能为空");
         }
 
@@ -273,24 +314,28 @@ public class SysProfileController extends BaseController {
         currentUser.setPhonenumber(request.getPhonenumber());
         currentUser.setSex(request.getSex());
 
-        if (request.getDeptId() != null) {
+        if (request.getDeptId() != null && request.getDeptId() != 0)
+        {
             currentUser.setDeptId(request.getDeptId());
-            SysDept dept = deptService.selectDeptById(request.getDeptId());
-            currentUser.setDept(dept);
+            currentUser.setDept(deptService.selectDeptById(request.getDeptId()));
         }
 
-        if (StringUtils.isNotEmpty(request.getPhonenumber()) && !userService.checkPhoneUnique(currentUser)) {
+        if (StringUtils.isNotEmpty(request.getPhonenumber()) && !userService.checkPhoneUnique(currentUser))
+        {
             return error("修改用户'" + loginUser.getUsername() + "'失败，手机号码已存在");
         }
-        if (StringUtils.isNotEmpty(request.getEmail()) && !userService.checkEmailUnique(currentUser)) {
+        if (StringUtils.isNotEmpty(request.getEmail()) && !userService.checkEmailUnique(currentUser))
+        {
             return error("修改用户'" + loginUser.getUsername() + "'失败，邮箱账号已存在");
         }
-        if (userService.updateUserProfile(currentUser) <= 0) {
+        if (userService.updateUserProfile(currentUser) <= 0)
+        {
             return error("修改个人信息异常，请联系管理员");
         }
 
         String username = loginUser.getUsername();
-        if (hasRole(currentUser, "student")) {
+        if (hasRole(currentUser, "student"))
+        {
             SamStudent student = new SamStudent();
             student.setNo(username);
             student.setName(StringUtils.isNotEmpty(request.getName()) ? request.getName() : currentUser.getNickName());
@@ -299,17 +344,20 @@ public class SysProfileController extends BaseController {
             student.setMajor(request.getMajor());
             student.setClassYear(request.getClassYear());
             student.setClassName(request.getClassName());
-            if (samStudentService.updateSamStudent(student) <= 0) {
+            if (samStudentService.updateSamStudent(student) <= 0)
+            {
                 throw new ServiceException("保存学生档案失败");
             }
         }
-        if (hasRole(currentUser, "teacher")) {
+        if (hasRole(currentUser, "teacher"))
+        {
             SamTeacher teacher = new SamTeacher();
             teacher.setNo(username);
             teacher.setTeacherName(currentUser.getNickName());
             teacher.setSchool(request.getSchool());
             teacher.setDepartment(request.getDepartment());
-            if (samTeacherService.updateSamTeacher(teacher) <= 0) {
+            if (samTeacherService.updateSamTeacher(teacher) <= 0)
+            {
                 throw new ServiceException("保存教师档案失败");
             }
         }
@@ -325,20 +373,24 @@ public class SysProfileController extends BaseController {
     @Log(title = "个人信息", businessType = BusinessType.UPDATE)
     @BizAudit(bizType = "profile", bizName = "修改个人密码", opType = BizAuditOpType.UPDATE, handler = "profileBizAuditHandler", async = false)
     @PutMapping("/updatePwd")
-    public AjaxResult updatePwd(@RequestBody Map<String, String> params) {
+    public AjaxResult updatePwd(@RequestBody Map<String, String> params)
+    {
         String oldPassword = params.get("oldPassword");
         String newPassword = params.get("newPassword");
         LoginUser loginUser = getLoginUser();
         Long userId = loginUser.getUserId();
         String password = loginUser.getPassword();
-        if (!SecurityUtils.matchesPassword(oldPassword, password)) {
+        if (!SecurityUtils.matchesPassword(oldPassword, password))
+        {
             return error("修改密码失败，旧密码错误");
         }
-        if (SecurityUtils.matchesPassword(newPassword, password)) {
+        if (SecurityUtils.matchesPassword(newPassword, password))
+        {
             return error("新密码不能与旧密码相同");
         }
         newPassword = SecurityUtils.encryptPassword(newPassword);
-        if (userService.resetUserPwd(userId, newPassword) > 0) {
+        if (userService.resetUserPwd(userId, newPassword) > 0)
+        {
             loginUser.getUser().setPwdUpdateDate(DateUtils.getNowDate());
             loginUser.getUser().setPassword(newPassword);
             tokenService.setLoginUser(loginUser);
@@ -353,14 +405,17 @@ public class SysProfileController extends BaseController {
     @Log(title = "用户头像", businessType = BusinessType.UPDATE)
     @BizAudit(bizType = "profile", bizName = "修改个人头像", opType = BizAuditOpType.UPDATE, handler = "profileBizAuditHandler", async = false)
     @PostMapping("/avatar")
-    public AjaxResult avatar(@RequestParam("avatarfile") MultipartFile file) throws Exception {
-        if (!file.isEmpty()) {
+    public AjaxResult avatar(@RequestParam("avatarfile") MultipartFile file) throws Exception
+    {
+        if (!file.isEmpty())
+        {
             LoginUser loginUser = getLoginUser();
-            String avatar = FileUploadUtils.upload(RuoYiConfig.getAvatarPath(), file, MimeTypeUtils.IMAGE_EXTENSION,
-                    true);
-            if (userService.updateUserAvatar(loginUser.getUserId(), avatar)) {
+            String avatar = FileUploadUtils.upload(RuoYiConfig.getAvatarPath(), file, MimeTypeUtils.IMAGE_EXTENSION, true);
+            if (userService.updateUserAvatar(loginUser.getUserId(), avatar))
+            {
                 String oldAvatar = loginUser.getUser().getAvatar();
-                if (StringUtils.isNotEmpty(oldAvatar)) {
+                if (StringUtils.isNotEmpty(oldAvatar))
+                {
                     FileUtils.deleteFile(RuoYiConfig.getProfile() + FileUtils.stripPrefix(oldAvatar));
                 }
                 AjaxResult ajax = AjaxResult.success();
@@ -373,10 +428,13 @@ public class SysProfileController extends BaseController {
         return error("上传图片异常，请联系管理员");
     }
 
-    private boolean hasRole(SysUser user, String roleKey) {
-        if (user == null || user.getRoles() == null || StringUtils.isEmpty(roleKey)) {
+    private boolean hasRole(SysUser user, String roleKey)
+    {
+        if (user == null || user.getRoles() == null || StringUtils.isEmpty(roleKey))
+        {
             return false;
         }
         return user.getRoles().stream().anyMatch(role -> role != null && roleKey.equals(role.getRoleKey()));
     }
 }
+

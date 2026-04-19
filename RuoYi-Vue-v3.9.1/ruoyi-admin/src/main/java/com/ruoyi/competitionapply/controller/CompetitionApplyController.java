@@ -125,9 +125,9 @@ public class CompetitionApplyController extends BaseController
     @PreAuthorize("@ss.hasPermi('competition-apply:competitionapply:edit')")
     @Log(title = "赛事申请审核", businessType = BusinessType.UPDATE)
     @PutMapping("/review/{id}")
-    public AjaxResult review(@PathVariable("id") Long id, @RequestBody CompetitionApplyReviewBo bo)
+    public AjaxResult review(@PathVariable("id") Long id, @RequestBody CompetitionApply updateInfo)
     {
-        return toAjax(competitionApplyService.reviewCompetitionApply(id, bo.getStatus(), bo.getAuditRemark()));
+        return toAjax(competitionApplyService.reviewCompetitionApply(id, updateInfo));
     }
 
     /**
@@ -234,35 +234,4 @@ public class CompetitionApplyController extends BaseController
         }
     }
 
-    /**
-     * 审核请求体
-     */
-    public static class CompetitionApplyReviewBo
-    {
-        /** 审核状态：1通过、2驳回 */
-        private String status;
-
-        /** 审核意见/驳回原因 */
-        private String auditRemark;
-
-        public String getStatus()
-        {
-            return status;
-        }
-
-        public void setStatus(String status)
-        {
-            this.status = status;
-        }
-
-        public String getAuditRemark()
-        {
-            return auditRemark;
-        }
-
-        public void setAuditRemark(String auditRemark)
-        {
-            this.auditRemark = auditRemark;
-        }
-    }
 }
