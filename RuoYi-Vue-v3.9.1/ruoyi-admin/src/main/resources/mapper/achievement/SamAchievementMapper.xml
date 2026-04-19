@@ -596,6 +596,7 @@
     <select id="selectAchievementInfoById" parameterType="String" resultType="java.util.HashMap">
         select 
             a.name,
+            a.fee,
             s.name as contact_name,
             s.no as student_id
         from sam_achievement a

@@ -192,10 +192,20 @@ public class Sam_rem_ProductServiceImpl implements ISam_rem_ProductService
         
         for (Sam_rem_Product product : productList) {
             // 根据获奖等级、类别、归属学院获取报销比例
+            Long ownerDepIdLong = null;
+            if (product.getOwnerDepId() != null) {
+                try {
+                    ownerDepIdLong = Long.valueOf(product.getOwnerDepId());
+                } catch (NumberFormatException e) {
+                    // 如果ownerDepId不是数字（如学院名称），则设为null，使用全校规则
+                    ownerDepIdLong = null;
+                }
+            }
+            
             Integer ratio = samReimbursementRatioMapper.getReimbursementRatio(
                 product.getGrade() != null ? product.getGrade().toString() : null,
                 product.getCategory(),
-                product.getOwnerDepId() != null ? Long.valueOf(product.getOwnerDepId()) : null
+                ownerDepIdLong
             );
             
             if (ratio != null) {

@@ -336,20 +336,20 @@
       <span>{{ scope.row.reimbursementDate ? parseTime(scope.row.reimbursementDate, '{y}-{m}-{d}') : '-' }}</span>
     </template>
   </el-table-column>
-<!--  <el-table-column label="报销比例" align="center" prop="reimbursementRatio" width="100">-->
-<!--    <template #default="scope">-->
-<!--      <span>{{ scope.row.reimbursementRatio ? scope.row.reimbursementRatio + '%' : '-' }}</span>-->
-<!--    </template>-->
-<!--  </el-table-column>-->
-<!--  &lt;!&ndash; 实际报销金额 &ndash;&gt;-->
-<!--  <el-table-column label="实际报销金额" align="center" width="120">-->
-<!--    <template #default="scope">-->
-<!--      <span v-if="scope.row.reimbursementFee || scope.row.reimbursement_fee">-->
-<!--        ¥{{ formatMoney(scope.row.reimbursementFee || scope.row.reimbursement_fee) }}-->
-<!--      </span>-->
-<!--      <span v-else>-</span>-->
-<!--    </template>-->
-<!--  </el-table-column>-->
+  <el-table-column label="报销比例" align="center" prop="reimbursementRatio" width="100">
+    <template #default="scope">
+      <span>{{ scope.row.reimbursementRatio ? scope.row.reimbursementRatio + '%' : '-' }}</span>
+    </template>
+  </el-table-column>
+  <!-- 实际报销金额 -->
+  <el-table-column label="实际报销金额" align="center" width="120">
+    <template #default="scope">
+      <span v-if="scope.row.reimbursementFee || scope.row.reimbursement_fee">
+        ¥{{ formatMoney(scope.row.reimbursementFee || scope.row.reimbursement_fee) }}
+      </span>
+      <span v-else>-</span>
+    </template>
+  </el-table-column>
 
   <!-- 报销状态列 -->
   <el-table-column label="报销状态" align="center" width="120">
@@ -382,15 +382,15 @@
     </template>
   </el-table-column>
 
-  <!-- 是否补录 -->
-  <el-table-column label="是否补录" align="center" width="100">
-    <template #default="scope">
-      <el-tag v-if="scope.row.isSupplement === 1 || scope.row.is_supplement === 1" type="warning">是</el-tag>
-      <el-tag v-else-if="scope.row.isSupplement === 0 || scope.row.is_supplement === 0" type="info">否</el-tag>
-      <span v-else>-</span>
-    </template>
-  </el-table-column>
-  
+<!--  &lt;!&ndash; 是否补录 &ndash;&gt;-->
+<!--  <el-table-column label="是否补录" align="center" width="100">-->
+<!--    <template #default="scope">-->
+<!--      <el-tag v-if="scope.row.isSupplement === 1 || scope.row.is_supplement === 1" type="warning">是</el-tag>-->
+<!--      <el-tag v-else-if="scope.row.isSupplement === 0 || scope.row.is_supplement === 0" type="info">否</el-tag>-->
+<!--      <span v-else>-</span>-->
+<!--    </template>-->
+<!--  </el-table-column>-->
+<!--  -->
 
 
 
@@ -663,6 +663,14 @@
             />
           </el-select>
         </el-form-item>
+        <el-form-item label="比赛名称" prop="competitionName">
+          <el-input 
+            v-model="associateQueryParams.competitionName" 
+            placeholder="请输入比赛名称" 
+            clearable 
+            style="width: 180px"
+          />
+        </el-form-item>
         <el-form-item>
           <el-button type="primary" icon="Search" @click="handleAssociateQuery">搜索</el-button>
           <el-button icon="Refresh" @click="resetAssociateQuery">重置</el-button>
@@ -679,6 +687,7 @@
       >
         <el-table-column type="selection" width="55" align="center" />
         <el-table-column label="成果编号" align="center" prop="achievementId" width="100" />
+        <el-table-column label="比赛名称" align="center" prop="competitionName" min-width="150" show-overflow-tooltip />
         <el-table-column label="作品名称" align="center" prop="name" min-width="180" show-overflow-tooltip />
         <el-table-column label="类别" align="center" prop="category" width="100">
           <template #default="scope">
@@ -738,7 +747,7 @@
     <el-dialog 
       title="项目报销" 
       v-model="reimburseDialogVisible" 
-      width="1400px"
+      width="1600px"
       append-to-body
       :close-on-click-modal="false"
       @close="handleCloseReimburseDialog"
@@ -782,8 +791,13 @@
                   <span class="reimburse-qrcode-id">ID: {{ selectedReimburseItem.achievementId }}</span>
                 </div>
                 <div class="reimburse-contact-info">
-                  <div class="contact-item"><span class="contact-label">负责人：</span><span>{{ selectedReimburseItem.contactName || '未设置' }}</span></div>
-                  <div class="contact-item"><span class="contact-label">学号：</span><span>{{ selectedReimburseItem.studentId || '未设置' }}</span></div>
+                  <div class="contact-row">
+                    <div class="contact-item"><span class="contact-label">负责人：</span><span>{{ selectedReimburseItem.contactName || '未设置' }}</span></div>
+                    <div class="contact-item amount-item"><span class="contact-label">需报销金额：</span><span class="amount-highlight">¥{{ formatMoney(selectedReimburseItem.fee) }}</span></div>
+                  </div>
+                  <div class="contact-row">
+                    <div class="contact-item"><span class="contact-label">学号：</span><span>{{ selectedReimburseItem.studentId || '未设置' }}</span></div>
+                  </div>
                 </div>
                 <div class="qrcode-wrapper">
                   <iframe v-if="selectedReimburseItem.qrCodeUuid && qrCodePreviewUrls[selectedReimburseItem.qrCodeUuid]" :src="qrCodePreviewUrls[selectedReimburseItem.qrCodeUuid]" class="qrcode-pdf" frameborder="0"></iframe>
@@ -1039,7 +1053,7 @@ const associateQueryParams = reactive({
   level: null,
   grade: null,
   ownerDepId: null,
-  sessionId:sessionId,
+  competitionName: null
 })
 
 
@@ -1475,6 +1489,7 @@ const resetAssociateQuery = () => {
   associateQueryParams.category = null
   associateQueryParams.level = null
   associateQueryParams.grade = null
+  associateQueryParams.competitionName = null
   associateQueryParams.pageNum = 1
   handleAssociateQuery()
 }
@@ -1756,11 +1771,11 @@ const handleOpenReimburseDialog = async () => {
   setTimeout(() => {
     const dialogWrapper = document.querySelector('.el-dialog.reimburse-dialog');
     if (dialogWrapper) {
-      dialogWrapper.style.height = '1600px';
-      dialogWrapper.style.maxHeight = '1600px';
+      dialogWrapper.style.height = '2200px';
+      dialogWrapper.style.maxHeight = '2200px';
       const dialogBody = dialogWrapper.querySelector('.el-dialog__body');
       if (dialogBody) {
-        dialogBody.style.height = '1500px';
+        dialogBody.style.height = '2100px';
         dialogBody.style.overflow = 'auto';
       }
     }
@@ -2184,28 +2199,50 @@ getList()
 
 /* 负责人信息样式 */
 .reimburse-contact-info {
-  margin: 15px 0;
-  padding: 15px;
+  margin: 20px 0;
+  padding: 20px;
   background-color: #f8f9fa;
   border-radius: 8px;
   border: 1px solid #e9ecef;
 }
 
 .contact-item {
-  margin-bottom: 8px;
-  font-size: 14px;
+  margin-bottom: 12px;
+  font-size: 18px;
 }
 
 .contact-label {
   font-weight: 500;
   color: #303133;
-  margin-right: 10px;
-  width: 60px;
+  margin-right: 15px;
+  min-width: 120px;
   display: inline-block;
+  white-space: nowrap;
+  word-break: keep-all;
 }
 
 .contact-item span:last-child {
   color: #606266;
+  font-size: 18px;
+}
+
+.amount-highlight {
+  color: #e6a23c !important;
+  font-weight: bold;
+  font-size: 20px !important;
+}
+
+.contact-row {
+  display: flex;
+  align-items: center;
+  margin-bottom: 12px;
+}
+
+.amount-item {
+  text-align: center;
+  flex: 1;
+  margin: 0 20px;
+  min-width: 200px;
 }
 
 /* 报销弹窗样式 */
@@ -2245,7 +2282,7 @@ getList()
   display: flex;
   gap: 20px;
   margin: 20px 0;
-  height: 450px;
+  height: 900px;
 }
 
 .reimburse-list {
@@ -2337,18 +2374,18 @@ getList()
 .reimburse-qrcode-header {
   display: flex;
   justify-content: space-between;
-  margin-bottom: 15px;
+  margin-bottom: 20px;
   font-weight: bold;
 }
 
 .reimburse-qrcode-name {
   color: #303133;
-  font-size: 16px;
+  font-size: 22px;
 }
 
 .reimburse-qrcode-id {
   color: #909399;
-  font-size: 14px;
+  font-size: 18px;
 }
 
 .reimburse-qrcode-empty {
@@ -2476,19 +2513,19 @@ getList()
   display: flex;
   justify-content: center;
   align-items: center;
-  min-height: 200px;
+  min-height: 400px;
 }
 
 .qrcode-img {
-  width: 200px;
-  height: 200px;
+  width: 400px;
+  height: 400px;
   border: 1px solid #dcdfe6;
   border-radius: 8px;
 }
 
 .qrcode-pdf {
-  width: 250px;
-  height: 250px;
+  width: 500px;
+  height: 500px;
   border: 1px solid #dcdfe6;
   border-radius: 8px;
 }
@@ -2497,13 +2534,16 @@ getList()
   display: flex;
   flex-direction: column;
   align-items: center;
-  gap: 10px;
+  gap: 15px;
   color: #909399;
+  min-height: 400px;
 }
 
 .qrcode-tip {
-  font-size: 12px;
-  color: #909399;
-  margin-top: 10px;
+  font-size: 18px;
+  color: #606266;
+  margin-top: 15px;
+  text-align: center;
+  font-weight: 500;
 }
 </style>

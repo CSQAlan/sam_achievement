@@ -400,9 +400,10 @@ PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
             <if test="grade != null">
                 AND grade = #{grade}
             </if>
-            <if test="sessionId!= null and sessionId !=''" >
-                AND session_id =#{sessionId}
+            <if test="competitionName != null and competitionName != ''">
+                AND c.name LIKE CONCAT('%', #{competitionName}, '%')
             </if>
+            
         </where>
         ORDER BY create_time DESC
     </select>
