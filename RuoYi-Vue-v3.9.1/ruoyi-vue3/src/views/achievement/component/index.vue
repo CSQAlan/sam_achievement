@@ -1,11 +1,13 @@
-﻿<template>
+<template>
   <div class="achievement-manage-root">
-    <div v-show="!pageModeActive" class="app-container">
-      <!-- 搜索表单 -->
-      <el-form :model="queryParams" ref="queryRef" v-show="showSearch" label-width="68px" class="achievement-search-form">
-        <el-row :gutter="10" class="search-row search-row-primary">
+    <div v-show="!pageModeActive" class="app-container achievement-app-container">
+      <!-- 1. 搜索区域 -->
+      <div class="search-section" v-show="showSearch">
 
-          <el-col :span="5">
+        <el-form :model="queryParams" ref="queryRef" label-width="68px" class="achievement-search-form">
+          <el-row :gutter="10" class="search-row search-row-primary">
+
+          <el-col :span="4">
             <el-form-item label="比赛" prop="competitionId" class="search-item" label-width="40px">
               <el-select
                   v-model="queryParams.competitionId"
@@ -50,7 +52,19 @@
             </el-form-item>
           </el-col>
 
-          <el-col :span="4">
+          <el-col v-if="reviewSource" :span="3">
+            <el-form-item label="年份" prop="year" class="search-item" label-width="40px">
+              <el-input
+                  v-model.number="queryParams.year"
+                  placeholder="年份"
+                  clearable
+                  @keyup.enter="handleQuery"
+                  @change="handleQuery"
+              />
+            </el-form-item>
+          </el-col>
+
+          <el-col :span="5">
             <el-form-item label="证书编号" prop="certificateNo" class="search-item">
               <el-input
                   v-model="queryParams.certificateNo"
@@ -60,7 +74,7 @@
               />
             </el-form-item>
           </el-col>
-          <el-col :span="9" class="search-action-col">
+          <el-col :span="7" class="search-action-col">
             <el-form-item class="search-item search-action-item">
               <div class="search-action-row">
                 <el-button type="primary" icon="Search" @click="handleQuery">搜索</el-button>
@@ -166,16 +180,6 @@
             </el-form-item>
           </el-col>
           <el-col v-if="reviewSource" :span="4">
-            <el-form-item label="年份" prop="year" class="search-item" >
-              <el-input
-                  v-model="queryParams.year"
-                  placeholder="请输入年份"
-                  clearable
-                  @keyup.enter="handleQuery"
-              />
-            </el-form-item>
-          </el-col>
-          <el-col v-if="reviewSource" :span="4">
             <el-form-item label="是否补录" prop="isSupplement" class="search-item">
               <el-select v-model="queryParams.isSupplement" placeholder="请选择是否补录" clearable>
                 <el-option
@@ -201,8 +205,11 @@
           </el-col>
         </el-row>
       </el-form>
+    </div>
 
-      <el-row class="mb8 toolbar-primary-row">
+    <!-- 2. 工具栏与操作区域 -->
+    <div class="action-section">
+      <el-row class="toolbar-row">
         <div class="toolbar-left">
           <el-button
               v-if="showAdd"
@@ -212,6 +219,16 @@
               @click="handleAdd"
               v-hasPermi="permAdd"
           >新增</el-button>
+          <el-button
+              v-if="canBatchReview"
+              type="warning"
+              plain
+              class="toolbar-fixed-button"
+              :loading="selectAllLoading"
+              @click="handleSelectAllResults"
+          >
+            {{ allResultsSelected ? '取消全选' : '全选全部' }}
+          </el-button>
           <el-button
               v-if="showEdit && canUseEditAction"
               type="success"
@@ -240,6 +257,15 @@
           >导出</el-button>
           <el-button
               v-if="showAttachmentExport"
+              type="primary"
+              plain
+              icon="Download"
+              :loading="exportCompetitionLoading"
+              @click="openCompetitionExportDialog"
+              v-hasPermi="permExport"
+          >赛事附件批量导出</el-button>
+          <el-button
+              v-if="showAttachmentExport"
               type="warning"
               plain
               icon="Download"
@@ -247,32 +273,31 @@
               :loading="exportAttachmentLoading"
               @click="openExportAttachmentDialog"
               v-hasPermi="permExport"
-          >导出附件</el-button>
+          >导出选中的附件</el-button>
+        </div>
+        <div class="toolbar-right">
+          <el-button icon="Refresh" circle @click="getList" title="刷新列表" />
         </div>
       </el-row>
 
-      <el-row v-if="canBatchReview" class="mb8 batch-toolbar-row">
-        <div class="batch-toolbar-panel">
-          <el-button
-              type="warning"
-              plain
-              class="toolbar-fixed-button"
-              :loading="selectAllLoading"
-              @click="handleSelectAllResults"
-          >
-            {{ allResultsSelected ? '取消全选' : '全选全部' }}
-          </el-button>
 
-          <div v-if="allResultsSelected" class="toolbar-selection-slot">
-            <el-tag type="warning">
-              已选全部 {{ allResultsCount }} 条
-            </el-tag>
-          </div>
+
+      <!-- 批量审核面板 -->
+      <transition name="el-zoom-in-top">
+        <el-row v-if="canBatchReview" class="batch-toolbar-row">
+          <div class="batch-toolbar-panel">
+            <div class="batch-panel-header">
+              <el-tag type="warning" effect="dark" class="selection-count-tag">
+                {{ allResultsSelected ? '已选全部' : '已选' }} {{ allResultsSelected ? allResultsCount : ids.length }} 项
+              </el-tag>
+              <div class="divider-vertical"></div>
+            </div>
 
           <el-select
               v-model="batchReviewStatus"
               class="toolbar-status-select"
               placeholder="请选择批量状态"
+              style="width: 200px;"
               clearable
           >
             <el-option
@@ -289,44 +314,53 @@
               icon="Edit"
               class="toolbar-fixed-button"
               :loading="batchReviewLoading"
+              :disabled="false"
               @click="handleBatchReviewStatus"
-              v-hasPermi="permEdit"
+              v-hasPermi="[...permEdit, ...permReview]"
           >
             批量审核
           </el-button>
 
-          <div class="batch-reason-inline" :class="{ 'is-active': showBatchRejectReason }">
-            <el-input
-                v-model="batchRejectReasonCustom"
-                class="batch-reason-input"
-                clearable
-                :placeholder="batchRejectReasonCustomPlaceholder"
-            >
-              <template #append>
-                <el-dropdown trigger="click" @command="handleBatchRejectReasonCommand">
-                  <span class="batch-reason-dropdown-link">常用原因</span>
-                  <template #dropdown>
-                    <el-dropdown-menu>
-                      <el-dropdown-item
-                          v-for="opt in batchRejectReasonOptions"
-                          :key="opt.value"
-                          :command="opt.value"
-                      >
-                        {{ opt.label }}
-                      </el-dropdown-item>
-                    </el-dropdown-menu>
+            <!-- 驳回原因输入区 - 修复内容显示 -->
+            <div v-if="showBatchRejectReason" class="audit-field reason-field">
+              <div class="audit-reason-group">
+                <el-input
+                    style="width: 300px;"
+                    v-model="batchRejectReasonCustom"
+                    clearable
+                    class="audit-reason-input"
+                    :placeholder="batchRejectReasonCustomPlaceholder"
+                >
+                  <template #append>
+                    <el-dropdown trigger="click" @command="handleBatchRejectReasonCommand">
+                      <span class="audit-reason-dropdown-link">常用原因</span>
+                      <template #dropdown>
+                        <el-dropdown-menu>
+                          <el-dropdown-item
+                              v-for="opt in batchRejectReasonOptions"
+                              :key="opt.value"
+                              :command="opt.value"
+                          >
+                            {{ opt.label }}
+                          </el-dropdown-item>
+                        </el-dropdown-menu>
+                      </template>
+                    </el-dropdown>
                   </template>
-                </el-dropdown>
-              </template>
-            </el-input>
+                </el-input>
+              </div>
+            </div>
           </div>
-        </div>
-      </el-row>
+        </el-row>
+      </transition>
+    </div>
 
-      <el-table ref="tableRef" v-loading="loading" :data="listData" @selection-change="handleSelectionChange">
+    <!-- 3. 数据表格区域 -->
+    <div class="table-section">
+      <el-table ref="tableRef" v-loading="loading" :data="listData" @selection-change="handleSelectionChange" border stripe>
         <el-table-column type="selection" width="55" align="center" />
         <el-table-column label="成果编号" width="77" align="center" prop="achievementId" />
-        <el-table-column label="比赛" width="120" align="center" prop="competitionName">
+        <el-table-column label="比赛" width="80" align="center" prop="competitionName">
           <template #default="scope">
             <span>{{ scope.row.competitionName || scope.row.competition_name || '-' }}</span>
           </template>
@@ -459,7 +493,6 @@
           v-model:limit="queryParams.pageSize"
           @pagination="getList"
       />
-
     </div>
 
     <AchievementForm
@@ -513,7 +546,118 @@
         </el-button>
       </template>
     </el-dialog>
+
+    <el-dialog
+        v-model="exportCompetitionDialogVisible"
+        title="按赛事批量导出所有附件"
+        width="450px"
+    >
+      <el-form label-width="80px">
+        <el-form-item label="比赛名称" style="margin-bottom: 20px;">
+            <el-select
+                  v-model="exportCompetitionId"
+                  placeholder="请输入关键字搜索比赛"
+                  clearable
+                  filterable
+                  remote
+                  reserve-keyword
+                  :remote-method="remoteSearchCompetition"
+                  :loading="competitionLoading"
+                  style="width: 100%;"
+                  @visible-change="handleCompetitionDropdownVisible"
+              >
+                <el-option
+                    v-for="item in competitionOptions"
+                    :key="item.id"
+                    :label="item.name"
+                    :value="item.id"
+                />
+            </el-select>
+        </el-form-item>
+        <el-form-item label="附件类型" style="margin-top: 10px; margin-bottom: 10px;">
+            <el-checkbox-group v-model="exportCompetitionAttachmentTypes" class="attachment-export-group">
+                <el-checkbox
+                    v-for="item in attachmentTypeOptions"
+                    :key="item.value"
+                    :label="item.value"
+                >
+                    {{ item.label }}
+                </el-checkbox>
+            </el-checkbox-group>
+        </el-form-item>
+      </el-form>
+      <div style="font-size:12px; line-height:1.6; color:#999; margin: 0 10px 0 10px; background: #f4f4f5; padding: 10px; border-radius: 4px;">
+        <span style="color:#e6a23c; font-weight:bold;">提示：</span>此功能<strong>无视列表分页</strong>，系统将一次性把当前选择赛事下的<strong>所有通过审核的成果</strong>打包为ZIP。
+      </div>
+
+      <div class="export-config-container">
+        <el-form label-position="top">
+          <el-form-item label="选择附件命名格式">
+            <el-radio-group v-model="namingPreset" class="modern-radio-group" @change="handleNamingPresetChange">
+              <el-radio-button label="default" style="width: 80px;">编号 + 姓名</el-radio-button>
+              <el-radio-button label="comp_id_name" style="width: 80px;">赛事 + 编号 + 姓名</el-radio-button>
+              <el-radio-button label="name_grade" style="width: 80px;">姓名 + 获奖等级</el-radio-button>
+              <el-radio-button label="custom" style="width: 80px;">自定义</el-radio-button>
+            </el-radio-group>
+          </el-form-item>
+
+        <!-- HTML 结构改进 -->
+<transition name="el-zoom-in-top">
+  <div v-if="namingPreset === 'custom'" class="custom-helper-box">
+    <!-- 标题不再是孤立的行，而是作为盒子的一部分 -->
+    <div class="helper-header">
+      <el-icon><Pointer /></el-icon>
+      <span>点击插入可用字段</span>
+    </div>
+    
+    <div class="naming-tag-container">
+      <el-button
+        v-for="tag in availableNamingTags"
+        :key="tag.key"
+        size="small"
+        class="token-button"
+        @click="insertNamingTag(tag.key)"
+      >
+        {{ tag.label }}
+      </el-button>
+    </div>
+
+    <!-- 输入框与上方紧密贴合 -->
+    <el-input
+      v-model="customNamingTemplate"
+      placeholder="在此构造您的文件名格式..."
+      class="template-input"
+    >
+      <template #prepend><span class="input-prefix">格式</span></template>
+    </el-input>
   </div>
+</transition>
+
+
+          <div class="preview-section">
+            <div class="preview-header">
+              <span class="preview-title"><el-icon><View /></el-icon> 文件名实时预览</span>
+            </div>
+            <div class="preview-content-box">
+              <span class="preview-text">{{ namingPreview }}.pdf</span>
+            </div>
+          </div>
+        </el-form>
+      </div>
+
+      <div style="font-size:11px; line-height:1.6; color:#f56c6c; margin: 10px 10px 0 10px; padding: 5px 10px; border-left: 3px solid #f56c6c; background: #fff5f5;">
+        * 若赛事量大，打包耗时可能较长，请耐心等待。
+      </div>
+
+      <template #footer>
+        <el-button @click="exportCompetitionDialogVisible = false">取消</el-button>
+        <el-button type="primary" :loading="exportCompetitionLoading" @click="submitCompetitionExportAttachment">
+          全量导出
+        </el-button>
+      </template>
+    </el-dialog>
+  </div>
+    </div>
 </template>
 
 <script setup>
@@ -523,14 +667,13 @@ import { useDict } from '@/utils/dict';
 import { blobValidate } from '@/utils/ruoyi';
 import useUserStore from '@/store/modules/user';
 import auth from '@/plugins/auth';
-import { Warning } from '@element-plus/icons-vue';
+import { Warning, Pointer, Edit, View, Search } from '@element-plus/icons-vue';
 import { saveAs } from 'file-saver';
 import AchievementForm from '../component/AchievementForm.vue';
 import { listManage, getManage, addManage, updateManage, delManage, exportAttachmentZip } from '@/api/achievement/manage';
 import { batchUpdateReviewStatus } from '@/api/achievement/review_batch';
 import { listCompetition } from '@/api/competition/competition';
 import { listSession } from '@/api/session/session';
-
 const props = defineProps({
   listFn: { type: Function, default: null },
   getFn: { type: Function, default: null },
@@ -578,6 +721,7 @@ const reviewRoute = computed(() => {
   return base.endsWith('/') ? `${base}reviewPage` : `${base}/reviewPage`;
 });
 const reviewSource = computed(() => (props.reviewSource || '').toLowerCase());
+
 
 const permissionPrefix = computed(() => props.permissionPrefix || 'achievement:manage');
 const permAdd = computed(() => [`${permissionPrefix.value}:add`]);
@@ -670,6 +814,10 @@ const openingReviewPageId = ref('');
 const currentId = ref(null);
 const exportAttachmentDialogVisible = ref(false);
 const exportAttachmentLoading = ref(false);
+const exportCompetitionDialogVisible = ref(false);
+const exportCompetitionLoading = ref(false);
+const exportCompetitionId = ref(null);
+const exportCompetitionAttachmentTypes = ref([1, 2, 3, 4, 5, 6, 8]);
 const selectedAttachmentTypes = ref([]);
 const attachmentTypeOptions = [
   { label: '奖状(证书)', value: 1 },
@@ -681,6 +829,49 @@ const attachmentTypeOptions = [
   { label: '收款码', value: 6 }
 ];
 const hasBatchSelection = computed(() => ids.value.length > 0);
+const namingPreset = ref('default');
+const customNamingTemplate = ref('{id}_{manager}_{type}');
+const availableNamingTags = [
+  { label: '[+ 成果编号]', key: '{id}' },
+  { label: '[+ 负责人]', key: '{manager}' },
+  { label: '[+ 获奖等级]', key: '{grade}' },
+  { label: '[+ 赛事名称]', key: '{competition}' },
+  { label: '[+ 附件类型]', key: '{type}' }
+];
+const namingPreviewData = {
+  id: '202404130001',
+  manager: '张三',
+  grade: '一等奖',
+  competition: '挑战杯全国大学生课外学术科技作品竞赛',
+  type: '奖状(证书)'
+};
+
+const namingPreview = computed(() => {
+  let template = '';
+  if (namingPreset.value === 'default') template = '{id}_{manager}';
+  else if (namingPreset.value === 'comp_id_name') template = '{competition}_{id}_{manager}';
+  else if (namingPreset.value === 'name_grade') template = '{manager}_{grade}';
+  else template = customNamingTemplate.value;
+
+  if (!template) return '未命名';
+
+  return template
+    .replace(/{id}/g, namingPreviewData.id)
+    .replace(/{manager}/g, namingPreviewData.manager)
+    .replace(/{grade}/g, namingPreviewData.grade)
+    .replace(/{competition}/g, namingPreviewData.competition)
+    .replace(/{type}/g, namingPreviewData.type);
+});
+
+function handleNamingPresetChange(val) {
+  if (val === 'default') customNamingTemplate.value = '{id}_{manager}';
+  else if (val === 'comp_id_name') customNamingTemplate.value = '{competition}_{id}_{manager}';
+  else if (val === 'name_grade') customNamingTemplate.value = '{manager}_{grade}';
+}
+
+function insertNamingTag(tag) {
+  customNamingTemplate.value += tag;
+}
 
 function normalizeLooseText(value) {
   if (value === null || value === undefined) return '';
@@ -1262,7 +1453,8 @@ function clearSelectionState() {
   tableRef.value?.clearSelection?.();
 }
 function handleAdd() {
-  openPageForm();
+  // 新增统一改为弹窗模式
+  openDialog();
 }
 
 async function handleUpdate() {
@@ -1353,6 +1545,49 @@ async function submitExportAttachment() {
     proxy.$modal?.msgError?.(e?.message || '导出附件失败');
   } finally {
     exportAttachmentLoading.value = false;
+  }
+}
+
+function openCompetitionExportDialog() {
+  exportCompetitionId.value = null;
+  exportCompetitionDialogVisible.value = true;
+}
+
+async function submitCompetitionExportAttachment() {
+  if (!exportCompetitionId.value) {
+    proxy.$modal?.msgWarning?.('请先选择需要打包的比赛');
+    return;
+  }
+  if (!exportCompetitionAttachmentTypes.value.length) {
+    proxy.$modal?.msgWarning?.('请至少选择一个附件类别');
+    return;
+  }
+
+  exportCompetitionLoading.value = true;
+  try {
+    const data = await exportAttachmentZip({
+      achievementIds: [],
+      types: exportCompetitionAttachmentTypes.value,
+      sourceMode: props.sourceMode || '',
+      groupByCompetition: true,
+      competitionId: exportCompetitionId.value,
+      filenameTemplate: namingPreset.value === 'custom' ? customNamingTemplate.value : (namingPreset.value === 'default' ? '{id}_{manager}' : (namingPreset.value === 'comp_id_name' ? '{competition}_{id}_{manager}' : '{manager}_{grade}'))
+    });
+
+    if (!blobValidate(data)) {
+      throw new Error(await parseBlobError(data, '批量打包导出附件失败'));
+    }
+
+    const blob = new Blob([data], { type: 'application/zip' });
+    const targetComp = competitionOptions.value.find(item => item.id === exportCompetitionId.value);
+    const compName = targetComp ? targetComp.name : '参赛附件批量打包';
+    saveAs(blob, `${compName}_全量附件导出_${new Date().getTime()}.zip`);
+    exportCompetitionDialogVisible.value = false;
+    proxy.$modal?.msgSuccess?.('打包导出成功');
+  } catch (e) {
+    proxy.$modal?.msgError?.(e?.message || '批量打包导出失败');
+  } finally {
+    exportCompetitionLoading.value = false;
   }
 }
 
@@ -1512,8 +1747,14 @@ function refreshFromRoute() {
   formShowSubmit.value = true;
   normalizeReviewStatusBySource();
   applyRoutePageState();
+
+  // 管理员审核页面默认当前年份筛选
+  if (reviewSource.value && !route.query.year && !queryParams.year) {
+    queryParams.year = new Date().getFullYear();
+  }
+
   nextTick(() => {
-    getList();
+    handleQuery();
   });
 }
 
@@ -1525,6 +1766,8 @@ onMounted(() => {
   if (typeof window !== 'undefined') {
     window.addEventListener(REVIEW_RESULT_APPLIED_EVENT, handleReviewResultApplied);
   }
+  // 页面初次挂载或 F5 刷新时执行初始化
+  refreshFromRoute();
 });
 
 onActivated(() => {
@@ -1656,91 +1899,156 @@ export default {
   white-space: nowrap;
 }
 
-.search-item :deep(.el-input),
-.search-item :deep(.el-select),
-.search-item :deep(.el-date-editor) {
-  width: 100%;
-}
-
-.attachment-export-group {
+/* 核心布局优化 */
+.achievement-app-container {
+  padding: 16px;
+  background-color: #f0f2f5;
+  min-height: calc(100vh - 84px);
   display: flex;
   flex-direction: column;
-  gap: 10px;
+  gap: 16px;
 }
 
-.toolbar-primary-row {
+.search-section {
+  background: #fff;
+  padding: 16px 20px 4px 20px;
+  border-radius: 4px;
+  box-shadow: 0 1px 4px rgba(0,21,41,0.08);
+}
+
+.section-title {
   display: flex;
   align-items: center;
+  gap: 8px;
+  margin-bottom: 20px;
+  font-size: 14px;
+  font-weight: 600;
+  color: #303133;
+  border-bottom: 1px solid #f0f0f0;
+  padding-bottom: 12px;
+}
+.section-title .el-icon {
+  /* 增加回退值：如果变量不存在，使用默认的 Element 蓝色 */
+  color: var(--el-color-primary, #409eff);
 }
 
-.toolbar-left {
+.action-section {
+  background: #fff;
+  padding: 16px 20px;
+  border-radius: 4px;
+  box-shadow: 0 1px 4px rgba(0,21,41,0.08);
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.batch-guide-alert {
+  margin-top: 8px;
+  animation: slideInDown 0.3s ease-out;
+}
+
+.toolbar-row {
   display: flex;
   align-items: center;
-  flex-wrap: nowrap;
-  gap: 10px;
-  flex: 0 0 auto;
+  justify-content: space-between;
 }
 
+.table-section {
+  background: #fff;
+  padding: 12px 20px 20px 20px;
+  border-radius: 4px;
+  box-shadow: 0 1px 4px rgba(0,21,41,0.08);
+  flex: 1;
+}
+
+/* 批量操作面板样式强化 - 增加回退值与布局对齐 */
 .batch-toolbar-row {
-  display: flex;
-  align-items: center;
+  background-color: aliceblue;
+  border: 1px solid #d9ecff; /* 手动替换变量，解决解析报错 */
+  border-radius: 4px;
+  margin-top: 8px;
+  padding: 12px 20px;
+  box-shadow: 0 2px 12px rgba(0, 0, 0, 0.04);
+  animation: slideInDown 0.3s ease-out;
 }
 
 .batch-toolbar-panel {
   width: 100%;
   display: flex;
   align-items: center;
-  gap: 10px;
-  padding: 0;
-  overflow-x: auto;
-  overflow-y: hidden;
-}
+  gap: 16px;
+  flex-wrap: nowrap; /* 强制不换行 */}
 
-.toolbar-fixed-button {
-  flex: 0 0 auto;
-}
-
-.toolbar-selection-slot {
-  display: flex;
-  align-items: center;
-  flex: 0 0 auto;
-}
-
-.toolbar-status-select {
-  flex: 0 0 150px;
-  width: 150px;
-}
-
-.batch-reason-inline {
-  flex: 1 0 430px;
-  min-width: 430px;
+/* 核心审核字段样式 - 对齐 reviewPage.vue */
+.audit-field {
   display: flex;
   align-items: center;
   gap: 10px;
-  visibility: hidden;
-  pointer-events: none;
+  position: relative;
 }
 
-.batch-reason-inline.is-active {
-  visibility: visible;
-  pointer-events: auto;
+.audit-label {
+  color: #4e5969;
+  font-size: 13px;
+  font-weight: 500;
+  white-space: nowrap;
 }
 
-.batch-reason-input {
-  flex: 1 1 auto;
-  min-width: 0;
+.reason-field {
+  display: flex;
+  align-items: center;
 }
 
-.batch-reason-dropdown-link {
+.audit-reason-group {
+  display: flex;
+}
+
+.audit-reason-input {
+  width: 100%;
+}
+
+.audit-reason-dropdown-link {
   display: inline-flex;
   align-items: center;
   cursor: pointer;
   white-space: nowrap;
-  color: var(--el-text-color-regular);
+  color: var(--el-color-primary, #409eff);
+  font-size: 12px;
+  font-weight: 500;
 }
 
-.batch-toolbar-panel :deep(.el-tag) {
-  white-space: nowrap;
+.batch-panel-header {
+  display: flex;
+  align-items: center;
+}
+
+.selection-count-tag {
+  font-weight: bold;
+  font-size: 13px;
+}
+
+.divider-vertical {
+  width: 1px;
+  height: 18px;
+  background-color: #dcdfe6;
+  margin: 0 8px; /* 缩小间距 */
+}
+
+.achievement-search-form {
+  margin-bottom: 0;
+}
+
+.search-row-advanced {
+  border-top: 1px dashed #ebeef5;
+  padding-top: 16px;
+  margin-top: 8px;
+}
+
+/* 表格表头美化 */
+.table-section :deep(.el-table__header-wrapper) th {
+  background-color: #f8f9fb !important;
+  color: #606266;
+  font-weight: 600;
 }
 
 .ellipsis-cell {
@@ -1759,5 +2067,130 @@ export default {
   cursor: pointer;
 }
 
-</style>
+/* 导出配置容器 */
+.export-config-container {
+  padding: 10px 15px;
+  background: #fbfbfc;
+  border-radius: 8px;
+  margin-top: 10px;
+  border: 1px solid #f2f4f7;
+}
 
+.attachment-export-group {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 5px 10px;
+  width: 100%;
+}
+
+/* 现代按钮组 */
+.modern-radio-group {
+  display: flex;
+  flex-wrap: wrap;
+}
+
+.modern-radio-group :deep(.el-radio-button__inner) {
+  padding: 8px 12px;
+  font-size: 13px;
+}
+
+
+/* 自定义辅助箱 - 整合风格 */
+.custom-helper-box {
+  margin: 10px 0;
+  padding: 12px;
+  background: #f8f9fb;
+  border: 1px solid #e4e7ed;
+  border-radius: 8px;
+}
+
+.helper-header {
+  font-size: 12px;
+  color: #a8abb2;
+  margin-bottom: 12px;
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.naming-tag-container {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  margin-bottom: 15px;
+}
+
+/* 令牌化按钮 */
+.token-button {
+  background: #ffffff !important;
+  border: 1px solid #dcdfe6 !important;
+  color: #606266 !important;
+  font-weight: normal;
+  transition: all 0.2s;
+  box-shadow: 0 1px 2px rgba(0,0,0,0.05);
+  border-radius: 4px;
+}
+
+.token-button:hover {
+  border-color: var(--el-color-primary) !important;
+  color: var(--el-color-primary) !important;
+  transform: translateY(-1px);
+}
+
+/* 输入框与隔离条 */
+.template-input :deep(.el-input-group__prepend) {
+  background-color: #f1f3f7;
+  color: #909399;
+  font-size: 12px;
+  padding: 0 12px;
+}
+
+.template-input :deep(.el-input__wrapper) {
+  background-color: #ffffff;
+}
+
+.input-prefix {
+  font-weight: 600;
+}
+
+/* 预览区域核心样式 */
+.preview-section {
+  margin-top: 12px;
+}
+
+.preview-header {
+  margin-bottom: 8px;
+  font-size: 13px;
+  font-weight: 600;
+  color: #606266;
+  display: flex;
+  align-items: center;
+}
+
+.preview-header .el-icon {
+  margin-right: 5px;
+}
+
+.preview-content-box {
+  background: linear-gradient(135deg, #f5f7fa 0%, #eef1f6 100%);
+  padding: 15px;
+  border-radius: 8px;
+  border: 1px solid #dfe4ed;
+  position: relative;
+}
+
+.preview-text {
+  display: block;
+  font-family: "Monaco", "Menlo", "Ubuntu Mono", "Consolas", monospace;
+  font-size: 13px;
+  color: #34495e;
+  line-height: 1.6;
+  word-break: break-all;
+  white-space: pre-wrap;
+  text-shadow: 0 1px 0 rgba(255,255,255,0.5);
+}
+
+.mt10 {
+  margin-top: 10px;
+}
+</style>

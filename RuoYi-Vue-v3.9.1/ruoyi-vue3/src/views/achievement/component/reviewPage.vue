@@ -1143,8 +1143,7 @@ watch(
   display: none;
 }
 .audit-reason-group {
-  display: flex;
-  width: 100%;
+  display: none;
 }
 .audit-label {
   color: #4e5969;

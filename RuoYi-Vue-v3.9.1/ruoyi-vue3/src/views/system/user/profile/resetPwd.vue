@@ -1,4 +1,4 @@
-<template>
+<!-- <template>
   <div class="app-container">
     <el-card>
       <template #header>
@@ -94,4 +94,4 @@ function close() {
 .pwd-form {
   max-width: 520px;
 }
-</style>
+</style> -->

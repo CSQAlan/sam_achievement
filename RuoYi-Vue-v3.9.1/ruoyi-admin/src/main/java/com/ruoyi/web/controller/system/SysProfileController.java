@@ -45,8 +45,7 @@ import com.ruoyi.web.service.ProfileCompletionService;
  */
 @RestController
 @RequestMapping("/system/user/profile")
-public class SysProfileController extends BaseController
-{
+public class SysProfileController extends BaseController {
     @Autowired
     private ISysUserService userService;
 
@@ -65,8 +64,7 @@ public class SysProfileController extends BaseController
     @Autowired
     private ISamTeacherService samTeacherService;
 
-    public static class ProfileSaveRequest
-    {
+    public static class ProfileSaveRequest {
         private String nickName;
         private String phonenumber;
         private String email;
@@ -79,18 +77,15 @@ public class SysProfileController extends BaseController
         private String name;
         private Long deptId;
 
-        public String getNickName()
-        {
+        public String getNickName() {
             return nickName;
         }
 
-        public void setNickName(String nickName)
-        {
+        public void setNickName(String nickName) {
             this.nickName = nickName;
         }
 
-        public String getPhonenumber()
-        {
+        public String getPhonenumber() {
             return phonenumber;
         }
 
@@ -99,8 +94,7 @@ public class SysProfileController extends BaseController
             this.phonenumber = phonenumber;
         }
 
-        public String getEmail()
-        {
+        public String getEmail() {
             return email;
         }
 
@@ -197,19 +191,19 @@ public class SysProfileController extends BaseController
     public AjaxResult profile()
     {
         LoginUser loginUser = getLoginUser();
-        
+
         // 健壮性改造：使用 selectUserById 或 selectUserByUserName 的列表获取方式，防止多角色导致 selectOne 报错
         SysUser user = userService.selectUserById(loginUser.getUserId());
         if (user == null) {
             user = userService.selectUserByUserName(loginUser.getUsername());
         }
-        
+
         if (user != null) {
             loginUser.setUser(user);
         }
-        
+
         profileCompletionService.refreshProfileCompletion(loginUser);
-        
+
         AjaxResult ajax = AjaxResult.success(user);
         ajax.put("roleGroup", userService.selectUserRoleGroup(loginUser.getUsername()));
         ajax.put("postGroup", userService.selectUserPostGroup(loginUser.getUsername()));
