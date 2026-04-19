@@ -1793,7 +1793,12 @@ const handleOpenReimburseDialog = async () => {
     // 获取支付信息
     const paymentRes = await getPaymentInfo(ids.value.join(','))
     if (paymentRes.code === 200) {
-      paymentInfo.value = paymentRes.data
+      // 按金额从高到低排序
+      paymentInfo.value = (paymentRes.data || []).sort((a, b) => {
+        const feeA = parseFloat(a.reimbursementFee || a.fee || 0)
+        const feeB = parseFloat(b.reimbursementFee || b.fee || 0)
+        return feeB - feeA // 从高到低排序
+      })
       
       // 加载收款码预览
       if (paymentInfo.value && paymentInfo.value.length > 0) {
@@ -1900,8 +1905,12 @@ const handleSubmitReimburse = async () => {
 
   // 如果是批量报销且有多个成果，初始化批量处理队列
   if (!currentReimburseRow.value && batchReimburseQueue.value.length === 0 && needReimburseProducts.length > 1) {
-    // 初始化批量报销队列
-    batchReimburseQueue.value = [...needReimburseProducts]
+    // 初始化批量报销队列，并按金额从高到低排序
+    batchReimburseQueue.value = [...needReimburseProducts].sort((a, b) => {
+      const feeA = parseFloat(a.reimbursementFee || a.reimbursement_fee || a.fee || 0)
+      const feeB = parseFloat(b.reimbursementFee || b.reimbursement_fee || b.fee || 0)
+      return feeB - feeA // 从高到低排序
+    })
     currentQueueIndex.value = 0
     isBatchProcessing.value = true
 
