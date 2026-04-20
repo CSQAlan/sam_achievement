@@ -237,6 +237,8 @@
                 default-first-option
                 placeholder="请选择已有赛事或直接输入新的赛事名称"
                 style="width: 100%"
+                :class="{ 'new-comp-select': isNewCompetition }"
+                @blur="handleCompetitionBlur"
               >
                 <el-option
                   v-for="item in competitionOptions"
@@ -245,6 +247,16 @@
                   :value="item.name"
                 />
               </el-select>
+              <div v-if="isNewCompetition" class="new-competition-hint">
+                <el-icon><WarningFilled /></el-icon> 
+                <span>
+                  检测到新赛事。
+                  <template v-if="suggestedCompetition">
+                    您指的是不是“<el-link type="warning" @click="form.name = suggestedCompetition">{{ suggestedCompetition }}</el-link>”？
+                  </template>
+                  <template v-else>请确保名称准确。</template>
+                </span>
+              </div>
             </el-form-item>
             <el-form-item label="年份" prop="year">
               <el-input-number
@@ -258,12 +270,19 @@
             </el-form-item>
             <el-form-item label="届次" prop="session">
               <el-input v-model="form.session" placeholder="例如：2025、十二届" />
+              <div class="input-tip">请按照奖状/证书上的届次填写（如：第十五届）</div>
             </el-form-item>
            
             
-            <el-alert v-if="preRecordedNote" type="warning" show-icon :closable="false" class="mb20">
+            <el-alert v-if="preRecordedNote" type="success" show-icon :closable="false" class="mb20">
               <template #title>
                 {{ preRecordedNote }}
+              </template>
+            </el-alert>
+
+            <el-alert v-if="duplicateNote" type="error" show-icon :closable="false" class="mb20">
+              <template #title>
+                {{ duplicateNote }}
               </template>
             </el-alert>
 
@@ -329,8 +348,14 @@
                 v-for="item in visibleAttachments"
                 :key="item.name"
                 :name="item.name"
-                :label="item.label"
               >
+                <template #label>
+                  <span class="tab-label">
+                    {{ item.label }}
+                    <el-icon v-if="form[item.prop]" class="success-dot"><CircleCheckFilled /></el-icon>
+                    <span v-else class="pending-dot"></span>
+                  </span>
+                </template>
                 <div class="upload-pane-content">
                   <el-alert
                     v-if="!form[item.prop]"
@@ -436,7 +461,15 @@ import {
   toRefs
 } from "vue";
 import { useRoute } from "vue-router";
-import { Delete, Document, Download, View, QuestionFilled } from "@element-plus/icons-vue";
+import { 
+  Delete, 
+  Document, 
+  Download, 
+  View, 
+  QuestionFilled, 
+  WarningFilled, 
+  CircleCheckFilled 
+} from "@element-plus/icons-vue";
 import request, { download } from "@/utils/request";
 import UploadFile from "@/components/FileUpload";
 import { listSession } from "@/api/session/session";
@@ -486,6 +519,19 @@ const routePreviewUrl = ref("");
 const competitionOptions = ref([]);
 
 const preRecordedNote = ref("");
+const duplicateNote = ref("");
+
+const isNewCompetition = computed(() => {
+  if (!form.value.name) return false;
+  return !competitionOptions.value.some(opt => opt.name === form.value.name);
+});
+
+const suggestedCompetition = computed(() => {
+  if (!isNewCompetition.value || !form.value.name) return null;
+  const query = form.value.name.toLowerCase();
+  const match = competitionOptions.value.find(opt => opt.name.toLowerCase().includes(query));
+  return match ? match.name : null;
+});
 
 function fetchCompetitionOptions() {
   request({
@@ -895,21 +941,37 @@ function submitForm() {
     if (!valid) {
       return;
     }
-    const submitData = {
-      ...form.value,
-      tags: Array.isArray(form.value.tags)
-        ? form.value.tags.join(",")
-        : form.value.tags || "",
-      competitionApplyAttachmentList: buildAttachmentList(),
+
+    const submitAction = () => {
+      const submitData = {
+        ...form.value,
+        tags: Array.isArray(form.value.tags)
+          ? form.value.tags.join(",")
+          : form.value.tags || "",
+        competitionApplyAttachmentList: buildAttachmentList(),
+      };
+      const requestFn = submitData.id
+        ? updateCompetitionapply
+        : addCompetitionapply;
+      requestFn(submitData).then(() => {
+        proxy.$modal.msgSuccess(submitData.id ? "修改成功" : "新增成功");
+        open.value = false;
+        getList();
+      });
     };
-    const requestFn = submitData.id
-      ? updateCompetitionapply
-      : addCompetitionapply;
-    requestFn(submitData).then(() => {
-      proxy.$modal.msgSuccess(submitData.id ? "修改成功" : "新增成功");
-      open.value = false;
-      getList();
-    });
+
+    // 如果检测到重复申请，提交前强弹窗提醒
+    if (duplicateNote.value) {
+      proxy.$modal.confirm(`系统检测到该赛事届次已有申请，确认继续提交吗？`, "重复申请提醒", {
+        confirmButtonText: "确定提交",
+        cancelButtonText: "取消并核实",
+        type: "warning"
+      }).then(() => {
+        submitAction();
+      }).catch(() => {});
+    } else {
+      submitAction();
+    }
   });
 }
 
@@ -950,12 +1012,14 @@ onBeforeUnmount(() => {
 
 fetchCompetitionOptions();
 getList();
-// 监听名/年/届，检测预录状态
+// 监听名/年/届，检测预录状态和重复申请
 watch([() => form.value.name, () => form.value.year, () => form.value.session], ([name, year, session]) => {
   if (name && year && String(session).trim()) {
     checkSessionStatus(name, year, session);
+    checkDuplicateApplication(name, year, session);
   } else {
     preRecordedNote.value = "";
+    duplicateNote.value = "";
   }
 });
 
@@ -984,6 +1048,39 @@ async function checkSessionStatus(name, year, session) {
     }
   } catch (e) {
     preRecordedNote.value = "";
+  }
+}
+
+async function checkDuplicateApplication(name, year, session) {
+  try {
+    // 查询同名、同年、同届的申请
+    const res = await listCompetitionapply({ 
+      name, 
+      year, 
+      session: String(session).trim(),
+      pageNum: 1,
+      pageSize: 10
+    });
+    const list = res.rows || [];
+    // 排除掉当前正在编辑的这一条
+    const others = list.filter(item => item.id !== form.value.id);
+    if (others.length > 0) {
+      duplicateNote.value = `系统检测到已有用户申请了该赛事的此届次（${session}），请勿重复申请。如有疑问请联系管理员。`;
+    } else {
+      duplicateNote.value = "";
+    }
+  } catch (e) {
+    console.error("检查重复申请失败", e);
+    duplicateNote.value = "";
+  }
+}
+
+/** 赛事名称失焦处理：保护用户输入的文字，防止失焦后值丢失，但不强制纠偏 */
+function handleCompetitionBlur(e) {
+  // 针对 Element Plus el-select allow-create 的增强处理
+  // 如果失焦时 v-model 为空，但搜索框(input)里其实有文字，则手动同步
+  if (!form.value.name && e.target.value) {
+    form.value.name = e.target.value;
   }
 }
 </script>
@@ -1028,6 +1125,59 @@ async function checkSessionStatus(name, year, session) {
   border: 1px solid #dcdfe6;
   border-radius: 4px;
   background: #f5f7fa;
+}
+
+.new-competition-hint {
+  margin-top: 5px;
+  font-size: 12px;
+  color: #e6a23c;
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  animation: shake 0.5s ease-in-out;
+}
+
+@keyframes shake {
+  0%, 100% { transform: translateX(0); }
+  25% { transform: translateX(-2px); }
+  75% { transform: translateX(2px); }
+}
+
+.new-comp-select :deep(.el-input__wrapper) {
+  box-shadow: 0 0 0 1px #e6a23c inset !important;
+  background-color: #fdf6ec !important;
+}
+
+/* 附件 Tab 样式增强 */
+.tab-label {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 14px;
+}
+
+.success-dot {
+  color: #67c23a;
+  font-size: 16px;
+}
+
+.pending-dot {
+  width: 8px;
+  height: 8px;
+  background-color: #f56c6c;
+  border-radius: 50%;
+  box-shadow: 0 0 4px rgba(245, 108, 108, 0.5);
+}
+
+.input-tip {
+  font-size: 11px;
+  color: #909399;
+  line-height: 1.5;
+  margin-top: 4px;
+}
+
+.mb20 {
+  margin-bottom: 20px;
 }
 
 .text-muted {
