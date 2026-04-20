@@ -72,6 +72,13 @@ public class SessionServiceImpl implements ISessionService {
         fileUuidMapper.updateFileUuidStatus(new String[] { uuid }, 0);
     }
 
+    private String normalizeOrganizations(String organizations) {
+        if (StringUtils.isBlank(organizations)) {
+            return organizations;
+        }
+        return organizations.replaceAll("，", ",");
+    }
+
     private void syncTagsToSubTable(Long sessionId, String tagsCode, String operName) {
         sessionMapper.deleteTagBySessionId(sessionId);
         if (StringUtils.isBlank(tagsCode)) {
@@ -114,14 +121,25 @@ public class SessionServiceImpl implements ISessionService {
         return sessionMapper.selectSessionList(session);
     }
 
+    @Override
+    public Long[] selectSessionIds(Session session) {
+        return sessionMapper.selectSessionIds(session);
+    }
+
     @Transactional(rollbackFor = Exception.class)
     @Override
     @BizAudit(bizType = "session", bizName = "新增届次", opType = BizAuditOpType.ADD, handler = "sessionBizAuditHandler", async = false)
     public int insertSession(Session session) {
         // year：默认当前年
         session.setYear(resolveYear(session.getYear()));
-        // uuid：必填且必须为PDF
-        validateAndFinalizeNoticeUuid(session.getUuid());
+        // 规范化盖章单位
+        session.setOrganizations(normalizeOrganizations(session.getOrganizations()));
+        // uuid：启用时必填且必须为PDF
+        if ("1".equals(session.getStatus())) {
+            validateAndFinalizeNoticeUuid(session.getUuid());
+        } else if (StringUtils.isNotBlank(session.getUuid())) {
+            validateAndFinalizeNoticeUuid(session.getUuid());
+        }
 
         // 复制模板：默认预录(2)，并强制重新上传通知（uuid不能复用模板uuid）
         if (session.getTemplateSessionId() != null)
@@ -155,8 +173,14 @@ public class SessionServiceImpl implements ISessionService {
         }
         // year：为空则默认当前年（避免被更新成null）
         session.setYear(resolveYear(session.getYear()));
-        // uuid：必填且必须为PDF
-        validateAndFinalizeNoticeUuid(session.getUuid());
+        // 规范化盖章单位
+        session.setOrganizations(normalizeOrganizations(session.getOrganizations()));
+        // uuid：启用时必填且必须为PDF
+        if ("1".equals(session.getStatus())) {
+            validateAndFinalizeNoticeUuid(session.getUuid());
+        } else if (StringUtils.isNotBlank(session.getUuid())) {
+            validateAndFinalizeNoticeUuid(session.getUuid());
+        }
 
         session.setUpdateTime(DateUtils.getNowDate());
         int updateCount = sessionMapper.updateSession(session);
@@ -209,6 +233,17 @@ public class SessionServiceImpl implements ISessionService {
         {
             throw new ServiceException("状态不合法");
         }
+
+        // 如果是要“启用 (status='1')”，检查是否都有上传 uuid
+        if ("1".equals(status)) {
+            for (Long id : ids) {
+                Session s = sessionMapper.selectSessionById(id);
+                if (s != null && StringUtils.isBlank(s.getUuid())) {
+                    throw new ServiceException("赛事届次【" + s.getSession() + "】未上传参赛通知PDF，无法启用！");
+                }
+            }
+        }
+
         return sessionMapper.updateSessionStatusByIds(ids, status, SecurityUtils.getUsername());
     }
 
@@ -250,10 +285,6 @@ public class SessionServiceImpl implements ISessionService {
             {
                 throw new ServiceException("第" + rowNo + "行：届次不能为空");
             }
-            if (StringUtils.isBlank(uuid))
-            {
-                throw new ServiceException("第" + rowNo + "行：参赛通知附件不能为空（仅PDF）");
-            }
 
             Session template = sessionMapper.selectSessionById(templateSessionId);
             if (template == null)
@@ -266,7 +297,7 @@ public class SessionServiceImpl implements ISessionService {
             }
 
             String normalizedSession = sessionText.trim();
-            String normalizedUuid = uuid.trim();
+
 
             // 同一赛事下届次不可重复（请求内）
             String uniqKey = template.getCompetitionId() + "@" + normalizedSession;
@@ -274,10 +305,7 @@ public class SessionServiceImpl implements ISessionService {
             {
                 throw new ServiceException("第" + rowNo + "行：同一赛事下届次重复（" + normalizedSession + "）");
             }
-            if (!uuidSet.add(normalizedUuid))
-            {
-                throw new ServiceException("第" + rowNo + "行：参赛通知附件重复，请分别上传不同通知文件");
-            }
+
 
             // DB重复校验：同一赛事下届次不能重复
             Session query = new Session();
@@ -289,18 +317,13 @@ public class SessionServiceImpl implements ISessionService {
                 throw new ServiceException("第" + rowNo + "行：届次已存在（" + normalizedSession + "）");
             }
 
-            // 强制重新上传通知：不能复用模板uuid
-            if (StringUtils.isNotBlank(template.getUuid()) && StringUtils.equals(template.getUuid(), normalizedUuid))
-            {
-                throw new ServiceException("第" + rowNo + "行：必须重新上传参赛通知（不能复用模板通知）");
-            }
+
 
             // year：默认当前年；uuid：必填且必须是PDF（同时会把is_temp置0）
             Session newSession = new Session();
             newSession.setTemplateSessionId(templateSessionId);
             newSession.setYear(resolveYear(item.getYear()));
             newSession.setSession(normalizedSession);
-            newSession.setUuid(normalizedUuid);
 
             // 复制模板字段（不允许前端篡改模板信息）
             newSession.setCompetitionId(template.getCompetitionId());
@@ -309,7 +332,9 @@ public class SessionServiceImpl implements ISessionService {
             newSession.setLevel(template.getLevel());
             newSession.setTags(template.getTags());
 
-            validateAndFinalizeNoticeUuid(newSession.getUuid());
+            if (StringUtils.isNotBlank(newSession.getUuid())) {
+                validateAndFinalizeNoticeUuid(newSession.getUuid());
+            }
 
             newSession.setStatus("2");
             newSession.setDelFlag("0");
@@ -491,6 +516,7 @@ public class SessionServiceImpl implements ISessionService {
         session.setCategory(categoryCode);
         session.setLevel(levelCode);
         session.setTags(tagsCode); // 届次表保留编码，用于导出
+        session.setOrganizations(normalizeOrganizations(session.getOrganizations()));
         session.setStatus("1");
         session.setDelFlag("0");
         session.setCreateBy(operName);

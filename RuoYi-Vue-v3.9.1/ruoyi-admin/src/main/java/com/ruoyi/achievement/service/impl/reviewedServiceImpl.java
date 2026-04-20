@@ -619,11 +619,11 @@ public class reviewedServiceImpl implements IreviewedService
         }
     }
 
-    private String resolveOwnerDepIdFromParticipant(SamAchievementParticipant participant)
+    private String resolveOwnerDepIdFromParticipant(SamAchievementParticipant participant) throws  ServiceException
     {
         if (participant == null)
         {
-            return null;
+            throw new ServiceException("参与人不能为空");
         }
 
         if (StringUtils.hasText(participant.getStudentId()))

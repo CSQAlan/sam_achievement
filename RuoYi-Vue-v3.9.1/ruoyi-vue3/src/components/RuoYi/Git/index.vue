@@ -1,7 +1,7 @@
 <template>
-  <div>
+  <!-- <div>
     <svg-icon icon-class="github" @click="goto" />
-  </div>
+  </div> -->
 </template>
 
 <script setup>

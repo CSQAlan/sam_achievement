@@ -36,7 +36,7 @@ PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
             ri.reimbursement_time,
             ri.total_fee,
             ri.paid_fee,
-            ri.status as reimbursement_status,
+            (CASE WHEN sa.reimbursement_date IS NOT NULL THEN '1' ELSE '0' END) as reimbursement_status,
             sa.achievement_id,
             sa.name as achievement_name,
             sa.team_name,
@@ -61,7 +61,17 @@ PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
                 and ri.name like concat('%', #{reimbursementName}, '%')
             </if>
             <if test="reimbursementStatus != null and reimbursementStatus != ''">
-                and ri.status = #{reimbursementStatus}
+                <choose>
+                    <when test='reimbursementStatus == "1"'>
+                        and sa.reimbursement_date is not null
+                    </when>
+                    <when test='reimbursementStatus == "0"'>
+                        and sa.reimbursement_date is null
+                    </when>
+                    <otherwise>
+                        and ri.status = #{reimbursementStatus}
+                    </otherwise>
+                </choose>
             </if>
             <if test="achievementName != null and achievementName != ''">
                 and sa.name like concat('%', #{achievementName}, '%')
@@ -99,7 +109,7 @@ PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
             ri.reimbursement_time,
             ri.total_fee,
             ri.paid_fee,
-            ri.status as reimbursement_status,
+            (CASE WHEN sa.reimbursement_date IS NOT NULL THEN '1' ELSE '0' END) as reimbursement_status,
             sa.achievement_id,
             sa.name as achievement_name,
             sa.team_name,

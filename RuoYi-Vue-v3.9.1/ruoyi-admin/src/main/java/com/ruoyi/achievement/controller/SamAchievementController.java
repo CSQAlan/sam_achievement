@@ -164,7 +164,7 @@ public class SamAchievementController extends BaseController
     @GetMapping("/listTracks")
     public AjaxResult listTracks(Long competitionId, Long sessionId)
     {
-        return success(samAchievementService.selectTrackList(competitionId, sessionId));
+         return success(samAchievementService.selectTrackList(competitionId, sessionId));
     }
 
     /**

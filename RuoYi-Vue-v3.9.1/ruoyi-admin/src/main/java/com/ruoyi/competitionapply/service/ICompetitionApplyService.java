@@ -32,5 +32,5 @@ public interface ICompetitionApplyService
     List<CompetitionApplyAttachment> selectCompetitionApplyAttachmentListByApplyId(Long applyId);
 
     @BizAudit(bizType = "competition_apply", bizName = "赛事申请审核", opType = BizAuditOpType.APPROVE, handler = "competitionApplyBizAuditHandler")
-    int reviewCompetitionApply(Long id, String status, String auditRemark);
+    int reviewCompetitionApply(Long id, CompetitionApply updateInfo);
 }

@@ -1,7 +1,7 @@
 <template>
   <div>
     <el-form ref="userRef" :model="form" :rules="rules" label-width="80px">
-      <el-form-item label="用户昵称" prop="nickName">
+      <el-form-item label="姓名" prop="nickName" readonly>
         <el-input v-model="form.nickName" maxlength="30" />
       </el-form-item>
       <el-form-item label="手机号码" prop="phonenumber">
@@ -601,10 +601,18 @@ function resolveSelectedDeptLabels() {
   const departmentOption = findDepartmentOption(schoolOption, form.value.department);
   const majorOption = findMajorOption(departmentOption, form.value.major);
 
+  let deptId = null;
+  if (isStudent.value) {
+    deptId = majorOption ? majorOption.id : (departmentOption ? departmentOption.id : (schoolOption ? schoolOption.id : null));
+  } else if (isTeacher.value) {
+    deptId = departmentOption ? departmentOption.id : (schoolOption ? schoolOption.id : null);
+  }
+
   return {
     school: schoolOption ? schoolOption.label : form.value.school,
     department: departmentOption ? departmentOption.label : form.value.department,
     major: majorOption ? majorOption.label : form.value.major,
+    deptId: deptId
   };
 }
 
@@ -629,6 +637,7 @@ async function refreshProfileCompletionState() {
       phonenumber: response.data.phonenumber,
       email: response.data.email,
       sex: response.data.sex,
+      dept: response.data.dept,
       profileInitialized: Number(response.data.profileInitialized || 0),
     });
     return Number(response.data.profileInitialized || 0) === 1;
@@ -638,17 +647,13 @@ async function refreshProfileCompletionState() {
 
 function redirectAfterProfileCompleted() {
   const redirectTarget = route.query.redirect;
-  const resolved = redirectTarget
-      ? router.resolve(redirectTarget)
-      : null;
-  // 清除地址栏中的 redirect，避免刷新后仍然携带旧跳转
-  router.replace({ path: route.path, query: {} }).finally(() => {
-    if (resolved && resolved.matched.length) {
-      router.replace(redirectTarget);
-    } else {
-      router.replace("/"); // 或 router.back()
-    }
-  });
+  // 完成资料后，因为首次登录时拦截了路由生成（没有构建左侧菜单），
+  // 所以这里使用 location.href 进行硬跳转（刷新页面），强制重新走一遍完整路由和权限拉取逻辑
+  if (redirectTarget) {
+    window.location.href = redirectTarget;
+  } else {
+    window.location.href = "/";
+  }
 }
 
 /** 提交按钮 */
@@ -666,6 +671,7 @@ function submit() {
         const selectedDeptLabels = resolveSelectedDeptLabels();
         const payload = {
           ...userData,
+          deptId: selectedDeptLabels.deptId
         };
 
         if (isStudent.value) {
@@ -675,11 +681,20 @@ function submit() {
           payload.classYear = form.value.classYear;
           payload.className = form.value.className;
           payload.name = form.value.name || form.value.nickName || userStore.nickName;
+
+          const schoolOpt = findSchoolOption(form.value.school);
+          const deptOpt = findDepartmentOption(schoolOpt, form.value.department);
+          const majorOpt = findMajorOption(deptOpt, form.value.major);
+          payload.deptId = majorOpt ? majorOpt.id : (deptOpt ? deptOpt.id : (schoolOpt ? schoolOpt.id : null));
         }
 
         if (isTeacher.value) {
           payload.school = selectedDeptLabels.school;
           payload.department = selectedDeptLabels.department;
+
+          const schoolOpt = findSchoolOption(form.value.school);
+          const deptOpt = findDepartmentOption(schoolOpt, form.value.department);
+          payload.deptId = deptOpt ? deptOpt.id : (schoolOpt ? schoolOpt.id : null);
         }
 
         const response = await saveFullUserProfile(payload);
@@ -688,12 +703,11 @@ function submit() {
           return;
         }
 
-        syncLocalProfile({
-          nickName: form.value.nickName,
-          phonenumber: form.value.phonenumber,
-          email: form.value.email,
-          sex: form.value.sex,
-        });
+        // 使用后端返回的最新数据（包含更新后的 dept 对象）同步本地状态
+        if (response.data) {
+          syncLocalProfile(response.data);
+        }
+
         const profileCompleted = await refreshProfileCompletionState();
 
         if (profileCompleted) {
