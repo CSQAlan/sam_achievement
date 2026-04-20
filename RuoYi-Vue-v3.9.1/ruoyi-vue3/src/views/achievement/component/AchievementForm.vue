@@ -260,20 +260,20 @@
                       <el-tab-pane v-for="item in visibleAttachments" :key="item.name" :label="item.label" :name="item.name">
                         <div class="upload-pane-content">
                           <!-- 【修改】：参赛作品与比赛照片的特殊处理 -->
-                          <template v-if="item.name === 'work' || item.name === 'photo'">
+                          <template v-if="item.name === 'work' || item.name === 'photo' || item.name === 'invoice'">
                             <div style="margin-bottom: 15px; background: #fff; padding: 15px; border-radius: 8px; border: 1px solid #ebeef5;">
                               <div style="font-weight: bold; margin-bottom: 10px; color: #303133;">
-                                {{ item.name === 'work' ? '是否有作品照片' : '是否有比赛照片' }}
+                                {{ item.name === 'work' ? '是否有作品照片' : (item.name === 'photo' ? '是否有比赛照片' : '是否有正规发票') }}
                               </div>
-                              <el-radio-group v-model="form[item.name === 'work' ? 'hasFileWork' : 'hasFilePhoto']" @change="(val) => handleHasFileChange(item.name, val)">
-                                <el-radio :label="1">有 (需上传至少5张PDF)</el-radio>
+                              <el-radio-group v-model="form[item.name === 'work' ? 'hasFileWork' : (item.name === 'photo' ? 'hasFilePhoto' : 'hasFileInvoice')]" @change="(val) => handleHasFileChange(item.name, val)">
+                                <el-radio :label="1">有 (需上传PDF)</el-radio>
                                 <el-radio :label="0">无 (需上传手写声明PDF)</el-radio>
                               </el-radio-group>
 
-                              <div v-if="form[item.name === 'work' ? 'hasFileWork' : 'hasFilePhoto'] === 0" style="margin-top: 10px; padding: 10px; background: #fdf6ec; border-radius: 4px; border: 1px solid #faecd8;">
+                              <div v-if="form[item.name === 'work' ? 'hasFileWork' : (item.name === 'photo' ? 'hasFilePhoto' : 'hasFileInvoice')] === 0" style="margin-top: 10px; padding: 10px; background: #fdf6ec; border-radius: 4px; border: 1px solid #faecd8;">
                                 <el-icon style="vertical-align: middle; color: #e6a23c; margin-right: 5px;"><InfoFilled /></el-icon>
                                 <span style="font-size: 13px; color: #e6a23c;">
-                                  请在纸上手写声明（包含作品名称/比赛名称、作者姓名、日期、声明无误等信息），拍照并转成PDF上传。
+                                  请在纸上手写声明（包含作品名称/比赛名称/发票事由、作者姓名、日期、声明无误等信息），拍照并转成PDF上传。
                                 </span>
                               </div>
                             </div>
@@ -622,7 +622,7 @@
                         <div v-if="form[item.name === 'work' ? 'hasFileWork' : 'hasFilePhoto'] === 0" style="margin-top: 10px; padding: 10px; background: #fdf6ec; border-radius: 4px; border: 1px solid #faecd8;">
                           <el-icon style="vertical-align: middle; color: #e6a23c; margin-right: 5px;"><InfoFilled /></el-icon>
                           <span style="font-size: 13px; color: #e6a23c;">
-                            请在纸上手写声明（包含作品名称/比赛名称、作者姓名、日期、声明无误等信息），拍照并转成PDF上传。
+                            请下载并打印此pdf文件后填写相关内容，拍照并转成PDF上传。
                           </span>
                         </div>
                       </div>
@@ -1180,7 +1180,8 @@ const data = reactive({
     fileInvoice: null,
     fileReceiptCode: null,
     hasFileWork: 1,
-    hasFilePhoto: 1
+    hasFilePhoto: 1,
+    hasFileInvoice: 1
   },
   formSnapshot: "",
   rules: {
@@ -1942,7 +1943,16 @@ watch(activeAttachmentTab, (newVal) => {
 
 function handlePreUpload(type) {
   currentUploadType.value = type;
-  const fileName = exampleMap[type];
+  let fileName = exampleMap[type];
+
+  if (type === 'work' && form.value.hasFileWork === 0) {
+    fileName = '/image/无参赛作品照片情况.pdf';
+  } else if (type === 'photo' && form.value.hasFilePhoto === 0) {
+    fileName = '/image/无比赛照片声明.pdf';
+  } else if (type === 'invoice' && form.value.hasFileInvoice === 0) {
+    fileName = '/image/无发票声明.pdf';
+  }
+
   if (fileName) {
     currentExampleUrl.value = fileName;
     isFullscreen.value = true;
@@ -2001,7 +2011,7 @@ const attachmentConfig = computed(() => {
       isMultiple: true
     },
     { label: findDictLabel('4') || '支付记录', name: 'payment', prop: 'filePayment', alert: `请上传${findDictLabel('4') || '支付记录'} (PDF)`, type: 'warning', condition: (f) => f.isReimburse === 1, fileType: ['pdf'], limit: 1 },
-    { label: findDictLabel('5') || '正规发票', name: 'invoice', prop: 'fileInvoice', alert: `请上传${findDictLabel('5') || '正规发票'} (PDF)`, type: 'warning', condition: (f) => f.isReimburse === 1, fileType: ['pdf'], limit: 1 },
+    { label: findDictLabel('5') || '正规发票', name: 'invoice', prop: 'fileInvoice', alert: form.value.hasFileInvoice === 1 ? `请上传${findDictLabel('5') || '正规发票'} (PDF)` : `请上传无发票声明 (PDF)`, type: 'warning', condition: (f) => f.isReimburse === 1, fileType: ['pdf'], limit: 1 },
     { label: findDictLabel('6') || '收款码', name: 'receipt', prop: 'fileReceiptCode', alert: `请上传${findDictLabel('6') || '收款码'} (PDF)`, type: 'warning', condition: (f) => f.isReimburse === 1, fileType: ['pdf'], limit: 1 },
   ];
 });
@@ -2094,13 +2104,27 @@ watch(() => form.value.fileInvoice, (uuid) => loadSafePreview(uuid, 'invoice'));
 watch(() => form.value.fileReceiptCode, (uuid) => loadSafePreview(uuid, 'receipt'));
 
 function handleHasFileChange(type, val) {
-  const prop = type === 'work' ? 'fileWork' : 'filePhoto';
-  form.value[prop] = [];
+  let prop;
+  if (type === 'work') prop = 'fileWork';
+  else if (type === 'photo') prop = 'filePhoto';
+  else if (type === 'invoice') prop = 'fileInvoice';
+  
+  if (type === 'invoice') {
+    form.value[prop] = null;
+  } else {
+    form.value[prop] = [];
+  }
 
   if (val === 0) {
     // 复用示例弹出逻辑：展示 PDF 内容并要求用户确认后解锁
     currentUploadType.value = type;
-    currentExampleUrl.value = type === 'work' ? '/image/zuopingzhaopian.pdf' : '/image/cansaizhaopian.pdf'; 
+    if (type === 'work') {
+      currentExampleUrl.value = '/image/无参赛作品照片情况.pdf';
+    } else if (type === 'photo') {
+      currentExampleUrl.value = '/image/无比赛照片声明.pdf';
+    } else if (type === 'invoice') {
+      currentExampleUrl.value = '/image/无发票声明.pdf';
+    }
     exampleVisible.value = true;
     // 重置解锁状态，直到用户在弹出层点击“确认”
     uploadUnlocked[type] = false;
@@ -2491,7 +2515,7 @@ function reset() {
     level: null, grade: null, track: null, certificateNo: null, groupId: null, ownerDepId: null,
     awardTime: null, fee: null, reimbursementFee: null, isReimburse: 0, reimbursementStatus: null,
     fileAward: null, fileNotice: null, fileWork: [], filePhoto: [], filePayment: null, fileInvoice: null, fileReceiptCode: null,
-    hasFileWork: 1, hasFilePhoto: 1
+    hasFileWork: 1, hasFilePhoto: 1, hasFileInvoice: 1
   };
   samAchievementParticipantList.value = [];
   samAchievementAdvisorList.value = [];
