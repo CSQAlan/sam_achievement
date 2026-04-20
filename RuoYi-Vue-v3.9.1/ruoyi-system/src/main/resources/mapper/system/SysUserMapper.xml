@@ -19,6 +19,9 @@ PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
         <result property="loginIp"       column="login_ip"        />
         <result property="loginDate"     column="login_date"      />
         <result property="pwdUpdateDate" column="pwd_update_date" />
+        <result property="profileInitialized" column="profile_initialized" />
+        <result property="wxNickName"    column="wx_nick_name"    />
+        <result property="openid"        column="openid"          />
         <result property="createBy"      column="create_by"       />
         <result property="createTime"    column="create_time"     />
         <result property="updateBy"      column="update_by"       />
@@ -48,7 +51,7 @@ PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
     </resultMap>
 	
 	<sql id="selectUserVo">
-        select u.user_id, u.dept_id, u.user_name, u.nick_name, u.email, u.avatar, u.phonenumber, u.password, u.sex, u.status, u.del_flag, u.login_ip, u.login_date, u.pwd_update_date, u.create_by, u.create_time, u.remark, 
+        select u.user_id, u.dept_id, u.user_name, u.nick_name, u.email, u.avatar, u.phonenumber, u.password, u.sex, u.status, u.del_flag, u.login_ip, u.login_date, u.pwd_update_date, u.profile_initialized, u.wx_nick_name, u.openid, u.create_by, u.create_time, u.remark, 
         d.dept_id, d.parent_id, d.ancestors, d.dept_name, d.order_num, d.leader, d.status as dept_status,
         r.role_id, r.role_name, r.role_key, r.role_sort, r.data_scope, r.status as role_status
         from sys_user u
@@ -58,7 +61,7 @@ PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
     </sql>
     
     <select id="selectUserList" parameterType="SysUser" resultMap="SysUserResult">
-		select u.user_id, u.dept_id, u.nick_name, u.user_name, u.email, u.avatar, u.phonenumber, u.sex, u.status, u.del_flag, u.login_ip, u.login_date, u.create_by, u.create_time, u.remark, d.dept_name, d.leader from sys_user u
+		select u.user_id, u.dept_id, u.nick_name, u.user_name, u.email, u.avatar, u.phonenumber, u.sex, u.status, u.del_flag, u.login_ip, u.login_date, u.profile_initialized, u.wx_nick_name, u.openid, u.create_by, u.create_time, u.remark, d.dept_name, d.leader from sys_user u
 		left join sys_dept d on u.dept_id = d.dept_id
 		where u.del_flag = '0'
 		<if test="userId != null and userId != 0">
@@ -155,6 +158,9 @@ PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
  			<if test="sex != null and sex != ''">sex,</if>
  			<if test="password != null and password != ''">password,</if>
  			<if test="status != null and status != ''">status,</if>
+ 			<if test="profileInitialized != null">profile_initialized,</if>
+ 			<if test="wxNickName != null and wxNickName != ''">wx_nick_name,</if>
+ 			<if test="openid != null and openid != ''">openid,</if>
  			<if test="pwdUpdateDate != null">pwd_update_date,</if>
  			<if test="createBy != null and createBy != ''">create_by,</if>
  			<if test="remark != null and remark != ''">remark,</if>
@@ -170,6 +176,9 @@ PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
  			<if test="sex != null and sex != ''">#{sex},</if>
  			<if test="password != null and password != ''">#{password},</if>
  			<if test="status != null and status != ''">#{status},</if>
+ 			<if test="profileInitialized != null">#{profileInitialized},</if>
+ 			<if test="wxNickName != null and wxNickName != ''">#{wxNickName},</if>
+ 			<if test="openid != null and openid != ''">#{openid},</if>
  			<if test="pwdUpdateDate != null">#{pwdUpdateDate},</if>
  			<if test="createBy != null and createBy != ''">#{createBy},</if>
  			<if test="remark != null and remark != ''">#{remark},</if>
@@ -180,7 +189,7 @@ PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
 	<update id="updateUser" parameterType="SysUser">
  		update sys_user
  		<set>
- 			<if test="deptId != 0">dept_id = #{deptId},</if>
+ 			<if test="deptId != null and deptId != 0">dept_id = #{deptId},</if>
  			<if test="nickName != null and nickName != ''">nick_name = #{nickName},</if>
  			<if test="email != null ">email = #{email},</if>
  			<if test="phonenumber != null ">phonenumber = #{phonenumber},</if>
@@ -188,6 +197,9 @@ PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
  			<if test="avatar != null and avatar != ''">avatar = #{avatar},</if>
  			<if test="password != null and password != ''">password = #{password},</if>
  			<if test="status != null and status != ''">status = #{status},</if>
+ 			<if test="profileInitialized != null">profile_initialized = #{profileInitialized},</if>
+ 			<if test="wxNickName != null">wx_nick_name = #{wxNickName},</if>
+ 			<if test="openid != null">openid = #{openid},</if>
  			<if test="loginIp != null and loginIp != ''">login_ip = #{loginIp},</if>
  			<if test="loginDate != null">login_date = #{loginDate},</if>
  			<if test="updateBy != null and updateBy != ''">update_by = #{updateBy},</if>

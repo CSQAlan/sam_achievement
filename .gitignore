@@ -1,0 +1,65 @@
+# 依赖目录
+RuoYi-Vue-v3.9.1/node_modules/
+jspm_packages/
+
+# 日志文件
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pnpm-debug.log*
+lerna-debug.log*
+
+# 构建输出
+dist/
+build/
+out/
+.next/
+.nuxt/
+
+# 环境变量文件
+.env
+.env.local
+.env.*.local
+
+# IDE 和编辑器
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+.DS_Store
+Thumbs.db
+
+# 缓存文件
+.cache/
+.parcel-cache/
+.npm/
+.eslintcache
+*.tsbuildinfo
+
+# 测试覆盖率
+coverage/
+.nyc_output/
+
+# 打包文件
+*.tgz
+*.tar.gz
+RuoYi-Vue-v3.9.1.zip
+RuoYi-Vue-v3.9.1 (2).zip
+
+# 本地数据库
+*.sqlite
+*.db
+
+# 配置文件
+.prettierrc
+.eslintrc
+RuoYi-Vue-v3.9.1/D/ruoyi/uploadPath/upload/2026/03/26/25十五届重庆赛区公示电子商务“创新、创意及创业”挑战赛_20260326213248A001.pdf
+RuoYi-Vue-v3.9.1/D/ruoyi/uploadPath/upload/2026/03/26/第十六届蓝桥杯大赛视觉艺术设计赛竞赛规则及说明_20260326213310A003.pdf
+RuoYi-Vue-v3.9.1/D/ruoyi/uploadPath/upload/2026/03/26/附件：中国国际大学生创新大赛（2025）产业赛道企业命题入选名单_20260326213259A002.pdf
+RuoYi-Vue-v3.9.1/D/ruoyi/uploadPath/upload/2026/03/30/第十六届蓝桥杯大赛视觉艺术设计赛竞赛规则及说明_20260330215519A001.pdf
+RuoYi-Vue-v3.9.1/D/ruoyi/uploadPath/upload/2026/03/30/附件：中国国际大学生创新大赛（2025）产业赛道企业命题入选名单_20260330215529A002.pdf
+RuoYi-Vue-v3.9.1/D/ruoyi/uploadPath/upload/2026/03/30/附件：中国国际大学生创新大赛（2025）产业赛道企业命题入选名单_20260330215538A003.pdf
+RuoYi-Vue-v3.9.1/D/ruoyi/uploadPath/upload/2026/04/07/25十五届重庆赛区公示电子商务“创新、创意及创业”挑战赛_20260407224833A001.pdf
+RuoYi-Vue-v3.9.1/rollback.diff
+RuoYi-Vue-v3.9.1/D/ruoyi/uploadPath/upload/2026/04/12/重庆师范大学github学生认证教程_20260412154117A001.pdf

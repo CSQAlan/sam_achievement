@@ -34,10 +34,11 @@ public class JobInvokeUtil
         }
         else
         {
-            Object bean = Class.forName(beanName).getDeclaredConstructor().newInstance();
+            Object bean = Class.forName(beanName).newInstance();
             invokeMethod(bean, methodName, methodParams);
         }
     }
+
 
     /**
      * 调用任务方法

@@ -7,11 +7,15 @@ ruoyi:
   # 版权年份
   copyrightYear: 2025
   # 文件路径 示例（ Windows配置D:/ruoyi/uploadPath，Linux配置 /home/ruoyi/uploadPath）
-  profile: D:/ruoyi/uploadPath
+  profile: D\ruoyi\uploadPath
   # 获取ip地址开关
   addressEnabled: false
   # 验证码类型 math 数字计算 char 字符验证
   captchaType: math
+# 统一认证配置
+cas:
+  casServerUrlPrefix: https://csxrz.cqnu.edu.cn/cas   # 统一认证平台
+  serverName: http://localhost:8080           # 浏览器能访问到 admin 的地址
 
 # 开发环境配置
 server:
@@ -67,8 +71,9 @@ spring:
       enabled: true
   # redis 配置
   redis:
-    # 地址
-    host: localhost
+    # 地址ccc
+    host: localhost 
+    # host: 192.168.3.110
     # 端口，默认为6379
     port: 6379
     # 数据库索引
@@ -87,6 +92,23 @@ spring:
         max-active: 8
         # #连接池最大阻塞等待时间（使用负值表示没有限制）
         max-wait: -1ms
+
+  jackson:
+    date-format: yyyy-MM-dd HH:mm:ss
+    time-zone: GMT+8
+    # 添加以下配置，使反序列化更灵活
+    parser:
+      allow_single_quotes: true
+      allow_unquoted_field_names: true
+    deserialization:
+      # 允许接受空字符串作为null
+      accept_empty_string_as_null_object: true
+      # 允许接受单个值作为数组
+      accept_single_value_as_array: true
+      # 日期反序列化更宽松
+      adjust_dates_to_context_time_zone: true
+      # 失败时忽略未知属性
+      fail_on_unknown_properties: false
 
 # token配置
 token:

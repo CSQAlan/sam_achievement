@@ -23,6 +23,7 @@ import com.ruoyi.framework.web.service.SysPermissionService;
 import com.ruoyi.framework.web.service.TokenService;
 import com.ruoyi.system.service.ISysConfigService;
 import com.ruoyi.system.service.ISysMenuService;
+import com.ruoyi.web.service.ProfileCompletionService;
 
 /**
  * 登录验证
@@ -46,6 +47,9 @@ public class SysLoginController
 
     @Autowired
     private ISysConfigService configService;
+
+    @Autowired
+    private ProfileCompletionService profileCompletionService;
 
     /**
      * 登录方法
@@ -73,6 +77,7 @@ public class SysLoginController
     public AjaxResult getInfo()
     {
         LoginUser loginUser = SecurityUtils.getLoginUser();
+        profileCompletionService.refreshProfileCompletion(loginUser);
         SysUser user = loginUser.getUser();
         // 角色集合
         Set<String> roles = permissionService.getRolePermission(user);
@@ -89,6 +94,7 @@ public class SysLoginController
         ajax.put("permissions", permissions);
         ajax.put("isDefaultModifyPwd", initPasswordIsModify(user.getPwdUpdateDate()));
         ajax.put("isPasswordExpired", passwordIsExpiration(user.getPwdUpdateDate()));
+        tokenService.setLoginUser(loginUser);
         return ajax;
     }
 

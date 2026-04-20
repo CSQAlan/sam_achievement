@@ -11,6 +11,7 @@ import com.ruoyi.common.constant.UserConstants;
 import com.ruoyi.common.core.domain.entity.SysRole;
 import com.ruoyi.common.core.domain.entity.SysUser;
 import com.ruoyi.common.utils.StringUtils;
+import com.ruoyi.system.service.AchievementPostPermissionService;
 import com.ruoyi.system.service.ISysMenuService;
 import com.ruoyi.system.service.ISysRoleService;
 
@@ -27,6 +28,9 @@ public class SysPermissionService
 
     @Autowired
     private ISysMenuService menuService;
+
+    @Autowired
+    private AchievementPostPermissionService achievementPostPermissionService;
 
     /**
      * 获取角色数据权限
@@ -84,6 +88,8 @@ public class SysPermissionService
                 perms.addAll(menuService.selectMenuPermsByUserId(user.getUserId()));
             }
         }
+        // Post-based elevation for achievement admin flows.
+        perms.addAll(achievementPostPermissionService.buildExtraPermissions(user.getUserName()));
         return perms;
     }
 }
