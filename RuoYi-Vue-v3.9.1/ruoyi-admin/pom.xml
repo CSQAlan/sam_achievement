@@ -43,6 +43,10 @@
             <artifactId>mysql-connector-java</artifactId>
         </dependency>
 
+            <dependency>
+                <groupId>org.apache.pdfbox</groupId>
+                <artifactId>pdfbox</artifactId>
+            </dependency>
         <!-- 核心模块-->
         <dependency>
             <groupId>com.ruoyi</groupId>

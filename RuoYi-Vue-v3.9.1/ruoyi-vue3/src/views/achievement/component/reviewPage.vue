@@ -1,4 +1,4 @@
-﻿<template>
+<template>
   <div class="app-container review-page">
     <AchievementForm
       :key="formKey"
@@ -1134,20 +1134,22 @@ watch(
   flex: 0 0 auto;
 }
 .reason-field {
-  flex: 0 0 100%;
+  flex: 1 1 100%;
   width: 100%;
   min-width: 0;
   padding-left: 0;
+  margin-top: 8px; /* 增加顶部间距，使其在换行后不显得拥挤 */
 }
 .reason-field::before {
   display: none;
 }
 .audit-reason-group {
-  display: none;
+  display: flex;
+  flex: 1;
 }
 .audit-label {
   color: #4e5969;
-  font-size: 12px;
+  font-size: 13px; /* 稍微调大一点点，与别处对齐 */
   font-weight: 500;
   white-space: nowrap;
 }

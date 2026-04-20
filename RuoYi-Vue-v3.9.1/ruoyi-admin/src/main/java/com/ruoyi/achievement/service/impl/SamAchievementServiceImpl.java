@@ -36,6 +36,7 @@ import com.ruoyi.common.utils.DictUtils;
 import com.ruoyi.common.utils.SecurityUtils;
 import com.ruoyi.common.utils.StringUtils;
 import com.ruoyi.common.utils.file.FileUtils;
+import com.ruoyi.common.utils.file.PdfUtils;
 import com.ruoyi.common.utils.poi.ExcelUtil;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
@@ -964,17 +965,36 @@ public class SamAchievementServiceImpl implements ISamAchievementService {
 
                 String entryName = resolveUniqueEntryName(nameCounterMap, folderPath, baseFileName);
 
+                boolean processed = false;
                 boolean opened = false;
-                try (InputStream inputStream = new BufferedInputStream(new FileInputStream(sourceFile))) {
-                    zipOutputStream.putNextEntry(new ZipEntry(entryName));
-                    opened = true;
-                    copyStream(inputStream, zipOutputStream);
+                try {
+                    if (entryName.toLowerCase().endsWith(".pdf")) {
+                        try (InputStream inputStream = new BufferedInputStream(new FileInputStream(sourceFile))) {
+                            zipOutputStream.putNextEntry(new ZipEntry(entryName));
+                            opened = true;
+                            PdfUtils.removeRestrictions(inputStream, zipOutputStream);
+                            processed = true;
+                        } catch (Exception ex) {
+                            log.warn("PDF restrictions removal failed during ZIP export for {}, falling back to direct copy. Message={}", entryName, ex.getMessage());
+                            // Fallback to direct copy logic below
+                        }
+                    }
+                    
+                    if (!processed) {
+                        try (InputStream inputStream = new BufferedInputStream(new FileInputStream(sourceFile))) {
+                            if (!opened) {
+                                zipOutputStream.putNextEntry(new ZipEntry(entryName));
+                                opened = true;
+                            }
+                            copyStream(inputStream, zipOutputStream);
+                        }
+                    }
                 } catch (Exception ex) {
                     log.warn("Skip unreadable attachment file, achievementId={}, type={}, fileUuid={}, message={}",
                             attachmentFile.getAchievementId(), attachmentFile.getType(),
                             attachmentFile.getFileUuid(), ex.getMessage());
                     addAttachmentFailRecord(failList, attachmentFile, ownerName, typeName,
-                            "文件读取失败" + (StringUtils.isNotEmpty(ex.getMessage()) ? "：" + ex.getMessage() : ""));
+                            "文件处理失败" + (StringUtils.isNotEmpty(ex.getMessage()) ? "：" + ex.getMessage() : ""));
                 } finally {
                     if (opened) {
                         try {
