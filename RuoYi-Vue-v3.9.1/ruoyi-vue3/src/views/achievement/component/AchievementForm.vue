@@ -266,14 +266,14 @@
                                 {{ item.name === 'work' ? '是否有作品照片' : (item.name === 'photo' ? '是否有比赛照片' : '是否有正规发票') }}
                               </div>
                               <el-radio-group v-model="form[item.name === 'work' ? 'hasFileWork' : (item.name === 'photo' ? 'hasFilePhoto' : 'hasFileInvoice')]" @change="(val) => handleHasFileChange(item.name, val)">
-                                <el-radio :label="1">有 (需上传PDF)</el-radio>
-                                <el-radio :label="0">无 (需上传手写声明PDF)</el-radio>
+                                <el-radio :label="1">{{ item.name === 'invoice' ? '有发票' : '有 (需上传PDF)' }}</el-radio>
+                                <el-radio :label="0">{{ item.name === 'invoice' ? '无发票 (需上传无发票声明PDF)' : '无 (需上传打印版声明PDF)' }}</el-radio>
                               </el-radio-group>
 
                               <div v-if="form[item.name === 'work' ? 'hasFileWork' : (item.name === 'photo' ? 'hasFilePhoto' : 'hasFileInvoice')] === 0" style="margin-top: 10px; padding: 10px; background: #fdf6ec; border-radius: 4px; border: 1px solid #faecd8;">
                                 <el-icon style="vertical-align: middle; color: #e6a23c; margin-right: 5px;"><InfoFilled /></el-icon>
                                 <span style="font-size: 13px; color: #e6a23c;">
-                                  请在纸上手写声明（包含作品名称/比赛名称/发票事由、作者姓名、日期、声明无误等信息），拍照并转成PDF上传。
+                                  {{ item.name === 'invoice' ? '请下载此文件并填写相关内容后拍照并转成PDF上传' : '请下载此文件并填写相关内容后拍照并转成PDF上传' }}
                                 </span>
                               </div>
                             </div>
@@ -609,20 +609,20 @@
                   <el-tab-pane v-for="item in visibleAttachments" :key="item.name" :label="item.label" :name="item.name">
                     <div class="upload-pane-content">
                     <!-- 【修改】：参赛作品与比赛照片的特殊处理 -->
-                    <template v-if="item.name === 'work' || item.name === 'photo'">
+                    <template v-if="item.name === 'work' || item.name === 'photo' || item.name === 'invoice'">
                       <div style="margin-bottom: 15px; background: #fff; padding: 15px; border-radius: 8px; border: 1px solid #ebeef5;">
                         <div style="font-weight: bold; margin-bottom: 10px; color: #303133;">
-                          {{ item.name === 'work' ? '是否有作品照片' : '是否有比赛照片' }}
+                          {{ item.name === 'work' ? '是否有作品照片' : (item.name === 'photo' ? '是否有比赛照片' : '是否有正规发票') }}
                         </div>
-                        <el-radio-group v-model="form[item.name === 'work' ? 'hasFileWork' : 'hasFilePhoto']" @change="(val) => handleHasFileChange(item.name, val)">
-                          <el-radio :label="1">有 (需上传至少5张PDF)</el-radio>
-                          <el-radio :label="0">无 (需上传手写声明PDF)</el-radio>
+                        <el-radio-group v-model="form[item.name === 'work' ? 'hasFileWork' : (item.name === 'photo' ? 'hasFilePhoto' : 'hasFileInvoice')]" @change="(val) => handleHasFileChange(item.name, val)">
+                          <el-radio :label="1">{{ item.name === 'invoice' ? '有发票' : '有 (需上传PDF)' }}</el-radio>
+                          <el-radio :label="0">{{ item.name === 'invoice' ? '无发票 (需上传无发票声明PDF)' : '无 (需上传打印声明PDF)' }}</el-radio>
                         </el-radio-group>
                         
-                        <div v-if="form[item.name === 'work' ? 'hasFileWork' : 'hasFilePhoto'] === 0" style="margin-top: 10px; padding: 10px; background: #fdf6ec; border-radius: 4px; border: 1px solid #faecd8;">
+                        <div v-if="form[item.name === 'work' ? 'hasFileWork' : (item.name === 'photo' ? 'hasFilePhoto' : (item.name === 'invoice' ? 'hasFileInvoice' : ''))] === 0" style="margin-top: 10px; padding: 10px; background: #fdf6ec; border-radius: 4px; border: 1px solid #faecd8;">
                           <el-icon style="vertical-align: middle; color: #e6a23c; margin-right: 5px;"><InfoFilled /></el-icon>
                           <span style="font-size: 13px; color: #e6a23c;">
-                            请下载并打印此pdf文件后填写相关内容，拍照并转成PDF上传。
+                            {{ item.name === 'invoice' ? '请下载并打印此pdf示例文件后填写相关内容，拍照并转成PDF上传。' : '请下载并打印此pdf文件后填写相关内容，拍照并转成PDF上传。' }}
                           </span>
                         </div>
                       </div>
@@ -1996,7 +1996,7 @@ const attachmentConfig = computed(() => {
       label: findDictLabel('3') || '参赛作品',
       name: 'work',
       prop: 'fileWork',
-      alert: form.value.hasFileWork === 1 ? `请上传${findDictLabel('3') || '参赛作品'} (PDF，5份及以上)` : `请上传手写声明 (PDF，1份)`,
+      alert: form.value.hasFileWork === 1 ? `请上传${findDictLabel('3') || '参赛作品'} (PDF，5份及以上)` : `请上传打印版声明 (PDF，1份)`,
       fileType: ['pdf'],
       limit: form.value.hasFileWork === 1 ? 10 : 1,
       isMultiple: true
@@ -2005,7 +2005,7 @@ const attachmentConfig = computed(() => {
       label: findDictLabel('8') || '比赛照片',
       name: 'photo',
       prop: 'filePhoto',
-      alert: form.value.hasFilePhoto === 1 ? `请上传${findDictLabel('8') || '比赛照片'} (PDF，5份及以上)` : `请上传手写声明 (PDF，1份)`,
+      alert: form.value.hasFilePhoto === 1 ? `请上传${findDictLabel('8') || '比赛照片'} (PDF，5份及以上)` : `请上传打印版声明 (PDF，1份)`,
       fileType: ['pdf'],
       limit: form.value.hasFilePhoto === 1 ? 10 : 1,
       isMultiple: true
@@ -2573,7 +2573,7 @@ function validatePDFUpload() {
     }
   } else {
     if (workFiles.length < 1) {
-      proxy.$modal.msgWarning(`请上传【${workLabel}】手写声明PDF文件！`);
+      proxy.$modal.msgWarning(`请上传【${workLabel}】打印版声明PDF文件！`);
       activeAttachmentTab.value = 'work';
       return false;
     }
@@ -2587,7 +2587,7 @@ function validatePDFUpload() {
     }
   } else {
     if (photoFiles.length < 1) {
-      proxy.$modal.msgWarning(`请上传【${photoLabel}】手写声明PDF文件！`);
+      proxy.$modal.msgWarning(`请上传【${photoLabel}】打印版声明PDF文件！`);
       activeAttachmentTab.value = 'photo';
       return false;
     }
@@ -2600,7 +2600,8 @@ function validatePDFUpload() {
       return false;
     }
     if (!f.fileInvoice) {
-      proxy.$modal.msgWarning("申请报销必须上传【正规发票】PDF文件！");
+      const label = f.hasFileInvoice === 1 ? (invoiceLabel || '正规发票') : '无发票声明';
+      proxy.$modal.msgWarning(`申请报销必须上传【${label}】PDF文件！`);
       activeAttachmentTab.value = "invoice";
       return false;
     }
