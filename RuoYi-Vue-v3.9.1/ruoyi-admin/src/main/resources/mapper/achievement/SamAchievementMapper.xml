@@ -123,7 +123,7 @@
             a.is_supplement,
             a.fee,
             a.reimbursement_fee,
-            v.reimbursement_status,
+            (CASE WHEN a.reimbursement_date IS NOT NULL THEN '1' ELSE '0' END) AS reimbursement_status,
             a.reimbursement_ratio,
             a.reimbursement_item_id,
             a.reimbursement_date,
@@ -167,23 +167,36 @@
                  ) ad_view on ad_view.achievement_id = a.achievement_id
     </sql>
 
+    <sql id="commonSearchConditions">
+        <if test="achievementId != null  and achievementId != ''"> and a.achievement_id = #{achievementId}</if>
+        <if test="competitionId != null  and competitionId != ''"> and s.competition_id = #{competitionId}</if>
+        <if test="sessionId != null  and sessionId != ''"> and a.session_id = #{sessionId}</if>
+        <if test="category != null  and category != ''"> and a.category like concat('%', #{category}, '%')</if>
+        <if test="name != null  and name != ''"> and a.name like concat('%', #{name}, '%')</if>
+        <if test="teamName != null  and teamName != ''"> and a.team_name like concat('%', #{teamName}, '%')</if>
+        <if test="level != null  and level != ''"> and a.level = #{level}</if>
+        <if test="grade != null "> and a.grade = #{grade}</if>
+        <if test="track != null  and track != ''"> and a.track like concat('%', #{track}, '%')</if>
+        <if test="certificateNo != null  and certificateNo != ''"> and a.certificate_no = #{certificateNo}</if>
+        <if test="groupId != null "> and a.group_id = #{groupId}</if>
+        <if test="awardTime != null "> and a.award_time = #{awardTime}</if>
+        <if test="year != null"> and a.year = #{year}</if>
+        <if test="isSupplement != null"> and a.is_supplement = #{isSupplement}</if>
+        <if test="params.contestant != null and params.contestant != ''"> and p_view.contestant like concat('%', #{params.contestant}, '%')</if>
+        <if test="params.instructor != null and params.instructor != ''"> and ad_view.instructor like concat('%', #{params.instructor}, '%')</if>
+        <if test="params.competitionName != null and params.competitionName != ''"> and c.name like concat('%', #{params.competitionName}, '%')</if>
+        <if test="params.beginTime != null and params.beginTime != ''"><!-- 开始时间检索 -->
+            AND date_format(a.create_time,'%Y%m%d') &gt;= date_format(#{params.beginTime},'%Y%m%d')
+        </if>
+        <if test="params.endTime != null and params.endTime != ''"><!-- 结束时间检索 -->
+            AND date_format(a.create_time,'%Y%m%d') &lt;= date_format(#{params.endTime},'%Y%m%d')
+        </if>
+    </sql>
+
     <select id="selectSamAchievementList" parameterType="SamAchievement" resultMap="SamAchievementListResult">
         <include refid="selectSamAchievementVo"/>
         <where>
-            <if test="achievementId != null  and achievementId != ''"> and a.achievement_id = #{achievementId}</if>
-            <if test="competitionId != null  and competitionId != ''"> and s.competition_id = #{competitionId}</if>
-            <if test="sessionId != null  and sessionId != ''"> and a.session_id = #{sessionId}</if>
-            <if test="category != null  and category != ''"> and a.category like concat('%', #{category}, '%')</if>
-            <if test="name != null  and name != ''"> and a.name like concat('%', #{name}, '%')</if>
-            <if test="teamName != null  and teamName != ''"> and a.team_name like concat('%', #{teamName}, '%')</if>
-            <if test="level != null  and level != ''"> and a.level = #{level}</if>
-            <if test="grade != null "> and a.grade = #{grade}</if>
-            <if test="track != null  and track != ''"> and a.track like concat('%', #{track}, '%')</if>
-            <if test="certificateNo != null  and certificateNo != ''"> and a.certificate_no = #{certificateNo}</if>
-            <if test="groupId != null "> and a.group_id = #{groupId}</if>
-            <if test="awardTime != null "> and a.award_time = #{awardTime}</if>
-            <if test="year != null"> and a.year = #{year}</if>
-            <if test="isSupplement != null"> and a.is_supplement = #{isSupplement}</if>
+            <include refid="commonSearchConditions"/>
         </where>
         order by a.achievement_id desc
     </select>
@@ -194,8 +207,8 @@
         <where>
             and p.student_id = #{params.studentId}
             <if test="params.manager != null and params.manager != ''"> and p.manager = #{params.manager}</if>
-            <if test="name != null  and name != ''"> and a.name like concat('%', #{name}, '%')</if>
             <if test="reviewResult != null  and reviewResult != ''"> and a.review_result = #{reviewResult}</if>
+            <include refid="commonSearchConditions"/>
         </where>
         order by a.achievement_id desc
     </select>
@@ -206,8 +219,8 @@
         <where>
             and p.student_id = #{params.studentId}
             and p.manager = '1'
-            <if test="name != null  and name != ''"> and a.name like concat('%', #{name}, '%')</if>
             <if test="reviewResult != null  and reviewResult != ''"> and a.review_result = #{reviewResult}</if>
+            <include refid="commonSearchConditions"/>
         </where>
     </select>
 
@@ -217,8 +230,8 @@
         <where>
             and ad.teacher_id = #{params.teacherId}
             <if test="params.isFirst != null and params.isFirst == 1"> and ad.order_no = 1</if>
-            <if test="name != null  and name != ''"> and a.name like concat('%', #{name}, '%')</if>
             <if test="reviewResult != null  and reviewResult != ''"> and a.review_result = #{reviewResult}</if>
+            <include refid="commonSearchConditions"/>
         </where>
         order by a.achievement_id desc
     </select>
@@ -231,8 +244,8 @@
                 or
                 exists (select 1 from sam_achievement_advisor ad where ad.achievement_id = a.achievement_id and ad.teacher_id = #{params.userId})
             )
-            <if test="name != null  and name != ''"> and a.name like concat('%', #{name}, '%')</if>
             <if test="reviewResult != null  and reviewResult != ''"> and a.review_result = #{reviewResult}</if>
+            <include refid="commonSearchConditions"/>
         </where>
         order by a.achievement_id desc
     </select>
@@ -480,6 +493,11 @@
                type="com.ruoyi.achievement.domain.ExportAchievementBaseVo">
         <result property="achievementId" column="achievement_id"/>
         <result property="ownerName" column="owner_name"/>
+        <result property="competitionName" column="competition_name"/>
+        <result property="awardGrade" column="grade"/>
+        <result property="awardLevel" column="level"/>
+        <result property="year" column="year"/>
+        <result property="track" column="track"/>
     </resultMap>
 
     <resultMap id="ExportAttachmentFileVoResult"
@@ -494,8 +512,15 @@
             resultMap="ExportAchievementBaseVoResult">
         select
         a.achievement_id,
-        coalesce(s_manager.name, s_first.name, '未知负责人') as owner_name
+        coalesce(s_manager.name, s_first.name, '未知负责人') as owner_name,
+        c.name as competition_name,
+        a.grade,
+        a.level,
+        a.year,
+        a.track
         from sam_achievement a
+        left join sam_competition_session s on a.session_id = s.session_id
+        left join sam_competition c on s.competition_id = c.id
         left join sam_achievement_participant p_manager
         on p_manager.achievement_id = a.achievement_id and p_manager.manager =
         '1'
@@ -510,11 +535,17 @@
         )
         left join sam_student s_first
         on s_first.no = p_first.student_id
-        where a.achievement_id in
-        <foreach collection="achievementIds" item="id" open="(" separator=","
-                 close=")">
-            #{id}
-        </foreach>
+        <where>
+            a.del_flag = 0
+            <if test="groupByCompetition != null and groupByCompetition and competitionId != null">
+                and s.competition_id = #{competitionId}
+            </if>
+            <if test="!(groupByCompetition != null and groupByCompetition and competitionId != null)">
+                and a.achievement_id in
+                <foreach collection="achievementIds" item="id" open="(" separator="," close=")">
+                    #{id}
+                </foreach>
+            </if>
         <choose>
             <when test="isAdmin">
             </when>
@@ -561,6 +592,7 @@
                 )
             </when>
         </choose>
+        </where>
     </select>
 
     <select id="selectExportAttachmentFiles"

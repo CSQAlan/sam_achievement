@@ -2,7 +2,9 @@ package com.ruoyi.reimbursement.mapper;
 
 import java.util.List;
 
+
 import com.ruoyi.reimbursement.domain.SamReimbursementRatio;
+import org.apache.ibatis.annotations.Mapper;
 import org.apache.ibatis.annotations.Param;
 
 /**
@@ -11,6 +13,7 @@ import org.apache.ibatis.annotations.Param;
  * @author ruoyi
  * @date 2026-02-07
  */
+@Mapper
 public interface SamReimbursementRatioMapper 
 {
     /**

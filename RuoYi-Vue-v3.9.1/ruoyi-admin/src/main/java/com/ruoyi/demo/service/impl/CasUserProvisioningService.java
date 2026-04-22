@@ -1,6 +1,8 @@
 package com.ruoyi.demo.service.impl;
 
 
+import com.ruoyi.achievement.domain.SamStudent;
+import com.ruoyi.achievement.domain.SamTeacher;
 import com.ruoyi.common.core.domain.entity.SysUser;
 import com.ruoyi.common.utils.SecurityUtils;
 import com.ruoyi.common.utils.uuid.IdUtils;
@@ -8,11 +10,13 @@ import com.ruoyi.demo.service.ICasUserProvisioningService;
 import com.ruoyi.demo.util.CasAttrDecodeUtil;
 import com.ruoyi.achievement.service.ISamStudentService;
 import com.ruoyi.achievement.service.ISamTeacherService;
+
 import com.ruoyi.system.service.ISysRoleService;
 import com.ruoyi.system.service.ISysUserService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
+import java.util.List;
 import java.util.Map;
 
 @Service
@@ -87,6 +91,31 @@ public class CasUserProvisioningService implements ICasUserProvisioningService {
         // 6) 赋默认角色（非常重要，否则进系统没菜单）
         // 例如默认给“学生角色” roleId=xxx（你需要按你系统实际配置）
         userService.insertUserAuth(user.getUserId(), new Long[]{ roleId });
+
+        // Insert into business tables based on role if not already exists
+        if (roleId == 103L) { // Teacher
+           SamTeacher query = new com.ruoyi.achievement.domain.SamTeacher();
+            query.setNo(id);
+           List<SamTeacher> list = teacherService.selectSamTeacherList(query);
+            if (list == null || list.isEmpty()) {
+                com.ruoyi.achievement.domain.SamTeacher teacher = new com.ruoyi.achievement.domain.SamTeacher();
+                teacher.setTeacherName(name != null ? name : loginName);
+                teacher.setNo(id);
+                // Additional fields can be set if needed
+                teacherService.insertSamTeacher(teacher);
+            }
+        } else if (roleId == 3L) { // Student
+           SamStudent query = new com.ruoyi.achievement.domain.SamStudent();
+            query.setNo(id);
+            List<com.ruoyi.achievement.domain.SamStudent> list = studentService.selectSamStudentList(query);
+            if (list == null || list.isEmpty()) {
+                com.ruoyi.achievement.domain.SamStudent student = new com.ruoyi.achievement.domain.SamStudent();
+                student.setName(name != null ? name : loginName);
+                student.setNo(id);
+                // Additional fields can be set if needed
+                studentService.insertSamStudent(student);
+            }
+        }
 
         // 或者调用 roleService 相关方法（看你的版本）
 

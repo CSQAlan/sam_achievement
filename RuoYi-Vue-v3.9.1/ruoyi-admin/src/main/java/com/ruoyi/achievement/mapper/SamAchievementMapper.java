@@ -168,7 +168,9 @@ public interface SamAchievementMapper
             @Param("sourceMode") String sourceMode,
             @Param("isStudent") boolean isStudent,
             @Param("isTeacher") boolean isTeacher,
-            @Param("isAdmin") boolean isAdmin);
+            @Param("isAdmin") boolean isAdmin,
+            @Param("competitionId") String competitionId,
+            @Param("groupByCompetition") Boolean groupByCompetition);
 
     /**
      * 查询成果附件文件信息

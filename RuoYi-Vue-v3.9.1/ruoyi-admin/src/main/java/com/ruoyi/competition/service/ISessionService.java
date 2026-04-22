@@ -26,6 +26,14 @@ public interface ISessionService
      * @return 赛事届次集合
      */
     public List<Session> selectSessionList(Session session);
+    
+    /**
+     * 查询所有匹配条件的届次ID（用于全选批量操作）
+     * 
+     * @param session 筛选条件
+     * @return ID集合
+     */
+    public Long[] selectSessionIds(Session session);
 
     /**
      * 新增赛事届次

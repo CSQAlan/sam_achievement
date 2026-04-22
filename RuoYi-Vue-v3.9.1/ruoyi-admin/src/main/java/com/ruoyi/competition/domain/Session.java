@@ -13,6 +13,12 @@ public class Session extends BaseEntity
 {
     private static final long serialVersionUID = 1L;
 
+    /** 批量查询ID集合 */
+    private Long[] ids;
+
+    public Long[] getIds() { return ids; }
+    public void setIds(Long[] ids) { this.ids = ids; }
+
     /** 届次主键 */
     private Long id;
 

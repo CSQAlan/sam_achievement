@@ -1,7 +1,7 @@
 <template>
-  <div>
+  <!-- <div>
     <svg-icon icon-class="question" @click="goto" />
-  </div>
+  </div> -->
 </template>
 
 <script setup>

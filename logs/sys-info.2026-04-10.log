@@ -1,0 +1,10 @@
+08:32:08.479 [Druid-ConnectionPool-Create-132617533] INFO  c.a.d.p.DruidAbstractDataSource - [setFailContinuous,1913] - {dataSource-1} failContinuous is false
+08:32:15.541 [RuoyiScheduler_Worker-1] INFO  c.r.a.t.FileCleanTask - [cleanTempFiles,39] - 开始执行定时任务：清理上传未提交的临时文件 (清理范围：超过 24 小时)...
+08:32:16.603 [RuoyiScheduler_Worker-1] INFO  c.r.a.t.FileCleanTask - [cleanTempFiles,45] - 未发现需要清理的临时文件。
+08:33:34.474 [SpringApplicationShutdownHook] INFO  o.q.c.QuartzScheduler - [standby,585] - Scheduler RuoyiScheduler_$_楼台1775734784809 paused.
+08:33:35.121 [SpringApplicationShutdownHook] INFO  o.q.c.QuartzScheduler - [shutdown,666] - Scheduler RuoyiScheduler_$_楼台1775734784809 shutting down.
+08:33:35.123 [SpringApplicationShutdownHook] INFO  o.q.c.QuartzScheduler - [standby,585] - Scheduler RuoyiScheduler_$_楼台1775734784809 paused.
+08:33:35.126 [SpringApplicationShutdownHook] INFO  o.q.c.QuartzScheduler - [shutdown,740] - Scheduler RuoyiScheduler_$_楼台1775734784809 shutdown complete.
+08:33:35.128 [SpringApplicationShutdownHook] INFO  sys-user - [shutdownAsyncManager,31] - ====关闭后台任务任务线程池====
+08:33:35.154 [SpringApplicationShutdownHook] INFO  c.a.d.p.DruidDataSource - [close,2083] - {dataSource-1} closing ...
+08:33:35.248 [SpringApplicationShutdownHook] INFO  c.a.d.p.DruidDataSource - [close,2156] - {dataSource-1} closed

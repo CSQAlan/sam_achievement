@@ -3,6 +3,7 @@ package com.ruoyi.reimbursement.mapper;
 import java.util.List;
 
 import com.ruoyi.reimbursement.domain.SamReimbursementItems;
+import org.apache.ibatis.annotations.Mapper;
 
 /**
  * 报销项目Mapper接口
@@ -10,6 +11,7 @@ import com.ruoyi.reimbursement.domain.SamReimbursementItems;
  * @author ruoyi
  * @date 2026-02-07
  */
+@Mapper
 public interface SamReimbursementItemsMapper 
 {
     /**

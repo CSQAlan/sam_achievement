@@ -1,0 +1,28 @@
+16:01:38.764 [restartedMain] INFO  c.r.RuoYiApplication - [logStarting,55] - Starting RuoYiApplication using Java 21.0.2 on 楼台 with PID 44136 (D:\各种作业\ruo\RuoYi-Vue-v3.9.1\ruoyi-admin\target\classes started by 罗 in D:\各种作业\ruo)
+16:01:38.769 [background-preinit] INFO  o.h.v.i.util.Version - [<clinit>,21] - HV000001: Hibernate Validator 6.2.5.Final
+16:01:38.769 [restartedMain] INFO  c.r.RuoYiApplication - [logStartupProfileInfo,686] - The following 1 profile is active: "druid"
+16:01:41.631 [restartedMain] INFO  o.a.c.h.Http11NioProtocol - [log,168] - Initializing ProtocolHandler ["http-nio-8080"]
+16:01:41.632 [restartedMain] INFO  o.a.c.c.StandardService - [log,168] - Starting service [Tomcat]
+16:01:41.633 [restartedMain] INFO  o.a.c.c.StandardEngine - [log,168] - Starting Servlet engine: [Apache Tomcat/9.0.112]
+16:01:41.730 [restartedMain] INFO  o.a.c.c.C.[.[.[/] - [log,168] - Initializing Spring embedded WebApplicationContext
+16:01:42.296 [restartedMain] INFO  o.j.c.c.c.WebXmlConfigurationStrategyImpl - [get,43] - Property [serverName] loaded from FilterConfig.getInitParameter with value [http://localhost:8080]
+16:01:42.297 [restartedMain] INFO  o.j.c.c.c.WebXmlConfigurationStrategyImpl - [get,43] - Property [redirectAfterValidation] loaded from FilterConfig.getInitParameter with value [false]
+16:01:42.298 [restartedMain] INFO  o.j.c.c.c.WebXmlConfigurationStrategyImpl - [get,43] - Property [casServerUrlPrefix] loaded from FilterConfig.getInitParameter with value [https://csxrz.cqnu.edu.cn/cas]
+16:01:45.872 [restartedMain] INFO  c.a.d.p.DruidDataSource - [init,865] - {dataSource-1} inited
+16:01:46.330 [restartedMain] INFO  c.a.d.p.DruidDataSource - [close,2083] - {dataSource-1} closing ...
+16:01:46.337 [restartedMain] INFO  c.a.d.p.DruidDataSource - [close,2156] - {dataSource-1} closed
+16:01:46.348 [restartedMain] INFO  o.a.c.c.StandardService - [log,168] - Stopping service [Tomcat]
+16:02:00.436 [background-preinit] INFO  o.h.v.i.util.Version - [<clinit>,21] - HV000001: Hibernate Validator 6.2.5.Final
+16:02:00.435 [restartedMain] INFO  c.r.RuoYiApplication - [logStarting,55] - Starting RuoYiApplication using Java 21.0.2 on 楼台 with PID 28220 (D:\各种作业\ruo\RuoYi-Vue-v3.9.1\ruoyi-admin\target\classes started by 罗 in D:\各种作业\ruo)
+16:02:00.437 [restartedMain] INFO  c.r.RuoYiApplication - [logStartupProfileInfo,686] - The following 1 profile is active: "druid"
+16:02:02.400 [restartedMain] INFO  o.a.c.h.Http11NioProtocol - [log,168] - Initializing ProtocolHandler ["http-nio-8080"]
+16:02:02.401 [restartedMain] INFO  o.a.c.c.StandardService - [log,168] - Starting service [Tomcat]
+16:02:02.401 [restartedMain] INFO  o.a.c.c.StandardEngine - [log,168] - Starting Servlet engine: [Apache Tomcat/9.0.112]
+16:02:02.469 [restartedMain] INFO  o.a.c.c.C.[.[.[/] - [log,168] - Initializing Spring embedded WebApplicationContext
+16:02:02.858 [restartedMain] INFO  o.j.c.c.c.WebXmlConfigurationStrategyImpl - [get,43] - Property [serverName] loaded from FilterConfig.getInitParameter with value [http://localhost:8080]
+16:02:02.860 [restartedMain] INFO  o.j.c.c.c.WebXmlConfigurationStrategyImpl - [get,43] - Property [redirectAfterValidation] loaded from FilterConfig.getInitParameter with value [false]
+16:02:02.860 [restartedMain] INFO  o.j.c.c.c.WebXmlConfigurationStrategyImpl - [get,43] - Property [casServerUrlPrefix] loaded from FilterConfig.getInitParameter with value [https://csxrz.cqnu.edu.cn/cas]
+16:02:06.156 [restartedMain] INFO  c.a.d.p.DruidDataSource - [init,865] - {dataSource-1} inited
+16:02:06.537 [restartedMain] INFO  c.a.d.p.DruidDataSource - [close,2083] - {dataSource-1} closing ...
+16:02:06.542 [restartedMain] INFO  c.a.d.p.DruidDataSource - [close,2156] - {dataSource-1} closed
+16:02:06.553 [restartedMain] INFO  o.a.c.c.StandardService - [log,168] - Stopping service [Tomcat]

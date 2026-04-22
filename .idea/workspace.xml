@@ -5,8 +5,67 @@
   </component>
   <component name="ChangeListManager">
     <list default="true" id="b204d056-52b8-4d02-915a-97d1bc9b8c13" name="Changes" comment="">
+      <change beforePath="$PROJECT_DIR$/.gitignore" beforeDir="false" afterPath="$PROJECT_DIR$/.gitignore" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/RuoYi-Vue-v3.9.1/ruoyi-vue3/src/views/system/Reimbursement/index.vue" beforeDir="false" afterPath="$PROJECT_DIR$/RuoYi-Vue-v3.9.1/ruoyi-vue3/src/views/system/Reimbursement/index.vue" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/RuoYi-Vue-v3.9.1/.idea/dataSources.xml" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/RuoYi-Vue-v3.9.1/.vscode/settings.json" beforeDir="false" afterPath="$PROJECT_DIR$/RuoYi-Vue-v3.9.1/.vscode/settings.json" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/RuoYi-Vue-v3.9.1/package-lock.json" beforeDir="false" afterPath="$PROJECT_DIR$/RuoYi-Vue-v3.9.1/package-lock.json" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/RuoYi-Vue-v3.9.1/package.json" beforeDir="false" afterPath="$PROJECT_DIR$/RuoYi-Vue-v3.9.1/package.json" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/RuoYi-Vue-v3.9.1/pom.xml" beforeDir="false" afterPath="$PROJECT_DIR$/RuoYi-Vue-v3.9.1/pom.xml" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/RuoYi-Vue-v3.9.1/ruoyi-admin/src/main/java/com/ruoyi/achievement/controller/SamAchievementController.java" beforeDir="false" afterPath="$PROJECT_DIR$/RuoYi-Vue-v3.9.1/ruoyi-admin/src/main/java/com/ruoyi/achievement/controller/SamAchievementController.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/RuoYi-Vue-v3.9.1/ruoyi-admin/src/main/java/com/ruoyi/achievement/domain/ExportAchievementBaseVo.java" beforeDir="false" afterPath="$PROJECT_DIR$/RuoYi-Vue-v3.9.1/ruoyi-admin/src/main/java/com/ruoyi/achievement/domain/ExportAchievementBaseVo.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/RuoYi-Vue-v3.9.1/ruoyi-admin/src/main/java/com/ruoyi/achievement/domain/ExportAttachmentZipReq.java" beforeDir="false" afterPath="$PROJECT_DIR$/RuoYi-Vue-v3.9.1/ruoyi-admin/src/main/java/com/ruoyi/achievement/domain/ExportAttachmentZipReq.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/RuoYi-Vue-v3.9.1/ruoyi-admin/src/main/java/com/ruoyi/achievement/mapper/SamAchievementMapper.java" beforeDir="false" afterPath="$PROJECT_DIR$/RuoYi-Vue-v3.9.1/ruoyi-admin/src/main/java/com/ruoyi/achievement/mapper/SamAchievementMapper.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/RuoYi-Vue-v3.9.1/ruoyi-admin/src/main/java/com/ruoyi/achievement/service/impl/SamAchievementServiceImpl.java" beforeDir="false" afterPath="$PROJECT_DIR$/RuoYi-Vue-v3.9.1/ruoyi-admin/src/main/java/com/ruoyi/achievement/service/impl/SamAchievementServiceImpl.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/RuoYi-Vue-v3.9.1/ruoyi-admin/src/main/java/com/ruoyi/achievement/service/impl/reviewedServiceImpl.java" beforeDir="false" afterPath="$PROJECT_DIR$/RuoYi-Vue-v3.9.1/ruoyi-admin/src/main/java/com/ruoyi/achievement/service/impl/reviewedServiceImpl.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/RuoYi-Vue-v3.9.1/ruoyi-admin/src/main/java/com/ruoyi/achievement/task/BizAuditCleanTask.java" beforeDir="false" afterPath="$PROJECT_DIR$/RuoYi-Vue-v3.9.1/ruoyi-admin/src/main/java/com/ruoyi/achievement/task/BizAuditCleanTask.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/RuoYi-Vue-v3.9.1/ruoyi-admin/src/main/java/com/ruoyi/competition/controller/CompetitionController.java" beforeDir="false" afterPath="$PROJECT_DIR$/RuoYi-Vue-v3.9.1/ruoyi-admin/src/main/java/com/ruoyi/competition/controller/CompetitionController.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/RuoYi-Vue-v3.9.1/ruoyi-admin/src/main/java/com/ruoyi/competition/controller/SessionController.java" beforeDir="false" afterPath="$PROJECT_DIR$/RuoYi-Vue-v3.9.1/ruoyi-admin/src/main/java/com/ruoyi/competition/controller/SessionController.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/RuoYi-Vue-v3.9.1/ruoyi-admin/src/main/java/com/ruoyi/competition/domain/Session.java" beforeDir="false" afterPath="$PROJECT_DIR$/RuoYi-Vue-v3.9.1/ruoyi-admin/src/main/java/com/ruoyi/competition/domain/Session.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/RuoYi-Vue-v3.9.1/ruoyi-admin/src/main/java/com/ruoyi/competition/mapper/SessionMapper.java" beforeDir="false" afterPath="$PROJECT_DIR$/RuoYi-Vue-v3.9.1/ruoyi-admin/src/main/java/com/ruoyi/competition/mapper/SessionMapper.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/RuoYi-Vue-v3.9.1/ruoyi-admin/src/main/java/com/ruoyi/competition/service/ISessionService.java" beforeDir="false" afterPath="$PROJECT_DIR$/RuoYi-Vue-v3.9.1/ruoyi-admin/src/main/java/com/ruoyi/competition/service/ISessionService.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/RuoYi-Vue-v3.9.1/ruoyi-admin/src/main/java/com/ruoyi/competition/service/impl/SessionServiceImpl.java" beforeDir="false" afterPath="$PROJECT_DIR$/RuoYi-Vue-v3.9.1/ruoyi-admin/src/main/java/com/ruoyi/competition/service/impl/SessionServiceImpl.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/RuoYi-Vue-v3.9.1/ruoyi-admin/src/main/java/com/ruoyi/competitionapply/controller/CompetitionApplyController.java" beforeDir="false" afterPath="$PROJECT_DIR$/RuoYi-Vue-v3.9.1/ruoyi-admin/src/main/java/com/ruoyi/competitionapply/controller/CompetitionApplyController.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/RuoYi-Vue-v3.9.1/ruoyi-admin/src/main/java/com/ruoyi/competitionapply/service/ICompetitionApplyService.java" beforeDir="false" afterPath="$PROJECT_DIR$/RuoYi-Vue-v3.9.1/ruoyi-admin/src/main/java/com/ruoyi/competitionapply/service/ICompetitionApplyService.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/RuoYi-Vue-v3.9.1/ruoyi-admin/src/main/java/com/ruoyi/competitionapply/service/impl/CompetitionApplyServiceImpl.java" beforeDir="false" afterPath="$PROJECT_DIR$/RuoYi-Vue-v3.9.1/ruoyi-admin/src/main/java/com/ruoyi/competitionapply/service/impl/CompetitionApplyServiceImpl.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/RuoYi-Vue-v3.9.1/ruoyi-admin/src/main/java/com/ruoyi/demo/service/impl/CasUserProvisioningService.java" beforeDir="false" afterPath="$PROJECT_DIR$/RuoYi-Vue-v3.9.1/ruoyi-admin/src/main/java/com/ruoyi/demo/service/impl/CasUserProvisioningService.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/RuoYi-Vue-v3.9.1/ruoyi-admin/src/main/java/com/ruoyi/reimbursement/controller/SamQualityDevelopmentFormController.java" beforeDir="false" afterPath="$PROJECT_DIR$/RuoYi-Vue-v3.9.1/ruoyi-admin/src/main/java/com/ruoyi/reimbursement/controller/SamQualityDevelopmentFormController.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/RuoYi-Vue-v3.9.1/ruoyi-admin/src/main/java/com/ruoyi/reimbursement/controller/SamReimbursementItemsController.java" beforeDir="false" afterPath="$PROJECT_DIR$/RuoYi-Vue-v3.9.1/ruoyi-admin/src/main/java/com/ruoyi/reimbursement/controller/SamReimbursementItemsController.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/RuoYi-Vue-v3.9.1/ruoyi-admin/src/main/java/com/ruoyi/reimbursement/controller/SamReimbursementRatioController.java" beforeDir="false" afterPath="$PROJECT_DIR$/RuoYi-Vue-v3.9.1/ruoyi-admin/src/main/java/com/ruoyi/reimbursement/controller/SamReimbursementRatioController.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/RuoYi-Vue-v3.9.1/ruoyi-admin/src/main/java/com/ruoyi/reimbursement/mapper/SamQualityDevelopmentFormMapper.java" beforeDir="false" afterPath="$PROJECT_DIR$/RuoYi-Vue-v3.9.1/ruoyi-admin/src/main/java/com/ruoyi/reimbursement/mapper/SamQualityDevelopmentFormMapper.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/RuoYi-Vue-v3.9.1/ruoyi-admin/src/main/java/com/ruoyi/reimbursement/mapper/SamReimbursementItemsMapper.java" beforeDir="false" afterPath="$PROJECT_DIR$/RuoYi-Vue-v3.9.1/ruoyi-admin/src/main/java/com/ruoyi/reimbursement/mapper/SamReimbursementItemsMapper.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/RuoYi-Vue-v3.9.1/ruoyi-admin/src/main/java/com/ruoyi/reimbursement/mapper/SamReimbursementRatioMapper.java" beforeDir="false" afterPath="$PROJECT_DIR$/RuoYi-Vue-v3.9.1/ruoyi-admin/src/main/java/com/ruoyi/reimbursement/mapper/SamReimbursementRatioMapper.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/RuoYi-Vue-v3.9.1/ruoyi-admin/src/main/java/com/ruoyi/reimbursement/service/impl/SamQualityDevelopmentFormServiceImpl.java" beforeDir="false" afterPath="$PROJECT_DIR$/RuoYi-Vue-v3.9.1/ruoyi-admin/src/main/java/com/ruoyi/reimbursement/service/impl/SamQualityDevelopmentFormServiceImpl.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/RuoYi-Vue-v3.9.1/ruoyi-admin/src/main/java/com/ruoyi/web/controller/system/SysProfileController.java" beforeDir="false" afterPath="$PROJECT_DIR$/RuoYi-Vue-v3.9.1/ruoyi-admin/src/main/java/com/ruoyi/web/controller/system/SysProfileController.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/RuoYi-Vue-v3.9.1/ruoyi-admin/src/main/resources/mapper/achievement/SamAchievementMapper.xml" beforeDir="false" afterPath="$PROJECT_DIR$/RuoYi-Vue-v3.9.1/ruoyi-admin/src/main/resources/mapper/achievement/SamAchievementMapper.xml" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/RuoYi-Vue-v3.9.1/ruoyi-admin/src/main/resources/mapper/achievement/reviewedMapper.xml" beforeDir="false" afterPath="$PROJECT_DIR$/RuoYi-Vue-v3.9.1/ruoyi-admin/src/main/resources/mapper/achievement/reviewedMapper.xml" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/RuoYi-Vue-v3.9.1/ruoyi-admin/src/main/resources/mapper/competition/SessionMapper.xml" beforeDir="false" afterPath="$PROJECT_DIR$/RuoYi-Vue-v3.9.1/ruoyi-admin/src/main/resources/mapper/competition/SessionMapper.xml" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/RuoYi-Vue-v3.9.1/ruoyi-admin/src/main/resources/mapper/reimbursement/SamReimbursementAchievementViewMapper.xml" beforeDir="false" afterPath="$PROJECT_DIR$/RuoYi-Vue-v3.9.1/ruoyi-admin/src/main/resources/mapper/reimbursement/SamReimbursementAchievementViewMapper.xml" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/RuoYi-Vue-v3.9.1/ruoyi-framework/pom.xml" beforeDir="false" afterPath="$PROJECT_DIR$/RuoYi-Vue-v3.9.1/ruoyi-framework/pom.xml" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/RuoYi-Vue-v3.9.1/ruoyi-system/pom.xml" beforeDir="false" afterPath="$PROJECT_DIR$/RuoYi-Vue-v3.9.1/ruoyi-system/pom.xml" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/RuoYi-Vue-v3.9.1/ruoyi-vue3/.env.development" beforeDir="false" afterPath="$PROJECT_DIR$/RuoYi-Vue-v3.9.1/ruoyi-vue3/.env.development" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/RuoYi-Vue-v3.9.1/ruoyi-vue3/.env.production" beforeDir="false" afterPath="$PROJECT_DIR$/RuoYi-Vue-v3.9.1/ruoyi-vue3/.env.production" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/RuoYi-Vue-v3.9.1/ruoyi-vue3/package-lock.json" beforeDir="false" afterPath="$PROJECT_DIR$/RuoYi-Vue-v3.9.1/ruoyi-vue3/package-lock.json" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/RuoYi-Vue-v3.9.1/ruoyi-vue3/src/api/session/session.js" beforeDir="false" afterPath="$PROJECT_DIR$/RuoYi-Vue-v3.9.1/ruoyi-vue3/src/api/session/session.js" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/RuoYi-Vue-v3.9.1/ruoyi-vue3/src/components/RuoYi/Doc/index.vue" beforeDir="false" afterPath="$PROJECT_DIR$/RuoYi-Vue-v3.9.1/ruoyi-vue3/src/components/RuoYi/Doc/index.vue" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/RuoYi-Vue-v3.9.1/ruoyi-vue3/src/components/RuoYi/Git/index.vue" beforeDir="false" afterPath="$PROJECT_DIR$/RuoYi-Vue-v3.9.1/ruoyi-vue3/src/components/RuoYi/Git/index.vue" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/RuoYi-Vue-v3.9.1/ruoyi-vue3/src/store/modules/user.js" beforeDir="false" afterPath="$PROJECT_DIR$/RuoYi-Vue-v3.9.1/ruoyi-vue3/src/store/modules/user.js" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/RuoYi-Vue-v3.9.1/ruoyi-vue3/src/views/achievement/component/AchievementForm.vue" beforeDir="false" afterPath="$PROJECT_DIR$/RuoYi-Vue-v3.9.1/ruoyi-vue3/src/views/achievement/component/AchievementForm.vue" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/RuoYi-Vue-v3.9.1/ruoyi-vue3/src/views/achievement/component/index.vue" beforeDir="false" afterPath="$PROJECT_DIR$/RuoYi-Vue-v3.9.1/ruoyi-vue3/src/views/achievement/component/index.vue" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/RuoYi-Vue-v3.9.1/ruoyi-vue3/src/views/achievement/component/reviewPage.vue" beforeDir="false" afterPath="$PROJECT_DIR$/RuoYi-Vue-v3.9.1/ruoyi-vue3/src/views/achievement/component/reviewPage.vue" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/RuoYi-Vue-v3.9.1/ruoyi-vue3/src/views/competition-apply/competitionapply/index.vue" beforeDir="false" afterPath="$PROJECT_DIR$/RuoYi-Vue-v3.9.1/ruoyi-vue3/src/views/competition-apply/competitionapply/index.vue" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/RuoYi-Vue-v3.9.1/ruoyi-vue3/src/views/competitionapply-review/index.vue" beforeDir="false" afterPath="$PROJECT_DIR$/RuoYi-Vue-v3.9.1/ruoyi-vue3/src/views/competitionapply-review/index.vue" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/RuoYi-Vue-v3.9.1/ruoyi-vue3/src/views/index.vue" beforeDir="false" afterPath="$PROJECT_DIR$/RuoYi-Vue-v3.9.1/ruoyi-vue3/src/views/index.vue" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/RuoYi-Vue-v3.9.1/ruoyi-vue3/src/views/session/session/index.vue" beforeDir="false" afterPath="$PROJECT_DIR$/RuoYi-Vue-v3.9.1/ruoyi-vue3/src/views/session/session/index.vue" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/RuoYi-Vue-v3.9.1/ruoyi-vue3/src/views/system/user/profile/index.vue" beforeDir="false" afterPath="$PROJECT_DIR$/RuoYi-Vue-v3.9.1/ruoyi-vue3/src/views/system/user/profile/index.vue" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/RuoYi-Vue-v3.9.1/ruoyi-vue3/src/views/system/user/profile/resetPwd.vue" beforeDir="false" afterPath="$PROJECT_DIR$/RuoYi-Vue-v3.9.1/ruoyi-vue3/src/views/system/user/profile/resetPwd.vue" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/RuoYi-Vue-v3.9.1/ruoyi-vue3/src/views/system/user/profile/userInfo.vue" beforeDir="false" afterPath="$PROJECT_DIR$/RuoYi-Vue-v3.9.1/ruoyi-vue3/src/views/system/user/profile/userInfo.vue" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/RuoYi-Vue-v3.9.1/ruoyi-vue3/vite.config.js" beforeDir="false" afterPath="$PROJECT_DIR$/RuoYi-Vue-v3.9.1/ruoyi-vue3/vite.config.js" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/RuoYi-Vue-v3.9.1/ry.bat" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/RuoYi-Vue-v3.9.1/ry.sh" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/RuoYi-Vue-v3.9.1/start-tunnel-background.bat" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/RuoYi-Vue-v3.9.1/start-tunnel.bat" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/RuoYi-Vue-v3.9.1/stop-tunnel.bat" beforeDir="false" />
     </list>
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
@@ -24,30 +83,33 @@
     <option name="hideEmptyMiddlePackages" value="true" />
     <option name="showLibraryContents" value="true" />
   </component>
-  <component name="PropertiesComponent">{
-  &quot;keyToString&quot;: {
-    &quot;ModuleVcsDetector.initialDetectionPerformed&quot;: &quot;true&quot;,
-    &quot;RequestMappingsPanelOrder0&quot;: &quot;0&quot;,
-    &quot;RequestMappingsPanelOrder1&quot;: &quot;1&quot;,
-    &quot;RequestMappingsPanelWidth0&quot;: &quot;75&quot;,
-    &quot;RequestMappingsPanelWidth1&quot;: &quot;75&quot;,
-    &quot;RunOnceActivity.ShowReadmeOnStart&quot;: &quot;true&quot;,
-    &quot;RunOnceActivity.TerminalTabsStorage.copyFrom.TerminalArrangementManager&quot;: &quot;true&quot;,
-    &quot;RunOnceActivity.git.unshallow&quot;: &quot;true&quot;,
-    &quot;Spring Boot.RuoYiApplication.executor&quot;: &quot;Run&quot;,
-    &quot;git-widget-placeholder&quot;: &quot;lwz__dev&quot;,
-    &quot;ignore.virus.scanning.warn.message&quot;: &quot;true&quot;,
-    &quot;last_opened_file_path&quot;: &quot;D:/各种作业/ruo&quot;,
-    &quot;node.js.detected.package.eslint&quot;: &quot;true&quot;,
-    &quot;node.js.detected.package.tslint&quot;: &quot;true&quot;,
-    &quot;node.js.selected.package.eslint&quot;: &quot;(autodetect)&quot;,
-    &quot;node.js.selected.package.tslint&quot;: &quot;(autodetect)&quot;,
-    &quot;nodejs_package_manager_path&quot;: &quot;npm&quot;,
-    &quot;settings.editor.selected.configurable&quot;: &quot;project.propCompiler&quot;,
-    &quot;ts.external.directory.path&quot;: &quot;D:\\Program Files\\JetBrains\\IntelliJ IDEA 2025.1.7\\plugins\\javascript-plugin\\jsLanguageServicesImpl\\external&quot;,
-    &quot;vue.rearranger.settings.migration&quot;: &quot;true&quot;
+  <component name="PropertiesComponent"><![CDATA[{
+  "keyToString": {
+    "ModuleVcsDetector.initialDetectionPerformed": "true",
+    "RequestMappingsPanelOrder0": "0",
+    "RequestMappingsPanelOrder1": "1",
+    "RequestMappingsPanelWidth0": "75",
+    "RequestMappingsPanelWidth1": "75",
+    "RunOnceActivity.ShowReadmeOnStart": "true",
+    "RunOnceActivity.TerminalTabsStorage.copyFrom.TerminalArrangementManager": "true",
+    "RunOnceActivity.git.unshallow": "true",
+    "Spring Boot.RuoYiApplication.executor": "Run",
+    "git-widget-placeholder": "main",
+    "ignore.virus.scanning.warn.message": "true",
+    "last_opened_file_path": "D:/各种作业/ruo",
+    "node.js.detected.package.eslint": "true",
+    "node.js.detected.package.tslint": "true",
+    "node.js.selected.package.eslint": "(autodetect)",
+    "node.js.selected.package.tslint": "(autodetect)",
+    "nodejs_package_manager_path": "npm",
+    "project.structure.last.edited": "项目",
+    "project.structure.proportion": "0.0",
+    "project.structure.side.proportion": "0.2",
+    "settings.editor.selected.configurable": "project.propCompiler",
+    "ts.external.directory.path": "D:\\Program Files\\JetBrains\\IntelliJ IDEA 2025.1.7\\plugins\\javascript-plugin\\jsLanguageServicesImpl\\external",
+    "vue.rearranger.settings.migration": "true"
   }
-}</component>
+}]]></component>
   <component name="RunManager">
     <configuration name="RuoYiApplication" type="SpringBootApplicationConfigurationType" factoryName="Spring Boot" nameIsGenerated="true">
       <option name="FRAME_DEACTIVATION_UPDATE_POLICY" value="UpdateClassesAndResources" />
@@ -88,6 +150,8 @@
       <workItem from="1776500108821" duration="37000" />
       <workItem from="1776564924907" duration="4918000" />
       <workItem from="1776591946583" duration="2187000" />
+      <workItem from="1776671551269" duration="4132000" />
+      <workItem from="1776826329108" duration="967000" />
     </task>
     <servers />
   </component>

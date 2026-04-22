@@ -196,8 +196,8 @@
           <el-form
             ref="competitionapplyRef"
             :model="form"
+            :rules="rules"
             label-width="100px"
-            :disabled="true"
           >
             <el-form-item label="赛事名称" prop="name">
               <el-input v-model="form.name" placeholder="请输入赛事名称" />
@@ -907,19 +907,24 @@ function handleApprove() {
   if (!form.value?.id) {
     return;
   }
-  proxy.$modal
-    .confirm("确认审核通过？通过后将自动生成赛事。")
-    .then(() =>
-      reviewCompetitionapply(form.value.id, {
-        status: "1",
-        auditRemark: form.value.auditRemark || "",
-      })
-    )
-    .then(() => {
-      proxy.$modal.msgSuccess("审核通过");
-      open.value = false;
-      getList();
-    });
+  proxy.$refs["competitionapplyRef"].validate((valid) => {
+    if (valid) {
+      proxy.$modal
+        .confirm("确认审核通过？通过后将自动生成赛事。")
+        .then(() => {
+          const payload = { ...form.value };
+          payload.status = "1";
+          payload.auditRemark = form.value.auditRemark || "";
+          payload.tags = Array.isArray(form.value.tags) ? form.value.tags.join(",") : form.value.tags;
+          return reviewCompetitionapply(form.value.id, payload);
+        })
+        .then(() => {
+          proxy.$modal.msgSuccess("审核通过");
+          open.value = false;
+          getList();
+        });
+    }
+  });
 }
 
 function handleReject() {

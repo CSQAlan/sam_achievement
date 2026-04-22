@@ -620,8 +620,11 @@ public class CompetitionApplyServiceImpl implements ICompetitionApplyService
     @Transactional
     @Override
     @BizAudit(bizType = "competition_apply", bizName = "审核申请", opType = BizAuditOpType.UPDATE, handler = "competitionApplyBizAuditHandler", async = false)
-    public int reviewCompetitionApply(Long id, String status, String auditRemark)
+    public int reviewCompetitionApply(Long id, CompetitionApply updateInfo)
     {
+        String status = updateInfo.getStatus();
+        String auditRemark = updateInfo.getAuditRemark();
+
         // 1) 参数校验：只允许 1(通过) 或 2(驳回)
         if (!"1".equals(status) && !"2".equals(status))
         {
@@ -647,19 +650,19 @@ public class CompetitionApplyServiceImpl implements ICompetitionApplyService
             // 3.1 先保证存在主赛事（按名称唯一）
             if (competitionId == null)
             {
-                Competition comp = competitionService.selectCompetitionByCompName(existing.getName());
+                Competition comp = competitionService.selectCompetitionByCompName(updateInfo.getName());
                 if (comp == null)
                 {
                     Competition competition = new Competition();
-                    competition.setName(existing.getName());
-                    competition.setCategory(existing.getCategory());
-                    competition.setOrganizations(existing.getOrganizations());
-                    competition.setLevel(existing.getLevel());
-                    competition.setTags(existing.getTags());
+                    competition.setName(updateInfo.getName());
+                    competition.setCategory(updateInfo.getCategory());
+                    competition.setOrganizations(updateInfo.getOrganizations());
+                    competition.setLevel(updateInfo.getLevel());
+                    competition.setTags(updateInfo.getTags());
                     competition.setScopeType(existing.getScopeType());
                     // 默认启用
                     competition.setStatus("1");
-                    competition.setMemo(existing.getMemo());
+                    competition.setMemo(updateInfo.getMemo());
                     competition.setDelFlag("0");
 
                     // 适用范围为“指定学院”时，默认把申请人学院写入赛事-部门关系
@@ -688,7 +691,7 @@ public class CompetitionApplyServiceImpl implements ICompetitionApplyService
                     }
 
                     competitionService.insertCompetition(competition);
-                    comp = competitionService.selectCompetitionByCompName(existing.getName());
+                    comp = competitionService.selectCompetitionByCompName(updateInfo.getName());
                     if (comp == null)
                     {
                         throw new ServiceException("审核通过失败：赛事生成异常");
@@ -700,11 +703,11 @@ public class CompetitionApplyServiceImpl implements ICompetitionApplyService
             // 3.2 再保证存在届次（主赛事 + 届次文本唯一）
             if (sessionId == null)
             {
-                if (StringUtils.isBlank(existing.getSession()))
+                if (StringUtils.isBlank(updateInfo.getSession()))
                 {
                     throw new ServiceException("审核通过失败：届次不能为空");
                 }
-                if (existing.getYear() == null || existing.getYear() <= 0)
+                if (updateInfo.getYear() == null || updateInfo.getYear() <= 0)
                 {
                     throw new ServiceException("审核通过失败：年份不能为空");
                 }
@@ -717,7 +720,7 @@ public class CompetitionApplyServiceImpl implements ICompetitionApplyService
 
                 Session query = new Session();
                 query.setCompetitionId(competitionId);
-                query.setSession(existing.getSession());
+                query.setSession(updateInfo.getSession());
                 List<Session> existSessions = sessionMapper.selectSessionList(query);
                 if (existSessions != null && !existSessions.isEmpty())
                 {
@@ -727,13 +730,13 @@ public class CompetitionApplyServiceImpl implements ICompetitionApplyService
                 {
                     Session newSession = new Session();
                     newSession.setCompetitionId(competitionId);
-                    newSession.setSession(existing.getSession());
-                    newSession.setYear(existing.getYear());
+                    newSession.setSession(updateInfo.getSession());
+                    newSession.setYear(updateInfo.getYear());
                     newSession.setUuid(noticeUuid);
-                    newSession.setCategory(existing.getCategory());
-                    newSession.setOrganizations(existing.getOrganizations());
-                    newSession.setLevel(existing.getLevel());
-                    newSession.setTags(existing.getTags());
+                    newSession.setCategory(updateInfo.getCategory());
+                    newSession.setOrganizations(updateInfo.getOrganizations());
+                    newSession.setLevel(updateInfo.getLevel());
+                    newSession.setTags(updateInfo.getTags());
                     newSession.setStatus("1");
                     newSession.setDelFlag("0");
 
@@ -759,6 +762,14 @@ public class CompetitionApplyServiceImpl implements ICompetitionApplyService
         update.setId(id);
         update.setStatus(status);
         update.setAuditRemark(auditRemark);
+        update.setName(updateInfo.getName());
+        update.setYear(updateInfo.getYear());
+        update.setSession(updateInfo.getSession());
+        update.setMemo(updateInfo.getMemo());
+        update.setCategory(updateInfo.getCategory());
+        update.setOrganizations(updateInfo.getOrganizations());
+        update.setLevel(updateInfo.getLevel());
+        update.setTags(updateInfo.getTags());
         update.setAuditTime(new Date());
         if (auditor != null)
         {

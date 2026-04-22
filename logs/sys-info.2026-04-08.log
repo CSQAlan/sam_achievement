@@ -1,0 +1,255 @@
+23:00:01.931 [restartedMain] INFO  c.r.RuoYiApplication - [logStarting,55] - Starting RuoYiApplication using Java 21.0.2 on 楼台 with PID 9296 (D:\各种作业\ruo\RuoYi-Vue-v3.9.1\ruoyi-admin\target\classes started by 罗 in D:\各种作业\ruo)
+23:00:01.933 [restartedMain] INFO  c.r.RuoYiApplication - [logStartupProfileInfo,686] - The following 1 profile is active: "druid"
+23:00:11.965 [restartedMain] INFO  c.r.RuoYiApplication - [logStarting,55] - Starting RuoYiApplication using Java 21.0.2 on 楼台 with PID 9296 (D:\各种作业\ruo\RuoYi-Vue-v3.9.1\ruoyi-admin\target\classes started by 罗 in D:\各种作业\ruo)
+23:00:11.965 [restartedMain] INFO  c.r.RuoYiApplication - [logStartupProfileInfo,686] - The following 1 profile is active: "druid"
+23:00:18.628 [restartedMain] INFO  c.r.RuoYiApplication - [logStarting,55] - Starting RuoYiApplication using Java 21.0.2 on 楼台 with PID 9296 (D:\各种作业\ruo\RuoYi-Vue-v3.9.1\ruoyi-admin\target\classes started by 罗 in D:\各种作业\ruo)
+23:00:18.628 [restartedMain] INFO  c.r.RuoYiApplication - [logStartupProfileInfo,686] - The following 1 profile is active: "druid"
+23:00:21.924 [restartedMain] INFO  c.r.RuoYiApplication - [logStarting,55] - Starting RuoYiApplication using Java 21.0.2 on 楼台 with PID 9296 (D:\各种作业\ruo\RuoYi-Vue-v3.9.1\ruoyi-admin\target\classes started by 罗 in D:\各种作业\ruo)
+23:00:21.924 [restartedMain] INFO  c.r.RuoYiApplication - [logStartupProfileInfo,686] - The following 1 profile is active: "druid"
+23:00:24.030 [restartedMain] INFO  o.a.c.h.Http11NioProtocol - [log,168] - Initializing ProtocolHandler ["http-nio-8080"]
+23:00:24.031 [restartedMain] INFO  o.a.c.c.StandardService - [log,168] - Starting service [Tomcat]
+23:00:24.031 [restartedMain] INFO  o.a.c.c.StandardEngine - [log,168] - Starting Servlet engine: [Apache Tomcat/9.0.112]
+23:00:24.065 [restartedMain] INFO  o.a.c.c.C.[.[.[/] - [log,168] - Initializing Spring embedded WebApplicationContext
+23:00:25.335 [restartedMain] INFO  c.a.d.p.DruidDataSource - [init,865] - {dataSource-3} inited
+23:00:25.350 [restartedMain] INFO  o.a.c.c.StandardService - [log,168] - Stopping service [Tomcat]
+23:00:25.366 [Druid-ConnectionPool-Create-2080833926] INFO  c.a.d.p.DruidAbstractDataSource - [setFailContinuous,1908] - {dataSource-3} failContinuous is true
+23:03:07.173 [restartedMain] INFO  c.r.RuoYiApplication - [logStarting,55] - Starting RuoYiApplication using Java 21.0.2 on 楼台 with PID 9296 (D:\各种作业\ruo\RuoYi-Vue-v3.9.1\ruoyi-admin\target\classes started by 罗 in D:\各种作业\ruo)
+23:03:07.176 [restartedMain] INFO  c.r.RuoYiApplication - [logStartupProfileInfo,686] - The following 1 profile is active: "druid"
+23:03:08.136 [restartedMain] INFO  o.a.c.h.Http11NioProtocol - [log,168] - Initializing ProtocolHandler ["http-nio-8080"]
+23:03:08.137 [restartedMain] INFO  o.a.c.c.StandardService - [log,168] - Starting service [Tomcat]
+23:03:08.137 [restartedMain] INFO  o.a.c.c.StandardEngine - [log,168] - Starting Servlet engine: [Apache Tomcat/9.0.112]
+23:03:08.151 [restartedMain] INFO  o.a.c.c.C.[.[.[/] - [log,168] - Initializing Spring embedded WebApplicationContext
+23:03:08.161 [restartedMain] INFO  o.a.c.c.StandardService - [log,168] - Stopping service [Tomcat]
+23:03:30.459 [restartedMain] INFO  c.r.RuoYiApplication - [logStarting,55] - Starting RuoYiApplication using Java 21.0.2 on 楼台 with PID 9296 (D:\各种作业\ruo\RuoYi-Vue-v3.9.1\ruoyi-admin\target\classes started by 罗 in D:\各种作业\ruo)
+23:03:30.459 [restartedMain] INFO  c.r.RuoYiApplication - [logStartupProfileInfo,686] - The following 1 profile is active: "druid"
+23:03:32.893 [restartedMain] INFO  o.a.c.h.Http11NioProtocol - [log,168] - Initializing ProtocolHandler ["http-nio-8080"]
+23:03:32.893 [restartedMain] INFO  o.a.c.c.StandardService - [log,168] - Starting service [Tomcat]
+23:03:32.893 [restartedMain] INFO  o.a.c.c.StandardEngine - [log,168] - Starting Servlet engine: [Apache Tomcat/9.0.112]
+23:03:32.909 [restartedMain] INFO  o.a.c.c.C.[.[.[/] - [log,168] - Initializing Spring embedded WebApplicationContext
+23:03:32.994 [restartedMain] INFO  o.a.c.c.StandardService - [log,168] - Stopping service [Tomcat]
+23:03:36.622 [restartedMain] INFO  c.r.RuoYiApplication - [logStarting,55] - Starting RuoYiApplication using Java 21.0.2 on 楼台 with PID 9296 (D:\各种作业\ruo\RuoYi-Vue-v3.9.1\ruoyi-admin\target\classes started by 罗 in D:\各种作业\ruo)
+23:03:36.622 [restartedMain] INFO  c.r.RuoYiApplication - [logStartupProfileInfo,686] - The following 1 profile is active: "druid"
+23:03:49.522 [restartedMain] INFO  c.r.RuoYiApplication - [logStarting,55] - Starting RuoYiApplication using Java 21.0.2 on 楼台 with PID 9296 (D:\各种作业\ruo\RuoYi-Vue-v3.9.1\ruoyi-admin\target\classes started by 罗 in D:\各种作业\ruo)
+23:03:49.523 [restartedMain] INFO  c.r.RuoYiApplication - [logStartupProfileInfo,686] - The following 1 profile is active: "druid"
+23:04:31.025 [restartedMain] INFO  c.r.RuoYiApplication - [logStarting,55] - Starting RuoYiApplication using Java 21.0.2 on 楼台 with PID 9296 (D:\各种作业\ruo\RuoYi-Vue-v3.9.1\ruoyi-admin\target\classes started by 罗 in D:\各种作业\ruo)
+23:04:31.025 [restartedMain] INFO  c.r.RuoYiApplication - [logStartupProfileInfo,686] - The following 1 profile is active: "druid"
+23:04:32.851 [restartedMain] INFO  o.a.c.h.Http11NioProtocol - [log,168] - Initializing ProtocolHandler ["http-nio-8080"]
+23:04:32.954 [restartedMain] INFO  o.a.c.c.StandardService - [log,168] - Starting service [Tomcat]
+23:04:32.954 [restartedMain] INFO  o.a.c.c.StandardEngine - [log,168] - Starting Servlet engine: [Apache Tomcat/9.0.112]
+23:04:32.972 [restartedMain] INFO  o.a.c.c.C.[.[.[/] - [log,168] - Initializing Spring embedded WebApplicationContext
+23:04:32.980 [restartedMain] INFO  o.a.c.c.StandardService - [log,168] - Stopping service [Tomcat]
+23:04:39.909 [restartedMain] INFO  c.r.RuoYiApplication - [logStarting,55] - Starting RuoYiApplication using Java 21.0.2 on 楼台 with PID 9296 (D:\各种作业\ruo\RuoYi-Vue-v3.9.1\ruoyi-admin\target\classes started by 罗 in D:\各种作业\ruo)
+23:04:39.910 [restartedMain] INFO  c.r.RuoYiApplication - [logStartupProfileInfo,686] - The following 1 profile is active: "druid"
+23:04:41.583 [restartedMain] INFO  o.a.c.h.Http11NioProtocol - [log,168] - Initializing ProtocolHandler ["http-nio-8080"]
+23:04:41.965 [restartedMain] INFO  o.a.c.c.StandardService - [log,168] - Starting service [Tomcat]
+23:04:41.966 [restartedMain] INFO  o.a.c.c.StandardEngine - [log,168] - Starting Servlet engine: [Apache Tomcat/9.0.112]
+23:04:41.997 [restartedMain] INFO  o.a.c.c.C.[.[.[/] - [log,168] - Initializing Spring embedded WebApplicationContext
+23:04:42.523 [restartedMain] INFO  o.a.c.c.StandardService - [log,168] - Stopping service [Tomcat]
+23:04:47.933 [restartedMain] INFO  c.r.RuoYiApplication - [logStarting,55] - Starting RuoYiApplication using Java 21.0.2 on 楼台 with PID 9296 (D:\各种作业\ruo\RuoYi-Vue-v3.9.1\ruoyi-admin\target\classes started by 罗 in D:\各种作业\ruo)
+23:04:47.933 [restartedMain] INFO  c.r.RuoYiApplication - [logStartupProfileInfo,686] - The following 1 profile is active: "druid"
+23:04:49.309 [restartedMain] INFO  o.a.c.h.Http11NioProtocol - [log,168] - Initializing ProtocolHandler ["http-nio-8080"]
+23:04:49.309 [restartedMain] INFO  o.a.c.c.StandardService - [log,168] - Starting service [Tomcat]
+23:04:49.309 [restartedMain] INFO  o.a.c.c.StandardEngine - [log,168] - Starting Servlet engine: [Apache Tomcat/9.0.112]
+23:04:49.330 [restartedMain] INFO  o.a.c.c.C.[.[.[/] - [log,168] - Initializing Spring embedded WebApplicationContext
+23:04:49.341 [restartedMain] INFO  o.a.c.c.StandardService - [log,168] - Stopping service [Tomcat]
+23:05:30.551 [restartedMain] INFO  c.r.RuoYiApplication - [logStarting,55] - Starting RuoYiApplication using Java 21.0.2 on 楼台 with PID 9296 (D:\各种作业\ruo\RuoYi-Vue-v3.9.1\ruoyi-admin\target\classes started by 罗 in D:\各种作业\ruo)
+23:05:30.551 [restartedMain] INFO  c.r.RuoYiApplication - [logStartupProfileInfo,686] - The following 1 profile is active: "druid"
+23:05:31.489 [restartedMain] INFO  o.a.c.h.Http11NioProtocol - [log,168] - Initializing ProtocolHandler ["http-nio-8080"]
+23:05:31.490 [restartedMain] INFO  o.a.c.c.StandardService - [log,168] - Starting service [Tomcat]
+23:05:31.490 [restartedMain] INFO  o.a.c.c.StandardEngine - [log,168] - Starting Servlet engine: [Apache Tomcat/9.0.112]
+23:05:31.511 [restartedMain] INFO  o.a.c.c.C.[.[.[/] - [log,168] - Initializing Spring embedded WebApplicationContext
+23:05:31.721 [restartedMain] INFO  o.a.c.c.StandardService - [log,168] - Stopping service [Tomcat]
+23:05:38.599 [restartedMain] INFO  c.r.RuoYiApplication - [logStarting,55] - Starting RuoYiApplication using Java 21.0.2 on 楼台 with PID 9296 (D:\各种作业\ruo\RuoYi-Vue-v3.9.1\ruoyi-admin\target\classes started by 罗 in D:\各种作业\ruo)
+23:05:38.599 [restartedMain] INFO  c.r.RuoYiApplication - [logStartupProfileInfo,686] - The following 1 profile is active: "druid"
+23:05:40.071 [restartedMain] INFO  o.a.c.h.Http11NioProtocol - [log,168] - Initializing ProtocolHandler ["http-nio-8080"]
+23:05:40.071 [restartedMain] INFO  o.a.c.c.StandardService - [log,168] - Starting service [Tomcat]
+23:05:40.071 [restartedMain] INFO  o.a.c.c.StandardEngine - [log,168] - Starting Servlet engine: [Apache Tomcat/9.0.112]
+23:05:40.095 [restartedMain] INFO  o.a.c.c.C.[.[.[/] - [log,168] - Initializing Spring embedded WebApplicationContext
+23:05:40.105 [restartedMain] INFO  o.a.c.c.StandardService - [log,168] - Stopping service [Tomcat]
+23:07:48.257 [restartedMain] INFO  c.r.RuoYiApplication - [logStarting,55] - Starting RuoYiApplication using Java 21.0.2 on 楼台 with PID 9296 (D:\各种作业\ruo\RuoYi-Vue-v3.9.1\ruoyi-admin\target\classes started by 罗 in D:\各种作业\ruo)
+23:07:48.258 [restartedMain] INFO  c.r.RuoYiApplication - [logStartupProfileInfo,686] - The following 1 profile is active: "druid"
+23:07:48.955 [restartedMain] INFO  o.a.c.h.Http11NioProtocol - [log,168] - Initializing ProtocolHandler ["http-nio-8080"]
+23:07:48.956 [restartedMain] INFO  o.a.c.c.StandardService - [log,168] - Starting service [Tomcat]
+23:07:48.956 [restartedMain] INFO  o.a.c.c.StandardEngine - [log,168] - Starting Servlet engine: [Apache Tomcat/9.0.112]
+23:07:48.982 [restartedMain] INFO  o.a.c.c.C.[.[.[/] - [log,168] - Initializing Spring embedded WebApplicationContext
+23:07:49.257 [restartedMain] INFO  o.a.c.c.StandardService - [log,168] - Stopping service [Tomcat]
+23:07:55.470 [restartedMain] INFO  c.r.RuoYiApplication - [logStarting,55] - Starting RuoYiApplication using Java 21.0.2 on 楼台 with PID 9296 (D:\各种作业\ruo\RuoYi-Vue-v3.9.1\ruoyi-admin\target\classes started by 罗 in D:\各种作业\ruo)
+23:07:55.471 [restartedMain] INFO  c.r.RuoYiApplication - [logStartupProfileInfo,686] - The following 1 profile is active: "druid"
+23:07:56.864 [restartedMain] INFO  o.a.c.h.Http11NioProtocol - [log,168] - Initializing ProtocolHandler ["http-nio-8080"]
+23:07:56.864 [restartedMain] INFO  o.a.c.c.StandardService - [log,168] - Starting service [Tomcat]
+23:07:56.864 [restartedMain] INFO  o.a.c.c.StandardEngine - [log,168] - Starting Servlet engine: [Apache Tomcat/9.0.112]
+23:07:56.887 [restartedMain] INFO  o.a.c.c.C.[.[.[/] - [log,168] - Initializing Spring embedded WebApplicationContext
+23:07:56.897 [restartedMain] INFO  o.a.c.c.StandardService - [log,168] - Stopping service [Tomcat]
+23:09:33.780 [restartedMain] INFO  c.r.RuoYiApplication - [logStarting,55] - Starting RuoYiApplication using Java 21.0.2 on 楼台 with PID 9296 (D:\各种作业\ruo\RuoYi-Vue-v3.9.1\ruoyi-admin\target\classes started by 罗 in D:\各种作业\ruo)
+23:09:33.780 [restartedMain] INFO  c.r.RuoYiApplication - [logStartupProfileInfo,686] - The following 1 profile is active: "druid"
+23:09:39.493 [restartedMain] INFO  c.r.RuoYiApplication - [logStarting,55] - Starting RuoYiApplication using Java 21.0.2 on 楼台 with PID 9296 (D:\各种作业\ruo\RuoYi-Vue-v3.9.1\ruoyi-admin\target\classes started by 罗 in D:\各种作业\ruo)
+23:09:39.493 [restartedMain] INFO  c.r.RuoYiApplication - [logStartupProfileInfo,686] - The following 1 profile is active: "druid"
+23:10:23.162 [restartedMain] INFO  c.r.RuoYiApplication - [logStarting,55] - Starting RuoYiApplication using Java 21.0.2 on 楼台 with PID 9296 (D:\各种作业\ruo\RuoYi-Vue-v3.9.1\ruoyi-admin\target\classes started by 罗 in D:\各种作业\ruo)
+23:10:23.162 [restartedMain] INFO  c.r.RuoYiApplication - [logStartupProfileInfo,686] - The following 1 profile is active: "druid"
+23:10:24.210 [restartedMain] INFO  o.a.c.h.Http11NioProtocol - [log,168] - Initializing ProtocolHandler ["http-nio-8080"]
+23:10:24.212 [restartedMain] INFO  o.a.c.c.StandardService - [log,168] - Starting service [Tomcat]
+23:10:24.212 [restartedMain] INFO  o.a.c.c.StandardEngine - [log,168] - Starting Servlet engine: [Apache Tomcat/9.0.112]
+23:10:24.244 [restartedMain] INFO  o.a.c.c.C.[.[.[/] - [log,168] - Initializing Spring embedded WebApplicationContext
+23:10:24.256 [restartedMain] INFO  o.a.c.c.StandardService - [log,168] - Stopping service [Tomcat]
+23:10:57.948 [restartedMain] INFO  c.r.RuoYiApplication - [logStarting,55] - Starting RuoYiApplication using Java 21.0.2 on 楼台 with PID 9296 (D:\各种作业\ruo\RuoYi-Vue-v3.9.1\ruoyi-admin\target\classes started by 罗 in D:\各种作业\ruo)
+23:10:57.948 [restartedMain] INFO  c.r.RuoYiApplication - [logStartupProfileInfo,686] - The following 1 profile is active: "druid"
+23:10:59.856 [restartedMain] INFO  c.r.RuoYiApplication - [logStarting,55] - Starting RuoYiApplication using Java 21.0.2 on 楼台 with PID 9296 (D:\各种作业\ruo\RuoYi-Vue-v3.9.1\ruoyi-admin\target\classes started by 罗 in D:\各种作业\ruo)
+23:10:59.856 [restartedMain] INFO  c.r.RuoYiApplication - [logStartupProfileInfo,686] - The following 1 profile is active: "druid"
+23:11:00.979 [restartedMain] INFO  o.a.c.h.Http11NioProtocol - [log,168] - Initializing ProtocolHandler ["http-nio-8080"]
+23:11:00.979 [restartedMain] INFO  o.a.c.c.StandardService - [log,168] - Starting service [Tomcat]
+23:11:00.979 [restartedMain] INFO  o.a.c.c.StandardEngine - [log,168] - Starting Servlet engine: [Apache Tomcat/9.0.112]
+23:11:01.002 [restartedMain] INFO  o.a.c.c.C.[.[.[/] - [log,168] - Initializing Spring embedded WebApplicationContext
+23:11:04.307 [restartedMain] INFO  c.a.d.p.DruidDataSource - [init,865] - {dataSource-7} inited
+23:11:06.190 [restartedMain] INFO  o.q.i.StdSchedulerFactory - [instantiate,1220] - Using default implementation for ThreadExecutor
+23:11:06.195 [restartedMain] INFO  o.q.c.SchedulerSignalerImpl - [<init>,61] - Initialized Scheduler Signaller of type: class org.quartz.core.SchedulerSignalerImpl
+23:11:06.195 [restartedMain] INFO  o.q.c.QuartzScheduler - [<init>,229] - Quartz Scheduler v.2.3.2 created.
+23:11:06.195 [restartedMain] INFO  o.q.c.QuartzScheduler - [initialize,294] - Scheduler meta-data: Quartz Scheduler (v2.3.2) 'RuoyiScheduler' with instanceId '楼台1775661066191'
+  Scheduler class: 'org.quartz.core.QuartzScheduler' - running locally.
+  NOT STARTED.
+  Currently in standby mode.
+  Number of jobs executed: 0
+  Using thread pool 'org.quartz.simpl.SimpleThreadPool' - with 20 threads.
+  Using job-store 'org.springframework.scheduling.quartz.LocalDataSourceJobStore' - which supports persistence. and is clustered.
+
+23:11:06.197 [restartedMain] INFO  o.q.i.StdSchedulerFactory - [instantiate,1374] - Quartz scheduler 'RuoyiScheduler' initialized from an externally provided properties instance.
+23:11:06.197 [restartedMain] INFO  o.q.i.StdSchedulerFactory - [instantiate,1378] - Quartz scheduler version: 2.3.2
+23:11:06.197 [restartedMain] INFO  o.q.c.QuartzScheduler - [setJobFactory,2293] - JobFactory set to: org.springframework.scheduling.quartz.AdaptableJobFactory@36ccc58b
+23:11:14.815 [restartedMain] INFO  o.a.c.h.Http11NioProtocol - [log,168] - Starting ProtocolHandler ["http-nio-8080"]
+23:11:14.990 [restartedMain] INFO  c.r.RuoYiApplication - [logStarted,61] - Started RuoYiApplication in 15.178 seconds (JVM running for 1395.721)
+23:11:16.832 [Quartz Scheduler [RuoyiScheduler]] INFO  o.q.c.QuartzScheduler - [start,547] - Scheduler RuoyiScheduler_$_楼台1775661066191 started.
+23:11:19.620 [Thread-103] INFO  o.q.c.QuartzScheduler - [standby,585] - Scheduler RuoyiScheduler_$_楼台1775661066191 paused.
+23:11:19.638 [Thread-103] INFO  o.q.c.QuartzScheduler - [shutdown,666] - Scheduler RuoyiScheduler_$_楼台1775661066191 shutting down.
+23:11:19.638 [Thread-103] INFO  o.q.c.QuartzScheduler - [standby,585] - Scheduler RuoyiScheduler_$_楼台1775661066191 paused.
+23:11:19.639 [Thread-103] INFO  o.q.c.QuartzScheduler - [shutdown,740] - Scheduler RuoyiScheduler_$_楼台1775661066191 shutdown complete.
+23:11:19.639 [Thread-103] INFO  sys-user - [shutdownAsyncManager,31] - ====关闭后台任务任务线程池====
+23:11:19.642 [Thread-103] INFO  c.a.d.p.DruidDataSource - [close,2083] - {dataSource-7} closing ...
+23:11:19.644 [Thread-103] INFO  c.a.d.p.DruidDataSource - [close,2156] - {dataSource-7} closed
+23:13:16.810 [restartedMain] INFO  c.r.RuoYiApplication - [logStarting,55] - Starting RuoYiApplication using Java 21.0.2 on 楼台 with PID 9296 (D:\各种作业\ruo\RuoYi-Vue-v3.9.1\ruoyi-admin\target\classes started by 罗 in D:\各种作业\ruo)
+23:13:16.812 [restartedMain] INFO  c.r.RuoYiApplication - [logStartupProfileInfo,686] - The following 1 profile is active: "druid"
+23:13:58.639 [restartedMain] INFO  c.r.RuoYiApplication - [logStarting,55] - Starting RuoYiApplication using Java 21.0.2 on 楼台 with PID 9296 (D:\各种作业\ruo\RuoYi-Vue-v3.9.1\ruoyi-admin\target\classes started by 罗 in D:\各种作业\ruo)
+23:13:58.641 [restartedMain] INFO  c.r.RuoYiApplication - [logStartupProfileInfo,686] - The following 1 profile is active: "druid"
+23:15:02.105 [restartedMain] INFO  c.r.RuoYiApplication - [logStarting,55] - Starting RuoYiApplication using Java 21.0.2 on 楼台 with PID 9296 (D:\各种作业\ruo\RuoYi-Vue-v3.9.1\ruoyi-admin\target\classes started by 罗 in D:\各种作业\ruo)
+23:15:02.105 [restartedMain] INFO  c.r.RuoYiApplication - [logStartupProfileInfo,686] - The following 1 profile is active: "druid"
+23:15:31.470 [restartedMain] INFO  c.r.RuoYiApplication - [logStarting,55] - Starting RuoYiApplication using Java 21.0.2 on 楼台 with PID 9296 (D:\各种作业\ruo\RuoYi-Vue-v3.9.1\ruoyi-admin\target\classes started by 罗 in D:\各种作业\ruo)
+23:15:31.471 [restartedMain] INFO  c.r.RuoYiApplication - [logStartupProfileInfo,686] - The following 1 profile is active: "druid"
+23:15:35.695 [restartedMain] INFO  c.r.RuoYiApplication - [logStarting,55] - Starting RuoYiApplication using Java 21.0.2 on 楼台 with PID 9296 (D:\各种作业\ruo\RuoYi-Vue-v3.9.1\ruoyi-admin\target\classes started by 罗 in D:\各种作业\ruo)
+23:15:35.696 [restartedMain] INFO  c.r.RuoYiApplication - [logStartupProfileInfo,686] - The following 1 profile is active: "druid"
+23:15:37.419 [restartedMain] INFO  c.r.RuoYiApplication - [logStarting,55] - Starting RuoYiApplication using Java 21.0.2 on 楼台 with PID 9296 (D:\各种作业\ruo\RuoYi-Vue-v3.9.1\ruoyi-admin\target\classes started by 罗 in D:\各种作业\ruo)
+23:15:37.419 [restartedMain] INFO  c.r.RuoYiApplication - [logStartupProfileInfo,686] - The following 1 profile is active: "druid"
+23:15:40.233 [restartedMain] INFO  c.r.RuoYiApplication - [logStarting,55] - Starting RuoYiApplication using Java 21.0.2 on 楼台 with PID 9296 (D:\各种作业\ruo\RuoYi-Vue-v3.9.1\ruoyi-admin\target\classes started by 罗 in D:\各种作业\ruo)
+23:15:40.233 [restartedMain] INFO  c.r.RuoYiApplication - [logStartupProfileInfo,686] - The following 1 profile is active: "druid"
+23:26:27.053 [restartedMain] INFO  c.r.RuoYiApplication - [logStarting,55] - Starting RuoYiApplication using Java 21.0.2 on 楼台 with PID 9296 (D:\各种作业\ruo\RuoYi-Vue-v3.9.1\ruoyi-admin\target\classes started by 罗 in D:\各种作业\ruo)
+23:26:27.053 [restartedMain] INFO  c.r.RuoYiApplication - [logStartupProfileInfo,686] - The following 1 profile is active: "druid"
+23:26:31.951 [restartedMain] INFO  c.r.RuoYiApplication - [logStarting,55] - Starting RuoYiApplication using Java 21.0.2 on 楼台 with PID 9296 (D:\各种作业\ruo\RuoYi-Vue-v3.9.1\ruoyi-admin\target\classes started by 罗 in D:\各种作业\ruo)
+23:26:31.953 [restartedMain] INFO  c.r.RuoYiApplication - [logStartupProfileInfo,686] - The following 1 profile is active: "druid"
+23:26:34.545 [restartedMain] INFO  c.r.RuoYiApplication - [logStarting,55] - Starting RuoYiApplication using Java 21.0.2 on 楼台 with PID 9296 (D:\各种作业\ruo\RuoYi-Vue-v3.9.1\ruoyi-admin\target\classes started by 罗 in D:\各种作业\ruo)
+23:26:34.548 [restartedMain] INFO  c.r.RuoYiApplication - [logStartupProfileInfo,686] - The following 1 profile is active: "druid"
+23:26:36.862 [restartedMain] INFO  c.r.RuoYiApplication - [logStarting,55] - Starting RuoYiApplication using Java 21.0.2 on 楼台 with PID 9296 (D:\各种作业\ruo\RuoYi-Vue-v3.9.1\ruoyi-admin\target\classes started by 罗 in D:\各种作业\ruo)
+23:26:36.862 [restartedMain] INFO  c.r.RuoYiApplication - [logStartupProfileInfo,686] - The following 1 profile is active: "druid"
+23:26:41.132 [restartedMain] INFO  c.r.RuoYiApplication - [logStarting,55] - Starting RuoYiApplication using Java 21.0.2 on 楼台 with PID 9296 (D:\各种作业\ruo\RuoYi-Vue-v3.9.1\ruoyi-admin\target\classes started by 罗 in D:\各种作业\ruo)
+23:26:41.133 [restartedMain] INFO  c.r.RuoYiApplication - [logStartupProfileInfo,686] - The following 1 profile is active: "druid"
+23:26:46.894 [restartedMain] INFO  c.r.RuoYiApplication - [logStarting,55] - Starting RuoYiApplication using Java 21.0.2 on 楼台 with PID 9296 (D:\各种作业\ruo\RuoYi-Vue-v3.9.1\ruoyi-admin\target\classes started by 罗 in D:\各种作业\ruo)
+23:26:46.894 [restartedMain] INFO  c.r.RuoYiApplication - [logStartupProfileInfo,686] - The following 1 profile is active: "druid"
+23:28:33.236 [restartedMain] INFO  c.r.RuoYiApplication - [logStarting,55] - Starting RuoYiApplication using Java 21.0.2 on 楼台 with PID 9296 (D:\各种作业\ruo\RuoYi-Vue-v3.9.1\ruoyi-admin\target\classes started by 罗 in D:\各种作业\ruo)
+23:28:33.236 [restartedMain] INFO  c.r.RuoYiApplication - [logStartupProfileInfo,686] - The following 1 profile is active: "druid"
+23:28:40.766 [restartedMain] INFO  o.a.c.h.Http11NioProtocol - [log,168] - Initializing ProtocolHandler ["http-nio-8081"]
+23:28:40.768 [restartedMain] INFO  o.a.c.c.StandardService - [log,168] - Starting service [Tomcat]
+23:28:40.768 [restartedMain] INFO  o.a.c.c.StandardEngine - [log,168] - Starting Servlet engine: [Apache Tomcat/9.0.112]
+23:28:40.933 [restartedMain] INFO  o.a.c.c.C.[.[.[/] - [log,168] - Initializing Spring embedded WebApplicationContext
+23:28:43.250 [restartedMain] INFO  c.a.d.p.DruidDataSource - [init,865] - {dataSource-8} inited
+23:28:43.253 [Druid-ConnectionPool-Create-898888459] INFO  c.a.d.p.DruidAbstractDataSource - [setFailContinuous,1908] - {dataSource-8} failContinuous is true
+23:28:43.284 [restartedMain] INFO  o.a.c.c.StandardService - [log,168] - Stopping service [Tomcat]
+23:28:46.274 [restartedMain] INFO  c.r.RuoYiApplication - [logStarting,55] - Starting RuoYiApplication using Java 21.0.2 on 楼台 with PID 9296 (D:\各种作业\ruo\RuoYi-Vue-v3.9.1\ruoyi-admin\target\classes started by 罗 in D:\各种作业\ruo)
+23:28:46.274 [restartedMain] INFO  c.r.RuoYiApplication - [logStartupProfileInfo,686] - The following 1 profile is active: "druid"
+23:28:48.693 [restartedMain] INFO  o.a.c.h.Http11NioProtocol - [log,168] - Initializing ProtocolHandler ["http-nio-8080"]
+23:28:48.693 [restartedMain] INFO  o.a.c.c.StandardService - [log,168] - Starting service [Tomcat]
+23:28:48.693 [restartedMain] INFO  o.a.c.c.StandardEngine - [log,168] - Starting Servlet engine: [Apache Tomcat/9.0.112]
+23:28:48.722 [restartedMain] INFO  o.a.c.c.C.[.[.[/] - [log,168] - Initializing Spring embedded WebApplicationContext
+23:28:48.736 [restartedMain] INFO  o.a.c.c.StandardService - [log,168] - Stopping service [Tomcat]
+23:28:52.570 [restartedMain] INFO  c.r.RuoYiApplication - [logStarting,55] - Starting RuoYiApplication using Java 21.0.2 on 楼台 with PID 9296 (D:\各种作业\ruo\RuoYi-Vue-v3.9.1\ruoyi-admin\target\classes started by 罗 in D:\各种作业\ruo)
+23:28:52.570 [restartedMain] INFO  c.r.RuoYiApplication - [logStartupProfileInfo,686] - The following 1 profile is active: "druid"
+23:28:53.943 [restartedMain] INFO  o.a.c.h.Http11NioProtocol - [log,168] - Initializing ProtocolHandler ["http-nio-8080"]
+23:28:53.944 [restartedMain] INFO  o.a.c.c.StandardService - [log,168] - Starting service [Tomcat]
+23:28:53.944 [restartedMain] INFO  o.a.c.c.StandardEngine - [log,168] - Starting Servlet engine: [Apache Tomcat/9.0.112]
+23:28:53.974 [restartedMain] INFO  o.a.c.c.C.[.[.[/] - [log,168] - Initializing Spring embedded WebApplicationContext
+23:28:53.992 [restartedMain] INFO  o.a.c.c.StandardService - [log,168] - Stopping service [Tomcat]
+23:29:58.905 [restartedMain] INFO  c.r.RuoYiApplication - [logStarting,55] - Starting RuoYiApplication using Java 21.0.2 on 楼台 with PID 9296 (D:\各种作业\ruo\RuoYi-Vue-v3.9.1\ruoyi-admin\target\classes started by 罗 in D:\各种作业\ruo)
+23:29:58.905 [restartedMain] INFO  c.r.RuoYiApplication - [logStartupProfileInfo,686] - The following 1 profile is active: "druid"
+23:30:00.712 [restartedMain] INFO  o.a.c.h.Http11NioProtocol - [log,168] - Initializing ProtocolHandler ["http-nio-8080"]
+23:30:00.713 [restartedMain] INFO  o.a.c.c.StandardService - [log,168] - Starting service [Tomcat]
+23:30:00.713 [restartedMain] INFO  o.a.c.c.StandardEngine - [log,168] - Starting Servlet engine: [Apache Tomcat/9.0.112]
+23:30:00.741 [restartedMain] INFO  o.a.c.c.C.[.[.[/] - [log,168] - Initializing Spring embedded WebApplicationContext
+23:30:00.755 [restartedMain] INFO  o.a.c.c.StandardService - [log,168] - Stopping service [Tomcat]
+23:30:02.987 [restartedMain] INFO  c.r.RuoYiApplication - [logStarting,55] - Starting RuoYiApplication using Java 21.0.2 on 楼台 with PID 9296 (D:\各种作业\ruo\RuoYi-Vue-v3.9.1\ruoyi-admin\target\classes started by 罗 in D:\各种作业\ruo)
+23:30:02.987 [restartedMain] INFO  c.r.RuoYiApplication - [logStartupProfileInfo,686] - The following 1 profile is active: "druid"
+23:30:06.733 [restartedMain] INFO  c.r.RuoYiApplication - [logStarting,55] - Starting RuoYiApplication using Java 21.0.2 on 楼台 with PID 9296 (D:\各种作业\ruo\RuoYi-Vue-v3.9.1\ruoyi-admin\target\classes started by 罗 in D:\各种作业\ruo)
+23:30:06.734 [restartedMain] INFO  c.r.RuoYiApplication - [logStartupProfileInfo,686] - The following 1 profile is active: "druid"
+23:30:08.185 [restartedMain] INFO  o.a.c.h.Http11NioProtocol - [log,168] - Initializing ProtocolHandler ["http-nio-8080"]
+23:30:08.187 [restartedMain] INFO  o.a.c.c.StandardService - [log,168] - Starting service [Tomcat]
+23:30:08.187 [restartedMain] INFO  o.a.c.c.StandardEngine - [log,168] - Starting Servlet engine: [Apache Tomcat/9.0.112]
+23:30:08.224 [restartedMain] INFO  o.a.c.c.C.[.[.[/] - [log,168] - Initializing Spring embedded WebApplicationContext
+23:30:08.659 [restartedMain] INFO  o.a.c.c.StandardService - [log,168] - Stopping service [Tomcat]
+23:30:12.679 [restartedMain] INFO  c.r.RuoYiApplication - [logStarting,55] - Starting RuoYiApplication using Java 21.0.2 on 楼台 with PID 9296 (D:\各种作业\ruo\RuoYi-Vue-v3.9.1\ruoyi-admin\target\classes started by 罗 in D:\各种作业\ruo)
+23:30:12.679 [restartedMain] INFO  c.r.RuoYiApplication - [logStartupProfileInfo,686] - The following 1 profile is active: "druid"
+23:30:14.637 [restartedMain] INFO  c.r.RuoYiApplication - [logStarting,55] - Starting RuoYiApplication using Java 21.0.2 on 楼台 with PID 9296 (D:\各种作业\ruo\RuoYi-Vue-v3.9.1\ruoyi-admin\target\classes started by 罗 in D:\各种作业\ruo)
+23:30:14.639 [restartedMain] INFO  c.r.RuoYiApplication - [logStartupProfileInfo,686] - The following 1 profile is active: "druid"
+23:30:16.398 [restartedMain] INFO  c.r.RuoYiApplication - [logStarting,55] - Starting RuoYiApplication using Java 21.0.2 on 楼台 with PID 27864 (D:\各种作业\ruo\RuoYi-Vue-v3.9.1\ruoyi-admin\target\classes started by 罗 in D:\各种作业\ruo)
+23:30:16.402 [restartedMain] INFO  c.r.RuoYiApplication - [logStartupProfileInfo,686] - The following 1 profile is active: "druid"
+23:30:16.410 [background-preinit] INFO  o.h.v.i.util.Version - [<clinit>,21] - HV000001: Hibernate Validator 6.2.5.Final
+23:30:42.122 [background-preinit] INFO  o.h.v.i.util.Version - [<clinit>,21] - HV000001: Hibernate Validator 6.2.5.Final
+23:30:42.122 [restartedMain] INFO  c.r.RuoYiApplication - [logStarting,55] - Starting RuoYiApplication using Java 21.0.2 on 楼台 with PID 35300 (D:\各种作业\ruo\RuoYi-Vue-v3.9.1\ruoyi-admin\target\classes started by 罗 in D:\各种作业\ruo)
+23:30:42.124 [restartedMain] INFO  c.r.RuoYiApplication - [logStartupProfileInfo,686] - The following 1 profile is active: "druid"
+23:32:32.950 [restartedMain] INFO  c.r.RuoYiApplication - [logStarting,55] - Starting RuoYiApplication using Java 21.0.2 on 楼台 with PID 30736 (D:\各种作业\ruo\RuoYi-Vue-v3.9.1\ruoyi-admin\target\classes started by 罗 in D:\各种作业\ruo)
+23:32:32.960 [restartedMain] INFO  c.r.RuoYiApplication - [logStartupProfileInfo,686] - The following 1 profile is active: "druid"
+23:32:32.967 [background-preinit] INFO  o.h.v.i.util.Version - [<clinit>,21] - HV000001: Hibernate Validator 6.2.5.Final
+23:33:52.940 [restartedMain] INFO  c.r.RuoYiApplication - [logStarting,55] - Starting RuoYiApplication using Java 21.0.2 on 楼台 with PID 3152 (D:\各种作业\ruo\RuoYi-Vue-v3.9.1\ruoyi-admin\target\classes started by 罗 in D:\各种作业\ruo)
+23:33:52.946 [background-preinit] INFO  o.h.v.i.util.Version - [<clinit>,21] - HV000001: Hibernate Validator 6.2.5.Final
+23:33:53.453 [restartedMain] INFO  c.r.RuoYiApplication - [logStartupProfileInfo,686] - The following 1 profile is active: "druid"
+23:33:56.548 [restartedMain] INFO  o.a.c.h.Http11NioProtocol - [log,168] - Initializing ProtocolHandler ["http-nio-8080"]
+23:33:56.549 [restartedMain] INFO  o.a.c.c.StandardService - [log,168] - Starting service [Tomcat]
+23:33:56.549 [restartedMain] INFO  o.a.c.c.StandardEngine - [log,168] - Starting Servlet engine: [Apache Tomcat/9.0.112]
+23:33:56.640 [restartedMain] INFO  o.a.c.c.C.[.[.[/] - [log,168] - Initializing Spring embedded WebApplicationContext
+23:33:57.274 [restartedMain] INFO  o.j.c.c.c.WebXmlConfigurationStrategyImpl - [get,43] - Property [serverName] loaded from FilterConfig.getInitParameter with value [http://localhost:8080]
+23:33:57.277 [restartedMain] INFO  o.j.c.c.c.WebXmlConfigurationStrategyImpl - [get,43] - Property [redirectAfterValidation] loaded from FilterConfig.getInitParameter with value [false]
+23:33:57.277 [restartedMain] INFO  o.j.c.c.c.WebXmlConfigurationStrategyImpl - [get,43] - Property [casServerUrlPrefix] loaded from FilterConfig.getInitParameter with value [https://csxrz.cqnu.edu.cn/cas]
+23:33:57.280 [restartedMain] INFO  o.j.c.c.c.WebXmlConfigurationStrategyImpl - [get,43] - Property [serverName] loaded from FilterConfig.getInitParameter with value [http://localhost:8080]
+23:33:57.280 [restartedMain] INFO  o.j.c.c.c.WebXmlConfigurationStrategyImpl - [get,43] - Property [casServerLoginUrl] loaded from FilterConfig.getInitParameter with value [https://csxrz.cqnu.edu.cn/cas/login]
+23:33:57.280 [restartedMain] INFO  o.j.c.c.c.WebXmlConfigurationStrategyImpl - [get,43] - Property [ignorePattern] loaded from FilterConfig.getInitParameter with value [/hello]
+23:34:00.406 [restartedMain] INFO  c.a.d.p.DruidDataSource - [init,865] - {dataSource-1} inited
+23:34:02.833 [restartedMain] INFO  o.q.i.StdSchedulerFactory - [instantiate,1220] - Using default implementation for ThreadExecutor
+23:34:02.844 [restartedMain] INFO  o.q.c.SchedulerSignalerImpl - [<init>,61] - Initialized Scheduler Signaller of type: class org.quartz.core.SchedulerSignalerImpl
+23:34:02.844 [restartedMain] INFO  o.q.c.QuartzScheduler - [<init>,229] - Quartz Scheduler v.2.3.2 created.
+23:34:02.850 [restartedMain] INFO  o.q.c.QuartzScheduler - [initialize,294] - Scheduler meta-data: Quartz Scheduler (v2.3.2) 'RuoyiScheduler' with instanceId '楼台1775662442836'
+  Scheduler class: 'org.quartz.core.QuartzScheduler' - running locally.
+  NOT STARTED.
+  Currently in standby mode.
+  Number of jobs executed: 0
+  Using thread pool 'org.quartz.simpl.SimpleThreadPool' - with 20 threads.
+  Using job-store 'org.springframework.scheduling.quartz.LocalDataSourceJobStore' - which supports persistence. and is clustered.
+
+23:34:02.850 [restartedMain] INFO  o.q.i.StdSchedulerFactory - [instantiate,1374] - Quartz scheduler 'RuoyiScheduler' initialized from an externally provided properties instance.
+23:34:02.850 [restartedMain] INFO  o.q.i.StdSchedulerFactory - [instantiate,1378] - Quartz scheduler version: 2.3.2
+23:34:02.851 [restartedMain] INFO  o.q.c.QuartzScheduler - [setJobFactory,2293] - JobFactory set to: org.springframework.scheduling.quartz.AdaptableJobFactory@1678311f
+23:34:12.576 [restartedMain] INFO  o.a.c.h.Http11NioProtocol - [log,168] - Starting ProtocolHandler ["http-nio-8080"]
+23:34:13.006 [restartedMain] INFO  c.r.RuoYiApplication - [logStarted,61] - Started RuoYiApplication in 20.779 seconds (JVM running for 22.286)
+23:34:14.748 [Quartz Scheduler [RuoyiScheduler]] INFO  o.q.c.QuartzScheduler - [start,547] - Scheduler RuoyiScheduler_$_楼台1775662442836 started.
+23:35:40.877 [http-nio-8080-exec-1] INFO  o.a.c.c.C.[.[.[/] - [log,168] - Initializing Spring DispatcherServlet 'dispatcherServlet'
+23:37:12.431 [http-nio-8080-exec-3] INFO  c.r.d.DemoController - [cas,71] - 登录票据ticket:[ST-2298246-Cegpom57f4VnVJRq5KRH-http://202.202.208.223:8080/cas]
+23:37:12.432 [http-nio-8080-exec-3] INFO  c.r.d.DemoController - [cas,83] - 登录名:[2024051603029]
+23:37:12.432 [http-nio-8080-exec-3] INFO  c.r.d.DemoController - [cas,84] - --------attributes keys--------
+23:37:12.432 [http-nio-8080-exec-3] INFO  c.r.d.DemoController - [cas,86] - tgt==[VEdULTE2NDcyMjYtbkhSVVBmYWhtbnhSU05iRWZCT3I5T1ZhM2ZxSmN4SVAwblA3c0UwUGRaWnJkWEVxSHktaHR0cDovLzIwMi4yMDIuMjA4LjIyMzo4MDgwL2Nhcw==]
+23:37:12.432 [http-nio-8080-exec-3] INFO  c.r.d.DemoController - [cas,86] - ACPUID==[MjAyNDA1MTYwMzAyOQ==]
+23:37:12.432 [http-nio-8080-exec-3] INFO  c.r.d.DemoController - [cas,86] - ACPISDONEACTIONBYSELF==[Y29tcGxldGVNb2JpbGVCeVNlbGY=]
+23:37:12.432 [http-nio-8080-exec-3] INFO  c.r.d.DemoController - [cas,86] - ACPUSERGROUPDN==[Ymtz]
+23:37:12.432 [http-nio-8080-exec-3] INFO  c.r.d.DemoController - [cas,86] - ACPNAME==[572X5amJ56u5]
+23:37:12.432 [http-nio-8080-exec-3] INFO  c.r.d.DemoController - [cas,86] - ACPSCHOOLEMAIL==[MjAyNDA1MTYwMzAyOUBzdHUuY3FudS5lZHUuY24=]
+23:37:12.432 [http-nio-8080-exec-3] INFO  c.r.d.DemoController - [cas,86] - ACPMOBILE==[MTgzODE4MTYzNjU=]
+23:37:12.432 [http-nio-8080-exec-3] INFO  c.r.d.DemoController - [cas,86] - e_rdn==[QUNQVUlEPTIwMjQwNTE2MDMwMjksQ09OVEFJTkVSSUQ9cGVyc29uLGNuPXVzZXI=]
+23:37:13.954 [http-nio-8080-exec-3] INFO  n.b.p.u.u.YauaaVersion - [logVersion,104] - Yauaa 7.32.0 (v7.32.0 @ 2025-10-11T16:29:46Z)
+23:37:14.076 [http-nio-8080-exec-3] INFO  n.b.p.u.c.ConfigLoader - [loadResources,310] - - Loaded 119 files in  112 ms using expression: classpath*:UserAgents/**/*.yaml
+23:37:15.146 [http-nio-8080-exec-3] INFO  n.b.p.u.a.UserAgentStringMatchMaker - [finalizeLoadingRules,282] - Building all needed matchers for the requested 11 fields.
+23:37:15.181 [http-nio-8080-exec-3] INFO  n.b.p.u.a.UserAgentStringMatchMaker - [initializeMatchers,336] - Initializing Analyzer data structures
+23:37:16.002 [http-nio-8080-exec-3] INFO  n.b.p.u.a.UserAgentStringMatchMaker - [initializeMatchers,347] - Built in 820 msec : Hashmap 197922, Ranges map:2964
+23:37:16.153 [http-nio-8080-exec-3] INFO  c.r.d.DemoController - [cas,128] - requestURL=http://localhost:8080/cas
+23:37:16.153 [http-nio-8080-exec-3] INFO  c.r.d.DemoController - [cas,129] - serverName=localhost, serverPort=8080
+23:39:37.602 [Druid-ConnectionPool-Create-1035891040] INFO  c.a.d.p.DruidAbstractDataSource - [setFailContinuous,1908] - {dataSource-1} failContinuous is true

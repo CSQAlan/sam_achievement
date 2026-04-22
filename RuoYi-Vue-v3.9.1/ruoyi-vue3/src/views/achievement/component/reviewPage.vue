@@ -13,6 +13,7 @@
       cancelText="返回"
       :titleAdd="reviewPageTitle"
       :titleEdit="reviewPageTitle"
+      :titleDetail="reviewPageTitle"
       @cancel="handleBack"
       @ok="handleFormSaved"
     />
@@ -1142,8 +1143,7 @@ watch(
   display: none;
 }
 .audit-reason-group {
-  display: flex;
-  width: 100%;
+  display: none;
 }
 .audit-label {
   color: #4e5969;
