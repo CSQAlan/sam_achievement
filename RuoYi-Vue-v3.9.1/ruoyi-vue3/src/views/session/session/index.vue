@@ -65,6 +65,14 @@
         <el-button type="primary" plain icon="UploadFilled" @click="handleImportOpen"
           v-hasPermi="['session:session:import']">批量导入</el-button>
       </el-col>
+      <el-col :span="1.5">
+        <el-button type="info" plain icon="Upload" @click="handleOpenPdfImport"
+          v-hasPermi="['session:session:edit']">PDF标签导入</el-button>
+      </el-col>
+      <el-col :span="1.5">
+        <el-button type="warning" plain icon="Remove" :disabled="multiple" @click="handleOpenTagRemove"
+          v-hasPermi="['session:session:edit']">批量删除标签</el-button>
+      </el-col>
       <!-- 新增：批量启用“预录” -->
       <el-col :span="2.2">
         <el-button type="success" plain icon="CircleCheck" :disabled="!hasPreRecordSelection" @click="handleEnablePreRecord"
@@ -361,15 +369,195 @@
         </div>
       </template>
     </el-dialog>
+
+    <!-- PDF导入对话框 -->
+    <el-dialog title="PDF竞赛清单导入" v-model="pdfImportOpen" width="1000px" append-to-body>
+      <div v-loading="pdfImportLoading">
+        <el-form label-width="100px">
+          <el-row :gutter="20">
+            <el-col :span="12">
+              <el-form-item label="导入年份">
+                <el-input-number v-model="pdfImportYear" :min="2000" :max="2100" controls-position="right" placeholder="年份" style="width: 100%" />
+              </el-form-item>
+            </el-col>
+            <el-col :span="12">
+              <el-form-item label="上传PDF">
+                <el-upload
+                  ref="pdfUploadRef"
+                  :limit="1"
+                  accept=".pdf"
+                  :auto-upload="false"
+                  :on-change="handlePdfFileChange"
+                  :on-remove="handlePdfFileRemove"
+                  action="#"
+                >
+                  <template #trigger>
+                    <el-button type="primary">选取文件</el-button>
+                  </template>
+                  <template #tip>
+                    <div class="el-upload__tip">只能上传 PDF 文件</div>
+                  </template>
+                </el-upload>
+              </el-form-item>
+            </el-col>
+          </el-row>
+          <el-row :gutter="20">
+            <el-col :span="12">
+              <el-form-item label="目标标签">
+                <el-select v-model="pdfImportTags" placeholder="请选择目标标签" style="width: 100%" multiple collapse-tags>
+                  <el-option v-for="dict in sys_competition_tag" :key="dict.value" :label="dict.label" :value="dict.value" />
+                </el-select>
+              </el-form-item>
+            </el-col>
+            <el-col :span="12">
+              <el-form-item label="相似度阈值">
+                <el-slider v-model="pdfThreshold" :min="0.1" :max="1.0" :step="0.05" show-input />
+                <div class="el-upload__tip">相似度高于此值的届次将被列出</div>
+              </el-form-item>
+            </el-col>
+          </el-row>
+          <el-row style="margin-bottom: 10px;">
+            <el-col :span="24" style="text-align: right;">
+              <el-button type="success" :disabled="!pdfImportFile" @click="handleAnalyzePdf">开始解析与匹配</el-button>
+            </el-col>
+          </el-row>
+        </el-form>
+
+        <el-tabs v-if="matchResults" v-model="pdfActiveTab">
+          <el-tab-pane :label="`精确匹配 (${matchResults.exactMatches.length})`" name="exact">
+            <el-table :data="matchResults.exactMatches" max-height="400">
+              <el-table-column label="PDF中的名称" prop="pdfName" />
+              <el-table-column label="系统赛事名" prop="competitionName" />
+              <el-table-column label="匹配届次" prop="sessionName" />
+              <el-table-column label="匹配项" prop="matchedName">
+                <template #default="scope">
+                  <el-tag v-if="scope.row.competitionName !== scope.row.matchedName" size="small" type="warning">别名: {{ scope.row.matchedName }}</el-tag>
+                  <span v-else>{{ scope.row.matchedName }}</span>
+                </template>
+              </el-table-column>
+              <el-table-column label="匹配相似度" prop="similarity" width="100" />
+            </el-table>
+          </el-tab-pane>
+          <el-tab-pane :label="`高相似度 (${matchResults.highSimilarityMatches.length})`" name="high">
+            <el-table :data="matchResults.highSimilarityMatches" max-height="400">
+              <el-table-column label="PDF中的名称" prop="pdfName" />
+              <el-table-column label="系统赛事名" prop="competitionName" />
+              <el-table-column label="匹配届次" prop="sessionName" />
+              <el-table-column label="匹配项" prop="matchedName">
+                <template #default="scope">
+                  <el-tag v-if="scope.row.competitionName !== scope.row.matchedName" size="small" type="warning">别名: {{ scope.row.matchedName }}</el-tag>
+                  <span v-else>{{ scope.row.matchedName }}</span>
+                </template>
+              </el-table-column>
+              <el-table-column label="匹配相似度" prop="similarity" width="100" />
+              <el-table-column label="操作" width="100" align="center">
+                <template #default="scope">
+                  <el-button link type="primary" @click="handleRemoveMatch('highSimilarityMatches', scope.$index)">排除</el-button>
+                </template>
+              </el-table-column>
+            </el-table>
+          </el-tab-pane>
+          <el-tab-pane :label="`相似匹配 (${matchResults.similarMatches.length})`" name="similar">
+            <el-table :data="matchResults.similarMatches" max-height="400">
+              <el-table-column label="PDF中的名称" prop="pdfName" />
+              <el-table-column label="系统赛事名" prop="competitionName" />
+              <el-table-column label="匹配届次" prop="sessionName" />
+              <el-table-column label="匹配项" prop="matchedName">
+                <template #default="scope">
+                  <el-tag v-if="scope.row.competitionName !== scope.row.matchedName" size="small" type="warning">别名: {{ scope.row.matchedName }}</el-tag>
+                  <span v-else>{{ scope.row.matchedName }}</span>
+                </template>
+              </el-table-column>
+              <el-table-column label="匹配相似度" prop="similarity" width="100" />
+              <el-table-column label="操作" width="100" align="center">
+                <template #default="scope">
+                  <el-button link type="primary" @click="handleRemoveMatch('similarMatches', scope.$index)">排除</el-button>
+                </template>
+              </el-table-column>
+            </el-table>
+          </el-tab-pane>
+          <el-tab-pane :label="`未匹配 (${matchResults.unmatchedNames.length})`" name="unmatched">
+            <el-row style="margin-bottom: 10px;">
+              <el-col :span="24" style="text-align: right;">
+                <el-button type="warning" link icon="Download" @click="handleExportUnmatched">导出未匹配名单</el-button>
+              </el-col>
+            </el-row>
+            <el-table :data="matchResults.unmatchedNames" max-height="400">
+              <el-table-column label="PDF中的名称">
+                <template #default="scope">
+                  {{ scope.row }}
+                </template>
+              </el-table-column>
+              <el-table-column label="操作" width="200" align="center">
+                <template #default="scope">
+                  <el-button link type="primary" @click="handleManualMatch(scope.row, scope.$index)">手动关联并学习</el-button>
+                </template>
+              </el-table-column>
+            </el-table>
+          </el-tab-pane>
+        </el-tabs>
+      </div>
+      <template #footer>
+        <div class="dialog-footer">
+          <el-button type="primary" @click="handleConfirmPdfImport" :disabled="!matchResults || totalMatchedCount === 0 || pdfImportTags.length === 0">确认关联 ({{ totalMatchedCount }}条)</el-button>
+          <el-button @click="pdfImportOpen = false">取 消</el-button>
+        </div>
+      </template>
+    </el-dialog>
+
+    <!-- 手动关联选择对话框 -->
+    <el-dialog title="选择关联届次" v-model="pdfManualOpen" width="600px" append-to-body>
+      <el-form label-width="80px">
+        <el-form-item label="PDF名称">
+          <el-input :value="currentUnmatchedName" disabled />
+        </el-form-item>
+        <el-form-item label="年份">
+          <el-input :value="pdfImportYear" disabled />
+        </el-form-item>
+        <el-form-item label="选择届次">
+          <el-select v-model="selectedSessionId" filterable remote :remote-method="remoteSearchSession" placeholder="搜索赛事名称" style="width: 100%">
+            <el-option v-for="item in sessionOptions" :key="item.id" :label="`${item.competitionName} (${item.session})`" :value="item.id" />
+          </el-select>
+        </el-form-item>
+      </el-form>
+      <template #footer>
+        <div class="dialog-footer">
+          <el-button type="primary" @click="submitManualMatch">确 定</el-button>
+          <el-button @click="pdfManualOpen = false">取 消</el-button>
+        </div>
+      </template>
+    </el-dialog>
+
+    <!-- 批量删除标签对话框 -->
+    <el-dialog title="批量删除标签" v-model="tagRemoveOpen" width="500px" append-to-body>
+      <el-form label-width="100px">
+        <el-form-item label="已选条数">
+          <el-tag type="info">{{ ids.length }} 条</el-tag>
+        </el-form-item>
+        <el-form-item label="选择要删除的标签">
+          <el-select v-model="removeTagCodes" placeholder="请选择标签" style="width: 100%" multiple collapse-tags>
+            <el-option v-for="dict in sys_competition_tag" :key="dict.value" :label="dict.label" :value="dict.value" />
+          </el-select>
+        </el-form-item>
+        <div style="color: #F56C6C; font-size: 12px; margin-left: 100px;">* 注意：此操作仅移除选中的标签，不影响其它标签</div>
+      </el-form>
+      <template #footer>
+        <div class="dialog-footer">
+          <el-button type="danger" @click="submitRemoveTags">确 定 删 除</el-button>
+          <el-button @click="tagRemoveOpen = false">取 消</el-button>
+        </div>
+      </template>
+    </el-dialog>
   </div>
 </template>
 
 <script setup name="Session">
 import { listSession, getSession, delSession, addSession, updateSession, exportTemplateSession, importDataSession, updateSessionStatusByIds, batchCopySession, allIdsSession } from "@/api/session/session"
-import { listCompetition } from "@/api/competition/competition"
+import { listCompetition, analyzeCompetitionPdf, linkCompetitionPdf, manualLinkCompetitionPdf, removeCompetitionTags } from "@/api/competition/competition"
+import { listDept } from "@/api/system/dept"
 import request from "@/utils/request"
 import UploadFile from "@/components/FileUpload"
-import { Delete, Document, Download, View, QuestionFilled, Checked, Calendar, Plus, Minus, ZoomIn, ZoomOut, Refresh } from "@element-plus/icons-vue"
+import { Delete, Document, Download, View, QuestionFilled, Checked, Calendar, Plus, Minus, ZoomIn, ZoomOut, Refresh, Upload } from "@element-plus/icons-vue"
 
 const { proxy } = getCurrentInstance()
 const { sys_competition_tag, sys_competition_status, sys_competition_del_flag, sys_competition_category, sys_competition_level } = proxy.useDict('sys_competition_tag', 'sys_competition_status', 'sys_competition_del_flag', 'sys_competition_category', 'sys_competition_level')
@@ -387,10 +575,35 @@ const single = ref(true)
 const multiple = ref(true)
 const total = ref(0)
 const title = ref("")
-const isAllSelected = ref(false)
-const sessionTableRef = ref(null)
-const yearSelectOpen = ref(false)
 const quickYear = ref(new Date().getFullYear())
+
+// PDF导入相关
+const pdfImportOpen = ref(false)
+const pdfImportLoading = ref(false)
+const pdfImportFile = ref(null)
+const pdfImportTags = ref([])
+const pdfImportYear = ref(new Date().getFullYear())
+const pdfThreshold = ref(0.7)
+const matchResults = ref(null)
+const pdfActiveTab = ref("exact")
+
+// 手动关联相关
+const pdfManualOpen = ref(false)
+const currentUnmatchedName = ref("")
+const currentUnmatchedIndex = ref(-1)
+const selectedSessionId = ref(null)
+const sessionOptions = ref([])
+
+// 批量删除标签相关
+const tagRemoveOpen = ref(false)
+const removeTagCodes = ref([])
+
+const totalMatchedCount = computed(() => {
+  if (!matchResults.value) return 0
+  return matchResults.value.exactMatches.length + 
+         matchResults.value.highSimilarityMatches.length + 
+         matchResults.value.similarMatches.length
+})
 
 const hasPreRecordSelection = computed(() => selectedRows.value.some(item => String(item?.status) === "2"))
 
@@ -812,6 +1025,178 @@ function executeSelectByYear() {
   }).catch(() => {
   }).finally(() => {
     proxy.$modal.closeLoading()
+  })
+}
+
+// --- PDF导入逻辑 ---
+
+function handleOpenPdfImport() {
+  pdfImportOpen.value = true
+  pdfImportFile.value = null
+  pdfImportTags.value = []
+  matchResults.value = null
+  pdfImportYear.value = new Date().getFullYear()
+  if (proxy.$refs.pdfUploadRef) {
+    proxy.$refs.pdfUploadRef.clearFiles()
+  }
+}
+
+function handlePdfFileChange(file) {
+  pdfImportFile.value = file.raw
+}
+
+function handlePdfFileRemove() {
+  pdfImportFile.value = null
+}
+
+function handleAnalyzePdf() {
+  if (!pdfImportFile.value) return
+  if (!pdfImportYear.value) {
+    proxy.$modal.msgError("请选择导入年份")
+    return
+  }
+  
+  pdfImportLoading.value = true
+  const formData = new FormData()
+  formData.append("file", pdfImportFile.value)
+  formData.append("threshold", pdfThreshold.value)
+  formData.append("year", pdfImportYear.value)
+  
+  analyzeCompetitionPdf(formData).then(response => {
+    matchResults.value = response.data
+    pdfImportLoading.value = false
+    // 默认切换到有数据的标签页
+    if (matchResults.value.exactMatches.length > 0) pdfActiveTab.value = "exact"
+    else if (matchResults.value.highSimilarityMatches.length > 0) pdfActiveTab.value = "high"
+    else if (matchResults.value.similarMatches.length > 0) pdfActiveTab.value = "similar"
+    else pdfActiveTab.value = "unmatched"
+  }).catch(() => {
+    pdfImportLoading.value = false
+  })
+}
+
+function handleRemoveMatch(type, index) {
+  matchResults.value[type].splice(index, 1)
+}
+
+function handleConfirmPdfImport() {
+  const sIds = [
+    ...matchResults.value.exactMatches.map(m => m.sessionId),
+    ...matchResults.value.highSimilarityMatches.map(m => m.sessionId),
+    ...matchResults.value.similarMatches.map(m => m.sessionId)
+  ]
+  
+  if (sIds.length === 0) return
+  
+  proxy.$modal.confirm(`确认将选中的 ${sIds.length} 条届次关联到标签吗？`).then(() => {
+    pdfImportLoading.value = true
+    return linkCompetitionPdf({
+      sessionIds: sIds,
+      tagCodes: pdfImportTags.value,
+      filename: pdfImportFile.value.name,
+      year: pdfImportYear.value
+    })
+  }).then(() => {
+    proxy.$modal.msgSuccess("导入关联成功")
+    pdfImportOpen.value = false
+    pdfImportLoading.value = false
+    getList()
+  }).catch(() => {
+    pdfImportLoading.value = false
+  })
+}
+
+// --- 手动关联逻辑 ---
+
+function handleManualMatch(name, index) {
+  currentUnmatchedName.value = name
+  currentUnmatchedIndex.value = index
+  selectedSessionId.value = null
+  sessionOptions.value = []
+  pdfManualOpen.value = true
+}
+
+function remoteSearchSession(query) {
+  if (query !== '') {
+    listSession({ competitionName: query, year: pdfImportYear.value, pageNum: 1, pageSize: 20 }).then(response => {
+      sessionOptions.value = response.rows
+    })
+  } else {
+    sessionOptions.value = []
+  }
+}
+
+function submitManualMatch() {
+  if (!selectedSessionId.value) return
+  
+  const sess = sessionOptions.value.find(s => s.id === selectedSessionId.value)
+  if (sess) {
+    // 调用后端建立关联并学习别名
+    manualLinkCompetitionPdf({
+      sessionId: sess.id,
+      pdfName: currentUnmatchedName.value
+    }).then(() => {
+      // 将手动匹配的项加入到“相似匹配”中以便后续一键打标签
+      matchResults.value.similarMatches.push({
+        sessionId: sess.id,
+        competitionName: sess.competitionName,
+        sessionName: sess.session,
+        pdfName: currentUnmatchedName.value,
+        similarity: "手动关联",
+        matchLevel: 3
+      })
+      // 从未匹配中移除
+      matchResults.value.unmatchedNames.splice(currentUnmatchedIndex.value, 1)
+      pdfManualOpen.value = false
+      proxy.$modal.msgSuccess("关联成功，系统已自动记录该名称为别名");
+    })
+  }
+}
+
+/** 导出未匹配名单 */
+function handleExportUnmatched() {
+  if (!matchResults.value || !matchResults.value.unmatchedNames.length) return;
+  
+  const content = "未匹配竞赛名称\n" + matchResults.value.unmatchedNames.join("\n");
+  const blob = new Blob([content], { type: 'text/csv;charset=utf-8;' });
+  const link = document.createElement("a");
+  const url = URL.createObjectURL(blob);
+  link.setAttribute("href", url);
+  link.setAttribute("download", `未匹配名单_${new Date().getTime()}.csv`);
+  link.style.visibility = 'hidden';
+  document.body.appendChild(link);
+  link.click();
+  document.body.removeChild(link);
+  link.remove();
+  window.URL.revokeObjectURL(url);
+}
+
+// --- 批量删除标签逻辑 ---
+
+function handleOpenTagRemove() {
+  if (ids.value.length === 0) {
+    proxy.$modal.msgError("请先选择要操作的届次")
+    return
+  }
+  removeTagCodes.value = []
+  tagRemoveOpen.value = true
+}
+
+function submitRemoveTags() {
+  if (removeTagCodes.value.length === 0) {
+    proxy.$modal.msgError("请选择要删除的标签")
+    return
+  }
+  
+  proxy.$modal.confirm(`确认要从选中的 ${ids.value.length} 条届次中移除这些标签吗？`).then(() => {
+    return removeCompetitionTags({
+      sessionIds: ids.value,
+      tagCodes: removeTagCodes.value
+    })
+  }).then(() => {
+    proxy.$modal.msgSuccess("移除成功")
+    tagRemoveOpen.value = false
+    getList()
   })
 }
 

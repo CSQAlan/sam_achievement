@@ -120,9 +120,13 @@ public class CompetitionController extends BaseController {
     @Log(title = "竞赛导入", businessType = BusinessType.OTHER)
     @PostMapping("/import/analyze")
     public AjaxResult analyzePdf(@RequestParam("file") MultipartFile file, 
-                                @RequestParam(value = "threshold", defaultValue = "0.7") Double threshold) {
+                                @RequestParam(value = "threshold", defaultValue = "0.7") Double threshold,
+                                @RequestParam("year") Integer year) {
         if (file == null || file.isEmpty()) {
             return error("请上传PDF文件");
+        }
+        if (year == null) {
+            return error("请选择导入年份");
         }
         
         try {
@@ -131,7 +135,7 @@ public class CompetitionController extends BaseController {
             file.transferTo(tempFile);
             
             try {
-                Map<String, Object> matchResult = competitionPdfMappingService.extractAndMatchFromPdf(tempFile, threshold);
+                Map<String, Object> matchResult = competitionPdfMappingService.extractAndMatchFromPdf(tempFile, threshold, year);
                 return success(matchResult);
             } finally {
                 FileUtils.deleteFile(tempFile.getAbsolutePath());
@@ -149,20 +153,42 @@ public class CompetitionController extends BaseController {
     @Log(title = "竞赛导入", businessType = BusinessType.UPDATE)
     @PostMapping("/import/link")
     public AjaxResult confirmLink(@RequestBody Map<String, Object> params) {
-        List<Integer> idsInt = (List<Integer>) params.get("competitionIds");
+        List<Integer> idsInt = (List<Integer>) params.get("sessionIds");
         if (idsInt == null) {
-            return error("请选择要关联的竞赛");
+            return error("请选择要关联的届次");
         }
-        List<Long> competitionIds = idsInt.stream().map(Integer::longValue).collect(Collectors.toList());
+        List<Long> sessionIds = idsInt.stream().map(Integer::longValue).collect(Collectors.toList());
         List<String> tagCodes = (List<String>) params.get("tagCodes");
         String filename = (String) params.get("filename");
+        Integer year = (Integer) params.get("year");
         
-        if (CollectionUtils.isEmpty(competitionIds)) {
-            return error("请选择要关联的竞赛");
+        if (CollectionUtils.isEmpty(sessionIds)) {
+            return error("请选择要关联的届次");
         }
         
-        int count = competitionPdfMappingService.confirmAndLink(competitionIds, tagCodes, filename);
-        return AjaxResult.success("成功关联 " + count + " 条竞赛数据", count);
+        int count = competitionPdfMappingService.confirmAndLink(sessionIds, tagCodes, filename, year);
+        return AjaxResult.success("成功关联 " + count + " 条届次数据", count);
+    }
+
+    /**
+     * 批量移除标签
+     */
+    @PreAuthorize("@ss.hasPermi('competition:competition:edit')")
+    @Log(title = "竞赛导入", businessType = BusinessType.UPDATE)
+    @PostMapping("/batch-remove-tags")
+    public AjaxResult removeTags(@RequestBody Map<String, Object> params) {
+        List<Integer> idsInt = (List<Integer>) params.get("sessionIds");
+        if (CollectionUtils.isEmpty(idsInt)) {
+            return error("请选择要操作的届次");
+        }
+        List<Long> sessionIds = idsInt.stream().map(Integer::longValue).collect(Collectors.toList());
+        List<String> tagCodes = (List<String>) params.get("tagCodes");
+        if (CollectionUtils.isEmpty(tagCodes)) {
+            return error("请选择要移除的标签");
+        }
+        
+        int count = competitionPdfMappingService.batchRemoveTagsFromSessions(sessionIds, tagCodes);
+        return success("成功从 " + count + " 条届次中移除指定标签");
     }
 
     /**
@@ -170,12 +196,12 @@ public class CompetitionController extends BaseController {
      */
     @PreAuthorize("@ss.hasPermi('competition:competition:edit')")
     @Log(title = "竞赛导入", businessType = BusinessType.UPDATE)
-    @PostMapping("/import/manualLink")
+    @PostMapping("/batch-manual-link")
     public AjaxResult manualLink(@RequestBody Map<String, Object> params) {
-        Long competitionId = Long.valueOf(params.get("competitionId").toString());
+        Long sessionId = Long.valueOf(params.get("sessionId").toString());
         String pdfName = (String) params.get("pdfName");
         
-        if (competitionPdfMappingService.linkManualMatch(competitionId, pdfName)) {
+        if (competitionPdfMappingService.linkManualMatch(sessionId, pdfName)) {
             return success("手动关联成功，系统已自动学习该名称为别名");
         }
         return error("手动关联失败");

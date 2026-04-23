@@ -59,7 +59,16 @@ export function linkCompetitionPdf(data) {
 // 手动建立关联并学习别名
 export function manualLinkCompetitionPdf(data) {
   return request({
-    url: "/competition/competition/import/manualLink",
+    url: "/competition/competition/batch-manual-link",
+    method: "post",
+    data,
+  });
+}
+
+// 批量移除标签
+export function removeCompetitionTags(data) {
+  return request({
+    url: "/competition/competition/batch-remove-tags",
     method: "post",
     data,
   });
