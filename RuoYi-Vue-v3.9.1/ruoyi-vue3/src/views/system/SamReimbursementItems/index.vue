@@ -105,11 +105,11 @@
     </el-link>
   </template>
 </el-table-column>
-      <el-table-column label="届次" align="center" prop="sessionName" width="150">
-        <template #default="scope">
-          <span>{{ scope.row.sessionName || scope.row.sessionId || '-' }}</span>
-        </template>
-      </el-table-column>
+<!--      <el-table-column label="届次" align="center" prop="sessionName" width="150">-->
+<!--        <template #default="scope">-->
+<!--          <span>{{ scope.row.sessionName || scope.row.sessionId || '-' }}</span>-->
+<!--        </template>-->
+<!--      </el-table-column>-->
       <el-table-column label="报销时间" align="center" prop="reimbursementTime" width="180">
         <template #default="scope">
           <span>{{ parseTime(scope.row.reimbursementTime, '{y}-{m}-{d}') }}</span>
@@ -120,9 +120,9 @@
           <span>{{ formatMoney(scope.row.totalFee) }}</span>
         </template>
       </el-table-column>
-      <el-table-column label="已发放金额" align="center" prop="paidFee">
+      <el-table-column label="已发放金额" align="center">
         <template #default="scope">
-          <span>{{ formatMoney(scope.row.paidFee) }}</span>
+          <span>{{ formatMoney(scope.row.actualPaidAmount || 0) }}</span>
         </template>
       </el-table-column>
       <el-table-column label="报销项目数量" align="center" prop="amount" />
@@ -254,13 +254,13 @@ import { ref, reactive, onMounted } from 'vue'
 import { useRouter } from 'vue-router'
 import { ElMessage, ElMessageBox } from 'element-plus'
 import { Search, Refresh, Plus, Edit, Delete, Download, Document, Calendar } from '@element-plus/icons-vue'
-import {
-  listSamReimbursementItems,
+import { listSamReimbursementItems,
   getSamReimbursementItems,
   delSamReimbursementItems,
   addSamReimbursementItems,
   updateSamReimbursementItems
 } from "@/api/system/SamReimbursementItems"
+import { listReimbursement, getReimbursementRules } from "@/api/system/Reimbursement"
 import Treeselect from "vue3-treeselect"
 import "vue3-treeselect/dist/vue3-treeselect.css"
 import { listDept } from "@/api/system/dept"
@@ -377,7 +377,20 @@ const getList = async () => {
   loading.value = true
   try {
     const response = await listSamReimbursementItems(queryParams)
-    SamReimbursementItemsList.value = response.rows
+    const items = response.rows
+    
+    // 为每个项目计算实际的已发放金额
+    for (const item of items) {
+      try {
+        const actualPaidAmount = await calculateActualPaidAmount(item.id)
+        item.actualPaidAmount = actualPaidAmount
+      } catch (error) {
+        console.error(`计算项目 ${item.id} 的实际已发放金额失败:`, error)
+        item.actualPaidAmount = 0
+      }
+    }
+    
+    SamReimbursementItemsList.value = items
     total.value = response.total
   } catch (error) {
     console.error('获取列表失败:', error)
@@ -466,6 +479,126 @@ const normalizer = (node) => {
 const formatMoney = (money) => {
   if (money == null) return '¥0.00'
   return '¥' + parseFloat(money).toFixed(2).replace(/\d{1,3}(?=(\d{3})+(\.\d*)?$)/g, '$&,')
+}
+
+/** 计算项目的实际已发放金额 */
+const calculateActualPaidAmount = async (projectId) => {
+  try {
+    // 获取项目信息，包括归属学院ID
+    const projectInfoResponse = await getSamReimbursementItems(projectId)
+    console.log('项目信息响应:', projectInfoResponse)
+    
+    if (projectInfoResponse.code !== 200) {
+      console.error('获取项目信息失败:', projectInfoResponse)
+      return 0
+    }
+    
+    const projectInfo = projectInfoResponse.data
+    const ownerDepId = projectInfo.ownerDepId
+    console.log('项目信息:', projectInfo)
+    console.log('归属学院ID:', ownerDepId)
+    
+    // 获取报销比例规则
+    let reimbursementRules = []
+    if (ownerDepId) {
+      try {
+        const rulesResponse = await getReimbursementRules(ownerDepId)
+        console.log('报销比例规则响应:', rulesResponse)
+        
+        if (rulesResponse.code === 200) {
+          // 报销比例规则可能没有 status 字段，直接使用所有规则
+          reimbursementRules = rulesResponse.data
+          console.log('报销比例规则:', reimbursementRules)
+        }
+      } catch (error) {
+        console.error('获取报销比例规则失败:', error)
+      }
+    }
+    
+    // 获取项目关联的成果列表
+    const response = await listReimbursement({
+      reimbursementItemId: projectId,
+      pageNum: 1,
+      pageSize: 1000 // 假设项目关联的成果数量不会超过1000
+    })
+    
+    console.log('成果列表响应:', response)
+    
+    if (response.code === 200) {
+      const achievements = response.rows
+      console.log('成果列表:', achievements)
+      let actualPaidAmount = 0
+      
+      // 遍历成果，计算已发放金额
+      for (const achievement of achievements) {
+        console.log('处理成果:', achievement)
+        // 检查是否有报销日期
+        const hasReimbursementDate = !!((achievement.reimbursementDate && achievement.reimbursementDate !== '') || (achievement.reimbursement_date && achievement.reimbursement_date !== ''))
+        console.log('是否有报销日期:', hasReimbursementDate)
+        
+        if (hasReimbursementDate) {
+          // 计算实际报销金额（报名费乘以报销比例）
+          const fee = parseFloat(achievement.reimbursementFee || achievement.reimbursement_fee || achievement.fee) || 0
+          const grade = achievement.grade
+          const category = achievement.category
+          console.log('报名费:', fee)
+          console.log('获奖等级:', grade)
+          console.log('报销类别:', category)
+          
+          // 获取报销比例
+          let ratio = 100 // 默认为100%
+          if (reimbursementRules.length > 0 && grade) {
+            // 转换为字符串类型进行比较
+            const gradeStr = grade.toString()
+            const categoryStr = category ? category.toString() : ''
+            console.log('gradeStr:', gradeStr)
+            console.log('categoryStr:', categoryStr)
+            
+            // 查找对应等级和类别的规则
+            let rule = reimbursementRules.find(r => r.grade === gradeStr && r.category === categoryStr)
+            console.log('查找对应等级和类别的规则:', rule)
+            
+            // 如果没有找到对应类别的规则，查找只匹配等级的规则
+            if (!rule && categoryStr) {
+              rule = reimbursementRules.find(r => r.grade === gradeStr && !r.category)
+              console.log('查找只匹配等级的规则:', rule)
+            }
+            
+            // 如果还是没有找到，查找任意规则
+            if (!rule) {
+              rule = reimbursementRules.find(r => r.grade === gradeStr)
+              console.log('查找任意规则:', rule)
+            }
+            
+            if (rule && rule.ratio) {
+              ratio = rule.ratio
+              console.log('找到的报销比例:', ratio)
+            }
+          }
+          
+          const actualReimbursement = fee * (ratio / 100)
+          console.log('实际报销金额:', actualReimbursement)
+          actualPaidAmount += actualReimbursement
+          console.log('累计已发放金额:', actualPaidAmount)
+        }
+      }
+      
+      console.log('最终实际已发放金额:', actualPaidAmount)
+      return actualPaidAmount
+    }
+    
+    return 0
+  } catch (error) {
+    console.error('计算实际已发放金额失败:', error)
+    return 0
+  }
+}
+
+/** 获取项目的实际已发放金额 */
+const getActualPaidAmount = async (projectId) => {
+  // 这里可以添加缓存，避免重复计算
+  const actualPaidAmount = await calculateActualPaidAmount(projectId)
+  return actualPaidAmount
 }
 
 /** 根据部门ID获取部门名称 */

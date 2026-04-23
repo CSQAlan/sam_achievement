@@ -326,13 +326,13 @@ public class SamReimbursementItemsServiceImpl implements ISamReimbursementItemsS
             // 1. 查询学院级规则
             SamReimbursementRatio collegeRatio = new SamReimbursementRatio();
             collegeRatio.setOwnerDepId(ownerDepId);
-            collegeRatio.setStatus("1"); // 只查询启用的规则
+            collegeRatio.setStatus("0"); // 只查询启用的规则
             List<SamReimbursementRatio> collegeRules = samReimbursementRatioMapper.selectSamReimbursementRatioList(collegeRatio);
             
             // 2. 查询全校通用规则（owner_dep_id IS NULL）
             SamReimbursementRatio globalRatio = new SamReimbursementRatio();
             globalRatio.setOwnerDepId(null);
-            globalRatio.setStatus("1"); // 只查询启用的规则
+            globalRatio.setStatus("0"); // 只查询启用的规则
             List<SamReimbursementRatio> globalRules = samReimbursementRatioMapper.selectSamReimbursementRatioList(globalRatio);
             
             // 3. 合并规则，学院级优先

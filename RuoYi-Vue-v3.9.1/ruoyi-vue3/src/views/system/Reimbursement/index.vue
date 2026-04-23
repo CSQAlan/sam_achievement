@@ -182,42 +182,7 @@
       </el-col>
     </el-row>
 
-    <!-- 报销比例规则 -->
-    <el-row :gutter="10" class="mb8" v-if="reimbursementRules.length > 0">
-      <el-col :span="24">
-        <el-card shadow="hover" class="rules-card">
-          <div class="section-title">
-            <el-icon><Document /></el-icon>
-            报销比例规则
-            <el-tag v-if="projectInfo && projectInfo.ownerDepId" type="info" size="small" style="margin-left: 10px;">学院级</el-tag>
-            <el-tag v-else type="default" size="small" style="margin-left: 10px;">全校通用</el-tag>
-          </div>
-          <el-table :data="reimbursementRules" style="width: 100%" border>
-            <el-table-column prop="grade" label="获奖等级" align="center">
-              <template #default="scope">
-                <span v-if="scope.row.grade === 1">一等奖</span>
-                <span v-else-if="scope.row.grade === 2">二等奖</span>
-                <span v-else-if="scope.row.grade === 3">三等奖</span>
-                <span v-else>{{ scope.row.grade }}</span>
-              </template>
-            </el-table-column>
-            <el-table-column prop="category" label="类别" align="center">
-              <template #default="scope">
-                <span v-if="scope.row.category === 0">政府类</span>
-                <span v-else-if="scope.row.category === 1">学会类</span>
-                <span v-else>{{ scope.row.category }}</span>
-              </template>
-            </el-table-column>
-            <el-table-column prop="ratio" label="报销比例" align="center">
-              <template #default="scope">
-                {{ (scope.row.ratio || 0) * 100 }}%
-              </template>
-            </el-table-column>
-            <el-table-column prop="ruleType" label="规则类型" align="center" />
-          </el-table>
-        </el-card>
-      </el-col>
-    </el-row>
+    
 
     <el-row :gutter="10" class="mb8">
       
@@ -328,7 +293,7 @@
 
 
       <!-- 使用成果主表字段：报销相关 -->
-  <el-table-column label="需报销金额" align="center" prop="fee" width="120">
+  <el-table-column label="报名费" align="center" prop="fee" width="120">
     <template #default="scope">
       <span>{{ scope.row.fee ? '¥' + scope.row.fee : '-' }}</span>
     </template>
@@ -338,18 +303,16 @@
       <span>{{ scope.row.reimbursementDate ? parseTime(scope.row.reimbursementDate, '{y}-{m}-{d}') : '-' }}</span>
     </template>
   </el-table-column>
-  <el-table-column label="报销比例" align="center" prop="reimbursementRatio" width="100">
+  <el-table-column label="报销比例" align="center" width="100">
     <template #default="scope">
-      <span>{{ scope.row.reimbursementRatio ? scope.row.reimbursementRatio + '%' : '-' }}</span>
+      <span>{{ (() => { console.log('scope.row:', scope.row); return getReimbursementRatio(scope.row.grade, scope.row.category); })() }}</span>
     </template>
   </el-table-column>
+
   <!-- 实际报销金额 -->
-  <el-table-column label="实际报销金额" align="center" width="120">
+  <el-table-column label="实际报销金额" align="center" width="150">
     <template #default="scope">
-      <span v-if="scope.row.reimbursementFee || scope.row.reimbursement_fee">
-        ¥{{ formatMoney(scope.row.reimbursementFee || scope.row.reimbursement_fee) }}
-      </span>
-      <span v-else>-</span>
+      <span>{{ calculateActualReimbursement(scope.row.fee, scope.row.grade, scope.row.category) }}</span>
     </template>
   </el-table-column>
 
@@ -383,18 +346,6 @@
       </template>
     </template>
   </el-table-column>
-
-<!--  &lt;!&ndash; 是否补录 &ndash;&gt;-->
-<!--  <el-table-column label="是否补录" align="center" width="100">-->
-<!--    <template #default="scope">-->
-<!--      <el-tag v-if="scope.row.isSupplement === 1 || scope.row.is_supplement === 1" type="warning">是</el-tag>-->
-<!--      <el-tag v-else-if="scope.row.isSupplement === 0 || scope.row.is_supplement === 0" type="info">否</el-tag>-->
-<!--      <span v-else>-</span>-->
-<!--    </template>-->
-<!--  </el-table-column>-->
-<!--  -->
-
-
 
 
       <el-table-column label="操作" align="center" width="280" class-name="small-padding fixed-width">
@@ -524,12 +475,12 @@
           
   <el-divider content-position="center">报销信息</el-divider>
     
-    <el-form-item label="需报销金额" prop="fee">
+    <el-form-item label="报名费" prop="fee">
       <el-input-number 
         v-model="form.fee" 
         :precision="2" 
         :min="0" 
-        placeholder="请输入需报销金额"
+        placeholder="请输入报名费"
         style="width: 100%"
       />
     </el-form-item>
@@ -579,9 +530,9 @@
       </el-radio-group>
     </el-form-item>
 
-          <el-table-column label="需报销金额" prop="totalFee" width="150">
+          <el-table-column label="报名费" prop="totalFee" width="150">
             <template #default="scope">
-              <el-input v-model="scope.row.totalFee" placeholder="请输入需报销金额" />
+              <el-input v-model="scope.row.totalFee" placeholder="请输入报名费" />
             </template>
           </el-table-column>
           <el-table-column label="已发放金额" prop="paidFee" width="150">
@@ -592,6 +543,11 @@
           <el-table-column label="报销项目数量" prop="amount" width="150">
             <template #default="scope">
               <el-input v-model="scope.row.amount" placeholder="请输入报销项目数量" />
+            </template>
+          </el-table-column>
+          <el-table-column label="报销比例" width="120">
+            <template #default="scope">
+              <span>{{ getReimbursementRatio(scope.row.grade, scope.row.category) }}</span>
             </template>
           </el-table-column>
           <el-table-column label="归属学院" prop="ownerDepId" width="150">
@@ -825,7 +781,7 @@
                 <div class="reimburse-contact-info">
                   <div class="contact-row">
                     <div class="contact-item"><span class="contact-label">负责人：</span><span>{{ selectedReimburseItem.contactName || '未设置' }}</span></div>
-                    <div class="contact-item amount-item"><span class="contact-label">需报销金额：</span><span class="amount-highlight">¥{{ formatMoney(selectedReimburseItem.fee) }}</span></div>
+                    <div class="contact-item amount-item"><span class="contact-label">报销金额：</span><span class="amount-highlight">¥{{ formatMoney(selectedReimburseItem.fee) }}</span></div>
                   </div>
                   <div class="contact-row">
                     <div class="contact-item"><span class="contact-label">学号：</span><span>{{ selectedReimburseItem.studentId || '未设置' }}</span></div>
@@ -953,6 +909,20 @@ const stats = ref({
 // 报销比例规则
 const reimbursementRules = ref([])
 
+// 默认报销比例规则
+const defaultReimbursementRules = [
+  { grade: '1', category: '0', ratio: 100, ruleType: '默认' },
+  { grade: '2', category: '0', ratio: 80, ruleType: '默认' },
+  { grade: '3', category: '0', ratio: 60, ruleType: '默认' },
+  { grade: '1', category: '1', ratio: 100, ruleType: '默认' },
+  { grade: '2', category: '1', ratio: 80, ruleType: '默认' },
+  { grade: '3', category: '1', ratio: 60, ruleType: '默认' },
+  { grade: '1', category: '3', ratio: 100, ruleType: '默认' },
+  { grade: '2', category: '3', ratio: 80, ruleType: '默认' },
+  { grade: '3', category: '3', ratio: 60, ruleType: '默认' },
+  { grade: '5', category: '0', ratio: 50, ruleType: '默认' }
+]
+
 // 项目信息
 const projectInfo = ref(null)
 
@@ -1010,6 +980,150 @@ const qrCodePreviewUrls = ref({})
 
 // 当前选中的报销项目
 const selectedReimburseItem = ref(null)
+
+/**
+ * 根据获奖等级和类别获取报销比例
+ * @param {number|string} grade - 获奖等级（1:一等奖, 2:二等奖, 3:三等奖）
+ * @param {string} category - 报销类别
+ * @returns {string} 报销比例
+ */
+const getReimbursementRatio = (grade, category) => {
+  console.log('获取报销比例，grade:', grade, 'category:', category)
+  console.log('reimbursementRules:', reimbursementRules.value)
+  
+  if (!grade) {
+    console.log('无grade，返回-')
+    return '-'  // 无数据时返回空
+  }
+  
+  // 转换为字符串类型进行比较
+  const gradeStr = grade.toString()
+  const categoryStr = category ? category.toString() : ''
+  
+  // 先从后端返回的规则中查找
+  let rule = null
+  if (reimbursementRules.value && reimbursementRules.value.length > 0) {
+    // 查找对应等级和类别的规则
+    rule = reimbursementRules.value.find(r => {
+      return r.grade === gradeStr && r.category === categoryStr
+    })
+    console.log('查找对应等级和类别的规则:', rule)
+    
+    // 如果没有找到对应类别的规则，查找只匹配等级的规则
+    if (!rule && categoryStr) {
+      rule = reimbursementRules.value.find(r => r.grade === gradeStr && !r.category)
+      console.log('查找只匹配等级的规则:', rule)
+    }
+    
+    // 如果还是没有找到，查找任意规则
+    if (!rule) {
+      rule = reimbursementRules.value.find(r => r.grade === gradeStr)
+      console.log('查找任意规则:', rule)
+    }
+  }
+  
+  // 如果后端没有返回规则，从默认规则中查找
+  if (!rule) {
+    console.log('从默认规则中查找')
+    // 查找对应等级和类别的规则
+    rule = defaultReimbursementRules.find(r => {
+      return r.grade === gradeStr && r.category === categoryStr
+    })
+    console.log('从默认规则中查找对应等级和类别的规则:', rule)
+    
+    // 如果没有找到对应类别的规则，查找只匹配等级的规则
+    if (!rule && categoryStr) {
+      rule = defaultReimbursementRules.find(r => r.grade === gradeStr && !r.category)
+      console.log('从默认规则中查找只匹配等级的规则:', rule)
+    }
+    
+    // 如果还是没有找到，查找任意规则
+    if (!rule) {
+      rule = defaultReimbursementRules.find(r => r.grade === gradeStr)
+      console.log('从默认规则中查找任意规则:', rule)
+    }
+  }
+  
+  if (!rule || !rule.ratio) {
+    console.log('无对应比例，返回-')
+    return '-'  // 无对应比例时返回空
+  }
+  
+  // 格式化比例显示（ratio存储的是百分比值，直接显示）
+  console.log('找到报销比例:', rule.ratio + '%')
+  return rule.ratio + '%'
+}
+
+/**
+ * 计算实际报销金额（报名费乘以报销比例）
+ * @param {number} fee - 报名费
+ * @param {number|string} grade - 获奖等级
+ * @param {string} category - 报销类别
+ * @returns {string} 实际报销金额
+ */
+const calculateActualReimbursement = (fee, grade, category) => {
+  console.log('计算实际报销金额，fee:', fee, 'grade:', grade, 'category:', category)
+  
+  if (!fee || !grade) {
+    console.log('无报名费或等级，返回-')
+    return '-'  // 无数据时返回空
+  }
+  
+  // 获取报销比例
+  const ratioStr = getReimbursementRatio(grade, category)
+  console.log('获取到的报销比例:', ratioStr)
+  
+  if (ratioStr === '-') {
+    console.log('无报销比例，返回-')
+    return '-'  // 无报销比例时返回空
+  }
+  
+  // 提取比例数值
+  const ratio = parseFloat(ratioStr.replace('%', '')) / 100
+  console.log('计算比例:', ratio)
+  
+  // 计算实际报销金额
+  const actualReimbursement = fee * ratio
+  console.log('实际报销金额:', actualReimbursement)
+  
+  // 格式化显示
+  return '¥' + actualReimbursement.toFixed(2)
+}
+
+/**
+ * 计算实际报销金额（返回数值）
+ * @param {number} fee - 报名费
+ * @param {number|string} grade - 获奖等级
+ * @param {string} category - 报销类别
+ * @returns {number} 实际报销金额
+ */
+const calculateActualReimbursementValue = (fee, grade, category) => {
+  console.log('计算实际报销金额（数值），fee:', fee, 'grade:', grade, 'category:', category)
+  
+  if (!fee || !grade) {
+    console.log('无报名费或等级，返回0')
+    return 0  // 无数据时返回0
+  }
+  
+  // 获取报销比例
+  const ratioStr = getReimbursementRatio(grade, category)
+  console.log('获取到的报销比例:', ratioStr)
+  
+  if (ratioStr === '-') {
+    console.log('无报销比例，返回0')
+    return 0  // 无报销比例时返回0
+  }
+  
+  // 提取比例数值
+  const ratio = parseFloat(ratioStr.replace('%', '')) / 100
+  console.log('计算比例:', ratio)
+  
+  // 计算实际报销金额
+  const actualReimbursement = fee * ratio
+  console.log('实际报销金额:', actualReimbursement)
+  
+  return actualReimbursement
+}
 
 // 批量报销队列管理
 const batchReimburseQueue = ref([])  // 待报销的成果队列
@@ -1191,17 +1305,26 @@ const loadDetailByReimbursementItemId = async () => {
   try {
     // 获取项目信息（包含状态）
     if (reimbursementItemId.value) {
+      console.log('获取项目信息，reimbursementItemId:', reimbursementItemId.value)
       const projectRes = await getReimbursementProjectInfo(reimbursementItemId.value)
+      console.log('项目信息响应:', projectRes)
       if (projectRes.code === 200) {
         currentProjectStatus.value = projectRes.data.status || '0'
         projectInfo.value = projectRes.data
+        console.log('项目信息:', projectRes.data)
         
         // 获取报销比例规则
-        if (projectRes.data.ownerDepId) {
-          const rulesRes = await getReimbursementRules(projectRes.data.ownerDepId)
-          if (rulesRes.code === 200) {
-            reimbursementRules.value = rulesRes.data
-          }
+        console.log('获取报销比例规则，ownerDepId:', projectRes.data.ownerDepId)
+        console.log('ownerDepId 类型:', typeof projectRes.data.ownerDepId)
+        const ownerDepId = Number(projectRes.data.ownerDepId)
+        console.log('转换后的 ownerDepId:', ownerDepId)
+        const rulesRes = await getReimbursementRules(ownerDepId)
+        console.log('报销比例规则响应:', rulesRes)
+        if (rulesRes.code === 200) {
+          // 只保留 status 为 "0" 的规则（正常状态）
+          reimbursementRules.value = rulesRes.data.filter(rule => rule.status === "0")
+          console.log('过滤后的报销比例规则:', reimbursementRules.value)
+          console.log('过滤后的报销比例规则长度:', reimbursementRules.value.length)
         }
       }
     }
@@ -1226,13 +1349,38 @@ const loadDetailByReimbursementItemId = async () => {
 }
 
 /** 查询报销项目详情列表 */
-function getList() {
+async function getList() {
   loading.value = true
   const params = { ...queryParams.value }
   
   // 只有在详情页面（有 reimbursementItemId）时才传递该参数
   if (reimbursementItemId.value) {
     params.reimbursementItemId = reimbursementItemId.value
+    
+    // 获取项目信息（包含状态）
+    try {
+      const projectRes = await getReimbursementProjectInfo(reimbursementItemId.value)
+      if (projectRes.code === 200) {
+        currentProjectStatus.value = projectRes.data.status || '0'
+        projectInfo.value = projectRes.data
+        
+        // 获取报销比例规则
+        console.log('获取报销比例规则，ownerDepId:', projectRes.data.ownerDepId)
+        console.log('ownerDepId 类型:', typeof projectRes.data.ownerDepId)
+        const ownerDepId = Number(projectRes.data.ownerDepId)
+        console.log('转换后的 ownerDepId:', ownerDepId)
+        const rulesRes = await getReimbursementRules(ownerDepId)
+        console.log('报销比例规则响应:', rulesRes)
+        if (rulesRes.code === 200) {
+          // 只保留 status 为 "0" 的规则（正常状态）
+          reimbursementRules.value = rulesRes.data.filter(rule => rule.status === "0")
+          console.log('过滤后的报销比例规则:', reimbursementRules.value)
+          console.log('过滤后的报销比例规则长度:', reimbursementRules.value.length)
+        }
+      }
+    } catch (error) {
+      console.error('获取项目信息失败:', error)
+    }
   }
   
   // 移除空值参数
@@ -1244,15 +1392,16 @@ function getList() {
   
   console.log('搜索参数:', params)
   
-  listReimbursement(params).then(response => {
+  try {
+    const response = await listReimbursement(params)
     ReimbursementList.value = response.rows
     total.value = response.total
-    loading.value = false
     updateStatsFromList(response.rows)  // 添加这行，更新统计卡片
-  }).catch(error => {
+  } catch (error) {
     console.error("获取列表失败:", error)
+  } finally {
     loading.value = false
-  })
+  }
 }
 
 // 取消按钮
@@ -1654,21 +1803,24 @@ const updateStatsFromList = (list) => {
   let unpaidAmount = 0
   
   list.forEach(item => {
-    // 需报销金额，优先使用 reimbursementFee，其次使用 fee
+    // 报名费，优先使用 reimbursementFee，其次使用 fee
     const fee = parseFloat(item.reimbursementFee || item.reimbursement_fee || item.fee) || 0
+    
+    // 计算实际报销金额
+    const actualReimbursement = calculateActualReimbursementValue(fee, item.grade, item.category)
     
     // 判断报销状态 - 修复条件逻辑
     const hasReimbursementDate = !!((item.reimbursementDate && item.reimbursementDate !== '') || (item.reimbursement_date && item.reimbursement_date !== ''))
     
     // 已报销：有报销时间
     if (hasReimbursementDate) {
-      paidAmount += fee
-      totalAmount += fee
+      paidAmount += actualReimbursement
+      totalAmount += actualReimbursement
     }
     // 需报销：没有报销时间，且（is_reimburse === 1 或 fee > 0）
     else if (item.is_reimburse === 1 || item.isReimburse === 1 || fee > 0) {
-      unpaidAmount += fee
-      totalAmount += fee
+      unpaidAmount += actualReimbursement
+      totalAmount += actualReimbursement
     }
     // 未报销：不计入任何金额
   })
@@ -1793,12 +1945,7 @@ const handleOpenReimburseDialog = async () => {
     // 获取支付信息
     const paymentRes = await getPaymentInfo(ids.value.join(','))
     if (paymentRes.code === 200) {
-      // 按金额从高到低排序
-      paymentInfo.value = (paymentRes.data || []).sort((a, b) => {
-        const feeA = parseFloat(a.reimbursementFee || a.fee || 0)
-        const feeB = parseFloat(b.reimbursementFee || b.fee || 0)
-        return feeB - feeA // 从高到低排序
-      })
+      paymentInfo.value = paymentRes.data
       
       // 加载收款码预览
       if (paymentInfo.value && paymentInfo.value.length > 0) {
@@ -1904,13 +2051,9 @@ const handleSubmitReimburse = async () => {
   }
 
   // 如果是批量报销且有多个成果，初始化批量处理队列
-  if (!currentReimburseRow.value && batchReimburseQueue.value.length === 0 && needReimburseProducts.length > 1) {
-    // 初始化批量报销队列，并按金额从高到低排序
-    batchReimburseQueue.value = [...needReimburseProducts].sort((a, b) => {
-      const feeA = parseFloat(a.reimbursementFee || a.reimbursement_fee || a.fee || 0)
-      const feeB = parseFloat(b.reimbursementFee || b.reimbursement_fee || b.fee || 0)
-      return feeB - feeA // 从高到低排序
-    })
+  if (!currentReimburseRow.value && needReimburseProducts.length > 1) {
+    // 初始化批量报销队列
+    batchReimburseQueue.value = [...needReimburseProducts]
     currentQueueIndex.value = 0
     isBatchProcessing.value = true
 
@@ -1929,28 +2072,10 @@ const handleSubmitReimburse = async () => {
     // 选择第一个成果显示收款码
     selectedReimburseItem.value = batchReimburseQueue.value[0]
     
-    // 确保左边列表选中当前成果
-    if (paymentInfo.value && paymentInfo.value.length > 0) {
-      // 找到当前成果在paymentInfo中的索引
-      const currentIndex = paymentInfo.value.findIndex(item => 
-        item.achievementId === batchReimburseQueue.value[0].achievementId
-      )
-      if (currentIndex !== -1) {
-        // 选中当前成果
-        selectedReimburseItem.value = paymentInfo.value[currentIndex]
-      }
-    }
-    
-    // 不需要自动轮询，在报销完成后手动计算
+    // 开始轮询已发放金额
+    startPollingPaidFee()
     
     return  // 等待用户点击"确认报销"
-  }
-  
-  // 如果批量处理队列已经初始化，直接处理当前成果
-  if (!currentReimburseRow.value && batchReimburseQueue.value.length > 1) {
-    // 批量报销模式：处理当前成果
-    await handleCurrentReimburse()
-    return
   }
 
   // 单个报销或批量但只有1个，直接处理
@@ -1973,6 +2098,13 @@ const handleSubmitReimburse = async () => {
   }
 
   reimburseLoading.value = true
+
+  // 判断是否是批量报销模式
+  if (!currentReimburseRow.value && batchReimburseQueue.value.length > 1) {
+    // 批量报销模式：处理当前成果
+    await handleCurrentReimburse()
+    return
+  }
 
   // 单个报销或批量但只有1个，直接处理
   try {
@@ -2062,7 +2194,7 @@ const handleSubmitReimburse = async () => {
  */
 const getReimburseButtonText = () => {
   if (reimburseProgress.show) {
-    if (batchReimburseQueue.value.length > 1) {
+    if (pendingReimburseProducts.value.length > 1) {
       return `确认报销 (${reimburseProgress.current}/${reimburseProgress.total})`
     }
     return '报销中...'
@@ -2175,51 +2307,20 @@ const handleNextReimburse = async () => {
   
   // 重新获取支付信息（确保收款码是最新的）
   await refreshPaymentInfo([nextProduct.achievementId])
-  
-  // 确保左边列表选中当前成果
-  if (paymentInfo.value && paymentInfo.value.length > 0) {
-    // 找到当前成果在paymentInfo中的索引
-    const currentIndex = paymentInfo.value.findIndex(item => 
-      item.achievementId === nextProduct.achievementId
-    )
-    if (currentIndex !== -1) {
-      // 选中当前成果
-      selectedReimburseItem.value = paymentInfo.value[currentIndex]
-    }
-  }
 }
 
 /**
- * 刷新支付信息（保持所有成果，只更新当前成果的信息）
+ * 刷新支付信息
  */
 const refreshPaymentInfo = async (achievementIds) => {
   try {
     const paymentRes = await getPaymentInfo(achievementIds.join(','))
     if (paymentRes.code === 200) {
-      const newPaymentInfo = paymentRes.data
+      paymentInfo.value = paymentRes.data
       
-      if (newPaymentInfo && newPaymentInfo.length > 0) {
-        // 如果是第一次加载，直接设置
-        if (!paymentInfo.value || paymentInfo.value.length === 0) {
-          paymentInfo.value = newPaymentInfo
-        } else {
-          // 否则，只更新当前成果的信息
-          newPaymentInfo.forEach(newItem => {
-            const existingIndex = paymentInfo.value.findIndex(item => 
-              item.achievementId === newItem.achievementId
-            )
-            if (existingIndex !== -1) {
-              // 更新现有成果
-              paymentInfo.value[existingIndex] = newItem
-            } else {
-              // 添加新成果（如果有的话）
-              paymentInfo.value.push(newItem)
-            }
-          })
-        }
-        
-        // 加载收款码预览
-        newPaymentInfo.forEach(item => {
+      // 加载收款码预览
+      if (paymentInfo.value && paymentInfo.value.length > 0) {
+        paymentInfo.value.forEach(item => {
           if (item.qrCodeUuid) {
             loadQrCodePreview(item.qrCodeUuid, item.achievementId)
           }
