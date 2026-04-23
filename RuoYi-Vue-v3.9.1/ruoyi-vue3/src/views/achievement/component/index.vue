@@ -494,6 +494,7 @@
           @pagination="getList"
       />
     </div>
+    </div>
 
     <AchievementForm
         v-if="pageModeActive"
@@ -511,7 +512,9 @@
         @ok="handleFormOk"
         @cancel="handleFormCancel"
     >
-    </AchievementForm>    <AchievementForm
+    </AchievementForm>
+
+    <AchievementForm
         ref="achievementDialogRef"
         :get-fn="getFn"
         :add-fn="addFn"
@@ -657,7 +660,6 @@
       </template>
     </el-dialog>
   </div>
-    </div>
 </template>
 
 <script setup>
@@ -1453,8 +1455,8 @@ function clearSelectionState() {
   tableRef.value?.clearSelection?.();
 }
 function handleAdd() {
-  // 新增统一改为弹窗模式
-  openDialog();
+  // 新增改为页面模式
+  openPageForm();
 }
 
 async function handleUpdate() {
@@ -1900,10 +1902,13 @@ export default {
 }
 
 /* 核心布局优化 */
-.achievement-app-container {
-  padding: 16px;
+.achievement-manage-root {
   background-color: #f0f2f5;
   min-height: calc(100vh - 84px);
+}
+
+.achievement-app-container {
+  padding: 16px;
   display: flex;
   flex-direction: column;
   gap: 16px;
