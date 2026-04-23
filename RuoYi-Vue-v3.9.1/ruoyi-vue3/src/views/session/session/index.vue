@@ -575,7 +575,10 @@ const single = ref(true)
 const multiple = ref(true)
 const total = ref(0)
 const title = ref("")
+const isAllSelected = ref(false)
 const quickYear = ref(new Date().getFullYear())
+const yearSelectOpen = ref(false)
+const sessionTableRef = ref(null)
 
 // PDF导入相关
 const pdfImportOpen = ref(false)
@@ -919,15 +922,30 @@ function resetQuery() {
 
 // 多选框选中数据
 function handleSelectionChange(selection) {
-  selectedRows.value = selection || []
-  ids.value = selection.map(item => item.id)
-  single.value = selection.length != 1
-  multiple.value = !selection.length
-  
-  // 如果手动取消勾选了某些项，则关闭“全选模式”的状态，改为普通多选状态
-  if (isAllSelected.value && selection.length < ids.value.length) {
-    // 这里其实不需要特别处理，因为 ids.value 已经由 map 得到了
+  // 如果是全选模式
+  if (isAllSelected.value) {
+    // 检查当前页是否全部勾选
+    const currentPageAllSelected = sessionList.value.every(row => 
+      selection.some(s => s.id === row.id)
+    )
+    
+    if (!currentPageAllSelected) {
+      // 如果当前页有取消勾选的，则退出“全选所有”模式，进入普通多选模式
+      isAllSelected.value = false
+      selectedRows.value = selection || []
+      ids.value = selection.map(item => item.id)
+    } else {
+      // 否则维持“全选所有”模式，不更新 ids（保持为全部ID）
+      // 但更新 selectedRows 以包含当前页的完整对象（供预览等使用）
+      // 注意：这里可能需要合并逻辑，但简单处理可以先不覆盖
+    }
+  } else {
+    selectedRows.value = selection || []
+    ids.value = selection.map(item => item.id)
   }
+  
+  single.value = ids.value.length != 1
+  multiple.value = !ids.value.length
 }
 
 /** 全选当前筛选条件下的所有ID */
@@ -937,7 +955,11 @@ async function handleSelectAllFiltered() {
   
   proxy.$modal.loading("正在获取符合条件的全部数据...")
   try {
-    const res = await allIdsSession(queryParams.value)
+    // 【修改】全选当前结果时，忽略年份过滤（无论当前搜索框填了什么年份，都选中符合其它条件的所有记录）
+    const query = { ...queryParams.value }
+    query.year = null
+    
+    const res = await allIdsSession(query)
     const allIds = res.data || []
     if (allIds.length === 0) {
       proxy.$modal.msgWarning("当前筛选条件下无数据")
