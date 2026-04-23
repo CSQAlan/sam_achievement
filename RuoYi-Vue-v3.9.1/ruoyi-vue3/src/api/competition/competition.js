@@ -37,3 +37,30 @@ export function delCompetition(id) {
     method: "delete",
   });
 }
+// 解析PDF并匹配竞赛
+export function analyzeCompetitionPdf(data) {
+  return request({
+    url: "/competition/competition/import/analyze",
+    method: "post",
+    data,
+    headers: { "Content-Type": "multipart/form-data" },
+  });
+}
+
+// 确认建立关联
+export function linkCompetitionPdf(data) {
+  return request({
+    url: "/competition/competition/import/link",
+    method: "post",
+    data,
+  });
+}
+
+// 手动建立关联并学习别名
+export function manualLinkCompetitionPdf(data) {
+  return request({
+    url: "/competition/competition/import/manualLink",
+    method: "post",
+    data,
+  });
+}
