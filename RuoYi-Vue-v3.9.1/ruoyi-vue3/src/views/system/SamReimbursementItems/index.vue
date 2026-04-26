@@ -105,6 +105,11 @@
     </el-link>
   </template>
 </el-table-column>
+      <el-table-column label="届次" align="center" prop="sessionName" width="150">
+        <template #default="scope">
+          <span>{{ scope.row.sessionName || scope.row.sessionId || '-' }}</span>
+        </template>
+      </el-table-column>
       <el-table-column label="报销时间" align="center" prop="reimbursementTime" width="180">
         <template #default="scope">
           <span>{{ parseTime(scope.row.reimbursementTime, '{y}-{m}-{d}') }}</span>
@@ -134,7 +139,7 @@
       <el-table-column label="备注" align="center" prop="remark" :show-overflow-tooltip="true" />
       <el-table-column label="操作" align="center" class-name="small-padding fixed-width" width="200">
         <template #default="scope">
-          <!-- 新增的关联成果按钮 -->
+          <!-- 新增的关联成果按钮
           <el-button
              size="mini"
              type="primary"
@@ -142,6 +147,7 @@
              @click="viewAchievements(scope.row)"
              v-hasPermi="['system:SamReimbursementItems:view']"
           >详细信息</el-button>
+          -->
           <el-button
               size="mini"
               type="text"
@@ -182,11 +188,21 @@
         <el-form-item label="报销项目名称" prop="name">
           <el-input v-model="form.name" placeholder="请输入报销项目名称" />
         </el-form-item>
-        <el-form-item label="报销时间" prop="reimbursementTime">
+        <el-form-item label="所属届次" prop="sessionId">
+          <el-select v-model="form.sessionId" placeholder="请选择届次">
+            <el-option
+              v-for="item in sessionOptions"
+              :key="item.id"
+              :label="item.label"
+              :value="item.id"
+            />
+          </el-select>
+        </el-form-item>
+        <el-form-item label="创建时间" prop="reimbursementTime">
   <el-date-picker
     v-model="form.reimbursementTime"
     type="date"
-    placeholder="请选择报销时间"
+    placeholder="请选择创建时间"
     format="yyyy-MM-dd"
     value-format="yyyy-MM-dd"
     :clearable="false">
@@ -237,7 +253,7 @@
 import { ref, reactive, onMounted } from 'vue'
 import { useRouter } from 'vue-router'
 import { ElMessage, ElMessageBox } from 'element-plus'
-import { Search, Refresh, Plus, Edit, Delete, Download, Document } from '@element-plus/icons-vue'
+import { Search, Refresh, Plus, Edit, Delete, Download, Document, Calendar } from '@element-plus/icons-vue'
 import {
   listSamReimbursementItems,
   getSamReimbursementItems,
@@ -248,6 +264,7 @@ import {
 import Treeselect from "vue3-treeselect"
 import "vue3-treeselect/dist/vue3-treeselect.css"
 import { listDept } from "@/api/system/dept"
+import { listSession } from "@/api/session/session"
 import useUserStore from '@/store/modules/user'
 
 
@@ -266,6 +283,9 @@ const router = useRouter()  // 需要创建实例
 
 // 字典选项
 const reimbursementStatusOptions = ref([])
+
+// 届次选项
+const sessionOptions = ref([])
 
 // 日期范围处理
 const reimbursementTimeRange = ref([])
@@ -289,6 +309,7 @@ const queryParams = reactive({
   pageNum: 1,
   pageSize: 10,
   name: null,
+  sessionId: null,
   ownerDepId: null,
   status: null,
   beginReimbursementTime: null,
@@ -299,6 +320,7 @@ const queryParams = reactive({
 const form = reactive({
   id: null,
   name: null,
+  sessionId: null,
   reimbursementTime: null,
   totalFee: null,
   paidFee: null,
@@ -316,10 +338,21 @@ const form = reactive({
 // 部门树选项
 const deptOptions = ref([])
 
+// 选中的比赛和届次信息
+const selectedCompetition = ref({
+  name: '中国大学生计算机设计大赛'
+})
+const selectedSession = ref({
+  session: '2026届'
+})
+
 // 表单校验规则
 const rules = reactive({
   name: [
     { required: true, message: "报销项目名称不能为空", trigger: "blur" }
+  ],
+  sessionId: [
+    { required: true, message: "所属届次不能为空", trigger: "blur" }
   ],
   reimbursementTime: [
     { required: true, message: "报销时间不能为空", trigger: "blur" }
@@ -379,6 +412,36 @@ const getDeptTree = async () => {
     console.error('获取部门树失败:', error)
     ElMessage.error('获取部门列表失败')
     deptOptions.value = []
+  }
+}
+
+/** 获取届次列表 */
+const getSessionList = async () => {
+  try {
+    const response = await listSession()
+    console.log('届次列表数据:', response)
+    
+    // 处理可能的数据结构
+    let sessionData = []
+    if (response.data) {
+      sessionData = response.data
+    } else if (response.rows) {
+      sessionData = response.rows
+    } else if (Array.isArray(response)) {
+      sessionData = response
+    }
+    
+    // 转换为下拉选项格式
+    sessionOptions.value = sessionData.map(item => ({
+      id: item.id,
+      label: item.session
+    }))
+    console.log('处理后的sessionOptions:', sessionOptions.value)
+    
+  } catch (error) {
+    console.error('获取届次列表失败:', error)
+    ElMessage.error('获取届次列表失败')
+    sessionOptions.value = []
   }
 }
 
@@ -459,6 +522,7 @@ const cancel = () => {
 const reset = () => {
   form.id = null
   form.name = null
+  form.sessionId = null
   form.reimbursementTime = null
   form.totalFee = null
   form.paidFee = null
@@ -663,12 +727,13 @@ const handleViewDetail = (row) => {
     return;
   }
   
-  // 跳转时传递ID
+  // 跳转时传递ID和届次ID
   router.push({
     path: '/reimbursement/Reimbursement',
     query: {
       reimbursementItemId: projectId,
-      name: row.name
+      name: row.name,
+      sessionId: row.sessionId
     }
   });
 }
@@ -695,6 +760,7 @@ const getDictData = async () => {
 onMounted(() => {
   getList()
   getDeptTree()
+  getSessionList()
   getDictData()
 })
 
@@ -714,3 +780,42 @@ const handleTree = (data, id) => {
   return convertToTreeSelect(data)
 }
 </script>
+
+<style scoped>
+/* 比赛信息样式 */
+.competition-info {
+  margin-bottom: 20px;
+  padding: 15px;
+  background-color: #f5f7fa;
+  border-radius: 8px;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+}
+
+.competition-name {
+  font-size: 24px;
+  font-weight: bold;
+  margin-bottom: 10px;
+  color: #303133;
+}
+
+.session-info {
+  margin-top: 10px;
+}
+
+.session-text {
+  font-size: 18px;
+  font-weight: 500;
+  margin-left: 5px;
+}
+
+/* 调整届次标签样式 */
+.el-tag--medium {
+  font-size: 18px;
+  padding: 6px 12px;
+}
+
+/* 调整届次图标大小 */
+.el-icon {
+  font-size: 18px;
+}
+</style>

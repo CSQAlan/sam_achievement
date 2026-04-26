@@ -50,18 +50,19 @@
             <div class="stat-body"><span class="number">{{ reviewerStats.totalCount }}</span><span class="label">项</span></div>
           </el-card>
         </el-col>
+             <el-col :sm="24" :lg="6">
+          <el-card shadow="hover" class="stat-card green">
+            <template #header><div class="card-header"><span>本月新增数</span><el-icon><TrendCharts /></el-icon></div></template>
+            <div class="stat-body"><span class="number">{{ reviewerStats.monthCount }}</span><span class="label">项</span></div>
+          </el-card>
+        </el-col>
         <el-col :sm="24" :lg="6">
           <el-card shadow="hover" class="stat-card red">
             <template #header><div class="card-header"><span>待审核任务</span><el-icon><Bell /></el-icon></div></template>
             <div class="stat-body"><span class="number">{{ reviewerStats.pendingCount }}</span><span class="label">条</span></div>
           </el-card>
         </el-col>
-        <el-col :sm="24" :lg="6">
-          <el-card shadow="hover" class="stat-card green">
-            <template #header><div class="card-header"><span>本月新增数</span><el-icon><TrendCharts /></el-icon></div></template>
-            <div class="stat-body"><span class="number">{{ reviewerStats.monthCount }}</span><span class="label">项</span></div>
-          </el-card>
-        </el-col>
+   
         <el-col :sm="24" :lg="6">
           <el-card shadow="hover" class="stat-card purple">
             <template #header><div class="card-header"><span>参与学生数</span><el-icon><User /></el-icon></div></template>

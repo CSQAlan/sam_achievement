@@ -24,6 +24,14 @@ public class SamReimbursementItems extends BaseEntity
     @Excel(name = "报销项目名称")
     private String name;
 
+    /** 届次ID */
+    @Excel(name = "届次")
+    private Long sessionId;
+
+    /** 届次名称（用于展示，非数据库字段） */
+    @Excel(name = "届次名称")
+    private String sessionName;
+
     /** 报销时间 */
     @JsonFormat(pattern = "yyyy-MM-dd")
     @Excel(name = "报销时间", width = 30, dateFormat = "yyyy-MM-dd")
@@ -52,6 +60,50 @@ public class SamReimbursementItems extends BaseEntity
     /** 删除标记（0存在 2删除） */
     private String delFlag;
 
+    /** 实际关联成果数量（用于列表显示） */
+    private Integer actualAmount;
+
+    /** 实际总金额（用于列表显示） */
+    private Double actualTotalFee;
+
+    /** 实际已发放金额（用于列表显示） */
+    private Double actualPaidFee;
+
+    /** 实际报销总金额（用于列表显示） */
+    private Double actualReimbursementFee;
+
+    public Integer getActualAmount() {
+        return actualAmount;
+    }
+
+    public void setActualAmount(Integer actualAmount) {
+        this.actualAmount = actualAmount;
+    }
+
+    public Double getActualTotalFee() {
+        return actualTotalFee;
+    }
+
+    public void setActualTotalFee(Double actualTotalFee) {
+        this.actualTotalFee = actualTotalFee;
+    }
+
+    public Double getActualPaidFee() {
+        return actualPaidFee;
+    }
+
+    public void setActualPaidFee(Double actualPaidFee) {
+        this.actualPaidFee = actualPaidFee;
+    }
+
+    public Double getActualReimbursementFee() {
+        return actualReimbursementFee;
+    }
+
+    public void setActualReimbursementFee(Double actualReimbursementFee) {
+        this.actualReimbursementFee = actualReimbursementFee;
+    }
+
     public void setId(Long id) 
     {
         this.id = id;
@@ -70,6 +122,22 @@ public class SamReimbursementItems extends BaseEntity
     public String getName() 
     {
         return name;
+    }
+
+    public Long getSessionId() {
+        return sessionId;
+    }
+
+    public void setSessionId(Long sessionId) {
+        this.sessionId = sessionId;
+    }
+
+    public String getSessionName() {
+        return sessionName;
+    }
+
+    public void setSessionName(String sessionName) {
+        this.sessionName = sessionName;
     }
 
     public void setReimbursementTime(Date reimbursementTime) 
@@ -147,12 +215,18 @@ public class SamReimbursementItems extends BaseEntity
         return new ToStringBuilder(this,ToStringStyle.MULTI_LINE_STYLE)
             .append("id", getId())
             .append("name", getName())
+            .append("sessionId", getSessionId())
+            .append("sessionName", getSessionName())
             .append("reimbursementTime", getReimbursementTime())
             .append("totalFee", getTotalFee())
             .append("paidFee", getPaidFee())
             .append("amount", getAmount())
             .append("ownerDepId", getOwnerDepId())
             .append("status", getStatus())
+            .append("actualAmount", getActualAmount())
+            .append("actualTotalFee", getActualTotalFee())
+            .append("actualReimbursementFee", getActualReimbursementFee())
+            .append("actualPaidFee", getActualPaidFee())
             .append("createBy", getCreateBy())
             .append("createTime", getCreateTime())
             .append("updateBy", getUpdateBy())

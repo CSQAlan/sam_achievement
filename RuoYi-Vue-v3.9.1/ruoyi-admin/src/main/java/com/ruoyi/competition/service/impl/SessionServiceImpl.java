@@ -130,6 +130,18 @@ public class SessionServiceImpl implements ISessionService {
     @Override
     @BizAudit(bizType = "session", bizName = "新增届次", opType = BizAuditOpType.ADD, handler = "sessionBizAuditHandler", async = false)
     public int insertSession(Session session) {
+        // 1. 查重校验：同一赛事下届次名称不可重复
+        if (session.getCompetitionId() == null || StringUtils.isBlank(session.getSession())) {
+            throw new ServiceException("新增失败：赛事ID和届次名称不能为空");
+        }
+        Session query = new Session();
+        query.setCompetitionId(session.getCompetitionId());
+        query.setSession(session.getSession().trim());
+        List<Session> existList = sessionMapper.selectSessionList(query);
+        if (!CollectionUtils.isEmpty(existList)) {
+            throw new ServiceException("新增失败：该赛事下已存在届次【" + session.getSession() + "】");
+        }
+
         // year：默认当前年
         session.setYear(resolveYear(session.getYear()));
         // 规范化盖章单位
@@ -171,8 +183,19 @@ public class SessionServiceImpl implements ISessionService {
         if (session.getId() == null) {
             throw new ServiceException("修改届次必须传入主键ID！");
         }
-        // year：为空则默认当前年（避免被更新成null）
-        session.setYear(resolveYear(session.getYear()));
+
+        // 1. 查重校验：不能修改成该赛事下已有的其它届次名称
+        if (session.getCompetitionId() != null && StringUtils.isNotBlank(session.getSession())) {
+            Session query = new Session();
+            query.setCompetitionId(session.getCompetitionId());
+            query.setSession(session.getSession().trim());
+            List<Session> existList = sessionMapper.selectSessionList(query);
+            // 如果查到了且 ID 不一样，说明改重了
+            if (!CollectionUtils.isEmpty(existList) && !existList.get(0).getId().equals(session.getId())) {
+                throw new ServiceException("修改失败：该赛事下已存在届次【" + session.getSession() + "】");
+            }
+        }
+
         // 规范化盖章单位
         session.setOrganizations(normalizeOrganizations(session.getOrganizations()));
         // uuid：启用时必填且必须为PDF

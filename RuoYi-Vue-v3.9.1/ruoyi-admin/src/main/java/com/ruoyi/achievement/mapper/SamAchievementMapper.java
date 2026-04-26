@@ -29,6 +29,14 @@ public interface SamAchievementMapper
     public SamAchievement selectSamAchievementByAchievementId(String achievementId);
 
     /**
+     * 查询成果基本信息，包括名称和负责人信息
+     *
+     * @param achievementId 成果录入主键
+     * @return 成果基本信息
+     */
+    public Map<String, Object> selectAchievementInfoById(String achievementId);
+
+    /**
      * 查询成果录入列表
      *
      * @param samAchievement 成果录入
@@ -170,4 +178,13 @@ public interface SamAchievementMapper
     public List<ExportAttachmentFileVo> selectExportAttachmentFiles(
             @Param("achievementIds") String[] achievementIds,
             @Param("types") Integer[] types);
+
+    /**
+     * 根据成果ID和附件类型查询附件UUID列表
+     *
+     * @param achievementId 成果ID
+     * @param type 附件类型
+     * @return 附件UUID列表
+     */
+    public List<String> selectAttachmentUuidByAchievementIdAndType(@Param("achievementId") String achievementId, @Param("type") Integer type);
 }

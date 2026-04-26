@@ -523,19 +523,16 @@ const rules = {
 
 const previewUrls = reactive({
   certificate: "",
-  category: "",
   notice: "",
 });
 
 const attachmentNames = reactive({
   certificate: "",
-  category: "",
   notice: "",
 });
 
 const attachmentFieldMap = {
   certificate: "certificateFile",
-  category: "categoryFile",
   notice: "noticeFile",
 };
 
@@ -545,13 +542,6 @@ const defaultAttachmentConfig = [
     dictValue: "1",
     fallbackLabel: "奖状",
     alert: "请上传奖状 PDF 文件",
-  },
-  {
-    name: "category",
-    // 竞赛目录：按字典约定为 7
-    dictValue: "7",
-    fallbackLabel: "竞赛目录",
-    alert: "请上传竞赛目录 PDF 文件",
   },
   {
     name: "notice",
@@ -595,7 +585,6 @@ function createDefaultForm() {
     tags: [],
     memo: null,
     certificateFile: null,
-    categoryFile: null,
     noticeFile: null,
     competitionApplyAttachmentList: [],
     attachmentUrls: "",

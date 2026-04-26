@@ -1,0 +1,157 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper
+PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+"http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.ruoyi.system.mapper.BizAuditLogMapper">
+
+    <resultMap id="BizAuditLogResult" type="BizAuditLog">
+        <id property="id" column="id"/>
+        <result property="traceId" column="trace_id"/>
+        <result property="requestId" column="request_id"/>
+        <result property="bizType" column="biz_type"/>
+        <result property="bizName" column="biz_name"/>
+        <result property="bizId" column="biz_id"/>
+        <result property="bizKey" column="biz_key"/>
+        <result property="opType" column="op_type"/>
+        <result property="resultStatus" column="result_status"/>
+        <result property="success" column="success"/>
+        <result property="errorCode" column="error_code"/>
+        <result property="errorMsg" column="error_msg"/>
+        <result property="batchFlag" column="batch_flag"/>
+        <result property="batchCount" column="batch_count"/>
+        <result property="className" column="class_name"/>
+        <result property="methodName" column="method_name"/>
+        <result property="method" column="method"/>
+        <result property="requestUri" column="request_uri"/>
+        <result property="requestMethod" column="request_method"/>
+        <result property="requestParams" column="request_params"/>
+        <result property="durationMs" column="duration_ms"/>
+        <result property="operUserId" column="oper_user_id"/>
+        <result property="operUserName" column="oper_user_name"/>
+        <result property="operNickName" column="oper_nick_name"/>
+        <result property="operDeptId" column="oper_dept_id"/>
+        <result property="operDeptName" column="oper_dept_name"/>
+        <result property="operIp" column="oper_ip"/>
+        <result property="operLocation" column="oper_location"/>
+        <result property="operBrowser" column="oper_browser"/>
+        <result property="operOs" column="oper_os"/>
+        <result property="beforeJson" column="before_json"/>
+        <result property="afterJson" column="after_json"/>
+        <result property="diffJson" column="diff_json"/>
+        <result property="extraJson" column="extra_json"/>
+        <result property="createTime" column="create_time"/>
+    </resultMap>
+
+    <resultMap id="BizAuditLogDetailResult" type="BizAuditLogDetail">
+        <id property="id" column="id"/>
+        <result property="logId" column="log_id"/>
+        <result property="itemPath" column="item_path"/>
+        <result property="itemKey" column="item_key"/>
+        <result property="itemBizId" column="item_biz_id"/>
+        <result property="itemName" column="item_name"/>
+        <result property="seqNo" column="seq_no"/>
+        <result property="changeType" column="change_type"/>
+        <result property="beforeJson" column="before_json"/>
+        <result property="afterJson" column="after_json"/>
+        <result property="diffJson" column="diff_json"/>
+        <result property="success" column="success"/>
+        <result property="errorMsg" column="error_msg"/>
+        <result property="createTime" column="create_time"/>
+    </resultMap>
+
+    <sql id="selectBizAuditColumns">
+        select id, trace_id, request_id, biz_type, biz_name, biz_id, biz_key, op_type, result_status, success,
+               error_code, error_msg, batch_flag, batch_count, class_name, method_name, method, request_uri,
+               request_method, request_params, duration_ms, oper_user_id, oper_user_name, oper_nick_name,
+               oper_dept_id, oper_dept_name, oper_ip, oper_location, oper_browser, oper_os, before_json,
+               after_json, diff_json, extra_json, create_time
+        from biz_audit_log
+    </sql>
+
+    <insert id="insertBizAuditLog" parameterType="BizAuditLog" useGeneratedKeys="true" keyProperty="id">
+        insert into biz_audit_log (
+            trace_id, request_id, biz_type, biz_name, biz_id, biz_key, op_type, result_status, success,
+            error_code, error_msg, batch_flag, batch_count, class_name, method_name, method, request_uri,
+            request_method, request_params, duration_ms, oper_user_id, oper_user_name, oper_nick_name,
+            oper_dept_id, oper_dept_name, oper_ip, oper_location, oper_browser, oper_os, before_json,
+            after_json, diff_json, extra_json, create_time
+        ) values (
+            #{traceId}, #{requestId}, #{bizType}, #{bizName}, #{bizId}, #{bizKey}, #{opType}, #{resultStatus}, #{success},
+            #{errorCode}, #{errorMsg}, #{batchFlag}, #{batchCount}, #{className}, #{methodName}, #{method}, #{requestUri},
+            #{requestMethod}, #{requestParams}, #{durationMs}, #{operUserId}, #{operUserName}, #{operNickName},
+            #{operDeptId}, #{operDeptName}, #{operIp}, #{operLocation}, #{operBrowser}, #{operOs}, #{beforeJson},
+            #{afterJson}, #{diffJson}, #{extraJson}, now()
+        )
+    </insert>
+
+    <insert id="batchInsertBizAuditLogDetail">
+        insert into biz_audit_log_detail (
+            log_id, item_path, item_key, item_biz_id, item_name, seq_no, change_type,
+            before_json, after_json, diff_json, success, error_msg, create_time
+        ) values
+        <foreach collection="list" item="item" separator=",">
+            (
+                #{item.logId}, #{item.itemPath}, #{item.itemKey}, #{item.itemBizId}, #{item.itemName}, #{item.seqNo}, #{item.changeType},
+                #{item.beforeJson}, #{item.afterJson}, #{item.diffJson}, #{item.success}, #{item.errorMsg}, now()
+            )
+        </foreach>
+    </insert>
+
+    <select id="selectBizAuditLogList" parameterType="BizAuditLog" resultMap="BizAuditLogResult">
+        <include refid="selectBizAuditColumns"/>
+        <where>
+            <if test="bizType != null and bizType != ''">and biz_type = #{bizType}</if>
+            <if test="bizName != null and bizName != ''">and biz_name like concat('%', #{bizName}, '%')</if>
+            <if test="bizId != null and bizId != ''">and biz_id like concat('%', #{bizId}, '%')</if>
+            <if test="opType != null and opType != ''">and op_type = #{opType}</if>
+            <if test="success != null">and success = #{success}</if>
+            <if test="operUserName != null and operUserName != ''">and oper_user_name like concat('%', #{operUserName}, '%')</if>
+            <if test="params.beginTime != null and params.beginTime != ''">
+                and create_time &gt;= #{params.beginTime}
+            </if>
+            <if test="params.endTime != null and params.endTime != ''">
+                and create_time &lt;= #{params.endTime}
+            </if>
+        </where>
+        order by id desc
+    </select>
+
+    <select id="selectBizAuditLogById" parameterType="Long" resultMap="BizAuditLogResult">
+        <include refid="selectBizAuditColumns"/>
+        where id = #{id}
+    </select>
+
+    <select id="selectBizAuditLogDetailListByLogId" parameterType="Long" resultMap="BizAuditLogDetailResult">
+        select id, log_id, item_path, item_key, item_biz_id, item_name, seq_no, change_type,
+               before_json, after_json, diff_json, success, error_msg, create_time
+        from biz_audit_log_detail
+        where log_id = #{logId}
+        order by seq_no asc, id asc
+    </select>
+
+    <delete id="deleteBizAuditLogByIds" parameterType="Long">
+        delete from biz_audit_log where id in
+        <foreach collection="array" item="id" open="(" separator="," close=")">
+            #{id}
+        </foreach>
+    </delete>
+
+    <delete id="deleteBizAuditLogDetailByLogIds" parameterType="Long">
+        delete from biz_audit_log_detail where log_id in
+        <foreach collection="array" item="id" open="(" separator="," close=")">
+            #{id}
+        </foreach>
+    </delete>
+
+    <delete id="cleanBizAuditLogBeforeDays" parameterType="Integer">
+        delete from biz_audit_log
+        where create_time &lt; DATE_SUB(now(), interval ${days} day)
+    </delete>
+
+    <delete id="cleanBizAuditLogDetailBeforeDays" parameterType="Integer">
+        delete d from biz_audit_log_detail d
+        inner join biz_audit_log l on l.id = d.log_id
+        where l.create_time &lt; DATE_SUB(now(), interval ${days} day)
+    </delete>
+
+</mapper>
