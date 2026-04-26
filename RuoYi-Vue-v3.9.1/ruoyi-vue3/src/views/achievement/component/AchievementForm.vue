@@ -1159,7 +1159,7 @@ const data = reactive({
     competitionId: null,
     achievementId: null,
     sessionId: null,
-    category: "3",
+    category: null,
     name: null,
     teamName: null,
     level: null,
@@ -2199,7 +2199,12 @@ function autoMatchSession() {
 
   // 3. 自动赋值并锁定
   if (matched.length >= 1) {
-    form.value.sessionId = matched[0].id;
+    const session = matched[0];
+    form.value.sessionId = session.id;
+    // 自动同步赛事类别
+    if (session.category) {
+      form.value.category = session.category;
+    }
     isAutoMatched.value = true;
   } else {
     form.value.sessionId = null;
@@ -2219,6 +2224,16 @@ function handleCompetitionChange(val) {
 // 监听级别和时间的变化，实时触发匹配逻辑
 watch(() => [form.value.level, form.value.awardTime], () => {
   autoMatchSession();
+});
+
+// 手动选择届次时同步赛事类别
+watch(() => form.value.sessionId, (newVal) => {
+  if (newVal) {
+    const session = sessionOptions.value.find(s => s.id === newVal);
+    if (session && session.category) {
+      form.value.category = session.category;
+    }
+  }
 });
 
 watch(
