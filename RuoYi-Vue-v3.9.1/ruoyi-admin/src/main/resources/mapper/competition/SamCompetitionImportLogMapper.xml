@@ -1,0 +1,80 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper
+PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+"http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.ruoyi.competition.mapper.SamCompetitionImportLogMapper">
+    
+    <resultMap type="SamCompetitionImportLog" id="SamCompetitionImportLogResult">
+        <result property="id"    column="id"    />
+        <result property="filename"    column="filename"    />
+        <result property="tagCode"    column="tag_code"    />
+        <result property="operator"    column="operator"    />
+        <result property="importTime"    column="import_time"    />
+        <result property="modifiedIds"    column="modified_ids"    />
+        <result property="status"    column="status"    />
+    </resultMap>
+
+    <sql id="selectSamCompetitionImportLogVo">
+        select id, filename, tag_code, operator, import_time, modified_ids, status from sam_competition_import_log
+    </sql>
+
+    <select id="selectSamCompetitionImportLogList" parameterType="SamCompetitionImportLog" resultMap="SamCompetitionImportLogResult">
+        <include refid="selectSamCompetitionImportLogVo"/>
+        <where>  
+            <if test="filename != null  and filename != ''"> and filename like concat('%', #{filename}, '%')</if>
+            <if test="tagCode != null  and tagCode != ''"> and tag_code = #{tagCode}</if>
+            <if test="operator != null  and operator != ''"> and operator = #{operator}</if>
+            <if test="status != null  and status != ''"> and status = #{status}</if>
+        </where>
+        order by import_time desc
+    </select>
+    
+    <select id="selectSamCompetitionImportLogById" parameterType="Long" resultMap="SamCompetitionImportLogResult">
+        <include refid="selectSamCompetitionImportLogVo"/>
+        where id = #{id}
+    </select>
+        
+    <insert id="insertSamCompetitionImportLog" parameterType="SamCompetitionImportLog" useGeneratedKeys="true" keyProperty="id">
+        insert into sam_competition_import_log
+        <trim prefix="(" suffix=")" suffixOverrides=",">
+            <if test="filename != null">filename,</if>
+            <if test="tagCode != null">tag_code,</if>
+            <if test="operator != null">operator,</if>
+            <if test="importTime != null">import_time,</if>
+            <if test="modifiedIds != null">modified_ids,</if>
+            <if test="status != null">status,</if>
+         </trim>
+        <trim prefix="values (" suffix=")" suffixOverrides=",">
+            <if test="filename != null">#{filename},</if>
+            <if test="tagCode != null">#{tagCode},</if>
+            <if test="operator != null">#{operator},</if>
+            <if test="importTime != null">#{importTime},</if>
+            <if test="modifiedIds != null">#{modifiedIds},</if>
+            <if test="status != null">#{status},</if>
+         </trim>
+    </insert>
+
+    <update id="updateSamCompetitionImportLog" parameterType="SamCompetitionImportLog">
+        update sam_competition_import_log
+        <trim prefix="SET" suffixOverrides=",">
+            <if test="filename != null">filename = #{filename},</if>
+            <if test="tagCode != null">tag_code = #{tagCode},</if>
+            <if test="operator != null">operator = #{operator},</if>
+            <if test="importTime != null">import_time = #{importTime},</if>
+            <if test="modifiedIds != null">modified_ids = #{modifiedIds},</if>
+            <if test="status != null">status = #{status},</if>
+        </trim>
+        where id = #{id}
+    </update>
+
+    <delete id="deleteSamCompetitionImportLogById" parameterType="Long">
+        delete from sam_competition_import_log where id = #{id}
+    </delete>
+
+    <delete id="deleteSamCompetitionImportLogByIds" parameterType="String">
+        delete from sam_competition_import_log where id in 
+        <foreach item="id" collection="array" open="(" separator="," close=")">
+            #{id}
+        </foreach>
+    </delete>
+</mapper>
