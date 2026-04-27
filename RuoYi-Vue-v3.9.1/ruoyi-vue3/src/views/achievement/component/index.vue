@@ -343,6 +343,9 @@
                           >
                             {{ opt.label }}
                           </el-dropdown-item>
+                          <el-dropdown-item divided command="manage_reasons" icon="Setting">
+                            管理常用原因
+                          </el-dropdown-item>
                         </el-dropdown-menu>
                       </template>
                     </el-dropdown>
@@ -659,6 +662,46 @@
         </el-button>
       </template>
     </el-dialog>
+
+    <!-- 常用原因管理弹窗 -->
+    <el-dialog
+        v-model="reasonManagementVisible"
+        :title="reasonManagementTitle"
+        width="500px"
+        append-to-body
+    >
+      <div class="reason-mgmt-container">
+        <div class="reason-mgmt-add">
+          <el-input
+              v-model="newReasonText"
+              placeholder="请输入新的常用原因"
+              clearable
+              @keyup.enter="handleAddReason"
+          >
+            <template #append>
+              <el-button @click="handleAddReason">添加</el-button>
+            </template>
+          </el-input>
+        </div>
+        
+        <el-table :data="fullReasonList" v-loading="reasonLoading" style="margin-top: 20px;" max-height="400">
+          <el-table-column label="原因描述" prop="dictLabel" />
+          <el-table-column label="操作" width="80" align="center">
+            <template #default="scope">
+              <el-button
+                  link
+                  type="danger"
+                  icon="Delete"
+                  @click="handleDeleteReason(scope.row)"
+              ></el-button>
+            </template>
+          </el-table-column>
+        </el-table>
+      </div>
+      <template #footer>
+        <el-button @click="reasonManagementVisible = false">关闭</el-button>
+      </template>
+    </el-dialog>
   </div>
 </template>
 
@@ -669,13 +712,16 @@ import { useDict } from '@/utils/dict';
 import { blobValidate } from '@/utils/ruoyi';
 import useUserStore from '@/store/modules/user';
 import auth from '@/plugins/auth';
-import { Warning, Pointer, Edit, View, Search } from '@element-plus/icons-vue';
+import { Warning, Pointer, Edit, View, Search, Setting, Delete } from '@element-plus/icons-vue';
 import { saveAs } from 'file-saver';
 import AchievementForm from '../component/AchievementForm.vue';
 import { listManage, getManage, addManage, updateManage, delManage, exportAttachmentZip } from '@/api/achievement/manage';
 import { batchUpdateReviewStatus } from '@/api/achievement/review_batch';
 import { listCompetition } from '@/api/competition/competition';
 import { listSession } from '@/api/session/session';
+import { addData, delData } from "@/api/system/dict/data";
+import { getFullDicts } from "@/api/achievement/reason";
+import useDictStore from '@/store/modules/dict';
 const props = defineProps({
   listFn: { type: Function, default: null },
   getFn: { type: Function, default: null },
@@ -821,6 +867,18 @@ const exportCompetitionLoading = ref(false);
 const exportCompetitionId = ref(null);
 const exportCompetitionAttachmentTypes = ref([1, 2, 3, 4, 5, 6, 8]);
 const selectedAttachmentTypes = ref([]);
+
+// 常用原因管理相关
+const reasonManagementVisible = ref(false);
+const reasonLoading = ref(false);
+const fullReasonList = ref([]);
+const newReasonText = ref('');
+const reasonManagementTitle = computed(() => {
+  return (reviewSource.value.startsWith('college') ? '管理院级常用原因' : '管理校级常用原因');
+});
+const currentReasonDictType = computed(() => {
+  return (reviewSource.value.startsWith('college') ? 'college_reason' : 'school_reason');
+});
 const attachmentTypeOptions = [
   { label: '奖状(证书)', value: 1 },
   { label: '比赛通知', value: 2 },
@@ -940,6 +998,10 @@ const batchRejectReasonOptions = computed(() => baseBatchRejectReasonOptions.val
 function handleBatchRejectReasonCommand(value) {
   const selectedValue = normalizeLooseText(value);
   if (!selectedValue) return;
+  if (selectedValue === 'manage_reasons') {
+    openReasonManagement();
+    return;
+  }
   const matched = findRejectReasonOption(batchRejectReasonOptions.value, selectedValue);
   const nextText = normalizeLooseText(matched?.label || matched?.value || selectedValue);
   if (!nextText) return;
@@ -948,6 +1010,88 @@ function handleBatchRejectReasonCommand(value) {
     nextText
   ]));
   batchRejectReasonCustom.value = merged.join(REJECT_REASON_SEPARATOR);
+}
+
+function openReasonManagement() {
+  reasonManagementVisible.value = true;
+  loadFullReasons();
+}
+
+async function loadFullReasons() {
+  reasonLoading.value = true;
+  try {
+    const response = await getFullDicts(currentReasonDictType.value);
+    fullReasonList.value = response.data || [];
+  } finally {
+    reasonLoading.value = false;
+  }
+}
+
+async function handleAddReason() {
+  const text = normalizeLooseText(newReasonText.value);
+  if (!text) {
+    proxy.$modal.msgWarning('原因内容不能为空');
+    return;
+  }
+  
+  if (fullReasonList.value.some(r => r.dictLabel === text)) {
+    proxy.$modal.msgWarning('该原因已存在');
+    return;
+  }
+
+  try {
+    const maxSort = Math.max(0, ...fullReasonList.value.map(r => r.dictSort || 0));
+    await addData({
+      dictLabel: text,
+      dictValue: text,
+      dictType: currentReasonDictType.value,
+      dictSort: maxSort + 1,
+      status: '0'
+    });
+    proxy.$modal.msgSuccess('添加成功');
+    newReasonText.value = '';
+    await loadFullReasons();
+    refreshDict();
+  } catch (e) {
+    console.error(e);
+  }
+}
+
+async function handleDeleteReason(row) {
+  try {
+    await proxy.$modal.confirm(`确认删除原因 "${row.dictLabel}" 吗？`);
+    await delData(row.dictCode);
+    proxy.$modal.msgSuccess('删除成功');
+    await loadFullReasons();
+    refreshDict();
+  } catch (e) {
+    // user cancelled
+  }
+}
+
+function refreshDict() {
+  // 清除本地缓存并重新加载字典
+  useDictStore().removeDict(currentReasonDictType.value);
+  // 这里不需要手动触发 useDict 的更新，因为它是响应式的，
+  // 但我们需要确保下次使用时会从服务器获取。
+  // 在 RuoYi vue3 中，useDict 返回的是 ref，
+  // 我们手动触发一次加载
+  const dictType = currentReasonDictType.value;
+  getFullDicts(dictType).then(resp => {
+    const nextDicts = resp.data.map(p => ({ 
+      label: p.dictLabel, 
+      value: p.dictValue, 
+      elTagType: p.listClass, 
+      elTagClass: p.cssClass 
+    }));
+    useDictStore().setDict(dictType, nextDicts);
+    // 强制触发 computed 更新
+    if (dictType === 'college_reason') {
+      college_reason.value = nextDicts;
+    } else {
+      school_reason.value = nextDicts;
+    }
+  });
 }
 
 function hashString(input) {
