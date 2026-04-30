@@ -2,6 +2,7 @@ package com.ruoyi.competition.mapper;
 
 import java.util.List;
 import com.ruoyi.competition.domain.SamCompetitionImportLog;
+import org.apache.ibatis.annotations.Mapper;
 
 /**
  * 竞赛导入日志Mapper接口
@@ -9,6 +10,7 @@ import com.ruoyi.competition.domain.SamCompetitionImportLog;
  * @author ruoyi
  * @date 2026-04-22
  */
+@Mapper
 public interface SamCompetitionImportLogMapper {
     /**
      * 查询竞赛导入日志
