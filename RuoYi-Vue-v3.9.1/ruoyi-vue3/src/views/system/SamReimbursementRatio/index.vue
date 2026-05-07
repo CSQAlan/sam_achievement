@@ -1,6 +1,16 @@
 <template>
   <div class="app-container">
     <el-form :model="queryParams" ref="queryFormRef" size="small" :inline="true" v-show="showSearch" label-width="68px">
+      <el-form-item label="获奖级别" prop="level">
+        <el-select v-model="queryParams.level" placeholder="请选择获奖级别" clearable>
+          <el-option
+              v-for="dict in awardLevelOptions"
+              :key="dict.value"
+              :label="dict.label"
+              :value="dict.value"
+          />
+        </el-select>
+      </el-form-item>
       <el-form-item label="获奖等级" prop="grade">
         <el-select v-model="queryParams.grade" placeholder="请选择获奖等级" clearable>
           <el-option
@@ -95,6 +105,11 @@
     <el-table v-loading="loading" :data="SamReimbursementRatioList" @selection-change="handleSelectionChange">
       <el-table-column type="selection" width="55" align="center" />
       <el-table-column label="主键ID" align="center" prop="id" />
+      <el-table-column label="获奖级别" align="center" prop="level">
+        <template #default="scope">
+          <dict-tag :options="awardLevelOptions" :value="scope.row.level"/>
+        </template>
+      </el-table-column>
       <el-table-column label="获奖等级" align="center" prop="grade">
         <template #default="scope">
           <dict-tag :options="awardGradeOptions" :value="scope.row.grade"/>
@@ -152,6 +167,16 @@
     <!-- 添加或修改报销比例对话框 -->
     <el-dialog :title="title" v-model="open" width="500px" append-to-body>
       <el-form ref="formRef" :model="form" :rules="rules" label-width="100px">
+        <el-form-item label="获奖级别" prop="level">
+          <el-select v-model="form.level" placeholder="请选择获奖级别">
+            <el-option
+                v-for="dict in awardLevelOptions"
+                :key="dict.value"
+                :label="dict.label"
+                :value="dict.value"
+            />
+          </el-select>
+        </el-form-item>
         <el-form-item label="获奖等级" prop="grade">
           <el-select v-model="form.grade" placeholder="请选择获奖等级">
             <el-option
@@ -237,6 +262,7 @@ const title = ref('')
 const open = ref(false)
 
 // 字典选项
+const awardLevelOptions = ref([])
 const awardGradeOptions = ref([])
 const reimbursementCategoryOptions = ref([])
 const ratioStatusOptions = ref([])
@@ -245,6 +271,7 @@ const ratioStatusOptions = ref([])
 const queryParams = reactive({
   pageNum: 1,
   pageSize: 10,
+  level: null,
   grade: null,
   category: null,
   ownerDepId: null,
@@ -254,6 +281,7 @@ const queryParams = reactive({
 // 表单参数
 const form = reactive({
   id: null,
+  level: null,
   grade: null,
   category: null,
   ratio: null,
@@ -272,6 +300,9 @@ const deptOptions = ref([])
 
 // 表单校验规则
 const rules = reactive({
+  level: [
+    { required: true, message: "获奖级别不能为空", trigger: "blur" }
+  ],
   grade: [
     { required: true, message: "获奖等级不能为空", trigger: "blur" }
   ]
@@ -329,6 +360,7 @@ const cancel = () => {
 // 表单重置
 const reset = () => {
   form.id = null
+  form.level = null
   form.grade = null
   form.category = null
   form.ratio = null
@@ -492,6 +524,12 @@ const getDictData = async () => {
   try {
     // 先使用默认数据测试
     console.log('使用默认字典数据')
+    awardLevelOptions.value = [
+      { value: '1', label: '国家级' },
+      { value: '2', label: '省部级' },
+      { value: '3', label: '市厅级' },
+      { value: '4', label: '校级' }
+    ]
     awardGradeOptions.value = [
       { value: '1', label: '一等奖' },
       { value: '2', label: '二等奖' },

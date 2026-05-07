@@ -207,14 +207,14 @@ public class Sam_rem_ProductServiceImpl implements ISam_rem_ProductService
             }
             
             Integer ratio = samReimbursementRatioMapper.getReimbursementRatio(
+                product.getLevel(),
                 product.getGrade() != null ? product.getGrade().toString() : null,
-                product.getCategory(),
                 ownerDepIdLong
             );
             
             // 找不到报销比例规则时抛出错误
             if (ratio == null) {
-                throw new RuntimeException("成果【" + product.getName() + "】未找到对应的报销比例规则（等级：" + product.getGrade() + "，类别：" + product.getCategory() + "，学院：" + product.getOwnerDepId() + "）");
+                throw new RuntimeException("成果【" + product.getName() + "】未找到对应的报销比例规则（级别：" + product.getLevel() + "，等级：" + product.getGrade() + "，学院：" + product.getOwnerDepId() + "）");
             }
             
             // 计算：报销金额 = 报名费 × 比例 / 100

@@ -305,7 +305,7 @@
   </el-table-column>
   <el-table-column label="报销比例" align="center" width="100">
     <template #default="scope">
-      <span :class="{ 'error-text': getReimbursementRatio(scope.row.grade, scope.row.category) === '无规则' }">{{ getReimbursementRatio(scope.row.grade, scope.row.category) }}</span>
+      <span :class="{ 'error-text': getReimbursementRatio(scope.row.grade, scope.row.level) === '无规则' }">{{ getReimbursementRatio(scope.row.grade, scope.row.level) }}</span>
     </template>
   </el-table-column>
 
@@ -982,32 +982,32 @@ const qrCodePreviewUrls = ref({})
 const selectedReimburseItem = ref(null)
 
 /**
- * 根据获奖等级和类别获取报销比例
+ * 根据获奖级别和获奖等级获取报销比例
  * @param {number|string} grade - 获奖等级（1:一等奖, 2:二等奖, 3:三等奖）
- * @param {string} category - 报销类别
+ * @param {string} level - 获奖级别（国家级、省部级等）
  * @returns {string} 报销比例，无规则时返回错误提示
  */
-const getReimbursementRatio = (grade, category) => {
-  console.log('获取报销比例，grade:', grade, 'category:', category)
+const getReimbursementRatio = (grade, level) => {
+  console.log('获取报销比例，grade:', grade, 'level:', level)
   console.log('reimbursementRules:', reimbursementRules.value)
   
-  if (!grade) {
-    console.log('无grade，返回错误提示')
+  if (!grade || !level) {
+    console.log('无grade或level，返回错误提示')
     return '无规则'  // 无数据时返回错误提示
   }
   
   // 转换为字符串类型进行比较
   const gradeStr = grade.toString()
-  const categoryStr = category ? category.toString() : ''
+  const levelStr = level.toString()
   
   // 从后端返回的规则中查找（不再使用默认规则）
   let rule = null
   if (reimbursementRules.value && reimbursementRules.value.length > 0) {
-    // 查找对应等级和类别的规则
+    // 查找对应级别和等级的规则
     rule = reimbursementRules.value.find(r => {
-      return r.grade === gradeStr && r.category === categoryStr
+      return r.level === levelStr && r.grade === gradeStr
     })
-    console.log('查找对应等级和类别的规则:', rule)
+    console.log('查找对应级别和等级的规则:', rule)
   }
   
   if (!rule || !rule.ratio) {
@@ -1036,7 +1036,7 @@ const calculateActualReimbursement = (fee, grade, category) => {
   }
   
   // 获取报销比例
-  const ratioStr = getReimbursementRatio(grade, category)
+  const ratioStr = getReimbursementRatio(grade, level)
   console.log('获取到的报销比例:', ratioStr)
   
   if (ratioStr === '无规则') {
@@ -1072,7 +1072,7 @@ const calculateActualReimbursementValue = (fee, grade, category) => {
   }
   
   // 获取报销比例
-  const ratioStr = getReimbursementRatio(grade, category)
+  const ratioStr = getReimbursementRatio(grade, level)
   console.log('获取到的报销比例:', ratioStr)
   
   if (ratioStr === '无规则') {

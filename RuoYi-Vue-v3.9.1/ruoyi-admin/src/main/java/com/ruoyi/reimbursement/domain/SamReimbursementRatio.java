@@ -20,13 +20,17 @@ public class SamReimbursementRatio extends BaseEntity
     /** 主键ID */
     private Long id;
 
+    /** 获奖级别（国家级、省部级等，存储字典值） */
+    @Excel(name = "获奖级别", dictType = "award_level_type")
+    private String level;
+
     /** 获奖等级（一等奖、二等奖、三等奖） */
     @Excel(name = "获奖等级", readConverterExp = "一=等奖、二等奖、三等奖")
     private String grade;
 
-    /** 报销类别（存储字典值：0=学会类、1=政府类） */
-    @Excel(dictType = "achievement_category") // 对应SQL里的dict_type
-    private String category; // 或private Integer category;（如果存数字）
+    /** 报销类别（存储字典值：0=学会类、1=政府类）- 已废弃，不再用于匹配 */
+    @Excel(dictType = "achievement_category")
+    private String category;
 
     /** 报销百分比 */
     @Excel(name = "报销百分比")
@@ -51,6 +55,16 @@ public class SamReimbursementRatio extends BaseEntity
     public Long getId() 
     {
         return id;
+    }
+
+    public void setLevel(String level) 
+    {
+        this.level = level;
+    }
+
+    public String getLevel() 
+    {
+        return level;
     }
 
     public void setGrade(String grade) 
@@ -117,6 +131,7 @@ public class SamReimbursementRatio extends BaseEntity
     public String toString() {
         return new ToStringBuilder(this,ToStringStyle.MULTI_LINE_STYLE)
             .append("id", getId())
+            .append("level", getLevel())
             .append("grade", getGrade())
             .append("category", getCategory())
             .append("ratio", getRatio())
