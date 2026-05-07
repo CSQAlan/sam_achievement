@@ -197,9 +197,13 @@ public class Sam_rem_ProductServiceImpl implements ISam_rem_ProductService
                 try {
                     ownerDepIdLong = Long.valueOf(product.getOwnerDepId());
                 } catch (NumberFormatException e) {
-                    // 如果ownerDepId不是数字（如学院名称），则设为null，使用全校规则
-                    ownerDepIdLong = null;
+                    throw new RuntimeException("成果【" + product.getName() + "】的归属学院ID格式不正确");
                 }
+            }
+            
+            // 检查归属学院ID是否为空
+            if (ownerDepIdLong == null) {
+                throw new RuntimeException("成果【" + product.getName() + "】未设置归属学院，无法计算报销比例");
             }
             
             Integer ratio = samReimbursementRatioMapper.getReimbursementRatio(
@@ -208,19 +212,22 @@ public class Sam_rem_ProductServiceImpl implements ISam_rem_ProductService
                 ownerDepIdLong
             );
             
-            if (ratio != null) {
-                // 计算：报销金额 = 报名费 × 比例 / 100
-                BigDecimal fee = product.getFee();
-                if (fee != null) {
-                    BigDecimal reimbursementFee = fee.multiply(new BigDecimal(ratio)).divide(new BigDecimal(100), 2, BigDecimal.ROUND_HALF_UP);
-                    product.setReimbursementFee(reimbursementFee);
-                    product.setReimbursementRatio(ratio.toString());
-                    updateList.add(product);
-                    
-                    totalAmount += reimbursementFee.doubleValue();
-                    // 这里简化处理，实际应根据报销状态计算已发放金额
-                    // paidAmount += ...
-                }
+            // 找不到报销比例规则时抛出错误
+            if (ratio == null) {
+                throw new RuntimeException("成果【" + product.getName() + "】未找到对应的报销比例规则（等级：" + product.getGrade() + "，类别：" + product.getCategory() + "，学院：" + product.getOwnerDepId() + "）");
+            }
+            
+            // 计算：报销金额 = 报名费 × 比例 / 100
+            BigDecimal fee = product.getFee();
+            if (fee != null) {
+                BigDecimal reimbursementFee = fee.multiply(new BigDecimal(ratio)).divide(new BigDecimal(100), 2, BigDecimal.ROUND_HALF_UP);
+                product.setReimbursementFee(reimbursementFee);
+                product.setReimbursementRatio(ratio.toString());
+                updateList.add(product);
+                
+                totalAmount += reimbursementFee.doubleValue();
+                // 这里简化处理，实际应根据报销状态计算已发放金额
+                // paidAmount += ...
             }
         }
         
@@ -281,7 +288,7 @@ public class Sam_rem_ProductServiceImpl implements ISam_rem_ProductService
             throw new RuntimeException("报销项目已完成，无法关联成果");
         }
         
-        // 2. 验证成果是否可关联（检查是否已被关联）
+        // 2. 验证成果是否可关联（检查是否已被关联以及审核状态）
         for (String achievementId : achievementIds) {
             Sam_rem_Product product = sam_rem_ProductMapper.selectSam_rem_ProductByAchievementId(achievementId);
             if (product == null) {
@@ -289,6 +296,13 @@ public class Sam_rem_ProductServiceImpl implements ISam_rem_ProductService
             }
             if (product.getReimbursementItemId() != null && !"".equals(product.getReimbursementItemId())) {
                 throw new RuntimeException("成果【" + product.getName() + "】已关联到其他报销项目");
+            }
+            // 验证成果必须同时通过院级和校级审核
+            if (product.getReviewResult() == null || product.getReviewResult() != 2) {
+                throw new RuntimeException("成果【" + product.getName() + "】未通过院级审核，无法关联");
+            }
+            if (product.getSchooiReviewResult() == null || product.getSchooiReviewResult() != 1) {
+                throw new RuntimeException("成果【" + product.getName() + "】未通过校级审核，无法关联");
             }
         }
         

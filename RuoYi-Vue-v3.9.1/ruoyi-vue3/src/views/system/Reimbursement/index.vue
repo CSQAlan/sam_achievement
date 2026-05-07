@@ -305,7 +305,7 @@
   </el-table-column>
   <el-table-column label="报销比例" align="center" width="100">
     <template #default="scope">
-      <span>{{ (() => { console.log('scope.row:', scope.row); return getReimbursementRatio(scope.row.grade, scope.row.category); })() }}</span>
+      <span :class="{ 'error-text': getReimbursementRatio(scope.row.grade, scope.row.category) === '无规则' }">{{ getReimbursementRatio(scope.row.grade, scope.row.category) }}</span>
     </template>
   </el-table-column>
 
@@ -327,9 +327,9 @@
         >
           已报销
         </el-tag>
-        <!-- 情况2：需要报销（is_reimburse = 1 但没有报销时间） -->
+        <!-- 情况2：需要报销（is_reimburse = 1 且有报销金额） -->
         <el-tag
-          v-else-if="scope.row.is_reimburse === 1 || scope.row.isReimburse === 1"
+          v-else-if="(scope.row.is_reimburse === 1 || scope.row.isReimburse === 1) && (scope.row.reimbursementFee || scope.row.reimbursement_fee || scope.row.fee || 0) > 0"
           type="warning"
         >
           需报销
@@ -341,8 +341,8 @@
         >
           需报销
         </el-tag>
-        <!-- 情况4：未报销 -->
-        <span v-else class="unreimbursed-status">未报销</span>
+        <!-- 情况4：无需报销（报销金额为0或不需要报销） -->
+        <span v-else class="unreimbursed-status">无需报</span>
       </template>
     </template>
   </el-table-column>
@@ -362,9 +362,9 @@
             @click="handleCancelAssociation(scope.row)"
             v-hasPermi="['system:Reimbursement:edit']"
           >取消关联</el-button>
-          <!-- 报销按钮 - 仅当项目未确认且未报销时显示 -->
+          <!-- 报销按钮 - 仅当项目已确认且未报销时显示 -->
           <el-button 
-            v-if="!isProjectConfirmed && (!scope.row.reimbursementDate) && (scope.row.is_reimburse === 1 || scope.row.isReimburse === 1 || (scope.row.reimbursementFee || scope.row.reimbursement_fee || 0) > 0)"
+            v-if="isProjectConfirmed && (!scope.row.reimbursementDate) && (scope.row.is_reimburse === 1 || scope.row.isReimburse === 1 || (scope.row.reimbursementFee || scope.row.reimbursement_fee || 0) > 0)"
             link 
             type="success" 
             icon="Edit" 
@@ -740,15 +740,15 @@
                     <template v-if="item">
                       <!-- 情况1：已报销（有报销时间） -->
                       <el-tag
-                        v-if="item.reimbursementDate || item.reimbursement_date"
+                        v-if="!!((item.reimbursementDate && item.reimbursementDate !== '') || (item.reimbursement_date && item.reimbursement_date !== ''))"
                         type="success"
                         size="small"
                       >
                         已报销
                       </el-tag>
-                      <!-- 情况2：需要报销（is_reimburse = 1 但没有报销时间） -->
+                      <!-- 情况2：需要报销（is_reimburse = 1 且有报销金额） -->
                       <el-tag
-                        v-else-if="(item.isReimburse === 1 || item.is_reimburse === 1) && !(item.reimbursementDate || item.reimbursement_date)"
+                        v-else-if="(item.isReimburse === 1 || item.is_reimburse === 1) && (item.reimbursementFee || item.reimbursement_fee || item.fee || 0) > 0"
                         type="warning"
                         size="small"
                       >
@@ -756,14 +756,14 @@
                       </el-tag>
                       <!-- 情况3：需要报销（有报销金额但未报销） -->
                       <el-tag
-                        v-else-if="(item.reimbursementFee || item.reimbursement_fee || 0) > 0 && !(item.reimbursementDate || item.reimbursement_date)"
+                        v-else-if="(item.reimbursementFee || item.reimbursement_fee || item.fee || 0) > 0"
                         type="warning"
                         size="small"
                       >
                         需报销
                       </el-tag>
-                      <!-- 情况4：未报销 -->
-                      <span v-else class="unreimbursed-status">未报销</span>
+                      <!-- 情况4：无需报销（报销金额为0或不需要报销） -->
+                      <span v-else class="unreimbursed-status">无需报</span>
                     </template>
                   </div>
                 </div>
@@ -985,22 +985,22 @@ const selectedReimburseItem = ref(null)
  * 根据获奖等级和类别获取报销比例
  * @param {number|string} grade - 获奖等级（1:一等奖, 2:二等奖, 3:三等奖）
  * @param {string} category - 报销类别
- * @returns {string} 报销比例
+ * @returns {string} 报销比例，无规则时返回错误提示
  */
 const getReimbursementRatio = (grade, category) => {
   console.log('获取报销比例，grade:', grade, 'category:', category)
   console.log('reimbursementRules:', reimbursementRules.value)
   
   if (!grade) {
-    console.log('无grade，返回-')
-    return '-'  // 无数据时返回空
+    console.log('无grade，返回错误提示')
+    return '无规则'  // 无数据时返回错误提示
   }
   
   // 转换为字符串类型进行比较
   const gradeStr = grade.toString()
   const categoryStr = category ? category.toString() : ''
   
-  // 先从后端返回的规则中查找
+  // 从后端返回的规则中查找（不再使用默认规则）
   let rule = null
   if (reimbursementRules.value && reimbursementRules.value.length > 0) {
     // 查找对应等级和类别的规则
@@ -1008,45 +1008,11 @@ const getReimbursementRatio = (grade, category) => {
       return r.grade === gradeStr && r.category === categoryStr
     })
     console.log('查找对应等级和类别的规则:', rule)
-    
-    // 如果没有找到对应类别的规则，查找只匹配等级的规则
-    if (!rule && categoryStr) {
-      rule = reimbursementRules.value.find(r => r.grade === gradeStr && !r.category)
-      console.log('查找只匹配等级的规则:', rule)
-    }
-    
-    // 如果还是没有找到，查找任意规则
-    if (!rule) {
-      rule = reimbursementRules.value.find(r => r.grade === gradeStr)
-      console.log('查找任意规则:', rule)
-    }
-  }
-  
-  // 如果后端没有返回规则，从默认规则中查找
-  if (!rule) {
-    console.log('从默认规则中查找')
-    // 查找对应等级和类别的规则
-    rule = defaultReimbursementRules.find(r => {
-      return r.grade === gradeStr && r.category === categoryStr
-    })
-    console.log('从默认规则中查找对应等级和类别的规则:', rule)
-    
-    // 如果没有找到对应类别的规则，查找只匹配等级的规则
-    if (!rule && categoryStr) {
-      rule = defaultReimbursementRules.find(r => r.grade === gradeStr && !r.category)
-      console.log('从默认规则中查找只匹配等级的规则:', rule)
-    }
-    
-    // 如果还是没有找到，查找任意规则
-    if (!rule) {
-      rule = defaultReimbursementRules.find(r => r.grade === gradeStr)
-      console.log('从默认规则中查找任意规则:', rule)
-    }
   }
   
   if (!rule || !rule.ratio) {
-    console.log('无对应比例，返回-')
-    return '-'  // 无对应比例时返回空
+    console.log('无对应比例，返回错误提示')
+    return '无规则'  // 无对应规则时返回错误提示
   }
   
   // 格式化比例显示（ratio存储的是百分比值，直接显示）
@@ -1073,9 +1039,9 @@ const calculateActualReimbursement = (fee, grade, category) => {
   const ratioStr = getReimbursementRatio(grade, category)
   console.log('获取到的报销比例:', ratioStr)
   
-  if (ratioStr === '-') {
-    console.log('无报销比例，返回-')
-    return '-'  // 无报销比例时返回空
+  if (ratioStr === '无规则') {
+    console.log('无报销比例，返回错误提示')
+    return '无规则'  // 无报销规则时返回错误提示
   }
   
   // 提取比例数值
@@ -1109,9 +1075,9 @@ const calculateActualReimbursementValue = (fee, grade, category) => {
   const ratioStr = getReimbursementRatio(grade, category)
   console.log('获取到的报销比例:', ratioStr)
   
-  if (ratioStr === '-') {
+  if (ratioStr === '无规则') {
     console.log('无报销比例，返回0')
-    return 0  // 无报销比例时返回0
+    return 0  // 无报销规则时返回0
   }
   
   // 提取比例数值
@@ -1608,7 +1574,7 @@ async function handleRecalculate() {
     
     if (res.code === 200) {
       const data = res.data
-      proxy.$modal.msgSuccess(`计算完成！共处理 ${data?.productCount || 0} 个成果，总金额：¥${data?.totalAmount || 0}`)
+      // proxy.$modal.msgSuccess(`计算完成！共处理 ${data?.productCount || 0} 个成果，总金额：¥${data?.totalAmount || 0}`)
       
       // 直接使用后端返回的统计信息
       stats.value = {
@@ -1987,6 +1953,9 @@ const handleOpenReimburseDialog = async () => {
 const handleCloseReimburseDialog = () => {
   // 停止轮询
   stopPollingPaidFee()
+  
+  // 关闭弹窗
+  reimburseDialogVisible.value = false
   
   // 重置状态
   reimburseProgress.value = {
@@ -2603,6 +2572,12 @@ getList()
 /* 未报销状态样式 */
 .unreimbursed-status {
   color: #909399;
+}
+
+/* 错误提示样式 */
+.error-text {
+  color: #f56c6c;
+  font-weight: bold;
 }
 
 /* 收款码区域样式 */

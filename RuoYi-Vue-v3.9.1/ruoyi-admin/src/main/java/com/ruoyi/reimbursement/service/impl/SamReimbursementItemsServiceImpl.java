@@ -323,20 +323,13 @@ public class SamReimbursementItemsServiceImpl implements ISamReimbursementItemsS
         List<Map<String, Object>> rulesList = new ArrayList<>();
         
         try {
-            // 1. 查询学院级规则
+            // 查询学院级规则（只查询指定学院的规则，不使用全校通用规则）
             SamReimbursementRatio collegeRatio = new SamReimbursementRatio();
             collegeRatio.setOwnerDepId(ownerDepId);
             collegeRatio.setStatus("0"); // 只查询启用的规则
             List<SamReimbursementRatio> collegeRules = samReimbursementRatioMapper.selectSamReimbursementRatioList(collegeRatio);
             
-            // 2. 查询全校通用规则（owner_dep_id IS NULL）
-            SamReimbursementRatio globalRatio = new SamReimbursementRatio();
-            globalRatio.setOwnerDepId(null);
-            globalRatio.setStatus("0"); // 只查询启用的规则
-            List<SamReimbursementRatio> globalRules = samReimbursementRatioMapper.selectSamReimbursementRatioList(globalRatio);
-            
-            // 3. 合并规则，学院级优先
-            // 先添加学院级规则
+            // 添加学院级规则
             for (SamReimbursementRatio rule : collegeRules) {
                 Map<String, Object> ruleMap = new HashMap<>();
                 ruleMap.put("grade", rule.getGrade());
@@ -345,27 +338,6 @@ public class SamReimbursementItemsServiceImpl implements ISamReimbursementItemsS
                 ruleMap.put("ownerDepId", rule.getOwnerDepId());
                 ruleMap.put("ruleType", "学院级");
                 rulesList.add(ruleMap);
-            }
-            
-            // 再添加全校通用规则（如果学院级规则中没有相同的等级和类别）
-            for (SamReimbursementRatio globalRule : globalRules) {
-                boolean exists = false;
-                for (SamReimbursementRatio collegeRule : collegeRules) {
-                    if (collegeRule.getGrade().equals(globalRule.getGrade()) &&
-                        collegeRule.getCategory().equals(globalRule.getCategory())) {
-                        exists = true;
-                        break;
-                    }
-                }
-                if (!exists) {
-                    Map<String, Object> ruleMap = new HashMap<>();
-                    ruleMap.put("grade", globalRule.getGrade());
-                    ruleMap.put("category", globalRule.getCategory());
-                    ruleMap.put("ratio", globalRule.getRatio());
-                    ruleMap.put("ownerDepId", globalRule.getOwnerDepId());
-                    ruleMap.put("ruleType", "全校通用");
-                    rulesList.add(ruleMap);
-                }
             }
             
         } catch (Exception e) {
