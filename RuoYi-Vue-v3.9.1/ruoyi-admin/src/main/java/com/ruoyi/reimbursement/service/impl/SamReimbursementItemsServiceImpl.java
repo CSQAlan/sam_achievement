@@ -286,6 +286,8 @@ public class SamReimbursementItemsServiceImpl implements ISamReimbursementItemsS
                 paymentInfo.put("reimbursementDate", achievementInfo.get("reimbursement_date"));
                 paymentInfo.put("isReimburse", achievementInfo.get("is_reimburse"));
                 paymentInfo.put("reimbursementFee", achievementInfo.get("reimbursement_fee"));
+                paymentInfo.put("phone", achievementInfo.get("phone"));
+                paymentInfo.put("email", achievementInfo.get("email"));
             }
             
             // 查询成果的收款码附件（type=6表示收款码）

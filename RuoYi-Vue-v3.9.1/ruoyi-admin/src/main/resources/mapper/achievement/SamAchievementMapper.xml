@@ -633,7 +633,9 @@
             a.is_reimburse,
             a.reimbursement_fee,
             s.name as contact_name,
-            s.no as student_id
+            s.no as student_id,
+            u.email as email,
+            u.phonenumber as phone
         from sam_achievement a
         left join (
             select p.achievement_id, p.student_id
@@ -644,6 +646,7 @@
             limit 1
         ) p on p.achievement_id = a.achievement_id
         left join sam_student s on s.no = p.student_id
+        left join sys_user u on u.user_name = s.no
         where a.achievement_id = #{achievementId}
     </select>
 

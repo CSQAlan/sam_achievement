@@ -385,3 +385,367 @@
 17:53:51.943 [restartedMain] INFO  c.r.RuoYiApplication - [logStarted,61] - Started RuoYiApplication in 15.894 seconds (JVM running for 16.736)
 17:53:53.864 [Quartz Scheduler [RuoyiScheduler]] INFO  o.q.c.QuartzScheduler - [start,547] - Scheduler RuoyiScheduler_$_楼台1778406823775 started.
 17:53:55.318 [http-nio-8080-exec-2] INFO  o.a.c.c.C.[.[.[/] - [log,168] - Initializing Spring DispatcherServlet 'dispatcherServlet'
+18:09:58.817 [Thread-5] INFO  o.q.c.QuartzScheduler - [standby,585] - Scheduler RuoyiScheduler_$_楼台1778406823775 paused.
+18:09:58.857 [Thread-5] INFO  o.q.c.QuartzScheduler - [shutdown,666] - Scheduler RuoyiScheduler_$_楼台1778406823775 shutting down.
+18:09:58.857 [Thread-5] INFO  o.q.c.QuartzScheduler - [standby,585] - Scheduler RuoyiScheduler_$_楼台1778406823775 paused.
+18:09:58.858 [Thread-5] INFO  o.q.c.QuartzScheduler - [shutdown,740] - Scheduler RuoyiScheduler_$_楼台1778406823775 shutdown complete.
+18:09:58.858 [Thread-5] INFO  sys-user - [shutdownAsyncManager,31] - ====关闭后台任务任务线程池====
+18:09:58.862 [Thread-5] INFO  c.a.d.p.DruidDataSource - [close,2083] - {dataSource-1} closing ...
+18:09:58.866 [Thread-5] INFO  c.a.d.p.DruidDataSource - [close,2156] - {dataSource-1} closed
+18:09:59.176 [restartedMain] INFO  c.r.RuoYiApplication - [logStarting,55] - Starting RuoYiApplication using Java 21.0.2 on 楼台 with PID 37424 (D:\各种作业\ruo\RuoYi-Vue-v3.9.1\ruoyi-admin\target\classes started by 罗 in D:\各种作业\ruo)
+18:09:59.176 [restartedMain] INFO  c.r.RuoYiApplication - [logStartupProfileInfo,686] - The following 1 profile is active: "druid"
+18:10:00.343 [restartedMain] INFO  o.a.c.h.Http11NioProtocol - [log,168] - Initializing ProtocolHandler ["http-nio-8080"]
+18:10:00.344 [restartedMain] INFO  o.a.c.c.StandardService - [log,168] - Starting service [Tomcat]
+18:10:00.344 [restartedMain] INFO  o.a.c.c.StandardEngine - [log,168] - Starting Servlet engine: [Apache Tomcat/9.0.112]
+18:10:00.373 [restartedMain] INFO  o.a.c.c.C.[.[.[/] - [log,168] - Initializing Spring embedded WebApplicationContext
+18:10:00.620 [restartedMain] INFO  o.j.c.c.c.WebXmlConfigurationStrategyImpl - [get,43] - Property [serverName] loaded from FilterConfig.getInitParameter with value [http://localhost:8080]
+18:10:00.621 [restartedMain] INFO  o.j.c.c.c.WebXmlConfigurationStrategyImpl - [get,43] - Property [redirectAfterValidation] loaded from FilterConfig.getInitParameter with value [false]
+18:10:00.622 [restartedMain] INFO  o.j.c.c.c.WebXmlConfigurationStrategyImpl - [get,43] - Property [casServerUrlPrefix] loaded from FilterConfig.getInitParameter with value [https://csxrz.cqnu.edu.cn/cas]
+18:10:03.421 [restartedMain] INFO  c.a.d.p.DruidDataSource - [init,865] - {dataSource-2} inited
+18:10:05.071 [restartedMain] INFO  o.q.i.StdSchedulerFactory - [instantiate,1220] - Using default implementation for ThreadExecutor
+18:10:05.072 [restartedMain] INFO  o.q.c.SchedulerSignalerImpl - [<init>,61] - Initialized Scheduler Signaller of type: class org.quartz.core.SchedulerSignalerImpl
+18:10:05.073 [restartedMain] INFO  o.q.c.QuartzScheduler - [<init>,229] - Quartz Scheduler v.2.3.2 created.
+18:10:05.073 [restartedMain] INFO  o.q.c.QuartzScheduler - [initialize,294] - Scheduler meta-data: Quartz Scheduler (v2.3.2) 'RuoyiScheduler' with instanceId '楼台1778407805072'
+  Scheduler class: 'org.quartz.core.QuartzScheduler' - running locally.
+  NOT STARTED.
+  Currently in standby mode.
+  Number of jobs executed: 0
+  Using thread pool 'org.quartz.simpl.SimpleThreadPool' - with 20 threads.
+  Using job-store 'org.springframework.scheduling.quartz.LocalDataSourceJobStore' - which supports persistence. and is clustered.
+
+18:10:05.073 [restartedMain] INFO  o.q.i.StdSchedulerFactory - [instantiate,1374] - Quartz scheduler 'RuoyiScheduler' initialized from an externally provided properties instance.
+18:10:05.073 [restartedMain] INFO  o.q.i.StdSchedulerFactory - [instantiate,1378] - Quartz scheduler version: 2.3.2
+18:10:05.073 [restartedMain] INFO  o.q.c.QuartzScheduler - [setJobFactory,2293] - JobFactory set to: org.springframework.scheduling.quartz.AdaptableJobFactory@6995f60b
+18:10:18.582 [restartedMain] INFO  o.a.c.h.Http11NioProtocol - [log,168] - Starting ProtocolHandler ["http-nio-8080"]
+18:10:18.720 [restartedMain] INFO  c.r.RuoYiApplication - [logStarted,61] - Started RuoYiApplication in 19.616 seconds (JVM running for 1003.512)
+18:10:20.024 [Thread-11] INFO  o.q.c.QuartzScheduler - [shutdown,666] - Scheduler RuoyiScheduler_$_楼台1778407805072 shutting down.
+18:10:20.024 [Thread-11] INFO  o.q.c.QuartzScheduler - [standby,585] - Scheduler RuoyiScheduler_$_楼台1778407805072 paused.
+18:10:20.024 [Thread-11] INFO  o.q.c.QuartzScheduler - [shutdown,740] - Scheduler RuoyiScheduler_$_楼台1778407805072 shutdown complete.
+18:10:20.024 [Thread-11] INFO  sys-user - [shutdownAsyncManager,31] - ====关闭后台任务任务线程池====
+18:10:20.026 [Thread-11] INFO  c.a.d.p.DruidDataSource - [close,2083] - {dataSource-2} closing ...
+18:10:20.027 [Thread-11] INFO  c.a.d.p.DruidDataSource - [close,2156] - {dataSource-2} closed
+18:10:20.261 [restartedMain] INFO  c.r.RuoYiApplication - [logStarting,55] - Starting RuoYiApplication using Java 21.0.2 on 楼台 with PID 37424 (D:\各种作业\ruo\RuoYi-Vue-v3.9.1\ruoyi-admin\target\classes started by 罗 in D:\各种作业\ruo)
+18:10:20.262 [restartedMain] INFO  c.r.RuoYiApplication - [logStartupProfileInfo,686] - The following 1 profile is active: "druid"
+18:10:20.478 [Quartz Scheduler [RuoyiScheduler]] INFO  o.q.c.QuartzScheduler - [start,547] - Scheduler RuoyiScheduler_$_楼台1778407805072 started.
+18:10:20.961 [restartedMain] INFO  o.a.c.h.Http11NioProtocol - [log,168] - Initializing ProtocolHandler ["http-nio-8080"]
+18:10:20.961 [restartedMain] INFO  o.a.c.c.StandardService - [log,168] - Starting service [Tomcat]
+18:10:20.961 [restartedMain] INFO  o.a.c.c.StandardEngine - [log,168] - Starting Servlet engine: [Apache Tomcat/9.0.112]
+18:10:20.980 [restartedMain] INFO  o.a.c.c.C.[.[.[/] - [log,168] - Initializing Spring embedded WebApplicationContext
+18:10:21.162 [restartedMain] INFO  o.j.c.c.c.WebXmlConfigurationStrategyImpl - [get,43] - Property [serverName] loaded from FilterConfig.getInitParameter with value [http://localhost:8080]
+18:10:21.162 [restartedMain] INFO  o.j.c.c.c.WebXmlConfigurationStrategyImpl - [get,43] - Property [redirectAfterValidation] loaded from FilterConfig.getInitParameter with value [false]
+18:10:21.163 [restartedMain] INFO  o.j.c.c.c.WebXmlConfigurationStrategyImpl - [get,43] - Property [casServerUrlPrefix] loaded from FilterConfig.getInitParameter with value [https://csxrz.cqnu.edu.cn/cas]
+18:10:24.273 [restartedMain] INFO  c.a.d.p.DruidDataSource - [init,865] - {dataSource-3} inited
+18:10:25.462 [restartedMain] INFO  o.q.i.StdSchedulerFactory - [instantiate,1220] - Using default implementation for ThreadExecutor
+18:10:25.463 [restartedMain] INFO  o.q.c.SchedulerSignalerImpl - [<init>,61] - Initialized Scheduler Signaller of type: class org.quartz.core.SchedulerSignalerImpl
+18:10:25.463 [restartedMain] INFO  o.q.c.QuartzScheduler - [<init>,229] - Quartz Scheduler v.2.3.2 created.
+18:10:25.463 [restartedMain] INFO  o.q.c.QuartzScheduler - [initialize,294] - Scheduler meta-data: Quartz Scheduler (v2.3.2) 'RuoyiScheduler' with instanceId '楼台1778407825462'
+  Scheduler class: 'org.quartz.core.QuartzScheduler' - running locally.
+  NOT STARTED.
+  Currently in standby mode.
+  Number of jobs executed: 0
+  Using thread pool 'org.quartz.simpl.SimpleThreadPool' - with 20 threads.
+  Using job-store 'org.springframework.scheduling.quartz.LocalDataSourceJobStore' - which supports persistence. and is clustered.
+
+18:10:25.463 [restartedMain] INFO  o.q.i.StdSchedulerFactory - [instantiate,1374] - Quartz scheduler 'RuoyiScheduler' initialized from an externally provided properties instance.
+18:10:25.463 [restartedMain] INFO  o.q.i.StdSchedulerFactory - [instantiate,1378] - Quartz scheduler version: 2.3.2
+18:10:25.463 [restartedMain] INFO  o.q.c.QuartzScheduler - [setJobFactory,2293] - JobFactory set to: org.springframework.scheduling.quartz.AdaptableJobFactory@35d80121
+18:10:33.187 [restartedMain] INFO  o.a.c.h.Http11NioProtocol - [log,168] - Starting ProtocolHandler ["http-nio-8080"]
+18:10:33.249 [restartedMain] INFO  c.r.RuoYiApplication - [logStarted,61] - Started RuoYiApplication in 13.037 seconds (JVM running for 1018.041)
+18:10:34.747 [Quartz Scheduler [RuoyiScheduler]] INFO  o.q.c.QuartzScheduler - [start,547] - Scheduler RuoyiScheduler_$_楼台1778407825462 started.
+18:11:18.074 [Thread-18] INFO  o.q.c.QuartzScheduler - [standby,585] - Scheduler RuoyiScheduler_$_楼台1778407825462 paused.
+18:11:18.086 [Thread-18] INFO  o.q.c.QuartzScheduler - [shutdown,666] - Scheduler RuoyiScheduler_$_楼台1778407825462 shutting down.
+18:11:18.086 [Thread-18] INFO  o.q.c.QuartzScheduler - [standby,585] - Scheduler RuoyiScheduler_$_楼台1778407825462 paused.
+18:11:18.086 [Thread-18] INFO  o.q.c.QuartzScheduler - [shutdown,740] - Scheduler RuoyiScheduler_$_楼台1778407825462 shutdown complete.
+18:11:18.086 [Thread-18] INFO  sys-user - [shutdownAsyncManager,31] - ====关闭后台任务任务线程池====
+18:11:18.089 [Thread-18] INFO  c.a.d.p.DruidDataSource - [close,2083] - {dataSource-3} closing ...
+18:11:18.089 [Thread-18] INFO  c.a.d.p.DruidDataSource - [close,2156] - {dataSource-3} closed
+18:11:18.281 [restartedMain] INFO  c.r.RuoYiApplication - [logStarting,55] - Starting RuoYiApplication using Java 21.0.2 on 楼台 with PID 37424 (D:\各种作业\ruo\RuoYi-Vue-v3.9.1\ruoyi-admin\target\classes started by 罗 in D:\各种作业\ruo)
+18:11:18.283 [restartedMain] INFO  c.r.RuoYiApplication - [logStartupProfileInfo,686] - The following 1 profile is active: "druid"
+18:11:18.848 [restartedMain] INFO  o.a.c.h.Http11NioProtocol - [log,168] - Initializing ProtocolHandler ["http-nio-8080"]
+18:11:18.848 [restartedMain] INFO  o.a.c.c.StandardService - [log,168] - Starting service [Tomcat]
+18:11:18.848 [restartedMain] INFO  o.a.c.c.StandardEngine - [log,168] - Starting Servlet engine: [Apache Tomcat/9.0.112]
+18:11:18.863 [restartedMain] INFO  o.a.c.c.C.[.[.[/] - [log,168] - Initializing Spring embedded WebApplicationContext
+18:11:19.004 [restartedMain] INFO  o.j.c.c.c.WebXmlConfigurationStrategyImpl - [get,43] - Property [serverName] loaded from FilterConfig.getInitParameter with value [http://localhost:8080]
+18:11:19.004 [restartedMain] INFO  o.j.c.c.c.WebXmlConfigurationStrategyImpl - [get,43] - Property [redirectAfterValidation] loaded from FilterConfig.getInitParameter with value [false]
+18:11:19.004 [restartedMain] INFO  o.j.c.c.c.WebXmlConfigurationStrategyImpl - [get,43] - Property [casServerUrlPrefix] loaded from FilterConfig.getInitParameter with value [https://csxrz.cqnu.edu.cn/cas]
+18:11:21.717 [restartedMain] INFO  c.a.d.p.DruidDataSource - [init,865] - {dataSource-4} inited
+18:11:22.672 [restartedMain] INFO  c.a.d.p.DruidDataSource - [close,2083] - {dataSource-4} closing ...
+18:11:22.673 [restartedMain] INFO  c.a.d.p.DruidDataSource - [close,2156] - {dataSource-4} closed
+18:11:25.443 [background-preinit] INFO  o.h.v.i.util.Version - [<clinit>,21] - HV000001: Hibernate Validator 6.2.5.Final
+18:11:25.444 [restartedMain] INFO  c.r.RuoYiApplication - [logStarting,55] - Starting RuoYiApplication using Java 21.0.2 on 楼台 with PID 1936 (D:\各种作业\ruo\RuoYi-Vue-v3.9.1\ruoyi-admin\target\classes started by 罗 in D:\各种作业\ruo)
+18:11:25.445 [restartedMain] INFO  c.r.RuoYiApplication - [logStartupProfileInfo,686] - The following 1 profile is active: "druid"
+18:11:27.282 [restartedMain] INFO  o.a.c.h.Http11NioProtocol - [log,168] - Initializing ProtocolHandler ["http-nio-8080"]
+18:11:27.283 [restartedMain] INFO  o.a.c.c.StandardService - [log,168] - Starting service [Tomcat]
+18:11:27.283 [restartedMain] INFO  o.a.c.c.StandardEngine - [log,168] - Starting Servlet engine: [Apache Tomcat/9.0.112]
+18:11:27.363 [restartedMain] INFO  o.a.c.c.C.[.[.[/] - [log,168] - Initializing Spring embedded WebApplicationContext
+18:11:27.793 [restartedMain] INFO  o.j.c.c.c.WebXmlConfigurationStrategyImpl - [get,43] - Property [serverName] loaded from FilterConfig.getInitParameter with value [http://localhost:8080]
+18:11:27.796 [restartedMain] INFO  o.j.c.c.c.WebXmlConfigurationStrategyImpl - [get,43] - Property [redirectAfterValidation] loaded from FilterConfig.getInitParameter with value [false]
+18:11:27.797 [restartedMain] INFO  o.j.c.c.c.WebXmlConfigurationStrategyImpl - [get,43] - Property [casServerUrlPrefix] loaded from FilterConfig.getInitParameter with value [https://csxrz.cqnu.edu.cn/cas]
+18:11:30.753 [restartedMain] INFO  c.a.d.p.DruidDataSource - [init,865] - {dataSource-1} inited
+18:11:32.609 [restartedMain] INFO  o.q.i.StdSchedulerFactory - [instantiate,1220] - Using default implementation for ThreadExecutor
+18:11:32.619 [restartedMain] INFO  o.q.c.SchedulerSignalerImpl - [<init>,61] - Initialized Scheduler Signaller of type: class org.quartz.core.SchedulerSignalerImpl
+18:11:32.619 [restartedMain] INFO  o.q.c.QuartzScheduler - [<init>,229] - Quartz Scheduler v.2.3.2 created.
+18:11:32.622 [restartedMain] INFO  o.q.c.QuartzScheduler - [initialize,294] - Scheduler meta-data: Quartz Scheduler (v2.3.2) 'RuoyiScheduler' with instanceId '楼台1778407892611'
+  Scheduler class: 'org.quartz.core.QuartzScheduler' - running locally.
+  NOT STARTED.
+  Currently in standby mode.
+  Number of jobs executed: 0
+  Using thread pool 'org.quartz.simpl.SimpleThreadPool' - with 20 threads.
+  Using job-store 'org.springframework.scheduling.quartz.LocalDataSourceJobStore' - which supports persistence. and is clustered.
+
+18:11:32.623 [restartedMain] INFO  o.q.i.StdSchedulerFactory - [instantiate,1374] - Quartz scheduler 'RuoyiScheduler' initialized from an externally provided properties instance.
+18:11:32.623 [restartedMain] INFO  o.q.i.StdSchedulerFactory - [instantiate,1378] - Quartz scheduler version: 2.3.2
+18:11:32.624 [restartedMain] INFO  o.q.c.QuartzScheduler - [setJobFactory,2293] - JobFactory set to: org.springframework.scheduling.quartz.AdaptableJobFactory@be03c8a
+18:11:40.248 [restartedMain] INFO  o.a.c.h.Http11NioProtocol - [log,168] - Starting ProtocolHandler ["http-nio-8080"]
+18:11:40.435 [restartedMain] INFO  c.r.RuoYiApplication - [logStarted,61] - Started RuoYiApplication in 15.303 seconds (JVM running for 16.748)
+18:11:42.145 [Quartz Scheduler [RuoyiScheduler]] INFO  o.q.c.QuartzScheduler - [start,547] - Scheduler RuoyiScheduler_$_楼台1778407892611 started.
+18:11:54.401 [http-nio-8080-exec-1] INFO  o.a.c.c.C.[.[.[/] - [log,168] - Initializing Spring DispatcherServlet 'dispatcherServlet'
+18:13:30.788 [Thread-5] INFO  o.q.c.QuartzScheduler - [standby,585] - Scheduler RuoyiScheduler_$_楼台1778407892611 paused.
+18:13:30.809 [Thread-5] INFO  o.q.c.QuartzScheduler - [shutdown,666] - Scheduler RuoyiScheduler_$_楼台1778407892611 shutting down.
+18:13:30.810 [Thread-5] INFO  o.q.c.QuartzScheduler - [standby,585] - Scheduler RuoyiScheduler_$_楼台1778407892611 paused.
+18:13:30.810 [Thread-5] INFO  o.q.c.QuartzScheduler - [shutdown,740] - Scheduler RuoyiScheduler_$_楼台1778407892611 shutdown complete.
+18:13:30.810 [Thread-5] INFO  sys-user - [shutdownAsyncManager,31] - ====关闭后台任务任务线程池====
+18:13:30.812 [Thread-5] INFO  c.a.d.p.DruidDataSource - [close,2083] - {dataSource-1} closing ...
+18:13:30.818 [Thread-5] INFO  c.a.d.p.DruidDataSource - [close,2156] - {dataSource-1} closed
+18:13:31.089 [restartedMain] INFO  c.r.RuoYiApplication - [logStarting,55] - Starting RuoYiApplication using Java 21.0.2 on 楼台 with PID 1936 (D:\各种作业\ruo\RuoYi-Vue-v3.9.1\ruoyi-admin\target\classes started by 罗 in D:\各种作业\ruo)
+18:13:31.090 [restartedMain] INFO  c.r.RuoYiApplication - [logStartupProfileInfo,686] - The following 1 profile is active: "druid"
+18:13:31.984 [restartedMain] INFO  o.a.c.h.Http11NioProtocol - [log,168] - Initializing ProtocolHandler ["http-nio-8080"]
+18:13:31.985 [restartedMain] INFO  o.a.c.c.StandardService - [log,168] - Starting service [Tomcat]
+18:13:31.985 [restartedMain] INFO  o.a.c.c.StandardEngine - [log,168] - Starting Servlet engine: [Apache Tomcat/9.0.112]
+18:13:32.012 [restartedMain] INFO  o.a.c.c.C.[.[.[/] - [log,168] - Initializing Spring embedded WebApplicationContext
+18:13:32.218 [restartedMain] INFO  o.j.c.c.c.WebXmlConfigurationStrategyImpl - [get,43] - Property [serverName] loaded from FilterConfig.getInitParameter with value [http://localhost:8080]
+18:13:32.219 [restartedMain] INFO  o.j.c.c.c.WebXmlConfigurationStrategyImpl - [get,43] - Property [redirectAfterValidation] loaded from FilterConfig.getInitParameter with value [false]
+18:13:32.219 [restartedMain] INFO  o.j.c.c.c.WebXmlConfigurationStrategyImpl - [get,43] - Property [casServerUrlPrefix] loaded from FilterConfig.getInitParameter with value [https://csxrz.cqnu.edu.cn/cas]
+18:13:34.908 [restartedMain] INFO  c.a.d.p.DruidDataSource - [init,865] - {dataSource-2} inited
+18:13:36.293 [restartedMain] INFO  o.q.i.StdSchedulerFactory - [instantiate,1220] - Using default implementation for ThreadExecutor
+18:13:36.296 [restartedMain] INFO  o.q.c.SchedulerSignalerImpl - [<init>,61] - Initialized Scheduler Signaller of type: class org.quartz.core.SchedulerSignalerImpl
+18:13:36.296 [restartedMain] INFO  o.q.c.QuartzScheduler - [<init>,229] - Quartz Scheduler v.2.3.2 created.
+18:13:36.296 [restartedMain] INFO  o.q.c.QuartzScheduler - [initialize,294] - Scheduler meta-data: Quartz Scheduler (v2.3.2) 'RuoyiScheduler' with instanceId '楼台1778408016295'
+  Scheduler class: 'org.quartz.core.QuartzScheduler' - running locally.
+  NOT STARTED.
+  Currently in standby mode.
+  Number of jobs executed: 0
+  Using thread pool 'org.quartz.simpl.SimpleThreadPool' - with 20 threads.
+  Using job-store 'org.springframework.scheduling.quartz.LocalDataSourceJobStore' - which supports persistence. and is clustered.
+
+18:13:36.296 [restartedMain] INFO  o.q.i.StdSchedulerFactory - [instantiate,1374] - Quartz scheduler 'RuoyiScheduler' initialized from an externally provided properties instance.
+18:13:36.296 [restartedMain] INFO  o.q.i.StdSchedulerFactory - [instantiate,1378] - Quartz scheduler version: 2.3.2
+18:13:36.296 [restartedMain] INFO  o.q.c.QuartzScheduler - [setJobFactory,2293] - JobFactory set to: org.springframework.scheduling.quartz.AdaptableJobFactory@6cd668a8
+18:13:43.793 [restartedMain] INFO  o.a.c.h.Http11NioProtocol - [log,168] - Starting ProtocolHandler ["http-nio-8080"]
+18:13:43.882 [restartedMain] INFO  c.r.RuoYiApplication - [logStarted,61] - Started RuoYiApplication in 12.854 seconds (JVM running for 140.194)
+18:13:45.354 [Quartz Scheduler [RuoyiScheduler]] INFO  o.q.c.QuartzScheduler - [start,547] - Scheduler RuoyiScheduler_$_楼台1778408016295 started.
+18:13:46.325 [Thread-11] INFO  o.q.c.QuartzScheduler - [standby,585] - Scheduler RuoyiScheduler_$_楼台1778408016295 paused.
+18:13:46.340 [Thread-11] INFO  o.q.c.QuartzScheduler - [shutdown,666] - Scheduler RuoyiScheduler_$_楼台1778408016295 shutting down.
+18:13:46.341 [Thread-11] INFO  o.q.c.QuartzScheduler - [standby,585] - Scheduler RuoyiScheduler_$_楼台1778408016295 paused.
+18:13:46.341 [Thread-11] INFO  o.q.c.QuartzScheduler - [shutdown,740] - Scheduler RuoyiScheduler_$_楼台1778408016295 shutdown complete.
+18:13:46.341 [Thread-11] INFO  sys-user - [shutdownAsyncManager,31] - ====关闭后台任务任务线程池====
+18:13:46.344 [Thread-11] INFO  c.a.d.p.DruidDataSource - [close,2083] - {dataSource-2} closing ...
+18:13:46.346 [Thread-11] INFO  c.a.d.p.DruidDataSource - [close,2156] - {dataSource-2} closed
+18:13:46.578 [restartedMain] INFO  c.r.RuoYiApplication - [logStarting,55] - Starting RuoYiApplication using Java 21.0.2 on 楼台 with PID 1936 (D:\各种作业\ruo\RuoYi-Vue-v3.9.1\ruoyi-admin\target\classes started by 罗 in D:\各种作业\ruo)
+18:13:46.578 [restartedMain] INFO  c.r.RuoYiApplication - [logStartupProfileInfo,686] - The following 1 profile is active: "druid"
+18:13:47.313 [restartedMain] INFO  o.a.c.h.Http11NioProtocol - [log,168] - Initializing ProtocolHandler ["http-nio-8080"]
+18:13:47.314 [restartedMain] INFO  o.a.c.c.StandardService - [log,168] - Starting service [Tomcat]
+18:13:47.314 [restartedMain] INFO  o.a.c.c.StandardEngine - [log,168] - Starting Servlet engine: [Apache Tomcat/9.0.112]
+18:13:47.328 [restartedMain] INFO  o.a.c.c.C.[.[.[/] - [log,168] - Initializing Spring embedded WebApplicationContext
+18:13:47.493 [restartedMain] INFO  o.j.c.c.c.WebXmlConfigurationStrategyImpl - [get,43] - Property [serverName] loaded from FilterConfig.getInitParameter with value [http://localhost:8080]
+18:13:47.493 [restartedMain] INFO  o.j.c.c.c.WebXmlConfigurationStrategyImpl - [get,43] - Property [redirectAfterValidation] loaded from FilterConfig.getInitParameter with value [false]
+18:13:47.493 [restartedMain] INFO  o.j.c.c.c.WebXmlConfigurationStrategyImpl - [get,43] - Property [casServerUrlPrefix] loaded from FilterConfig.getInitParameter with value [https://csxrz.cqnu.edu.cn/cas]
+18:13:50.999 [restartedMain] INFO  c.a.d.p.DruidDataSource - [init,865] - {dataSource-3} inited
+18:13:52.314 [restartedMain] INFO  o.q.i.StdSchedulerFactory - [instantiate,1220] - Using default implementation for ThreadExecutor
+18:13:52.315 [restartedMain] INFO  o.q.c.SchedulerSignalerImpl - [<init>,61] - Initialized Scheduler Signaller of type: class org.quartz.core.SchedulerSignalerImpl
+18:13:52.315 [restartedMain] INFO  o.q.c.QuartzScheduler - [<init>,229] - Quartz Scheduler v.2.3.2 created.
+18:13:52.315 [restartedMain] INFO  o.q.c.QuartzScheduler - [initialize,294] - Scheduler meta-data: Quartz Scheduler (v2.3.2) 'RuoyiScheduler' with instanceId '楼台1778408032314'
+  Scheduler class: 'org.quartz.core.QuartzScheduler' - running locally.
+  NOT STARTED.
+  Currently in standby mode.
+  Number of jobs executed: 0
+  Using thread pool 'org.quartz.simpl.SimpleThreadPool' - with 20 threads.
+  Using job-store 'org.springframework.scheduling.quartz.LocalDataSourceJobStore' - which supports persistence. and is clustered.
+
+18:13:52.316 [restartedMain] INFO  o.q.i.StdSchedulerFactory - [instantiate,1374] - Quartz scheduler 'RuoyiScheduler' initialized from an externally provided properties instance.
+18:13:52.316 [restartedMain] INFO  o.q.i.StdSchedulerFactory - [instantiate,1378] - Quartz scheduler version: 2.3.2
+18:13:52.316 [restartedMain] INFO  o.q.c.QuartzScheduler - [setJobFactory,2293] - JobFactory set to: org.springframework.scheduling.quartz.AdaptableJobFactory@6d6beaf7
+18:14:00.884 [restartedMain] INFO  o.a.c.h.Http11NioProtocol - [log,168] - Starting ProtocolHandler ["http-nio-8080"]
+18:14:00.998 [restartedMain] INFO  c.r.RuoYiApplication - [logStarted,61] - Started RuoYiApplication in 14.457 seconds (JVM running for 157.31)
+18:14:02.778 [Quartz Scheduler [RuoyiScheduler]] INFO  o.q.c.QuartzScheduler - [start,547] - Scheduler RuoyiScheduler_$_楼台1778408032314 started.
+18:17:32.286 [SpringApplicationShutdownHook] INFO  o.q.c.QuartzScheduler - [standby,585] - Scheduler RuoyiScheduler_$_楼台1778408032314 paused.
+18:17:32.299 [SpringApplicationShutdownHook] INFO  o.q.c.QuartzScheduler - [shutdown,666] - Scheduler RuoyiScheduler_$_楼台1778408032314 shutting down.
+18:17:32.299 [SpringApplicationShutdownHook] INFO  o.q.c.QuartzScheduler - [standby,585] - Scheduler RuoyiScheduler_$_楼台1778408032314 paused.
+18:17:32.299 [SpringApplicationShutdownHook] INFO  o.q.c.QuartzScheduler - [shutdown,740] - Scheduler RuoyiScheduler_$_楼台1778408032314 shutdown complete.
+18:17:32.299 [SpringApplicationShutdownHook] INFO  sys-user - [shutdownAsyncManager,31] - ====关闭后台任务任务线程池====
+18:17:32.302 [SpringApplicationShutdownHook] INFO  c.a.d.p.DruidDataSource - [close,2083] - {dataSource-3} closing ...
+18:17:32.303 [SpringApplicationShutdownHook] INFO  c.a.d.p.DruidDataSource - [close,2156] - {dataSource-3} closed
+18:17:37.618 [background-preinit] INFO  o.h.v.i.util.Version - [<clinit>,21] - HV000001: Hibernate Validator 6.2.5.Final
+18:17:37.618 [restartedMain] INFO  c.r.RuoYiApplication - [logStarting,55] - Starting RuoYiApplication using Java 21.0.2 on 楼台 with PID 6696 (D:\各种作业\ruo\RuoYi-Vue-v3.9.1\ruoyi-admin\target\classes started by 罗 in D:\各种作业\ruo)
+18:17:37.620 [restartedMain] INFO  c.r.RuoYiApplication - [logStartupProfileInfo,686] - The following 1 profile is active: "druid"
+18:17:39.524 [restartedMain] INFO  o.a.c.h.Http11NioProtocol - [log,168] - Initializing ProtocolHandler ["http-nio-8080"]
+18:17:39.526 [restartedMain] INFO  o.a.c.c.StandardService - [log,168] - Starting service [Tomcat]
+18:17:39.526 [restartedMain] INFO  o.a.c.c.StandardEngine - [log,168] - Starting Servlet engine: [Apache Tomcat/9.0.112]
+18:17:39.605 [restartedMain] INFO  o.a.c.c.C.[.[.[/] - [log,168] - Initializing Spring embedded WebApplicationContext
+18:17:40.018 [restartedMain] INFO  o.j.c.c.c.WebXmlConfigurationStrategyImpl - [get,43] - Property [serverName] loaded from FilterConfig.getInitParameter with value [http://localhost:8080]
+18:17:40.019 [restartedMain] INFO  o.j.c.c.c.WebXmlConfigurationStrategyImpl - [get,43] - Property [redirectAfterValidation] loaded from FilterConfig.getInitParameter with value [false]
+18:17:40.020 [restartedMain] INFO  o.j.c.c.c.WebXmlConfigurationStrategyImpl - [get,43] - Property [casServerUrlPrefix] loaded from FilterConfig.getInitParameter with value [https://csxrz.cqnu.edu.cn/cas]
+18:17:43.301 [restartedMain] INFO  c.a.d.p.DruidDataSource - [init,865] - {dataSource-1} inited
+18:17:45.238 [restartedMain] INFO  o.q.i.StdSchedulerFactory - [instantiate,1220] - Using default implementation for ThreadExecutor
+18:17:45.247 [restartedMain] INFO  o.q.c.SchedulerSignalerImpl - [<init>,61] - Initialized Scheduler Signaller of type: class org.quartz.core.SchedulerSignalerImpl
+18:17:45.248 [restartedMain] INFO  o.q.c.QuartzScheduler - [<init>,229] - Quartz Scheduler v.2.3.2 created.
+18:17:45.251 [restartedMain] INFO  o.q.c.QuartzScheduler - [initialize,294] - Scheduler meta-data: Quartz Scheduler (v2.3.2) 'RuoyiScheduler' with instanceId '楼台1778408265240'
+  Scheduler class: 'org.quartz.core.QuartzScheduler' - running locally.
+  NOT STARTED.
+  Currently in standby mode.
+  Number of jobs executed: 0
+  Using thread pool 'org.quartz.simpl.SimpleThreadPool' - with 20 threads.
+  Using job-store 'org.springframework.scheduling.quartz.LocalDataSourceJobStore' - which supports persistence. and is clustered.
+
+18:17:45.252 [restartedMain] INFO  o.q.i.StdSchedulerFactory - [instantiate,1374] - Quartz scheduler 'RuoyiScheduler' initialized from an externally provided properties instance.
+18:17:45.252 [restartedMain] INFO  o.q.i.StdSchedulerFactory - [instantiate,1378] - Quartz scheduler version: 2.3.2
+18:17:45.253 [restartedMain] INFO  o.q.c.QuartzScheduler - [setJobFactory,2293] - JobFactory set to: org.springframework.scheduling.quartz.AdaptableJobFactory@a7de636
+18:17:53.024 [restartedMain] INFO  o.a.c.h.Http11NioProtocol - [log,168] - Starting ProtocolHandler ["http-nio-8080"]
+18:17:53.212 [restartedMain] INFO  c.r.RuoYiApplication - [logStarted,61] - Started RuoYiApplication in 15.905 seconds (JVM running for 16.706)
+18:17:54.942 [Quartz Scheduler [RuoyiScheduler]] INFO  o.q.c.QuartzScheduler - [start,547] - Scheduler RuoyiScheduler_$_楼台1778408265240 started.
+18:18:00.640 [http-nio-8080-exec-1] INFO  o.a.c.c.C.[.[.[/] - [log,168] - Initializing Spring DispatcherServlet 'dispatcherServlet'
+18:19:58.369 [Thread-5] INFO  o.q.c.QuartzScheduler - [standby,585] - Scheduler RuoyiScheduler_$_楼台1778408265240 paused.
+18:19:58.393 [Thread-5] INFO  o.q.c.QuartzScheduler - [shutdown,666] - Scheduler RuoyiScheduler_$_楼台1778408265240 shutting down.
+18:19:58.393 [Thread-5] INFO  o.q.c.QuartzScheduler - [standby,585] - Scheduler RuoyiScheduler_$_楼台1778408265240 paused.
+18:19:58.395 [Thread-5] INFO  o.q.c.QuartzScheduler - [shutdown,740] - Scheduler RuoyiScheduler_$_楼台1778408265240 shutdown complete.
+18:19:58.396 [Thread-5] INFO  sys-user - [shutdownAsyncManager,31] - ====关闭后台任务任务线程池====
+18:19:58.400 [Thread-5] INFO  c.a.d.p.DruidDataSource - [close,2083] - {dataSource-1} closing ...
+18:19:58.410 [Thread-5] INFO  c.a.d.p.DruidDataSource - [close,2156] - {dataSource-1} closed
+18:19:58.715 [restartedMain] INFO  c.r.RuoYiApplication - [logStarting,55] - Starting RuoYiApplication using Java 21.0.2 on 楼台 with PID 6696 (D:\各种作业\ruo\RuoYi-Vue-v3.9.1\ruoyi-admin\target\classes started by 罗 in D:\各种作业\ruo)
+18:19:58.715 [restartedMain] INFO  c.r.RuoYiApplication - [logStartupProfileInfo,686] - The following 1 profile is active: "druid"
+18:19:59.623 [restartedMain] INFO  o.a.c.h.Http11NioProtocol - [log,168] - Initializing ProtocolHandler ["http-nio-8080"]
+18:19:59.623 [restartedMain] INFO  o.a.c.c.StandardService - [log,168] - Starting service [Tomcat]
+18:19:59.623 [restartedMain] INFO  o.a.c.c.StandardEngine - [log,168] - Starting Servlet engine: [Apache Tomcat/9.0.112]
+18:19:59.650 [restartedMain] INFO  o.a.c.c.C.[.[.[/] - [log,168] - Initializing Spring embedded WebApplicationContext
+18:19:59.825 [restartedMain] INFO  o.j.c.c.c.WebXmlConfigurationStrategyImpl - [get,43] - Property [serverName] loaded from FilterConfig.getInitParameter with value [http://localhost:8080]
+18:19:59.826 [restartedMain] INFO  o.j.c.c.c.WebXmlConfigurationStrategyImpl - [get,43] - Property [redirectAfterValidation] loaded from FilterConfig.getInitParameter with value [false]
+18:19:59.827 [restartedMain] INFO  o.j.c.c.c.WebXmlConfigurationStrategyImpl - [get,43] - Property [casServerUrlPrefix] loaded from FilterConfig.getInitParameter with value [https://csxrz.cqnu.edu.cn/cas]
+18:20:03.036 [restartedMain] INFO  c.a.d.p.DruidDataSource - [init,865] - {dataSource-2} inited
+18:20:04.442 [restartedMain] INFO  o.q.i.StdSchedulerFactory - [instantiate,1220] - Using default implementation for ThreadExecutor
+18:20:04.445 [restartedMain] INFO  o.q.c.SchedulerSignalerImpl - [<init>,61] - Initialized Scheduler Signaller of type: class org.quartz.core.SchedulerSignalerImpl
+18:20:04.445 [restartedMain] INFO  o.q.c.QuartzScheduler - [<init>,229] - Quartz Scheduler v.2.3.2 created.
+18:20:04.445 [restartedMain] INFO  o.q.c.QuartzScheduler - [initialize,294] - Scheduler meta-data: Quartz Scheduler (v2.3.2) 'RuoyiScheduler' with instanceId '楼台1778408404443'
+  Scheduler class: 'org.quartz.core.QuartzScheduler' - running locally.
+  NOT STARTED.
+  Currently in standby mode.
+  Number of jobs executed: 0
+  Using thread pool 'org.quartz.simpl.SimpleThreadPool' - with 20 threads.
+  Using job-store 'org.springframework.scheduling.quartz.LocalDataSourceJobStore' - which supports persistence. and is clustered.
+
+18:20:04.445 [restartedMain] INFO  o.q.i.StdSchedulerFactory - [instantiate,1374] - Quartz scheduler 'RuoyiScheduler' initialized from an externally provided properties instance.
+18:20:04.445 [restartedMain] INFO  o.q.i.StdSchedulerFactory - [instantiate,1378] - Quartz scheduler version: 2.3.2
+18:20:04.446 [restartedMain] INFO  o.q.c.QuartzScheduler - [setJobFactory,2293] - JobFactory set to: org.springframework.scheduling.quartz.AdaptableJobFactory@346f91f1
+18:20:11.663 [restartedMain] INFO  o.a.c.h.Http11NioProtocol - [log,168] - Starting ProtocolHandler ["http-nio-8080"]
+18:20:11.801 [restartedMain] INFO  c.r.RuoYiApplication - [logStarted,61] - Started RuoYiApplication in 13.172 seconds (JVM running for 155.295)
+18:20:13.246 [Quartz Scheduler [RuoyiScheduler]] INFO  o.q.c.QuartzScheduler - [start,547] - Scheduler RuoyiScheduler_$_楼台1778408404443 started.
+18:20:14.194 [Thread-11] INFO  o.q.c.QuartzScheduler - [standby,585] - Scheduler RuoyiScheduler_$_楼台1778408404443 paused.
+18:20:14.211 [Thread-11] INFO  o.q.c.QuartzScheduler - [shutdown,666] - Scheduler RuoyiScheduler_$_楼台1778408404443 shutting down.
+18:20:14.211 [Thread-11] INFO  o.q.c.QuartzScheduler - [standby,585] - Scheduler RuoyiScheduler_$_楼台1778408404443 paused.
+18:20:14.211 [Thread-11] INFO  o.q.c.QuartzScheduler - [shutdown,740] - Scheduler RuoyiScheduler_$_楼台1778408404443 shutdown complete.
+18:20:14.211 [Thread-11] INFO  sys-user - [shutdownAsyncManager,31] - ====关闭后台任务任务线程池====
+18:20:14.214 [Thread-11] INFO  c.a.d.p.DruidDataSource - [close,2083] - {dataSource-2} closing ...
+18:20:14.216 [Thread-11] INFO  c.a.d.p.DruidDataSource - [close,2156] - {dataSource-2} closed
+18:20:14.463 [restartedMain] INFO  c.r.RuoYiApplication - [logStarting,55] - Starting RuoYiApplication using Java 21.0.2 on 楼台 with PID 6696 (D:\各种作业\ruo\RuoYi-Vue-v3.9.1\ruoyi-admin\target\classes started by 罗 in D:\各种作业\ruo)
+18:20:14.464 [restartedMain] INFO  c.r.RuoYiApplication - [logStartupProfileInfo,686] - The following 1 profile is active: "druid"
+18:20:15.188 [restartedMain] INFO  o.a.c.h.Http11NioProtocol - [log,168] - Initializing ProtocolHandler ["http-nio-8080"]
+18:20:15.188 [restartedMain] INFO  o.a.c.c.StandardService - [log,168] - Starting service [Tomcat]
+18:20:15.188 [restartedMain] INFO  o.a.c.c.StandardEngine - [log,168] - Starting Servlet engine: [Apache Tomcat/9.0.112]
+18:20:15.209 [restartedMain] INFO  o.a.c.c.C.[.[.[/] - [log,168] - Initializing Spring embedded WebApplicationContext
+18:20:15.393 [restartedMain] INFO  o.j.c.c.c.WebXmlConfigurationStrategyImpl - [get,43] - Property [serverName] loaded from FilterConfig.getInitParameter with value [http://localhost:8080]
+18:20:15.393 [restartedMain] INFO  o.j.c.c.c.WebXmlConfigurationStrategyImpl - [get,43] - Property [redirectAfterValidation] loaded from FilterConfig.getInitParameter with value [false]
+18:20:15.394 [restartedMain] INFO  o.j.c.c.c.WebXmlConfigurationStrategyImpl - [get,43] - Property [casServerUrlPrefix] loaded from FilterConfig.getInitParameter with value [https://csxrz.cqnu.edu.cn/cas]
+18:20:18.323 [restartedMain] INFO  c.a.d.p.DruidDataSource - [init,865] - {dataSource-3} inited
+18:20:24.377 [restartedMain] INFO  o.q.i.StdSchedulerFactory - [instantiate,1220] - Using default implementation for ThreadExecutor
+18:20:24.378 [restartedMain] INFO  o.q.c.SchedulerSignalerImpl - [<init>,61] - Initialized Scheduler Signaller of type: class org.quartz.core.SchedulerSignalerImpl
+18:20:24.379 [restartedMain] INFO  o.q.c.QuartzScheduler - [<init>,229] - Quartz Scheduler v.2.3.2 created.
+18:20:24.379 [restartedMain] INFO  o.q.c.QuartzScheduler - [initialize,294] - Scheduler meta-data: Quartz Scheduler (v2.3.2) 'RuoyiScheduler' with instanceId '楼台1778408424378'
+  Scheduler class: 'org.quartz.core.QuartzScheduler' - running locally.
+  NOT STARTED.
+  Currently in standby mode.
+  Number of jobs executed: 0
+  Using thread pool 'org.quartz.simpl.SimpleThreadPool' - with 20 threads.
+  Using job-store 'org.springframework.scheduling.quartz.LocalDataSourceJobStore' - which supports persistence. and is clustered.
+
+18:20:24.379 [restartedMain] INFO  o.q.i.StdSchedulerFactory - [instantiate,1374] - Quartz scheduler 'RuoyiScheduler' initialized from an externally provided properties instance.
+18:20:24.379 [restartedMain] INFO  o.q.i.StdSchedulerFactory - [instantiate,1378] - Quartz scheduler version: 2.3.2
+18:20:24.379 [restartedMain] INFO  o.q.c.QuartzScheduler - [setJobFactory,2293] - JobFactory set to: org.springframework.scheduling.quartz.AdaptableJobFactory@612e2fcd
+18:20:32.844 [restartedMain] INFO  o.a.c.h.Http11NioProtocol - [log,168] - Starting ProtocolHandler ["http-nio-8080"]
+18:20:32.967 [restartedMain] INFO  c.r.RuoYiApplication - [logStarted,61] - Started RuoYiApplication in 18.542 seconds (JVM running for 176.461)
+18:20:34.630 [Quartz Scheduler [RuoyiScheduler]] INFO  o.q.c.QuartzScheduler - [start,547] - Scheduler RuoyiScheduler_$_楼台1778408424378 started.
+18:20:53.984 [http-nio-8080-exec-1] INFO  o.a.c.c.C.[.[.[/] - [log,168] - Initializing Spring DispatcherServlet 'dispatcherServlet'
+18:21:53.053 [Thread-19] INFO  o.q.c.QuartzScheduler - [standby,585] - Scheduler RuoyiScheduler_$_楼台1778408424378 paused.
+18:21:53.066 [Thread-19] INFO  o.q.c.QuartzScheduler - [shutdown,666] - Scheduler RuoyiScheduler_$_楼台1778408424378 shutting down.
+18:21:53.066 [Thread-19] INFO  o.q.c.QuartzScheduler - [standby,585] - Scheduler RuoyiScheduler_$_楼台1778408424378 paused.
+18:21:53.068 [Thread-19] INFO  o.q.c.QuartzScheduler - [shutdown,740] - Scheduler RuoyiScheduler_$_楼台1778408424378 shutdown complete.
+18:21:53.068 [Thread-19] INFO  sys-user - [shutdownAsyncManager,31] - ====关闭后台任务任务线程池====
+18:21:53.069 [Thread-19] INFO  c.a.d.p.DruidDataSource - [close,2083] - {dataSource-3} closing ...
+18:21:53.070 [Thread-19] INFO  c.a.d.p.DruidDataSource - [close,2156] - {dataSource-3} closed
+18:21:53.308 [restartedMain] INFO  c.r.RuoYiApplication - [logStarting,55] - Starting RuoYiApplication using Java 21.0.2 on 楼台 with PID 6696 (D:\各种作业\ruo\RuoYi-Vue-v3.9.1\ruoyi-admin\target\classes started by 罗 in D:\各种作业\ruo)
+18:21:53.308 [restartedMain] INFO  c.r.RuoYiApplication - [logStartupProfileInfo,686] - The following 1 profile is active: "druid"
+18:21:54.004 [restartedMain] INFO  o.a.c.h.Http11NioProtocol - [log,168] - Initializing ProtocolHandler ["http-nio-8080"]
+18:21:54.004 [restartedMain] INFO  o.a.c.c.StandardService - [log,168] - Starting service [Tomcat]
+18:21:54.005 [restartedMain] INFO  o.a.c.c.StandardEngine - [log,168] - Starting Servlet engine: [Apache Tomcat/9.0.112]
+18:21:54.021 [restartedMain] INFO  o.a.c.c.C.[.[.[/] - [log,168] - Initializing Spring embedded WebApplicationContext
+18:21:54.151 [restartedMain] INFO  o.j.c.c.c.WebXmlConfigurationStrategyImpl - [get,43] - Property [serverName] loaded from FilterConfig.getInitParameter with value [http://localhost:8080]
+18:21:54.152 [restartedMain] INFO  o.j.c.c.c.WebXmlConfigurationStrategyImpl - [get,43] - Property [redirectAfterValidation] loaded from FilterConfig.getInitParameter with value [false]
+18:21:54.152 [restartedMain] INFO  o.j.c.c.c.WebXmlConfigurationStrategyImpl - [get,43] - Property [casServerUrlPrefix] loaded from FilterConfig.getInitParameter with value [https://csxrz.cqnu.edu.cn/cas]
+18:21:56.933 [restartedMain] INFO  c.a.d.p.DruidDataSource - [init,865] - {dataSource-4} inited
+18:21:58.281 [restartedMain] INFO  o.q.i.StdSchedulerFactory - [instantiate,1220] - Using default implementation for ThreadExecutor
+18:21:58.282 [restartedMain] INFO  o.q.c.SchedulerSignalerImpl - [<init>,61] - Initialized Scheduler Signaller of type: class org.quartz.core.SchedulerSignalerImpl
+18:21:58.282 [restartedMain] INFO  o.q.c.QuartzScheduler - [<init>,229] - Quartz Scheduler v.2.3.2 created.
+18:21:58.283 [restartedMain] INFO  o.q.c.QuartzScheduler - [initialize,294] - Scheduler meta-data: Quartz Scheduler (v2.3.2) 'RuoyiScheduler' with instanceId '楼台1778408518281'
+  Scheduler class: 'org.quartz.core.QuartzScheduler' - running locally.
+  NOT STARTED.
+  Currently in standby mode.
+  Number of jobs executed: 0
+  Using thread pool 'org.quartz.simpl.SimpleThreadPool' - with 20 threads.
+  Using job-store 'org.springframework.scheduling.quartz.LocalDataSourceJobStore' - which supports persistence. and is clustered.
+
+18:21:58.283 [restartedMain] INFO  o.q.i.StdSchedulerFactory - [instantiate,1374] - Quartz scheduler 'RuoyiScheduler' initialized from an externally provided properties instance.
+18:21:58.283 [restartedMain] INFO  o.q.i.StdSchedulerFactory - [instantiate,1378] - Quartz scheduler version: 2.3.2
+18:21:58.283 [restartedMain] INFO  o.q.c.QuartzScheduler - [setJobFactory,2293] - JobFactory set to: org.springframework.scheduling.quartz.AdaptableJobFactory@54af888
+18:22:05.735 [restartedMain] INFO  o.a.c.h.Http11NioProtocol - [log,168] - Starting ProtocolHandler ["http-nio-8080"]
+18:22:05.838 [restartedMain] INFO  c.r.RuoYiApplication - [logStarted,61] - Started RuoYiApplication in 12.566 seconds (JVM running for 269.332)
+18:22:07.349 [Quartz Scheduler [RuoyiScheduler]] INFO  o.q.c.QuartzScheduler - [start,547] - Scheduler RuoyiScheduler_$_楼台1778408518281 started.
+18:22:23.668 [http-nio-8080-exec-1] INFO  o.a.c.c.C.[.[.[/] - [log,168] - Initializing Spring DispatcherServlet 'dispatcherServlet'
+18:22:56.893 [Thread-27] INFO  o.q.c.QuartzScheduler - [standby,585] - Scheduler RuoyiScheduler_$_楼台1778408518281 paused.
+18:22:56.904 [Thread-27] INFO  o.q.c.QuartzScheduler - [shutdown,666] - Scheduler RuoyiScheduler_$_楼台1778408518281 shutting down.
+18:22:56.904 [Thread-27] INFO  o.q.c.QuartzScheduler - [standby,585] - Scheduler RuoyiScheduler_$_楼台1778408518281 paused.
+18:22:56.904 [Thread-27] INFO  o.q.c.QuartzScheduler - [shutdown,740] - Scheduler RuoyiScheduler_$_楼台1778408518281 shutdown complete.
+18:22:56.904 [Thread-27] INFO  sys-user - [shutdownAsyncManager,31] - ====关闭后台任务任务线程池====
+18:22:56.907 [Thread-27] INFO  c.a.d.p.DruidDataSource - [close,2083] - {dataSource-4} closing ...
+18:22:56.908 [Thread-27] INFO  c.a.d.p.DruidDataSource - [close,2156] - {dataSource-4} closed
+18:22:57.173 [restartedMain] INFO  c.r.RuoYiApplication - [logStarting,55] - Starting RuoYiApplication using Java 21.0.2 on 楼台 with PID 6696 (D:\各种作业\ruo\RuoYi-Vue-v3.9.1\ruoyi-admin\target\classes started by 罗 in D:\各种作业\ruo)
+18:22:57.173 [restartedMain] INFO  c.r.RuoYiApplication - [logStartupProfileInfo,686] - The following 1 profile is active: "druid"
+18:22:57.785 [restartedMain] INFO  o.a.c.h.Http11NioProtocol - [log,168] - Initializing ProtocolHandler ["http-nio-8080"]
+18:22:57.786 [restartedMain] INFO  o.a.c.c.StandardService - [log,168] - Starting service [Tomcat]
+18:22:57.786 [restartedMain] INFO  o.a.c.c.StandardEngine - [log,168] - Starting Servlet engine: [Apache Tomcat/9.0.112]
+18:22:57.809 [restartedMain] INFO  o.a.c.c.C.[.[.[/] - [log,168] - Initializing Spring embedded WebApplicationContext
+18:22:57.955 [restartedMain] INFO  o.j.c.c.c.WebXmlConfigurationStrategyImpl - [get,43] - Property [serverName] loaded from FilterConfig.getInitParameter with value [http://localhost:8080]
+18:22:57.957 [restartedMain] INFO  o.j.c.c.c.WebXmlConfigurationStrategyImpl - [get,43] - Property [redirectAfterValidation] loaded from FilterConfig.getInitParameter with value [false]
+18:22:57.957 [restartedMain] INFO  o.j.c.c.c.WebXmlConfigurationStrategyImpl - [get,43] - Property [casServerUrlPrefix] loaded from FilterConfig.getInitParameter with value [https://csxrz.cqnu.edu.cn/cas]
+18:23:01.234 [restartedMain] INFO  c.a.d.p.DruidDataSource - [init,865] - {dataSource-5} inited
+18:23:02.515 [restartedMain] INFO  o.q.i.StdSchedulerFactory - [instantiate,1220] - Using default implementation for ThreadExecutor
+18:23:02.516 [restartedMain] INFO  o.q.c.SchedulerSignalerImpl - [<init>,61] - Initialized Scheduler Signaller of type: class org.quartz.core.SchedulerSignalerImpl
+18:23:02.516 [restartedMain] INFO  o.q.c.QuartzScheduler - [<init>,229] - Quartz Scheduler v.2.3.2 created.
+18:23:02.516 [restartedMain] INFO  o.q.c.QuartzScheduler - [initialize,294] - Scheduler meta-data: Quartz Scheduler (v2.3.2) 'RuoyiScheduler' with instanceId '楼台1778408582515'
+  Scheduler class: 'org.quartz.core.QuartzScheduler' - running locally.
+  NOT STARTED.
+  Currently in standby mode.
+  Number of jobs executed: 0
+  Using thread pool 'org.quartz.simpl.SimpleThreadPool' - with 20 threads.
+  Using job-store 'org.springframework.scheduling.quartz.LocalDataSourceJobStore' - which supports persistence. and is clustered.
+
+18:23:02.516 [restartedMain] INFO  o.q.i.StdSchedulerFactory - [instantiate,1374] - Quartz scheduler 'RuoyiScheduler' initialized from an externally provided properties instance.
+18:23:02.516 [restartedMain] INFO  o.q.i.StdSchedulerFactory - [instantiate,1378] - Quartz scheduler version: 2.3.2
+18:23:02.516 [restartedMain] INFO  o.q.c.QuartzScheduler - [setJobFactory,2293] - JobFactory set to: org.springframework.scheduling.quartz.AdaptableJobFactory@446e1686
+18:23:10.716 [restartedMain] INFO  o.a.c.h.Http11NioProtocol - [log,168] - Starting ProtocolHandler ["http-nio-8080"]
+18:23:10.775 [restartedMain] INFO  c.r.RuoYiApplication - [logStarted,61] - Started RuoYiApplication in 13.641 seconds (JVM running for 334.269)
+18:23:12.293 [Quartz Scheduler [RuoyiScheduler]] INFO  o.q.c.QuartzScheduler - [start,547] - Scheduler RuoyiScheduler_$_楼台1778408582515 started.
+18:23:13.267 [SpringApplicationShutdownHook] INFO  o.q.c.QuartzScheduler - [standby,585] - Scheduler RuoyiScheduler_$_楼台1778408582515 paused.
+18:23:13.277 [SpringApplicationShutdownHook] INFO  o.q.c.QuartzScheduler - [shutdown,666] - Scheduler RuoyiScheduler_$_楼台1778408582515 shutting down.
+18:23:13.277 [SpringApplicationShutdownHook] INFO  o.q.c.QuartzScheduler - [standby,585] - Scheduler RuoyiScheduler_$_楼台1778408582515 paused.
+18:23:13.277 [SpringApplicationShutdownHook] INFO  o.q.c.QuartzScheduler - [shutdown,740] - Scheduler RuoyiScheduler_$_楼台1778408582515 shutdown complete.
+18:23:13.279 [SpringApplicationShutdownHook] INFO  sys-user - [shutdownAsyncManager,31] - ====关闭后台任务任务线程池====
+18:23:13.281 [SpringApplicationShutdownHook] INFO  c.a.d.p.DruidDataSource - [close,2083] - {dataSource-5} closing ...
+18:23:13.282 [SpringApplicationShutdownHook] INFO  c.a.d.p.DruidDataSource - [close,2156] - {dataSource-5} closed

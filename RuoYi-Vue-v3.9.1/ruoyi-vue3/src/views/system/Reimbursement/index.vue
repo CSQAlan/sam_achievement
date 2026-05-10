@@ -779,12 +779,16 @@
                   <span class="reimburse-qrcode-id">ID: {{ selectedReimburseItem.achievementId }}</span>
                 </div>
                 <div class="reimburse-contact-info">
-                  <div class="contact-row">
-                    <div class="contact-item"><span class="contact-label">负责人：</span><span>{{ selectedReimburseItem.contactName || '未设置' }}</span></div>
-                    <div class="contact-item amount-item"><span class="contact-label">报销金额：</span><span class="amount-highlight">¥{{ formatMoney(selectedReimburseItem.fee) }}</span></div>
-                  </div>
-                  <div class="contact-row">
-                    <div class="contact-item"><span class="contact-label">学号：</span><span>{{ selectedReimburseItem.studentId || '未设置' }}</span></div>
+                  <div class="contact-grid">
+                    <div class="contact-col">
+                      <div class="contact-item"><span class="contact-label">负责人：</span><span>{{ selectedReimburseItem.contactName || '未设置' }}</span></div>
+                      <div class="contact-item"><span class="contact-label">学号：</span><span>{{ selectedReimburseItem.studentId || '未设置' }}</span></div>
+                      <div class="contact-item"><span class="contact-label">电话：</span><span>{{ selectedReimburseItem.phone || '未设置' }}</span></div>
+                    </div>
+                    <div class="contact-col contact-col-right">
+                      <div class="contact-item amount-item"><span class="contact-label">报销金额：</span><span class="amount-highlight">¥{{ formatMoney(selectedReimburseItem.fee) }}</span></div>
+                      <div class="contact-item"><span class="contact-label">邮箱：</span><span>{{ selectedReimburseItem.email || '未设置' }}</span></div>
+                    </div>
                   </div>
                 </div>
                 <div class="qrcode-wrapper">
@@ -2721,16 +2725,27 @@ getList()
   font-size: 20px !important;
 }
 
-.contact-row {
+.contact-grid {
   display: flex;
-  align-items: center;
-  margin-bottom: 12px;
+  justify-content: space-between;
+}
+
+.contact-col {
+  flex: 1;
+}
+
+.contact-col-right {
+  text-align: right;
+}
+
+.contact-col-right .contact-label {
+  text-align: right;
+  min-width: auto;
+  margin-left: 15px;
+  margin-right: 0;
 }
 
 .amount-item {
-  text-align: center;
-  flex: 1;
-  margin: 0 20px;
   min-width: 200px;
 }
 
