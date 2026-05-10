@@ -24,12 +24,20 @@ public interface CompetitionMapper
     public Competition selectCompetitionById(Long id);
 
     /**
-     * 查询总赛事列表
-     * 
-     * @param competition 总赛事
-     * @return 总赛事集合
+     * 查询赛事列表
+     *
+     * @param competition 赛事
+     * @return 赛事集合
      */
     public List<Competition> selectCompetitionList(Competition competition);
+    
+    /**
+     * 查询带有指定标签的赛事列表
+     *
+     * @param tagName 标签名称
+     * @return 赛事集合
+     */
+    public List<Competition> selectCompetitionByTag(String tagName);
 
     /**
      * 新增总赛事

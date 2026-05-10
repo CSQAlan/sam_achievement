@@ -874,18 +874,11 @@ const handleViewDetail = (row) => {
 // 获取字典数据
 const getDictData = async () => {
   try {
-    // 这里需要根据实际项目中的字典获取方法调整
-    // 如果项目中有 useDict 方法，可以使用
-    const { data } = await useDict('reimbursement_status')
-    reimbursementStatusOptions.value = data
+    const { getDicts } = await import("@/api/system/dict/data")
+    const res = await getDicts('reimbursement_status')
+    reimbursementStatusOptions.value = res.data || []
   } catch (error) {
     console.error('获取字典失败:', error)
-    // 临时默认数据
-    reimbursementStatusOptions.value = [
-      { value: '0', label: '已报销' },
-      { value: '1', label: '未报销' }
-     
-    ]
   }
 }
 

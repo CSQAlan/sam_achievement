@@ -1200,4 +1200,15 @@ public class SamAchievementServiceImpl implements ISamAchievementService {
     public List<String> selectTrackList(Long competitionId, Long sessionId) {
         return samAchievementMapper.selectTrackList(competitionId, sessionId);
     }
+
+    /**
+     * 查询带有指定标签比赛的成果列表（用于素质提升展示）
+     *
+     * @param samAchievement 查询条件
+     * @return 成果列表
+     */
+    @Override
+    public List<SamAchievement> selectSamAchievementListByCompetitionTag(SamAchievement samAchievement) {
+        return samAchievementMapper.selectSamAchievementListByCompetitionTag(samAchievement);
+    }
 }

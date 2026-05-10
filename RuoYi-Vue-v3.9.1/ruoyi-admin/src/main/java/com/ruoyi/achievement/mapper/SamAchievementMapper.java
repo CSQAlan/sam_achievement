@@ -187,4 +187,12 @@ public interface SamAchievementMapper
      * @return 附件UUID列表
      */
     public List<String> selectAttachmentUuidByAchievementIdAndType(@Param("achievementId") String achievementId, @Param("type") Integer type);
+
+    /**
+     * 查询带有指定标签比赛的成果列表（用于素质提升展示）
+     *
+     * @param samAchievement 查询条件
+     * @return 成果列表
+     */
+    public List<SamAchievement> selectSamAchievementListByCompetitionTag(SamAchievement samAchievement);
 }

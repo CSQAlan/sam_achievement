@@ -312,7 +312,7 @@
   <!-- 实际报销金额 -->
   <el-table-column label="实际报销金额" align="center" width="150">
     <template #default="scope">
-      <span>{{ calculateActualReimbursement(scope.row.fee, scope.row.grade, scope.row.category) }}</span>
+      <span>{{ calculateActualReimbursement(scope.row.fee, scope.row.grade, scope.row.level, scope.row.category) }}</span>
     </template>
   </el-table-column>
 
@@ -1027,8 +1027,8 @@ const getReimbursementRatio = (grade, level) => {
  * @param {string} category - 报销类别
  * @returns {string} 实际报销金额
  */
-const calculateActualReimbursement = (fee, grade, category) => {
-  console.log('计算实际报销金额，fee:', fee, 'grade:', grade, 'category:', category)
+const calculateActualReimbursement = (fee, grade, level, category) => {
+  console.log('计算实际报销金额，fee:', fee, 'grade:', grade, 'level:', level, 'category:', category)
   
   if (!fee || !grade) {
     console.log('无报名费或等级，返回-')
@@ -1063,8 +1063,8 @@ const calculateActualReimbursement = (fee, grade, category) => {
  * @param {string} category - 报销类别
  * @returns {number} 实际报销金额
  */
-const calculateActualReimbursementValue = (fee, grade, category) => {
-  console.log('计算实际报销金额（数值），fee:', fee, 'grade:', grade, 'category:', category)
+const calculateActualReimbursementValue = (fee, grade, level, category) => {
+  console.log('计算实际报销金额（数值），fee:', fee, 'grade:', grade, 'level:', level, 'category:', category)
   
   if (!fee || !grade) {
     console.log('无报名费或等级，返回0')
@@ -1230,11 +1230,11 @@ const { queryParams, form, rules } = toRefs(data)
 
 // 字典数据 - 使用 proxy.useDict 方式
 const { 
-  achievement_category, 
+  sys_competition_category: achievement_category, 
   group_type, 
-  award_rank, 
-  award_level_type 
-} = proxy.useDict('achievement_category', 'group_type', 'award_rank', 'award_level_type')
+  award_grade: award_rank, 
+  sys_competition_level: award_level_type 
+} = proxy.useDict('sys_competition_category', 'group_type', 'award_grade', 'sys_competition_level')
 
 
 // 页面加载时执行
@@ -1773,7 +1773,7 @@ const updateStatsFromList = (list) => {
     const fee = parseFloat(item.reimbursementFee || item.reimbursement_fee || item.fee) || 0
     
     // 计算实际报销金额
-    const actualReimbursement = calculateActualReimbursementValue(fee, item.grade, item.category)
+    const actualReimbursement = calculateActualReimbursementValue(fee, item.grade, item.level, item.category)
     
     // 判断报销状态 - 修复条件逻辑
     const hasReimbursementDate = !!((item.reimbursementDate && item.reimbursementDate !== '') || (item.reimbursement_date && item.reimbursement_date !== ''))

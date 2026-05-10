@@ -10,6 +10,7 @@ import org.springframework.web.bind.annotation.PutMapping;
 import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.RequestBody;
+import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 import com.ruoyi.common.annotation.Log;
@@ -103,6 +104,15 @@ public class CompetitionController extends BaseController {
         Competition query = new Competition();
 
         List<Competition> list = competitionService.selectCompetitionList(query);
+        return AjaxResult.success(list);
+    }
+    
+    /**
+     * 获取带有指定标签的赛事列表（用于素质提升界面）
+     */
+    @GetMapping("/listByTag")
+    public AjaxResult listByTag(@RequestParam("tagName") String tagName) {
+        List<Competition> list = competitionService.selectCompetitionByTag(tagName);
         return AjaxResult.success(list);
     }
 }

@@ -105,4 +105,12 @@ public interface ISamAchievementService
      * 批量导出成果附件压缩包
      */
     public void exportAttachmentZip(ExportAttachmentZipReq req, HttpServletResponse response) throws IOException;
+
+    /**
+     * 查询带有指定标签比赛的成果列表（用于素质提升展示）
+     *
+     * @param samAchievement 查询条件
+     * @return 成果列表
+     */
+    public List<SamAchievement> selectSamAchievementListByCompetitionTag(SamAchievement samAchievement);
 }

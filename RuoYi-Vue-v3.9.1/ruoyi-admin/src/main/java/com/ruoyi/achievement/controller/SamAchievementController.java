@@ -257,4 +257,26 @@ public class SamAchievementController extends BaseController
         samAchievementService.exportAttachmentZip(req, response);
     }
 
+    /**
+     * 查询带有素质提升奖标签的成果列表
+     */
+    @GetMapping("/list-quality")
+    public TableDataInfo listQuality(SamAchievement samAchievement)
+    {
+        startPage();
+        List<SamAchievement> list = samAchievementService.selectSamAchievementListByCompetitionTag(samAchievement);
+        return getDataTable(list);
+    }
+
+    /**
+     * 导出素质提升奖成果列表
+     */
+    @PostMapping("/export-quality")
+    public void exportQuality(HttpServletResponse response, @RequestBody SamAchievement samAchievement)
+    {
+        List<SamAchievement> list = samAchievementService.selectSamAchievementListByCompetitionTag(samAchievement);
+        ExcelUtil<SamAchievement> util = new ExcelUtil<SamAchievement>(SamAchievement.class);
+        util.exportExcel(response, list, "素质提升奖成果数据");
+    }
+
 }

@@ -519,49 +519,34 @@ const getDeptName = (deptId) => {
 
 // 获取字典数据
 const getDictData = async () => {
-  console.log('开始获取字典数据...')
-  
   try {
-    // 先使用默认数据测试
-    console.log('使用默认字典数据')
-    awardLevelOptions.value = [
-      { value: '1', label: '国家级' },
-      { value: '2', label: '省部级' },
-      { value: '3', label: '市厅级' },
-      { value: '4', label: '校级' }
-    ]
-    awardGradeOptions.value = [
-      { value: '1', label: '一等奖' },
-      { value: '2', label: '二等奖' },
-      { value: '3', label: '三等奖' }
-    ]
-    reimbursementCategoryOptions.value = [
-      { value: '1', label: '政府类' },
-      { value: '2', label: '学会类' },
-    ]
-    ratioStatusOptions.value = [
-      { value: '0', label: '正常' },
-      { value: '1', label: '停用' }
-    ]
+    const { getDicts } = await import("@/api/system/dict/data")
+    const [levelRes, gradeRes, categoryRes, statusRes] = await Promise.all([
+      getDicts('sys_competition_level'),
+      getDicts('award_grade'),
+      getDicts('sys_competition_category'),
+      getDicts('ratio_status')
+    ]);
     
-    console.log('字典数据已设置:', {
-      grade: awardGradeOptions.value,
-      category: reimbursementCategoryOptions.value,
-      status: ratioStatusOptions.value
-    })
-    
-    // 尝试API调用，但不要影响显示
-    try {
-      console.log('尝试调用字典API...')
-      const { getDicts } = await import("@/api/system/dict/data")
-      const res = await getDicts('award_grade')
-      console.log('API返回数据:', res)
-    } catch (apiError) {
-      console.log('API调用失败，使用默认数据:', apiError)
-    }
-    
+    // 将后端返回的 { dictLabel, dictValue } 格式转换为 { label, value } 格式
+    awardLevelOptions.value = (levelRes.data || []).map(item => ({
+      label: item.dictLabel,
+      value: item.dictValue
+    }));
+    awardGradeOptions.value = (gradeRes.data || []).map(item => ({
+      label: item.dictLabel,
+      value: item.dictValue
+    }));
+    reimbursementCategoryOptions.value = (categoryRes.data || []).map(item => ({
+      label: item.dictLabel,
+      value: item.dictValue
+    }));
+    ratioStatusOptions.value = (statusRes.data || []).map(item => ({
+      label: item.dictLabel,
+      value: item.dictValue
+    }));
   } catch (error) {
-    console.error('getDictData 出错:', error)
+    console.error('获取字典数据失败:', error);
   }
 }
 

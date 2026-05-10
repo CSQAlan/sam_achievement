@@ -646,4 +646,16 @@
         left join sam_student s on s.no = p.student_id
         where a.achievement_id = #{achievementId}
     </select>
+
+    <select id="selectSamAchievementListByCompetitionTag" parameterType="SamAchievement" resultMap="SamAchievementListResult">
+        <include refid="selectSamAchievementVo"/>
+        <where>
+            a.del_flag = '0'
+            AND c.del_flag = '0'
+            AND FIND_IN_SET('0', c.tags) > 0
+            AND EXISTS (SELECT 1 FROM sam_achievement_advisor ad WHERE ad.achievement_id = a.achievement_id AND ad.del_flag = '0')
+            <include refid="commonSearchConditions"/>
+        </where>
+        order by a.achievement_id desc
+    </select>
 </mapper>
