@@ -547,7 +547,7 @@
           </el-table-column>
           <el-table-column label="报销比例" width="120">
             <template #default="scope">
-              <span>{{ getReimbursementRatio(scope.row.grade, scope.row.category) }}</span>
+              <span>{{ getReimbursementRatio(scope.row.grade, scope.row.level) }}</span>
             </template>
           </el-table-column>
           <el-table-column label="归属学院" prop="ownerDepId" width="150">
@@ -983,8 +983,8 @@ const selectedReimburseItem = ref(null)
 
 /**
  * 根据获奖级别和获奖等级获取报销比例
- * @param {number|string} grade - 获奖等级（1:一等奖, 2:二等奖, 3:三等奖）
- * @param {string} level - 获奖级别（国家级、省部级等）
+ * @param {number|string} grade - 获奖等级
+ * @param {string} level - 获奖级别
  * @returns {string} 报销比例，无规则时返回错误提示
  */
 const getReimbursementRatio = (grade, level) => {
@@ -1000,14 +1000,14 @@ const getReimbursementRatio = (grade, level) => {
   const gradeStr = grade.toString()
   const levelStr = level.toString()
   
-  // 从后端返回的规则中查找（不再使用默认规则）
+  // 从后端返回的规则中查找（只匹配级别和等级）
   let rule = null
   if (reimbursementRules.value && reimbursementRules.value.length > 0) {
-    // 查找对应级别和等级的规则
+    // 查找对应级别和等级的规则（忽略category）
     rule = reimbursementRules.value.find(r => {
       return r.level === levelStr && r.grade === gradeStr
     })
-    console.log('查找对应级别和等级的规则:', rule)
+    console.log('查找级别和等级匹配的规则:', rule)
   }
   
   if (!rule || !rule.ratio) {
@@ -1287,10 +1287,10 @@ const loadDetailByReimbursementItemId = async () => {
         const rulesRes = await getReimbursementRules(ownerDepId)
         console.log('报销比例规则响应:', rulesRes)
         if (rulesRes.code === 200) {
-          // 只保留 status 为 "0" 的规则（正常状态）
-          reimbursementRules.value = rulesRes.data.filter(rule => rule.status === "0")
-          console.log('过滤后的报销比例规则:', reimbursementRules.value)
-          console.log('过滤后的报销比例规则长度:', reimbursementRules.value.length)
+          // 保留所有规则（包括正常和停用状态）
+          reimbursementRules.value = rulesRes.data
+          console.log('报销比例规则:', reimbursementRules.value)
+          console.log('报销比例规则长度:', reimbursementRules.value.length)
         }
       }
     }
@@ -1338,10 +1338,10 @@ async function getList() {
         const rulesRes = await getReimbursementRules(ownerDepId)
         console.log('报销比例规则响应:', rulesRes)
         if (rulesRes.code === 200) {
-          // 只保留 status 为 "0" 的规则（正常状态）
-          reimbursementRules.value = rulesRes.data.filter(rule => rule.status === "0")
-          console.log('过滤后的报销比例规则:', reimbursementRules.value)
-          console.log('过滤后的报销比例规则长度:', reimbursementRules.value.length)
+          // 保留所有规则（包括正常和停用状态）
+          reimbursementRules.value = rulesRes.data
+          console.log('报销比例规则:', reimbursementRules.value)
+          console.log('报销比例规则长度:', reimbursementRules.value.length)
         }
       }
     } catch (error) {

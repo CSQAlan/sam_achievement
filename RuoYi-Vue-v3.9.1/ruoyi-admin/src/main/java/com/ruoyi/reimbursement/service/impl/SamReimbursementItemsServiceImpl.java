@@ -323,19 +323,21 @@ public class SamReimbursementItemsServiceImpl implements ISamReimbursementItemsS
         List<Map<String, Object>> rulesList = new ArrayList<>();
         
         try {
-            // 查询学院级规则（只查询指定学院的规则，不使用全校通用规则）
+            // 查询学院级规则（查询指定学院的所有规则，包括启用和停用状态）
             SamReimbursementRatio collegeRatio = new SamReimbursementRatio();
             collegeRatio.setOwnerDepId(ownerDepId);
-            collegeRatio.setStatus("0"); // 只查询启用的规则
+            // 不设置 status 过滤条件，获取所有状态的规则
             List<SamReimbursementRatio> collegeRules = samReimbursementRatioMapper.selectSamReimbursementRatioList(collegeRatio);
             
             // 添加学院级规则
             for (SamReimbursementRatio rule : collegeRules) {
                 Map<String, Object> ruleMap = new HashMap<>();
+                ruleMap.put("level", rule.getLevel());     // 添加级别字段
                 ruleMap.put("grade", rule.getGrade());
                 ruleMap.put("category", rule.getCategory());
                 ruleMap.put("ratio", rule.getRatio());
                 ruleMap.put("ownerDepId", rule.getOwnerDepId());
+                ruleMap.put("status", rule.getStatus());   // 添加状态字段
                 ruleMap.put("ruleType", "学院级");
                 rulesList.add(ruleMap);
             }
