@@ -182,6 +182,10 @@
         <if test="awardTime != null "> and a.award_time = #{awardTime}</if>
         <if test="year != null"> and a.year = #{year}</if>
         <if test="isSupplement != null"> and a.is_supplement = #{isSupplement}</if>
+        <if test="contestant != null and contestant != ''"> and p_view.contestant like concat('%', #{contestant}, '%')</if>
+        <if test="instructor != null and instructor != ''"> and ad_view.instructor like concat('%', #{instructor}, '%')</if>
+        <if test="competitionName != null and competitionName != ''"> and c.name like concat('%', #{competitionName}, '%')</if>
+        <if test="teacherId != null and teacherId != ''"> and ad.teacher_id = #{teacherId}</if>
         <if test="params.contestant != null and params.contestant != ''"> and p_view.contestant like concat('%', #{params.contestant}, '%')</if>
         <if test="params.instructor != null and params.instructor != ''"> and ad_view.instructor like concat('%', #{params.instructor}, '%')</if>
         <if test="params.competitionName != null and params.competitionName != ''"> and c.name like concat('%', #{params.competitionName}, '%')</if>

@@ -61,6 +61,14 @@ export function listQualityAchievement(query) {
   })
 }
 
+// 获取成果详情
+export function getAchievementInfo(achievementId) {
+  return request({
+    url: '/achievement/manage/' + achievementId,
+    method: 'get'
+  })
+}
+
 // 导出素质提升奖成果列表
 export function exportQualityAchievement(query) {
   return request({

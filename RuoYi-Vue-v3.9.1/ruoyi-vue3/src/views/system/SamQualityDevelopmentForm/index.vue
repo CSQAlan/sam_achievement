@@ -126,90 +126,31 @@
       </div>
     </div>
 
-    <el-dialog title="成果详情" :visible.sync="dialogVisible" width="600px">
-      <div v-if="detailData" class="detail-card">
-        <el-row :gutter="20">
-          <el-col :span="12">
-            <div class="detail-item">
-              <span class="detail-label">比赛名称：</span>
-              <span class="detail-value">{{ detailData.competitionName }}</span>
-            </div>
-          </el-col>
-          <el-col :span="12">
-            <div class="detail-item">
-              <span class="detail-label">届次：</span>
-              <span class="detail-value">{{ detailData.sessionName }}</span>
-            </div>
-          </el-col>
-          <el-col :span="12">
-            <div class="detail-item">
-              <span class="detail-label">参赛选手：</span>
-              <span class="detail-value">{{ detailData.contestant }}</span>
-            </div>
-          </el-col>
-          <el-col :span="12">
-            <div class="detail-item">
-              <span class="detail-label">指导老师：</span>
-              <span class="detail-value">{{ detailData.instructor }}</span>
-            </div>
-          </el-col>
-          <el-col :span="12">
-            <div class="detail-item">
-              <span class="detail-label">类别：</span>
-              <span class="detail-value">{{ getCategoryLabel(detailData.category) }}</span>
-            </div>
-          </el-col>
-          <el-col :span="12">
-            <div class="detail-item">
-              <span class="detail-label">级别：</span>
-              <span class="detail-value">{{ getLevelLabel(detailData.level) }}</span>
-            </div>
-          </el-col>
-          <el-col :span="12">
-            <div class="detail-item">
-              <span class="detail-label">获奖等级：</span>
-              <span class="detail-value">{{ getGradeLabel(detailData.grade) }}</span>
-            </div>
-          </el-col>
-          <el-col :span="12">
-            <div class="detail-item">
-              <span class="detail-label">证书编号：</span>
-              <span class="detail-value">{{ detailData.certificateNo }}</span>
-            </div>
-          </el-col>
-          <el-col :span="12">
-            <div class="detail-item">
-              <span class="detail-label">组别：</span>
-              <span class="detail-value">{{ getGroupLabel(detailData.groupId) }}</span>
-            </div>
-          </el-col>
-          <el-col :span="12">
-            <div class="detail-item">
-              <span class="detail-label">获奖时间：</span>
-              <span class="detail-value">{{ detailData.awardTime }}</span>
-            </div>
-          </el-col>
-        </el-row>
-      </div>
-      <div slot="footer" class="dialog-footer">
-        <el-button @click="dialogVisible = false">关闭</el-button>
-      </div>
-    </el-dialog>
+    <AchievementForm
+        ref="achievementDialogRef"
+        :get-fn="getManage"
+        :read-only="formReadOnly"
+        cancel-text="关闭"
+        @cancel="() => {}"
+    >
+    </AchievementForm>
   </div>
 </template>
 
 <script setup>
-import { ref, reactive, onMounted } from 'vue';
+import { ref, reactive, onMounted, nextTick } from 'vue';
 import { Search, Refresh, View, Download } from '@element-plus/icons-vue';
-import { listQualityAchievement } from '@/api/system/SamQualityDevelopmentForm';
+import { listQualityAchievement, getAchievementInfo } from '@/api/system/SamQualityDevelopmentForm';
 import { getDicts } from "@/api/system/dict/data";
 import axios from 'axios';
 import { getToken } from '@/utils/auth';
+import AchievementForm from '@/views/achievement/component/AchievementForm.vue';
+import { getManage } from '@/api/achievement/manage';
 
 const loading = ref(false);
 const tableData = ref([]);
-const dialogVisible = ref(false);
-const detailData = ref(null);
+const achievementDialogRef = ref(null);
+const formReadOnly = ref(true);
 
 const categoryOptions = ref([]);
 const levelOptions = ref([]);
@@ -346,8 +287,12 @@ const handleCurrentChange = (page) => {
 };
 
 const handleView = (row) => {
-  detailData.value = row;
-  dialogVisible.value = true;
+  if (row && row.achievementId) {
+    formReadOnly.value = true;
+    nextTick(() => {
+      achievementDialogRef.value?.open(row.achievementId);
+    });
+  }
 };
 
 const handleExport = () => {
@@ -474,32 +419,5 @@ onMounted(() => {
   margin-top: 20px;
   padding-top: 20px;
   border-top: 1px solid #f0f0f0;
-}
-
-.detail-card {
-  padding: 10px 0;
-}
-
-.detail-item {
-  padding: 12px 0;
-  border-bottom: 1px dashed #f0f0f0;
-
-  &:last-child {
-    border-bottom: none;
-  }
-}
-
-.detail-label {
-  color: #666;
-  font-weight: 500;
-  margin-right: 8px;
-}
-
-.detail-value {
-  color: #333;
-}
-
-.dialog-footer {
-  text-align: right;
 }
 </style>

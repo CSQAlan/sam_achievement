@@ -823,3 +823,50 @@ Caused by: java.sql.SQLSyntaxErrorException: Unknown column 'u.login_name' in 'o
 	at java.base/java.lang.reflect.Method.invoke(Method.java:580)
 	at org.mybatis.spring.SqlSessionTemplate$SqlSessionInterceptor.invoke(SqlSessionTemplate.java:427)
 	... 150 common frames omitted
+18:37:39.807 [QuartzScheduler_RuoyiScheduler-楼台1778409439824_MisfireHandler] ERROR o.s.s.q.LocalDataSourceJobStore - [manage,4017] - MisfireHandler: Error handling misfires: Failed to obtain DB connection from data source 'springNonTxDataSource.RuoyiScheduler': com.alibaba.druid.pool.DataSourceClosedException: dataSource already closed at Sun May 10 18:37:39 CST 2026
+org.quartz.JobPersistenceException: Failed to obtain DB connection from data source 'springNonTxDataSource.RuoyiScheduler': com.alibaba.druid.pool.DataSourceClosedException: dataSource already closed at Sun May 10 18:37:39 CST 2026
+	at org.quartz.impl.jdbcjobstore.JobStoreCMT.getNonManagedTXConnection(JobStoreCMT.java:168)
+	at org.quartz.impl.jdbcjobstore.JobStoreSupport.doRecoverMisfires(JobStoreSupport.java:3246)
+	at org.quartz.impl.jdbcjobstore.JobStoreSupport$MisfireHandler.manage(JobStoreSupport.java:4012)
+	at org.quartz.impl.jdbcjobstore.JobStoreSupport$MisfireHandler.run(JobStoreSupport.java:4033)
+Caused by: com.alibaba.druid.pool.DataSourceClosedException: dataSource already closed at Sun May 10 18:37:39 CST 2026
+	at com.alibaba.druid.pool.DruidDataSource.getConnectionInternal(DruidDataSource.java:1546)
+	at com.alibaba.druid.pool.DruidDataSource.getConnectionDirect(DruidDataSource.java:1372)
+	at com.alibaba.druid.filter.FilterChainImpl.dataSource_connect(FilterChainImpl.java:5074)
+	at com.alibaba.druid.filter.stat.StatFilter.dataSource_getConnection(StatFilter.java:724)
+	at com.alibaba.druid.filter.FilterChainImpl.dataSource_connect(FilterChainImpl.java:5070)
+	at com.alibaba.druid.pool.DruidDataSource.getConnection(DruidDataSource.java:1347)
+	at com.alibaba.druid.pool.DruidDataSource.getConnection(DruidDataSource.java:1333)
+	at com.alibaba.druid.pool.DruidDataSource.getConnection(DruidDataSource.java:81)
+	at org.springframework.jdbc.datasource.lookup.AbstractRoutingDataSource.getConnection(AbstractRoutingDataSource.java:194)
+	at org.springframework.scheduling.quartz.LocalDataSourceJobStore$2.getConnection(LocalDataSourceJobStore.java:140)
+	at org.quartz.utils.DBConnectionManager.getConnection(DBConnectionManager.java:108)
+	at org.quartz.impl.jdbcjobstore.JobStoreCMT.getNonManagedTXConnection(JobStoreCMT.java:165)
+	... 3 common frames omitted
+18:39:22.721 [QuartzScheduler_RuoyiScheduler-楼台1778409464402_MisfireHandler] ERROR c.a.d.f.s.StatFilter - [internalAfterStatementExecute,518] - slow sql 2519 millis. SELECT COUNT(TRIGGER_NAME) FROM QRTZ_TRIGGERS WHERE SCHED_NAME = 'RuoyiScheduler' AND NOT (MISFIRE_INSTR = -1) AND NEXT_FIRE_TIME < ? AND TRIGGER_STATE = ? [1778409548199,"WAITING"]
+18:39:23.044 [QuartzScheduler_RuoyiScheduler-楼台1778409439824_MisfireHandler] ERROR c.a.d.f.s.StatFilter - [internalAfterStatementExecute,518] - slow sql 2107 millis. SELECT COUNT(TRIGGER_NAME) FROM QRTZ_TRIGGERS WHERE SCHED_NAME = 'RuoyiScheduler' AND NOT (MISFIRE_INSTR = -1) AND NEXT_FIRE_TIME < ? AND TRIGGER_STATE = ? [1778409548935,"WAITING"]
+18:39:28.839 [QuartzScheduler_RuoyiScheduler-楼台1778409464402_ClusterManager] ERROR c.a.d.f.s.StatFilter - [internalAfterStatementExecute,518] - slow sql 1431 millis. SELECT * FROM QRTZ_SCHEDULER_STATE WHERE SCHED_NAME = 'RuoyiScheduler' []
+18:39:29.899 [RuoyiScheduler_QuartzSchedulerThread] ERROR c.a.d.f.s.StatFilter - [internalAfterStatementExecute,518] - slow sql 2646 millis. SELECT TRIGGER_NAME, TRIGGER_GROUP, NEXT_FIRE_TIME, PRIORITY FROM QRTZ_TRIGGERS WHERE SCHED_NAME = 'RuoyiScheduler' AND TRIGGER_STATE = ? AND NEXT_FIRE_TIME <= ? AND (MISFIRE_INSTR = -1 OR (MISFIRE_INSTR != -1 AND NEXT_FIRE_TIME >= ?)) ORDER BY NEXT_FIRE_TIME ASC, PRIORITY DESC ["WAITING",1778409594818,1778409555252]
+18:39:29.914 [QuartzScheduler_RuoyiScheduler-楼台1778409464402_ClusterManager] ERROR c.a.d.f.s.StatFilter - [internalAfterStatementExecute,518] - slow sql 1074 millis. UPDATE QRTZ_SCHEDULER_STATE SET LAST_CHECKIN_TIME = ? WHERE SCHED_NAME = 'RuoyiScheduler' AND INSTANCE_NAME = ? [1778409568839,"楼台1778409464402"]
+18:39:35.851 [QuartzScheduler_RuoyiScheduler-楼台1778409464402_MisfireHandler] ERROR c.a.d.f.s.StatFilter - [internalAfterStatementExecute,518] - slow sql 2876 millis. SELECT COUNT(TRIGGER_NAME) FROM QRTZ_TRIGGERS WHERE SCHED_NAME = 'RuoyiScheduler' AND NOT (MISFIRE_INSTR = -1) AND NEXT_FIRE_TIME < ? AND TRIGGER_STATE = ? [1778409560974,"WAITING"]
+18:39:36.265 [QuartzScheduler_RuoyiScheduler-楼台1778409439824_MisfireHandler] ERROR c.a.d.f.s.StatFilter - [internalAfterStatementExecute,518] - slow sql 2682 millis. SELECT COUNT(TRIGGER_NAME) FROM QRTZ_TRIGGERS WHERE SCHED_NAME = 'RuoyiScheduler' AND NOT (MISFIRE_INSTR = -1) AND NEXT_FIRE_TIME < ? AND TRIGGER_STATE = ? [1778409561582,"WAITING"]
+18:47:55.260 [QuartzScheduler_RuoyiScheduler-楼台1778409439824_MisfireHandler] ERROR o.s.s.q.LocalDataSourceJobStore - [manage,4017] - MisfireHandler: Error handling misfires: Failed to obtain DB connection from data source 'springNonTxDataSource.RuoyiScheduler': com.alibaba.druid.pool.DataSourceClosedException: dataSource already closed at Sun May 10 18:47:52 CST 2026
+org.quartz.JobPersistenceException: Failed to obtain DB connection from data source 'springNonTxDataSource.RuoyiScheduler': com.alibaba.druid.pool.DataSourceClosedException: dataSource already closed at Sun May 10 18:47:52 CST 2026
+	at org.quartz.impl.jdbcjobstore.JobStoreCMT.getNonManagedTXConnection(JobStoreCMT.java:168)
+	at org.quartz.impl.jdbcjobstore.JobStoreSupport.doRecoverMisfires(JobStoreSupport.java:3246)
+	at org.quartz.impl.jdbcjobstore.JobStoreSupport$MisfireHandler.manage(JobStoreSupport.java:4012)
+	at org.quartz.impl.jdbcjobstore.JobStoreSupport$MisfireHandler.run(JobStoreSupport.java:4033)
+Caused by: com.alibaba.druid.pool.DataSourceClosedException: dataSource already closed at Sun May 10 18:47:52 CST 2026
+	at com.alibaba.druid.pool.DruidDataSource.getConnectionInternal(DruidDataSource.java:1546)
+	at com.alibaba.druid.pool.DruidDataSource.getConnectionDirect(DruidDataSource.java:1372)
+	at com.alibaba.druid.filter.FilterChainImpl.dataSource_connect(FilterChainImpl.java:5074)
+	at com.alibaba.druid.filter.stat.StatFilter.dataSource_getConnection(StatFilter.java:724)
+	at com.alibaba.druid.filter.FilterChainImpl.dataSource_connect(FilterChainImpl.java:5070)
+	at com.alibaba.druid.pool.DruidDataSource.getConnection(DruidDataSource.java:1347)
+	at com.alibaba.druid.pool.DruidDataSource.getConnection(DruidDataSource.java:1333)
+	at com.alibaba.druid.pool.DruidDataSource.getConnection(DruidDataSource.java:81)
+	at org.springframework.jdbc.datasource.lookup.AbstractRoutingDataSource.getConnection(AbstractRoutingDataSource.java:194)
+	at org.springframework.scheduling.quartz.LocalDataSourceJobStore$2.getConnection(LocalDataSourceJobStore.java:140)
+	at org.quartz.utils.DBConnectionManager.getConnection(DBConnectionManager.java:108)
+	at org.quartz.impl.jdbcjobstore.JobStoreCMT.getNonManagedTXConnection(JobStoreCMT.java:165)
+	... 3 common frames omitted
