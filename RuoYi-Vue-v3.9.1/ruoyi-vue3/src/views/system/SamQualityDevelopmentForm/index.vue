@@ -238,13 +238,21 @@ const getDictData = async () => {
       getDicts('award_grade'),
       getDicts('group_type')
     ]);
-    categoryOptions.value = categoryRes.data || [];
-    levelOptions.value = levelRes.data || [];
-    gradeOptions.value = gradeRes.data || [];
-    groupOptions.value = groupRes.data || [];
+    // 将后端返回的字典数据转换为统一格式（兼容 dict_value/dict_label 和 dictValue/dictLabel）
+    categoryOptions.value = formatDictData(categoryRes.data || []);
+    levelOptions.value = formatDictData(levelRes.data || []);
+    gradeOptions.value = formatDictData(gradeRes.data || []);
+    groupOptions.value = formatDictData(groupRes.data || []);
   } catch (error) {
     console.error('获取字典数据失败:', error);
   }
+};
+
+const formatDictData = (data) => {
+  return data.map(item => ({
+    dictValue: item.dictValue !== undefined ? item.dictValue : item.dict_value,
+    dictLabel: item.dictLabel !== undefined ? item.dictLabel : item.dict_label
+  }));
 };
 
 const getLabelByValue = (options, code) => {

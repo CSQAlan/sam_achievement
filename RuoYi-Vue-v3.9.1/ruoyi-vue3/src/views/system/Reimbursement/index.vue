@@ -1099,6 +1099,10 @@ const pollInterval = ref(null)        // 轮询定时器
 
 // 是否可以报销
 const canReimburse = computed(() => {
+  // 单个报销模式：currentReimburseRow 有数据且项目已确认
+  if (currentReimburseRow.value && isProjectConfirmed.value) {
+    return true
+  }
   // 批量报销模式：batchReimburseQueue 有数据就允许报销
   if (batchReimburseQueue.value.length > 0 && isProjectConfirmed.value) {
     return true
