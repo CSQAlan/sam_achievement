@@ -212,7 +212,6 @@ export const dynamicRoutes = [
   ]
 }
 
-
 ]
 
 const router = createRouter({

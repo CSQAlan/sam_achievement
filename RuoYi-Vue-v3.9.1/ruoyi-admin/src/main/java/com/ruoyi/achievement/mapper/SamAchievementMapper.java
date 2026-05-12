@@ -195,4 +195,12 @@ public interface SamAchievementMapper
      * @return 成果列表
      */
     public List<SamAchievement> selectSamAchievementListByCompetitionTag(SamAchievement samAchievement);
+
+    /**
+     * 查询教师指导的带有素质提升奖标签的成果列表（用于教师版素质提升展示）
+     *
+     * @param samAchievement 查询条件
+     * @return 成果列表
+     */
+    public List<SamAchievement> selectQualityAchievementListByTeacher(SamAchievement samAchievement);
 }

@@ -269,6 +269,23 @@ public class SamAchievementController extends BaseController
     }
 
     /**
+     * 查询教师指导的带有素质提升奖标签的成果列表（教师版素质提升）
+     */
+    @GetMapping("/list-quality-teacher")
+    public TableDataInfo listQualityTeacher(SamAchievement samAchievement)
+    {
+        // 获取当前用户工号
+        String username = SecurityUtils.getUsername();
+        if (samAchievement.getParams() == null) {
+            samAchievement.setParams(new HashMap<>());
+        }
+        samAchievement.getParams().put("teacherId", username);
+        startPage();
+        List<SamAchievement> list = samAchievementService.selectQualityAchievementListByTeacher(samAchievement);
+        return getDataTable(list);
+    }
+
+    /**
      * 导出素质提升奖成果列表
      */
     @PostMapping("/export-quality")
@@ -277,6 +294,23 @@ public class SamAchievementController extends BaseController
         List<SamAchievement> list = samAchievementService.selectSamAchievementListByCompetitionTag(samAchievement);
         ExcelUtil<SamAchievement> util = new ExcelUtil<SamAchievement>(SamAchievement.class);
         util.exportExcel(response, list, "素质提升奖成果数据");
+    }
+
+    /**
+     * 导出教师指导的素质提升奖成果列表（教师版）
+     */
+    @PostMapping("/export-quality-teacher")
+    public void exportQualityTeacher(HttpServletResponse response, @RequestBody SamAchievement samAchievement)
+    {
+        // 获取当前用户工号
+        String username = SecurityUtils.getUsername();
+        if (samAchievement.getParams() == null) {
+            samAchievement.setParams(new HashMap<>());
+        }
+        samAchievement.getParams().put("teacherId", username);
+        List<SamAchievement> list = samAchievementService.selectQualityAchievementListByTeacher(samAchievement);
+        ExcelUtil<SamAchievement> util = new ExcelUtil<SamAchievement>(SamAchievement.class);
+        util.exportExcel(response, list, "教师指导素质提升奖成果数据");
     }
 
 }

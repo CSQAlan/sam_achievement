@@ -8,15 +8,15 @@ import java.io.IOException;
 
 /**
  * 成果录入Service接口
- * 
+ *
  * @author 王璨
  * @date 2026-02-03
  */
-public interface ISamAchievementService 
+public interface ISamAchievementService
 {
     /**
      * 查询成果录入
-     * 
+     *
      * @param achievementId 成果录入主键
      * @return 成果录入
      */
@@ -26,7 +26,7 @@ public interface ISamAchievementService
 
     /**
      * 查询成果录入列表
-     * 
+     *
      * @param samAchievement 成果录入
      * @return 成果录入集合
      */
@@ -54,7 +54,7 @@ public interface ISamAchievementService
 
     /**
      * 新增成果录入
-     * 
+     *
      * @param samAchievement 成果录入
      * @return 结果
      */
@@ -62,7 +62,7 @@ public interface ISamAchievementService
 
     /**
      * 修改成果录入
-     * 
+     *
      * @param samAchievement 成果录入
      * @return 结果
      */
@@ -70,7 +70,7 @@ public interface ISamAchievementService
 
     /**
      * 批量删除成果录入
-     * 
+     *
      * @param achievementIds 需要删除的成果录入主键集合
      * @return 结果
      */
@@ -78,7 +78,7 @@ public interface ISamAchievementService
 
     /**
      * 删除成果录入信息
-     * 
+     *
      * @param achievementId 成果录入主键
      * @return 结果
      */
@@ -113,4 +113,12 @@ public interface ISamAchievementService
      * @return 成果列表
      */
     public List<SamAchievement> selectSamAchievementListByCompetitionTag(SamAchievement samAchievement);
+
+    /**
+     * 查询教师指导的带有素质提升奖标签的成果列表（用于教师版素质提升展示）
+     *
+     * @param samAchievement 查询条件
+     * @return 成果列表
+     */
+    public List<SamAchievement> selectQualityAchievementListByTeacher(SamAchievement samAchievement);
 }
