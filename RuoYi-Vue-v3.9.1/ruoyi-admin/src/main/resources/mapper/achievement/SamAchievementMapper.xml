@@ -688,10 +688,10 @@
                 WHERE a.del_flag = '0'
                 <choose>
                     <when test="isSchoolAdmin">
-                        AND a.schooi_review_result = 2
+                        AND a.review_result = 2 AND a.schooi_review_result = 2
                     </when>
                     <otherwise>
-                        AND a.review_result = 0
+                        AND (a.review_result = 0 OR a.review_result IS NULL)
                         <if test="ownerDepId != null and ownerDepId != ''"> AND a.owner_dep_id = #{ownerDepId}</if>
                     </otherwise>
                 </choose>
