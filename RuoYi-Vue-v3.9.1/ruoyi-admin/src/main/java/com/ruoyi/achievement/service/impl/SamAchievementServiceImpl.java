@@ -1220,4 +1220,52 @@ public class SamAchievementServiceImpl implements ISamAchievementService {
     public List<String> selectTrackList(Long competitionId, Long sessionId) {
         return samAchievementMapper.selectTrackList(competitionId, sessionId);
     }
+
+    /**
+     * 查询年度成果统计
+     */
+    @Override
+    public List<Map<String, Object>> selectYearStats(SamAchievement samAchievement) {
+        return samAchievementMapper.selectYearStats(samAchievement);
+    }
+
+    /**
+     * 查询首页统计数据
+     */
+    @Override
+    public Map<String, Object> selectDashboardStats() {
+        Map<String, Object> params = new HashMap<>();
+
+        // 权限判断与过滤 (与 Controller 保持一致)
+        boolean isSchoolAdmin = SecurityUtils.hasRole("admin") || SecurityUtils.hasRole("schooladmin")
+                || SecurityUtils.hasRole("schoolleveladmin") || SecurityUtils.hasRole("schooleveladmin")
+                || SecurityUtils.hasPermi("achievement:school_level_unreviewed:list");
+
+        params.put("isSchoolAdmin", isSchoolAdmin);
+
+        if (!isSchoolAdmin) {
+            boolean isCollegeAdmin = SecurityUtils.hasRole("collegeadmin") || SecurityUtils.hasRole("collegeleveladmin")
+                    || SecurityUtils.hasPermi("achievement:college_level_unreviewed:list");
+            if (isCollegeAdmin) {
+                Long userDeptId = SecurityUtils.getDeptId();
+                if (userDeptId != null) {
+                    Long collegeId = deptService.getCollegeId(userDeptId);
+                    if (collegeId != null) {
+                        params.put("ownerDepId", String.valueOf(collegeId));
+                    }
+                }
+            }
+        }
+
+        Map<String, Object> result = samAchievementMapper.selectDashboardStats(params);
+        if (result == null) {
+            result = new HashMap<>();
+        }
+        
+        // 补充图表数据
+        result.put("trend", samAchievementMapper.selectDashboardTrend(params));
+        result.put("distribution", samAchievementMapper.selectDashboardDistribution(params));
+
+        return result;
+    }
 }

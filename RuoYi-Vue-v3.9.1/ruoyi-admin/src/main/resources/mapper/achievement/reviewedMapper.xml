@@ -172,6 +172,7 @@ PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
             <if test="year != null"> and a.year = #{year}</if>
             <if test="isSupplement != null"> and a.is_supplement = #{isSupplement}</if>
             <if test="ownerDepId != null and ownerDepId != ''"> and a.owner_dep_id = #{ownerDepId}</if>
+            and a.del_flag = '0'
 
             <if test="reviewStage != null and reviewStage != '' and reviewStatus != null and reviewStatus != ''">
                 <choose>

@@ -22,8 +22,13 @@
     </el-row>
 
     <!-- 2. 动态统计卡片 -->
+    <div class="section-title mb10">
+      <span class="title-label">{{ viewLevelLabel }}数据概览</span>
+      <el-divider direction="vertical" />
+      <span class="title-desc">实时更新统计数据</span>
+    </div>
     <el-row :gutter="20" class="row-stats mb10">
-      <template v-if="isOnlyStudent">
+      <template v-if="isIndividualView">
         <el-col :sm="24" :lg="8">
           <el-card shadow="hover" class="stat-card blue">
             <template #header><div class="card-header"><span>已认定成果</span><el-icon><Checked /></el-icon></div></template>
@@ -46,7 +51,7 @@
       <template v-else>
         <el-col :sm="24" :lg="6">
           <el-card shadow="hover" class="stat-card blue">
-            <template #header><div class="card-header"><span>系统成果总数</span><el-icon><DataLine /></el-icon></div></template>
+            <template #header><div class="card-header"><span>{{ isSchoolAdmin ? '系统' : '全院' }}成果总数</span><el-icon><DataLine /></el-icon></div></template>
             <div class="stat-body"><span class="number">{{ reviewerStats.totalCount }}</span><span class="label">项</span></div>
           </el-card>
         </el-col>
@@ -141,7 +146,7 @@ import * as echarts from 'echarts';
 import useUserStore from '@/store/modules/user';
 import { useRouter } from 'vue-router';
 import { onMounted, ref, computed, onUnmounted, getCurrentInstance, nextTick } from 'vue';
-import { listManage } from "@/api/achievement/manage";
+import { listManage, listYearStats, getDashboardStats } from "@/api/achievement/manage";
 import { listStudent } from "@/api/achievement/student";
 import { listCollege_level_unreviewed } from "@/api/achievement/college_level_unreviewed";
 import { listSchool_level_unreviewed } from "@/api/achievement/school_level_unreviewed";
@@ -163,12 +168,38 @@ const noticeList = ref([]);
 const roles = computed(() => userStore.roles || []);
 const permissions = computed(() => userStore.permissions || []);
 const isAdmin = computed(() => roles.value.includes('admin') || permissions.value.includes('*:*:*'));
+
+// 1. 学校管理层 (School Level)
+const isSchoolAdmin = computed(() => 
+  isAdmin.value || 
+  roles.value.includes('schooladmin') || 
+  roles.value.includes('schoolleveladmin') ||
+  roles.value.includes('schooleveladmin') ||
+  permissions.value.includes('achievement:school_level_unreviewed:list')
+);
+
+// 2. 学院管理层 (College Level)
+const isCollegeAdmin = computed(() => 
+  !isSchoolAdmin.value && (
+    roles.value.includes('collegeadmin') || 
+    roles.value.includes('collegeleveladmin') ||
+    permissions.value.includes('achievement:college_level_unreviewed:list')
+  )
+);
+
+// 3. 个人/教师/学生 (Individual Level)
 const isStudent = computed(() => roles.value.includes('student'));
 const isTeacher = computed(() => roles.value.includes('teacher'));
-const isCollegeReviewer = computed(() => permissions.value.includes('achievement:college_level_unreviewed:list'));
-const isSchoolReviewer = computed(() => permissions.value.includes('achievement:school_level_unreviewed:list'));
-const isReviewer = computed(() => isCollegeReviewer.value || isSchoolReviewer.value || isAdmin.value);
-const isOnlyStudent = computed(() => (isStudent.value || isTeacher.value) && !isReviewer.value);
+
+// 逻辑优先级：学校 > 学院 > 个人
+const isReviewer = computed(() => isSchoolAdmin.value || isCollegeAdmin.value);
+const isIndividualView = computed(() => (isStudent.value || isTeacher.value) && !isReviewer.value);
+
+const viewLevelLabel = computed(() => {
+  if (isSchoolAdmin.value) return '学校';
+  if (isCollegeAdmin.value) return '学院';
+  return '个人';
+});
 
 const handleAchievementApply = () => {
   if (isTeacher.value) {
@@ -183,73 +214,90 @@ const handleMyAchievement = () => {
 };
 
 const getStats = async () => {
-  // 1. 如果是管理人员/审核员，优先获取全局统计数据
-  if (isReviewer.value) {
-    try {
-      // 系统成果总数
-      const resTotal = await listManage({ pageNum: 1, pageSize: 1 });
-      reviewerStats.value.totalCount = resTotal.total || 0;
+  try {
+    // 1. 管理员视图 (学校或学院)
+    if (isReviewer.value) {
+      const res = await getDashboardStats();
+      if (res.data) {
+        // 更新卡片数据
+        reviewerStats.value.totalCount = res.data.totalCount || 0;
+        reviewerStats.value.monthCount = res.data.monthCount || 0;
+        reviewerStats.value.pendingCount = res.data.pendingCount || 0;
+        reviewerStats.value.studentCount = res.data.studentCount || 0;
 
-      // 本月新增数
-      const now = new Date();
-      const firstDay = proxy.parseTime(new Date(now.getFullYear(), now.getMonth(), 1), '{y}-{m}-{d}');
-      const lastDay = proxy.parseTime(now, '{y}-{m}-{d}');
-      const resMonth = await listManage({ 
-        pageNum: 1, 
-        pageSize: 1, 
-        'params[beginTime]': firstDay, 
-        'params[endTime]': lastDay 
-      });
-      reviewerStats.value.monthCount = resMonth.total || 0;
+        // 更新趋势图数据 (折线图/柱状图)
+        if (res.data.trend && res.data.trend.length > 0) {
+          chartData.value.years = res.data.trend.map(item => `${item.year}年`);
+          chartData.value.yearCounts = res.data.trend.map(item => item.count);
+        } else {
+          chartData.value.years = [new Date().getFullYear() + '年'];
+          chartData.value.yearCounts = [0];
+        }
 
-      // 参与学生总数
-      const resStudent = await listStudent({ pageNum: 1, pageSize: 1 });
-      reviewerStats.value.studentCount = resStudent.total || 0;
+        // 更新分布图数据 (饼图)
+        const levelConfigs = [
+          { label: '国家级', value: '0', color: '#ff4d4f' },
+          { label: '省部级', value: '1', color: '#ffa940' },
+          { label: '市厅级', value: '2', color: '#ffec3d' },
+          { label: '校级', value: '3', color: '#40a9ff' }
+        ];
+        
+        const distMap = {};
+        if (res.data.distribution) {
+          res.data.distribution.forEach(item => {
+            distMap[String(item.level)] = item.count;
+          });
+        }
 
-      // 待审核任务数
-      reviewerStats.value.pendingCount = 0;
-      if (isCollegeReviewer.value || isAdmin.value) {
-        const res = await listCollege_level_unreviewed({ pageNum: 1, pageSize: 1 });
-        reviewerStats.value.pendingCount += (res.total || 0);
+        chartData.value.levels = levelConfigs.map(c => ({ 
+          name: c.label, 
+          value: distMap[c.value] || 0, 
+          itemStyle: { color: c.color } 
+        })).filter(item => item.value > 0);
+
+        if (chartData.value.levels.length === 0) {
+          chartData.value.levels = [{ name: '暂无数据', value: 0, itemStyle: { color: '#eee' } }];
+        }
+
+        nextTick(() => {
+          initCharts();
+        });
       }
-      if (isSchoolReviewer.value || isAdmin.value) {
-        const res = await listSchool_level_unreviewed({ pageNum: 1, pageSize: 1 });
-        reviewerStats.value.pendingCount += (res.total || 0);
-      }
-    } catch (e) { console.error('获取管理端统计失败', e); }
-  } 
-  // 2. 如果只是学生或老师，则获取个人统计数据
-  else if (isStudent.value || isTeacher.value) {
-    try {
+    } 
+    // 2. 个人视图 (学生或老师)
+    else {
       const res = await listManage({ pageNum: 1, pageSize: 999 });
       const rows = res.rows || [];
+      // 已认定：校审通过
       studentStats.value.certified = rows.filter(r => String(r.schooiReviewResult) === '1').length;
-      studentStats.value.pending = rows.filter(r => String(r.reviewResult) === '0' || (String(r.reviewResult) === '2' && String(r.schooiReviewResult) === '2')).length;
-      studentStats.value.rejected = rows.filter(r => String(r.reviewResult) === '1' || String(r.schooiReviewResult) === '0').length;
-    } catch (e) { console.error('获取师生个人统计失败', e); }
+      // 审核中：院审待审 或 (院审通过且校审待审)
+      studentStats.value.pending = rows.filter(r => 
+        String(r.reviewResult) === '0' || 
+        (String(r.reviewResult) === '2' && String(r.schooiReviewResult) === '2')
+      ).length;
+      // 已退回：院审驳回 或 校审驳回
+      studentStats.value.rejected = rows.filter(r => 
+        String(r.reviewResult) === '1' || 
+        String(r.schooiReviewResult) === '0'
+      ).length;
+
+      // 个人视图图表数据
+      const resYear = await listYearStats();
+      if (resYear.data && resYear.data.length > 0) {
+        chartData.value.years = resYear.data.map(item => `${item.year}年`);
+        chartData.value.yearCounts = resYear.data.map(item => item.count);
+      } else {
+        chartData.value.years = [new Date().getFullYear() + '年'];
+        chartData.value.yearCounts = [0];
+      }
+
+      nextTick(() => {
+        initCharts();
+      });
+    }
+  } catch (e) {
+    console.error('获取统计数据失败', e);
   }
-};
-
-const getChartsData = async () => {
-  try {
-    const currentYear = new Date().getFullYear();
-    const years = [currentYear - 2, currentYear - 1, currentYear];
-    const yearRes = await Promise.all(years.map(y => listManage({ pageNum: 1, pageSize: 1, year: y })));
-    chartData.value.years = years.map(y => `${y}年`);
-    chartData.value.yearCounts = yearRes.map(res => res.total || 0);
-
-    const levelConfigs = [
-      { label: '国家级', value: '0', color: '#ff4d4f' },
-      { label: '省市级', value: '1', color: '#ffa940' },
-      { label: '校级', value: '3', color: '#40a9ff' }
-    ];
-    const levelRes = await Promise.all(levelConfigs.map(c => listManage({ pageNum: 1, pageSize: 1, level: c.value })));
-    chartData.value.levels = levelConfigs.map((c, i) => ({ name: c.label, value: levelRes[i].total || 0, itemStyle: { color: c.color } })).filter(item => item.value > 0);
-    if (chartData.value.levels.length === 0) chartData.value.levels = [{ name: '暂无数据', value: 0, itemStyle: { color: '#eee' } }];
-    nextTick(() => {
-      initCharts();
-    });
-  } catch (e) { console.error(e); }
 };
 
 const getNoticeList = async () => {
@@ -307,7 +355,6 @@ const initCharts = () => {
 
 onMounted(() => { 
   getStats(); 
-  getChartsData(); 
   getNoticeList();
   window.addEventListener('resize', () => { trendChart && trendChart.resize(); pieChart && pieChart.resize(); }); 
 });
@@ -326,6 +373,25 @@ onUnmounted(() => { if (trendChart) trendChart.dispose(); if (pieChart) pieChart
 
   .mb10 { margin-bottom: 10px; }
   .mr5 { margin-right: 5px; }
+
+  .section-title {
+    display: flex;
+    align-items: center;
+    padding: 0 5px;
+    .title-label {
+      font-size: 15px;
+      font-weight: bold;
+      color: #303133;
+    }
+    .title-desc {
+      font-size: 12px;
+      color: #909399;
+    }
+    :deep(.el-divider--vertical) {
+      margin: 0 10px;
+      height: 14px;
+    }
+  }
 
   .row-welcome { flex: 0 0 auto; margin-bottom: 10px; }
   .row-stats { flex: 0 0 auto; margin-bottom: 10px; }
