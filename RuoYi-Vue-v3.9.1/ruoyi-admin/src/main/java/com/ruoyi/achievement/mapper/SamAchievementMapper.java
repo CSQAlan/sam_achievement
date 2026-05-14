@@ -170,7 +170,8 @@ public interface SamAchievementMapper
             @Param("isTeacher") boolean isTeacher,
             @Param("isAdmin") boolean isAdmin,
             @Param("competitionId") String competitionId,
-            @Param("groupByCompetition") Boolean groupByCompetition);
+            @Param("groupByCompetition") Boolean groupByCompetition,
+            @Param("deptId") Long deptId);
 
     /**
      * 查询成果附件文件信息

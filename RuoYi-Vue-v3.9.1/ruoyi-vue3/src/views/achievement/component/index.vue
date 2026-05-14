@@ -1676,7 +1676,7 @@ async function submitExportAttachment() {
     const data = await exportAttachmentZip({
       achievementIds: ids.value,
       types: selectedAttachmentTypes.value,
-      sourceMode: props.sourceMode || ''
+      sourceMode: props.reviewSource || props.sourceMode || ''
     });
 
     if (!blobValidate(data)) {
@@ -1714,7 +1714,7 @@ async function submitCompetitionExportAttachment() {
     const data = await exportAttachmentZip({
       achievementIds: [],
       types: exportCompetitionAttachmentTypes.value,
-      sourceMode: props.sourceMode || '',
+      sourceMode: props.reviewSource || props.sourceMode || '',
       groupByCompetition: true,
       competitionId: exportCompetitionId.value,
       filenameTemplate: namingPreset.value === 'custom' ? customNamingTemplate.value : (namingPreset.value === 'default' ? '{id}_{manager}' : (namingPreset.value === 'comp_id_name' ? '{competition}_{id}_{manager}' : '{manager}_{grade}'))

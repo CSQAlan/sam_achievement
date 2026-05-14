@@ -860,20 +860,30 @@ public class SamAchievementServiceImpl implements ISamAchievementService {
         Long userId = SecurityUtils.getUserId();
         boolean isAdmin = SecurityUtils.isAdmin(userId);
         String loginName = SecurityUtils.getUsername();
+        Long deptId = SecurityUtils.getDeptId();
+
         if (!isAdmin && StringUtils.isEmpty(loginName)) {
             throw new ServiceException("当前登录用户无效");
+        }
+        
+        String sourceMode = normalizeSourceMode(req.getSourceMode());
+        if (sourceMode != null && (sourceMode.startsWith("college_level") || sourceMode.startsWith("school_level"))) {
+            if (!SecurityUtils.hasPermi("achievement:" + sourceMode + ":export") && !SecurityUtils.hasPermi("achievement:" + sourceMode + ":list")) {
+                throw new ServiceException("无权导出该状态的成果附件");
+            }
         }
 
         List<ExportAchievementBaseVo> authorizedAchievementList = samAchievementMapper
                 .selectAuthorizedExportAchievementBase(
                         achievementIdList.isEmpty() ? new String[0] : achievementIdList.toArray(new String[0]),
                         loginName,
-                        normalizeSourceMode(req.getSourceMode()),
+                        sourceMode,
                         SecurityUtils.hasRole("student"),
                         SecurityUtils.hasRole("teacher"),
                         isAdmin,
                         competitionId,
-                        isGroupByCompetition);
+                        isGroupByCompetition,
+                        deptId);
 
         if (authorizedAchievementList == null || authorizedAchievementList.isEmpty()) {
             throw new ServiceException("当前没有可导出的成果");

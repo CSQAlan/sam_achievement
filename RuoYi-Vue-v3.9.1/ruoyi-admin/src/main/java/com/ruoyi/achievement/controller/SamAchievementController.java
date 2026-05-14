@@ -247,7 +247,7 @@ public class SamAchievementController extends BaseController
         return getDataTable(new java.util.ArrayList<>());
     }
 
-    @PreAuthorize("@ss.hasAnyPermi('achievement:manage:export,achievement:manage:participated:export,achievement:manage:guided:export')")
+    @PreAuthorize("@ss.hasAnyPermi('achievement:manage:export,achievement:manage:participated:export,achievement:manage:guided:export,achievement:college_level_unreviewed:export,achievement:college_level_reviewed:export,achievement:school_level_unreviewed:export,achievement:school_level_reviewed:export')")
     @Log(title = "成果附件批量导出", businessType = BusinessType.EXPORT)
     @BizAudit(bizType = "achievement", bizName = "导出成果附件", opType = BizAuditOpType.EXPORT, handler = "achievementBizAuditHandler")
     @PostMapping("/exportAttachmentZip")

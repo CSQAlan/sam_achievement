@@ -549,6 +549,13 @@
         <choose>
             <when test="isAdmin">
             </when>
+            <when test="sourceMode == 'college_level_unreviewed' or sourceMode == 'college_level_reviewed'">
+                <if test="deptId != null">
+                    and a.owner_dep_id = #{deptId}
+                </if>
+            </when>
+            <when test="sourceMode == 'school_level_unreviewed' or sourceMode == 'school_level_reviewed'">
+            </when>
             <when test="sourceMode == 'participated'">
                 and (
                 exists (
