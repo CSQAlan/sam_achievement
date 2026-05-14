@@ -22,13 +22,13 @@ const isWhiteList = (path) => {
 const isProfilePage = (path) => path.startsWith('/user/profile')
 
 const shouldBypassInit = (path) => isWhiteList(path) || isProfilePage(path)
-// 重定向到CAS登录
-// function redirectToCas(to) {
-//   // 记录用户原本想去的页面，等CAS回来后可以跳回
-//   sessionStorage.setItem('CAS_REDIRECT', to.fullPath)
-//   const service = encodeURIComponent(CAS_SERVICE)
-//   window.location.href = `${CAS_LOGIN_URL}?service=${service}`
-// }
+//重定向到CAS登录
+function redirectToCas(to) {
+  // 记录用户原本想去的页面，等CAS回来后可以跳回
+  sessionStorage.setItem('CAS_REDIRECT', to.fullPath)
+  const service = encodeURIComponent(CAS_SERVICE)
+  window.location.href = `${CAS_LOGIN_URL}?service=${service}`
+}
 // 检查是否完善了邮箱和手机号
 const checkProfileInitialized = (to, next) => {
   const userStore = useUserStore()
