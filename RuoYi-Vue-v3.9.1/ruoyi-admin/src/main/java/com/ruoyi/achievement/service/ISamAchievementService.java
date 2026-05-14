@@ -5,6 +5,7 @@ import com.ruoyi.achievement.domain.SamAchievement;
 import com.ruoyi.achievement.domain.ExportAttachmentZipReq;
 import javax.servlet.http.HttpServletResponse;
 import java.io.IOException;
+import java.util.Map;
 
 /**
  * 成果录入Service接口
@@ -100,6 +101,11 @@ public interface ISamAchievementService
      * @return 赛道列表
      */
     public List<String> selectTrackList(Long competitionId, Long sessionId);
+
+    /**
+     * 查询年度成果统计
+     */
+    public List<Map<String, Object>> selectYearStats(SamAchievement samAchievement);
 
     /**
      * 批量导出成果附件压缩包

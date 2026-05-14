@@ -48,7 +48,26 @@ public class SamAchievementController extends BaseController
     private ISysDeptService deptService;
 
     /**
-     * 查询成果录入列表
+     * 判断是否为校级管理员（通过角色或权限）
+     */
+    private boolean isSchoolAdmin() {
+        return SecurityUtils.hasRole("admin") || SecurityUtils.hasRole("schooladmin") 
+            || SecurityUtils.hasRole("schoolleveladmin") || SecurityUtils.hasRole("schooleveladmin")
+            || SecurityUtils.hasPermi("achievement:school_level_unreviewed:list");
+    }
+
+    /**
+     * 判断是否为院级管理员（通过角色或权限）
+     */
+    private boolean isCollegeAdmin() {
+        if (isSchoolAdmin()) return false;
+        return SecurityUtils.hasRole("collegeadmin") || SecurityUtils.hasRole("collegeleveladmin")
+            || SecurityUtils.hasPermi("achievement:college_level_unreviewed:list");
+    }
+
+    /**
+     * 查询成果管理列表（管理视图：全校/全院）
+     * 只有管理员或特定角色的“管理”菜单才会调用此接口
      */
     @PreAuthorize("@ss.hasAnyPermi('achievement:manage:list,achievement:manage:participated:list,achievement:manage:guided:list')")
     @GetMapping("/list")
@@ -56,14 +75,14 @@ public class SamAchievementController extends BaseController
     {
         startPage();
         
-        // 1. 学校管理员 (School Level) - 优先级最高，可查看全量
-        if (SecurityUtils.hasRole("admin") || SecurityUtils.hasRole("schooladmin") || SecurityUtils.hasRole("schoolleveladmin") || SecurityUtils.hasRole("schooleveladmin")) {
+        // 1. 学校管理员：查看全量数据
+        if (isSchoolAdmin()) {
             List<SamAchievement> list = samAchievementService.selectSamAchievementList(samAchievement);
             return getDataTable(list);
         }
 
-        // 2. 学院管理员 (College Level) - 仅查看本院数据
-        if (SecurityUtils.hasRole("collegeadmin") || SecurityUtils.hasRole("collegeleveladmin")) {
+        // 2. 学院管理员：查看本院数据
+        if (isCollegeAdmin()) {
             if (StringUtils.isEmpty(samAchievement.getOwnerDepId())) {
                 Long userDeptId = SecurityUtils.getDeptId();
                 if (userDeptId != null) {
@@ -77,36 +96,110 @@ public class SamAchievementController extends BaseController
             return getDataTable(list);
         }
 
-        // 3. 个人/教师 (Individual Level) - 仅查看自己关联的数据
+        // 3. 如果不是管理员，回退到个人视角（负责或指导）
         if (SecurityUtils.hasRole("student")) {
-            String studentId = SecurityUtils.getUsername();
-            if (samAchievement.getParams() == null) {
-                samAchievement.setParams(new HashMap<>());
-            }
-            samAchievement.getParams().put("studentId", studentId);
-            samAchievement.getParams().put("manager", "1");
-            List<SamAchievement> list = samAchievementService.selectSamAchievementListByStudentId(samAchievement);
-            return getDataTable(list);
+            return listResponsible(samAchievement);
         }
-
         if (SecurityUtils.hasRole("teacher")) {
-            String teacherId = SecurityUtils.getUsername();
-            if (samAchievement.getParams() == null) {
-                samAchievement.setParams(new HashMap<>());
-            }
-            samAchievement.getParams().put("teacherId", teacherId);
-            samAchievement.getParams().put("isFirst", 1);
-            List<SamAchievement> list = samAchievementService.selectSamAchievementListByTeacherId(samAchievement);
-            return getDataTable(list);
+            return listGuided(samAchievement);
         }
 
-        // 兜底逻辑
-        List<SamAchievement> list = samAchievementService.selectSamAchievementList(samAchievement);
+        return getDataTable(new java.util.ArrayList<>());
+    }
+
+    /**
+     * 查询我负责的成果（学生端专用）
+     * 规则：只展示当前登录人作为“负责人”的成果。即使是管理员，在此页面也只看个人数据。
+     */
+    @PreAuthorize("@ss.hasPermi('achievement:manage:list')")
+    @GetMapping("/list-responsible")
+    public TableDataInfo listResponsible(SamAchievement samAchievement)
+    {
+        // 严禁老师查看“我负责的成果”（除非该老师也有学生号，此处以角色判定）
+        if (!SecurityUtils.hasRole("student") && !SecurityUtils.isAdmin(SecurityUtils.getUserId())) {
+             return getDataTable(new java.util.ArrayList<>());
+        }
+
+        startPage();
+        String username = SecurityUtils.getUsername();
+        if (samAchievement.getParams() == null) {
+            samAchievement.setParams(new HashMap<>());
+        }
+        samAchievement.getParams().put("studentId", username);
+        samAchievement.getParams().put("manager", "1"); 
+        
+        List<SamAchievement> list = samAchievementService.selectSamAchievementListByResponsibleStudentId(samAchievement);
         return getDataTable(list);
     }
 
     /**
-     * 导出成果录入列表
+     * 查询我指导的成果（教师端专用）
+     * 规则：只展示当前登录人作为“指导老师”的成果。即使是管理员，在此页面也只看个人数据。
+     */
+    @PreAuthorize("@ss.hasPermi('achievement:manage:guided:list')")
+    @GetMapping("/list-guided")
+    public TableDataInfo listGuided(SamAchievement samAchievement)
+    {
+        // 严禁纯学生查看“我指导的成果”
+        if (!SecurityUtils.hasRole("teacher") && !SecurityUtils.isAdmin(SecurityUtils.getUserId())) {
+            return getDataTable(new java.util.ArrayList<>());
+        }
+
+        startPage();
+        String username = SecurityUtils.getUsername();
+        if (samAchievement.getParams() == null) {
+            samAchievement.setParams(new HashMap<>());
+        }
+        samAchievement.getParams().put("teacherId", username);
+        // 不限位次，只要参与指导即可
+        List<SamAchievement> list = samAchievementService.selectSamAchievementListByTeacherId(samAchievement);
+        return getDataTable(list);
+    }
+
+    /**
+     * 查询我参与的成果（学生/老师通用，非负责或非主导的参与项）
+     */
+    @PreAuthorize("@ss.hasPermi('achievement:manage:participated:list')")
+    @GetMapping("/list-participated")
+    public TableDataInfo listParticipated(SamAchievement samAchievement)
+    {
+        startPage();
+        String username = SecurityUtils.getUsername();
+        if (samAchievement.getParams() == null) {
+            samAchievement.setParams(new HashMap<>());
+        }
+        samAchievement.getParams().put("userId", username);
+        List<SamAchievement> list = samAchievementService.selectSamAchievementListByUserId(samAchievement);
+        return getDataTable(list);
+    }
+
+    /**
+     * 查询年度成果统计（遵循管理/个人视图分离）
+     */
+    @GetMapping("/stats/year")
+    public AjaxResult selectYearStats(SamAchievement samAchievement)
+    {
+        if (isSchoolAdmin()) {
+            // 全校
+        } else if (isCollegeAdmin()) {
+            // 学院
+            Long collegeId = deptService.getCollegeId(SecurityUtils.getDeptId());
+            if (collegeId != null) samAchievement.setOwnerDepId(String.valueOf(collegeId));
+        } else {
+            // 个人
+            if (samAchievement.getParams() == null) samAchievement.setParams(new HashMap<>());
+            if (SecurityUtils.hasRole("student")) {
+                samAchievement.getParams().put("studentId", SecurityUtils.getUsername());
+                samAchievement.getParams().put("manager", "1");
+            } else if (SecurityUtils.hasRole("teacher")) {
+                samAchievement.getParams().put("teacherId", SecurityUtils.getUsername());
+            }
+        }
+        return success(samAchievementService.selectYearStats(samAchievement));
+    }
+
+    /**
+     * 导出成果（遵循管理/个人视图分离）
      */
     @PreAuthorize("@ss.hasAnyPermi('achievement:manage:export,achievement:manage:participated:export,achievement:manage:guided:export')")
     @Log(title = "成果录入", businessType = BusinessType.EXPORT)
@@ -115,45 +208,26 @@ public class SamAchievementController extends BaseController
     public void export(HttpServletResponse response, SamAchievement samAchievement)
     {
         List<SamAchievement> list;
-        // 1. 学校管理员
-        if (SecurityUtils.hasRole("admin") || SecurityUtils.hasRole("schooladmin") || SecurityUtils.hasRole("schoolleveladmin") || SecurityUtils.hasRole("schooleveladmin")) {
+        if (isSchoolAdmin()) {
             list = samAchievementService.selectSamAchievementList(samAchievement);
-        } 
-        // 2. 学院管理员
-        else if (SecurityUtils.hasRole("collegeadmin") || SecurityUtils.hasRole("collegeleveladmin")) {
-            if (StringUtils.isEmpty(samAchievement.getOwnerDepId())) {
-                Long userDeptId = SecurityUtils.getDeptId();
-                if (userDeptId != null) {
-                    Long collegeId = deptService.getCollegeId(userDeptId);
-                    if (collegeId != null) {
-                        samAchievement.setOwnerDepId(String.valueOf(collegeId));
-                    }
-                }
-            }
+        } else if (isCollegeAdmin()) {
+            Long collegeId = deptService.getCollegeId(SecurityUtils.getDeptId());
+            if (collegeId != null) samAchievement.setOwnerDepId(String.valueOf(collegeId));
             list = samAchievementService.selectSamAchievementList(samAchievement);
-        }
-        // 3. 学生/教师
-        else if (SecurityUtils.hasRole("student")) {
-            String studentId = SecurityUtils.getUsername();
-            if (samAchievement.getParams() == null) {
-                samAchievement.setParams(new HashMap<>());
-            }
-            samAchievement.getParams().put("studentId", studentId);
+        } else if (SecurityUtils.hasRole("student")) {
+            if (samAchievement.getParams() == null) samAchievement.setParams(new HashMap<>());
+            samAchievement.getParams().put("studentId", SecurityUtils.getUsername());
             samAchievement.getParams().put("manager", "1");
-            list = samAchievementService.selectSamAchievementListByStudentId(samAchievement);
+            list = samAchievementService.selectSamAchievementListByResponsibleStudentId(samAchievement);
         } else if (SecurityUtils.hasRole("teacher")) {
-            String teacherId = SecurityUtils.getUsername();
-            if (samAchievement.getParams() == null) {
-                samAchievement.setParams(new HashMap<>());
-            }
-            samAchievement.getParams().put("teacherId", teacherId);
-            samAchievement.getParams().put("isFirst", 1);
+            if (samAchievement.getParams() == null) samAchievement.setParams(new HashMap<>());
+            samAchievement.getParams().put("teacherId", SecurityUtils.getUsername());
             list = samAchievementService.selectSamAchievementListByTeacherId(samAchievement);
         } else {
             list = samAchievementService.selectSamAchievementList(samAchievement);
         }
         ExcelUtil<SamAchievement> util = new ExcelUtil<SamAchievement>(SamAchievement.class);
-        util.exportExcel(response, list, "成果录入数据");
+        util.exportExcel(response, list, "成果数据");
     }
 
     /**
@@ -222,77 +296,6 @@ public class SamAchievementController extends BaseController
         return success(samAchievementService.checkCertificateNoUnique(samAchievement));
     }
 
-    /**
-     * 查询我参与的成果列表
-     */
-    @PreAuthorize("@ss.hasPermi('achievement:manage:participated:list')")
-    @GetMapping("/list-participated")
-    public TableDataInfo listParticipated(SamAchievement samAchievement)
-    {
-        startPage();
-        String username = SecurityUtils.getUsername();
-        if (StringUtils.isEmpty(username)) {
-            throw new com.ruoyi.common.exception.ServiceException("当前用户信息不能为空");
-        }
-        if (samAchievement.getParams() == null) {
-            samAchievement.setParams(new HashMap<>());
-        }
-
-        // 使用统一的查询方法，查找该用户在“选手”或“指导老师”中出现的所有记录
-        samAchievement.getParams().put("userId", username);
-        List<SamAchievement> list = samAchievementService.selectSamAchievementListByUserId(samAchievement);
-
-        return getDataTable(list);
-    }
-
-    /**
-     * Responsible achievement list
-     */
-    @PreAuthorize("@ss.hasPermi('achievement:manage:list')")
-    @GetMapping("/list-responsible")
-    public TableDataInfo listResponsible(SamAchievement samAchievement)
-    {
-        startPage();
-        String username = SecurityUtils.getUsername();
-        if (StringUtils.isEmpty(username)) {
-            throw new com.ruoyi.common.exception.ServiceException("Current user info cannot be empty");
-        }
-        if (samAchievement.getParams() == null) {
-            samAchievement.setParams(new HashMap<>());
-        }
-        samAchievement.getParams().put("studentId", username);
-        List<SamAchievement> list = samAchievementService.selectSamAchievementListByResponsibleStudentId(samAchievement);
-
-        return getDataTable(list);
-    }
-
-    /**
-     * Query achievements guided by the current teacher
-     */
-    @PreAuthorize("@ss.hasPermi('achievement:manage:guided:list')")
-    @GetMapping("/list-guided")
-    public TableDataInfo listGuided(SamAchievement samAchievement)
-    {
-        // 获取当前用户工号
-        String username = SecurityUtils.getUsername();
-
-        // 核心逻辑：如果是老师或者管理员，查询本用户参与指导的所有成果
-        if (SecurityUtils.hasRole("teacher") || SecurityUtils.isAdmin(SecurityUtils.getUserId())) {
-            startPage();
-            if (samAchievement.getParams() == null) {
-                samAchievement.setParams(new HashMap<>());
-            }
-            samAchievement.getParams().put("teacherId", username);
-            // 不再限制必须是第一指导老师
-
-            List<SamAchievement> list = samAchievementService.selectSamAchievementListByTeacherId(samAchievement);
-            return getDataTable(list);
-        }
-
-        // 如果是纯学生角色（且不是管理员），或者不具备上述权限，返回空
-        return getDataTable(new java.util.ArrayList<>());
-    }
-
     @PreAuthorize("@ss.hasAnyPermi('achievement:manage:export,achievement:manage:participated:export,achievement:manage:guided:export')")
     @Log(title = "成果附件批量导出", businessType = BusinessType.EXPORT)
     @BizAudit(bizType = "achievement", bizName = "导出成果附件", opType = BizAuditOpType.EXPORT, handler = "achievementBizAuditHandler")
@@ -302,5 +305,4 @@ public class SamAchievementController extends BaseController
     {
         samAchievementService.exportAttachmentZip(req, response);
     }
-
 }

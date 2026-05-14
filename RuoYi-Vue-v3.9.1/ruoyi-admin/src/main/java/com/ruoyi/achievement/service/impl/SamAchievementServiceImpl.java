@@ -1220,4 +1220,12 @@ public class SamAchievementServiceImpl implements ISamAchievementService {
     public List<String> selectTrackList(Long competitionId, Long sessionId) {
         return samAchievementMapper.selectTrackList(competitionId, sessionId);
     }
+
+    /**
+     * 查询年度成果统计
+     */
+    @Override
+    public List<Map<String, Object>> selectYearStats(SamAchievement samAchievement) {
+        return samAchievementMapper.selectYearStats(samAchievement);
+    }
 }

@@ -187,4 +187,9 @@ public interface SamAchievementMapper
      * @return 附件UUID列表
      */
     public List<String> selectAttachmentUuidByAchievementIdAndType(@Param("achievementId") String achievementId, @Param("type") Integer type);
+
+    /**
+     * 查询年度成果统计
+     */
+    public List<Map<String, Object>> selectYearStats(SamAchievement samAchievement);
 }

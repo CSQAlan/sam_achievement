@@ -146,7 +146,7 @@ import * as echarts from 'echarts';
 import useUserStore from '@/store/modules/user';
 import { useRouter } from 'vue-router';
 import { onMounted, ref, computed, onUnmounted, getCurrentInstance, nextTick } from 'vue';
-import { listManage } from "@/api/achievement/manage";
+import { listManage, listYearStats } from "@/api/achievement/manage";
 import { listStudent } from "@/api/achievement/student";
 import { listCollege_level_unreviewed } from "@/api/achievement/college_level_unreviewed";
 import { listSchool_level_unreviewed } from "@/api/achievement/school_level_unreviewed";
@@ -277,14 +277,17 @@ const getStats = async () => {
 
 const getChartsData = async () => {
   try {
-    const currentYear = new Date().getFullYear();
-    const years = [currentYear - 2, currentYear - 1, currentYear];
-    
-    // 异步获取近三年的数据
-    const yearRes = await Promise.all(years.map(y => listManage({ pageNum: 1, pageSize: 1, year: y })));
-    chartData.value.years = years.map(y => `${y}年`);
-    chartData.value.yearCounts = yearRes.map(res => res.total || 0);
+    // 1. 获取年度统计数据 (后端已处理层级过滤和所有年份)
+    const resYear = await listYearStats();
+    if (resYear.data && resYear.data.length > 0) {
+      chartData.value.years = resYear.data.map(item => `${item.year}年`);
+      chartData.value.yearCounts = resYear.data.map(item => item.count);
+    } else {
+      chartData.value.years = [new Date().getFullYear() + '年'];
+      chartData.value.yearCounts = [0];
+    }
 
+    // 2. 获取获奖级别分布
     const levelConfigs = [
       { label: '国家级', value: '0', color: '#ff4d4f' },
       { label: '省部级', value: '1', color: '#ffa940' },
