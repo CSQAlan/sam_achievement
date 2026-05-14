@@ -29,6 +29,9 @@ import com.ruoyi.common.core.page.TableDataInfo;
 import com.ruoyi.framework.web.service.TokenService;
 import com.ruoyi.web.service.ProfileCompletionService;
 
+import com.ruoyi.system.service.ISysDeptService;
+import com.ruoyi.common.core.domain.entity.SysDept;
+
 /**
  * 学生档案Controller
  * 
@@ -41,6 +44,9 @@ public class SamStudentController extends BaseController
 {
     @Autowired
     private ISamStudentService samStudentService;
+
+    @Autowired
+    private ISysDeptService deptService;
 
     @Autowired
     private ProfileCompletionService profileCompletionService;
@@ -56,6 +62,7 @@ public class SamStudentController extends BaseController
     public TableDataInfo list(SamStudent samStudent)
     {
         startPage();
+        applyHierarchicalFilter(samStudent);
         List<SamStudent> list = samStudentService.selectSamStudentList(samStudent);
         return getDataTable(list);
     }
@@ -69,9 +76,40 @@ public class SamStudentController extends BaseController
     @PostMapping("/export")
     public void export(HttpServletResponse response, SamStudent samStudent)
     {
+        applyHierarchicalFilter(samStudent);
         List<SamStudent> list = samStudentService.selectSamStudentList(samStudent);
         ExcelUtil<SamStudent> util = new ExcelUtil<SamStudent>(SamStudent.class);
         util.exportExcel(response, list, "学生档案数据");
+    }
+
+    /**
+     * 应用层级权限过滤
+     */
+    private void applyHierarchicalFilter(SamStudent samStudent) {
+        // 1. 学校管理员 (School Level) - 优先级最高，可查看全量
+        if (SecurityUtils.hasRole("admin") || SecurityUtils.hasRole("schooladmin") || SecurityUtils.hasRole("schoolleveladmin") || SecurityUtils.hasRole("schooleveladmin")) {
+            return; // 不过滤
+        }
+
+        // 2. 学院管理员 (College Level) - 仅查看本院学生
+        if (SecurityUtils.hasRole("collegeadmin") || SecurityUtils.hasRole("collegeleveladmin")) {
+            if (StringUtils.isEmpty(samStudent.getSchool())) {
+                Long userDeptId = SecurityUtils.getDeptId();
+                if (userDeptId != null) {
+                    Long collegeId = deptService.getCollegeId(userDeptId);
+                    if (collegeId != null) {
+                        SysDept collegeDept = deptService.selectDeptById(collegeId);
+                        if (collegeDept != null) {
+                            samStudent.setSchool(collegeDept.getDeptName());
+                        }
+                    }
+                }
+            }
+            return;
+        }
+
+        // 3. 个人角色 (Student/Teacher) - 默认情况下，如果没有管理角色，普通学生只能看到自己（可选，目前系统默认允许查询列表但可能受到其他限制）
+        // 如果需要强制过滤个人，可以在这里添加逻辑。目前根据业务，列表页通常由管理员使用。
     }
 
     @Log(title = "学生管理", businessType = BusinessType.IMPORT)

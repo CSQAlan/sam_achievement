@@ -28,6 +28,7 @@ import com.ruoyi.achievement.service.ISamAchievementService;
 import com.ruoyi.common.utils.poi.ExcelUtil;
 import com.ruoyi.common.core.page.TableDataInfo;
 import com.ruoyi.achievement.domain.ExportAttachmentZipReq;
+import com.ruoyi.system.service.ISysDeptService;
 import java.io.IOException;
 
 /**
@@ -43,20 +44,40 @@ public class SamAchievementController extends BaseController
     @Autowired
     private ISamAchievementService samAchievementService;
 
+    @Autowired
+    private ISysDeptService deptService;
+
     /**
-     * 查询成果录入列表（我负责的成果）
+     * 查询成果录入列表
      */
     @PreAuthorize("@ss.hasAnyPermi('achievement:manage:list,achievement:manage:participated:list,achievement:manage:guided:list')")
     @GetMapping("/list")
     public TableDataInfo list(SamAchievement samAchievement)
     {
         startPage();
-        // 如果是管理员，则直接查询全量数据，不进行个人数据的强制过滤
-        if (SecurityUtils.hasRole("admin")) {
+        
+        // 1. 学校管理员 (School Level) - 优先级最高，可查看全量
+        if (SecurityUtils.hasRole("admin") || SecurityUtils.hasRole("schooladmin") || SecurityUtils.hasRole("schoolleveladmin") || SecurityUtils.hasRole("schooleveladmin")) {
             List<SamAchievement> list = samAchievementService.selectSamAchievementList(samAchievement);
             return getDataTable(list);
         }
 
+        // 2. 学院管理员 (College Level) - 仅查看本院数据
+        if (SecurityUtils.hasRole("collegeadmin") || SecurityUtils.hasRole("collegeleveladmin")) {
+            if (StringUtils.isEmpty(samAchievement.getOwnerDepId())) {
+                Long userDeptId = SecurityUtils.getDeptId();
+                if (userDeptId != null) {
+                    Long collegeId = deptService.getCollegeId(userDeptId);
+                    if (collegeId != null) {
+                        samAchievement.setOwnerDepId(String.valueOf(collegeId));
+                    }
+                }
+            }
+            List<SamAchievement> list = samAchievementService.selectSamAchievementList(samAchievement);
+            return getDataTable(list);
+        }
+
+        // 3. 个人/教师 (Individual Level) - 仅查看自己关联的数据
         if (SecurityUtils.hasRole("student")) {
             String studentId = SecurityUtils.getUsername();
             if (samAchievement.getParams() == null) {
@@ -79,6 +100,7 @@ public class SamAchievementController extends BaseController
             return getDataTable(list);
         }
 
+        // 兜底逻辑
         List<SamAchievement> list = samAchievementService.selectSamAchievementList(samAchievement);
         return getDataTable(list);
     }
@@ -93,9 +115,25 @@ public class SamAchievementController extends BaseController
     public void export(HttpServletResponse response, SamAchievement samAchievement)
     {
         List<SamAchievement> list;
-        if (SecurityUtils.hasRole("admin")) {
+        // 1. 学校管理员
+        if (SecurityUtils.hasRole("admin") || SecurityUtils.hasRole("schooladmin") || SecurityUtils.hasRole("schoolleveladmin") || SecurityUtils.hasRole("schooleveladmin")) {
             list = samAchievementService.selectSamAchievementList(samAchievement);
-        } else if (SecurityUtils.hasRole("student")) {
+        } 
+        // 2. 学院管理员
+        else if (SecurityUtils.hasRole("collegeadmin") || SecurityUtils.hasRole("collegeleveladmin")) {
+            if (StringUtils.isEmpty(samAchievement.getOwnerDepId())) {
+                Long userDeptId = SecurityUtils.getDeptId();
+                if (userDeptId != null) {
+                    Long collegeId = deptService.getCollegeId(userDeptId);
+                    if (collegeId != null) {
+                        samAchievement.setOwnerDepId(String.valueOf(collegeId));
+                    }
+                }
+            }
+            list = samAchievementService.selectSamAchievementList(samAchievement);
+        }
+        // 3. 学生/教师
+        else if (SecurityUtils.hasRole("student")) {
             String studentId = SecurityUtils.getUsername();
             if (samAchievement.getParams() == null) {
                 samAchievement.setParams(new HashMap<>());

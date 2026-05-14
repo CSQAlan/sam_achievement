@@ -174,14 +174,17 @@ const isSchoolAdmin = computed(() =>
   isAdmin.value || 
   roles.value.includes('schooladmin') || 
   roles.value.includes('schoolleveladmin') ||
+  roles.value.includes('schooleveladmin') ||
   permissions.value.includes('achievement:school_level_unreviewed:list')
 );
 
 // 2. 学院管理层 (College Level)
 const isCollegeAdmin = computed(() => 
-  roles.value.includes('collegeadmin') || 
-  roles.value.includes('collegeleveladmin') ||
-  permissions.value.includes('achievement:college_level_unreviewed:list')
+  !isSchoolAdmin.value && (
+    roles.value.includes('collegeadmin') || 
+    roles.value.includes('collegeleveladmin') ||
+    permissions.value.includes('achievement:college_level_unreviewed:list')
+  )
 );
 
 // 3. 个人/教师/学生 (Individual Level)
@@ -214,7 +217,7 @@ const getStats = async () => {
   try {
     // 1. 管理员视图 (学校或学院)
     if (isReviewer.value) {
-      // 成果统计 (后端 listManage 会根据角色自动过滤数据权限: 学校管理员看全局，学院管理员看本院)
+      // 成果统计 (后端 listManage 已按层级权限过滤)
       const resTotal = await listManage({ pageNum: 1, pageSize: 1 });
       reviewerStats.value.totalCount = resTotal.total || 0;
 
@@ -227,10 +230,10 @@ const getStats = async () => {
       });
       reviewerStats.value.monthCount = resMonth.total || 0;
 
-      // 参与学生数 (如果是学院管理员，尝试带上学院名称进行过滤)
+      // 参与学生数
       let studentQueryParams = { pageNum: 1, pageSize: 1 };
-      if (!isSchoolAdmin.value && isCollegeAdmin.value && userStore.deptName) {
-        // 学院管理员仅统计本院学生
+      // 学院管理员统计本院学生 (已在 computed 保证 isSchoolAdmin 为 false 时才进入此处判断)
+      if (isCollegeAdmin.value && userStore.deptName) {
         studentQueryParams.school = userStore.deptName;
       }
       try {
@@ -240,14 +243,12 @@ const getStats = async () => {
         reviewerStats.value.studentCount = 0;
       }
 
-      // 待审核任务数 (根据权限角色查对应的审核列表)
+      // 待审核任务数
       reviewerStats.value.pendingCount = 0;
       if (isSchoolAdmin.value) {
-        // 学校管理员看校级待审核 (全校)
         const res = await listSchool_level_unreviewed({ pageNum: 1, pageSize: 1 });
         reviewerStats.value.pendingCount = res.total || 0;
       } else if (isCollegeAdmin.value) {
-        // 学院管理员看院级待审核 (本院)
         const res = await listCollege_level_unreviewed({ pageNum: 1, pageSize: 1 });
         reviewerStats.value.pendingCount = res.total || 0;
       }
