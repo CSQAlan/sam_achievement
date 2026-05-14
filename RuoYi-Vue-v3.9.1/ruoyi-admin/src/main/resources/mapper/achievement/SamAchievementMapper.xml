@@ -654,6 +654,98 @@
         and del_flag = 0
     </select>
 
+    <select id="selectDashboardStats" parameterType="java.util.Map" resultType="java.util.Map">
+        SELECT
+            (
+                SELECT COUNT(*) FROM sam_achievement a
+                WHERE a.del_flag = '0'
+                <choose>
+                    <when test="isSchoolAdmin">
+                        AND a.schooi_review_result = 1
+                    </when>
+                    <otherwise>
+                        AND a.review_result = 2
+                        <if test="ownerDepId != null and ownerDepId != ''"> AND a.owner_dep_id = #{ownerDepId}</if>
+                    </otherwise>
+                </choose>
+            ) as totalCount,
+            (
+                SELECT COUNT(*) FROM sam_achievement a
+                WHERE a.del_flag = '0'
+                AND date_format(a.create_time, '%Y-%m') = date_format(now(), '%Y-%m')
+                <choose>
+                    <when test="isSchoolAdmin">
+                        AND a.schooi_review_result = 1
+                    </when>
+                    <otherwise>
+                        AND a.review_result = 2
+                        <if test="ownerDepId != null and ownerDepId != ''"> AND a.owner_dep_id = #{ownerDepId}</if>
+                    </otherwise>
+                </choose>
+            ) as monthCount,
+            (
+                SELECT COUNT(*) FROM sam_achievement a
+                WHERE a.del_flag = '0'
+                <choose>
+                    <when test="isSchoolAdmin">
+                        AND a.schooi_review_result = 2
+                    </when>
+                    <otherwise>
+                        AND a.review_result = 0
+                        <if test="ownerDepId != null and ownerDepId != ''"> AND a.owner_dep_id = #{ownerDepId}</if>
+                    </otherwise>
+                </choose>
+            ) as pendingCount,
+            (
+                SELECT COUNT(DISTINCT p.student_id)
+                FROM sam_achievement_participant p
+                INNER JOIN sam_achievement a ON p.achievement_id = a.achievement_id
+                WHERE a.del_flag = '0'
+                <choose>
+                    <when test="isSchoolAdmin">
+                        AND a.schooi_review_result = 1
+                    </when>
+                    <otherwise>
+                        AND a.review_result = 2
+                        <if test="ownerDepId != null and ownerDepId != ''"> AND a.owner_dep_id = #{ownerDepId}</if>
+                    </otherwise>
+                </choose>
+            ) as studentCount
+    </select>
+
+    <select id="selectDashboardTrend" parameterType="java.util.Map" resultType="java.util.Map">
+        SELECT year, COUNT(*) as count
+        FROM sam_achievement a
+        WHERE a.del_flag = '0' AND a.year IS NOT NULL
+        <choose>
+            <when test="isSchoolAdmin">
+                AND a.schooi_review_result = 1
+            </when>
+            <otherwise>
+                AND a.review_result = 2
+                <if test="ownerDepId != null and ownerDepId != ''"> AND a.owner_dep_id = #{ownerDepId}</if>
+            </otherwise>
+        </choose>
+        GROUP BY year
+        ORDER BY year ASC
+    </select>
+
+    <select id="selectDashboardDistribution" parameterType="java.util.Map" resultType="java.util.Map">
+        SELECT level, COUNT(*) as count
+        FROM sam_achievement a
+        WHERE a.del_flag = '0' AND a.level IS NOT NULL
+        <choose>
+            <when test="isSchoolAdmin">
+                AND a.schooi_review_result = 1
+            </when>
+            <otherwise>
+                AND a.review_result = 2
+                <if test="ownerDepId != null and ownerDepId != ''"> AND a.owner_dep_id = #{ownerDepId}</if>
+            </otherwise>
+        </choose>
+        GROUP BY level
+    </select>
+
     <select id="selectAchievementInfoById" parameterType="String" resultType="java.util.HashMap">
         select 
             a.name,

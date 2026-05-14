@@ -146,7 +146,7 @@ import * as echarts from 'echarts';
 import useUserStore from '@/store/modules/user';
 import { useRouter } from 'vue-router';
 import { onMounted, ref, computed, onUnmounted, getCurrentInstance, nextTick } from 'vue';
-import { listManage, listYearStats } from "@/api/achievement/manage";
+import { listManage, listYearStats, getDashboardStats } from "@/api/achievement/manage";
 import { listStudent } from "@/api/achievement/student";
 import { listCollege_level_unreviewed } from "@/api/achievement/college_level_unreviewed";
 import { listSchool_level_unreviewed } from "@/api/achievement/school_level_unreviewed";
@@ -217,40 +217,51 @@ const getStats = async () => {
   try {
     // 1. 管理员视图 (学校或学院)
     if (isReviewer.value) {
-      // 成果统计 (后端 listManage 已按层级权限过滤)
-      const resTotal = await listManage({ pageNum: 1, pageSize: 1 });
-      reviewerStats.value.totalCount = resTotal.total || 0;
+      const res = await getDashboardStats();
+      if (res.data) {
+        // 更新卡片数据
+        reviewerStats.value.totalCount = res.data.totalCount || 0;
+        reviewerStats.value.monthCount = res.data.monthCount || 0;
+        reviewerStats.value.pendingCount = res.data.pendingCount || 0;
+        reviewerStats.value.studentCount = res.data.studentCount || 0;
 
-      const now = new Date();
-      const firstDay = proxy.parseTime(new Date(now.getFullYear(), now.getMonth(), 1), '{y}-{m}-{d}');
-      const resMonth = await listManage({ 
-        pageNum: 1, 
-        pageSize: 1, 
-        'params[beginTime]': firstDay
-      });
-      reviewerStats.value.monthCount = resMonth.total || 0;
+        // 更新趋势图数据 (折线图/柱状图)
+        if (res.data.trend && res.data.trend.length > 0) {
+          chartData.value.years = res.data.trend.map(item => `${item.year}年`);
+          chartData.value.yearCounts = res.data.trend.map(item => item.count);
+        } else {
+          chartData.value.years = [new Date().getFullYear() + '年'];
+          chartData.value.yearCounts = [0];
+        }
 
-      // 参与学生数
-      let studentQueryParams = { pageNum: 1, pageSize: 1 };
-      // 学院管理员统计本院学生 (已在 computed 保证 isSchoolAdmin 为 false 时才进入此处判断)
-      if (isCollegeAdmin.value && userStore.deptName) {
-        studentQueryParams.school = userStore.deptName;
-      }
-      try {
-        const resStudent = await listStudent(studentQueryParams);
-        reviewerStats.value.studentCount = resStudent.total || 0;
-      } catch (e) {
-        reviewerStats.value.studentCount = 0;
-      }
+        // 更新分布图数据 (饼图)
+        const levelConfigs = [
+          { label: '国家级', value: '0', color: '#ff4d4f' },
+          { label: '省部级', value: '1', color: '#ffa940' },
+          { label: '市厅级', value: '2', color: '#ffec3d' },
+          { label: '校级', value: '3', color: '#40a9ff' }
+        ];
+        
+        const distMap = {};
+        if (res.data.distribution) {
+          res.data.distribution.forEach(item => {
+            distMap[String(item.level)] = item.count;
+          });
+        }
 
-      // 待审核任务数
-      reviewerStats.value.pendingCount = 0;
-      if (isSchoolAdmin.value) {
-        const res = await listSchool_level_unreviewed({ pageNum: 1, pageSize: 1 });
-        reviewerStats.value.pendingCount = res.total || 0;
-      } else if (isCollegeAdmin.value) {
-        const res = await listCollege_level_unreviewed({ pageNum: 1, pageSize: 1 });
-        reviewerStats.value.pendingCount = res.total || 0;
+        chartData.value.levels = levelConfigs.map(c => ({ 
+          name: c.label, 
+          value: distMap[c.value] || 0, 
+          itemStyle: { color: c.color } 
+        })).filter(item => item.value > 0);
+
+        if (chartData.value.levels.length === 0) {
+          chartData.value.levels = [{ name: '暂无数据', value: 0, itemStyle: { color: '#eee' } }];
+        }
+
+        nextTick(() => {
+          initCharts();
+        });
       }
     } 
     // 2. 个人视图 (学生或老师)
@@ -269,48 +280,23 @@ const getStats = async () => {
         String(r.reviewResult) === '1' || 
         String(r.schooiReviewResult) === '0'
       ).length;
+
+      // 个人视图图表数据
+      const resYear = await listYearStats();
+      if (resYear.data && resYear.data.length > 0) {
+        chartData.value.years = resYear.data.map(item => `${item.year}年`);
+        chartData.value.yearCounts = resYear.data.map(item => item.count);
+      } else {
+        chartData.value.years = [new Date().getFullYear() + '年'];
+        chartData.value.yearCounts = [0];
+      }
+
+      nextTick(() => {
+        initCharts();
+      });
     }
   } catch (e) {
     console.error('获取统计数据失败', e);
-  }
-};
-
-const getChartsData = async () => {
-  try {
-    // 1. 获取年度统计数据 (后端已处理层级过滤和所有年份)
-    const resYear = await listYearStats();
-    if (resYear.data && resYear.data.length > 0) {
-      chartData.value.years = resYear.data.map(item => `${item.year}年`);
-      chartData.value.yearCounts = resYear.data.map(item => item.count);
-    } else {
-      chartData.value.years = [new Date().getFullYear() + '年'];
-      chartData.value.yearCounts = [0];
-    }
-
-    // 2. 获取获奖级别分布
-    const levelConfigs = [
-      { label: '国家级', value: '0', color: '#ff4d4f' },
-      { label: '省部级', value: '1', color: '#ffa940' },
-      { label: '市厅级', value: '2', color: '#ffec3d' },
-      { label: '校级', value: '3', color: '#40a9ff' }
-    ];
-    
-    const levelRes = await Promise.all(levelConfigs.map(c => listManage({ pageNum: 1, pageSize: 1, level: c.value })));
-    chartData.value.levels = levelConfigs.map((c, i) => ({ 
-      name: c.label, 
-      value: levelRes[i].total || 0, 
-      itemStyle: { color: c.color } 
-    })).filter(item => item.value > 0);
-
-    if (chartData.value.levels.length === 0) {
-      chartData.value.levels = [{ name: '暂无数据', value: 0, itemStyle: { color: '#eee' } }];
-    }
-    
-    nextTick(() => {
-      initCharts();
-    });
-  } catch (e) {
-    console.error('获取图表数据失败', e);
   }
 };
 
@@ -369,7 +355,6 @@ const initCharts = () => {
 
 onMounted(() => { 
   getStats(); 
-  getChartsData(); 
   getNoticeList();
   window.addEventListener('resize', () => { trendChart && trendChart.resize(); pieChart && pieChart.resize(); }); 
 });

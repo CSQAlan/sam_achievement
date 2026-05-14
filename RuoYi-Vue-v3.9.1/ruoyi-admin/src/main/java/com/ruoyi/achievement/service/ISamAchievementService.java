@@ -108,6 +108,11 @@ public interface ISamAchievementService
     public List<Map<String, Object>> selectYearStats(SamAchievement samAchievement);
 
     /**
+     * 查询首页统计数据
+     */
+    public Map<String, Object> selectDashboardStats();
+
+    /**
      * 批量导出成果附件压缩包
      */
     public void exportAttachmentZip(ExportAttachmentZipReq req, HttpServletResponse response) throws IOException;

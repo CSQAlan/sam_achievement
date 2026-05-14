@@ -192,4 +192,19 @@ public interface SamAchievementMapper
      * 查询年度成果统计
      */
     public List<Map<String, Object>> selectYearStats(SamAchievement samAchievement);
+
+    /**
+     * 查询首页统计数据
+     */
+    public Map<String, Object> selectDashboardStats(Map<String, Object> params);
+
+    /**
+     * 查询首页趋势统计
+     */
+    public List<Map<String, Object>> selectDashboardTrend(Map<String, Object> params);
+
+    /**
+     * 查询首页分布统计
+     */
+    public List<Map<String, Object>> selectDashboardDistribution(Map<String, Object> params);
 }

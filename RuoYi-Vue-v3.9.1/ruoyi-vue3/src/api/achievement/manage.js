@@ -17,6 +17,14 @@ export function listYearStats(query) {
   })
 }
 
+// 查询首页统计数据
+export function getDashboardStats() {
+  return request({
+    url: '/achievement/manage/stats/dashboard',
+    method: 'get'
+  })
+}
+
 export function getManage(achievementId, params = {}) {
   return request({
     url: '/achievement/manage/' + achievementId,

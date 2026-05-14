@@ -75,6 +75,18 @@ public class SamAchievementController extends BaseController
     {
         startPage();
         
+        // 优先处理明确要求的个人视角（不论是否为管理员）
+        if (samAchievement.getParams() != null) {
+            String sourceMode = (String) samAchievement.getParams().get("sourceMode");
+            if ("responsible".equals(sourceMode)) {
+                return listResponsible(samAchievement);
+            } else if ("guided".equals(sourceMode)) {
+                return listGuided(samAchievement);
+            } else if ("participated".equals(sourceMode)) {
+                return listParticipated(samAchievement);
+            }
+        }
+
         // 1. 学校管理员：查看全量数据
         if (isSchoolAdmin()) {
             List<SamAchievement> list = samAchievementService.selectSamAchievementList(samAchievement);
@@ -134,7 +146,7 @@ public class SamAchievementController extends BaseController
 
     /**
      * 查询我指导的成果（教师端专用）
-     * 规则：只展示当前登录人作为“指导老师”的成果。即使是管理员，在此页面也只看个人数据。
+     * 规则：只展示当前登录人作为“第一指导老师”的成果。
      */
     @PreAuthorize("@ss.hasPermi('achievement:manage:guided:list')")
     @GetMapping("/list-guided")
@@ -151,13 +163,16 @@ public class SamAchievementController extends BaseController
             samAchievement.setParams(new HashMap<>());
         }
         samAchievement.getParams().put("teacherId", username);
-        // 不限位次，只要参与指导即可
+        // 限制位次：仅限第一指导老师（遵循“我负责的成果权限是我为第一负责人”规则）
+        samAchievement.getParams().put("isFirst", 1);
+        
         List<SamAchievement> list = samAchievementService.selectSamAchievementListByTeacherId(samAchievement);
         return getDataTable(list);
     }
 
     /**
-     * 查询我参与的成果（学生/老师通用，非负责或非主导的参与项）
+     * 查询我参与的成果（学生/老师通用）
+     * 规则：展示所有包含当前登录人名字的成果（不论是负责人、参与人还是指导老师）。
      */
     @PreAuthorize("@ss.hasPermi('achievement:manage:participated:list')")
     @GetMapping("/list-participated")
@@ -169,6 +184,7 @@ public class SamAchievementController extends BaseController
             samAchievement.setParams(new HashMap<>());
         }
         samAchievement.getParams().put("userId", username);
+        // 核心逻辑：exists (participant or advisor)，展示“有名字都能显示”的成果
         List<SamAchievement> list = samAchievementService.selectSamAchievementListByUserId(samAchievement);
         return getDataTable(list);
     }
@@ -196,6 +212,15 @@ public class SamAchievementController extends BaseController
             }
         }
         return success(samAchievementService.selectYearStats(samAchievement));
+    }
+
+    /**
+     * 查询首页统计数据
+     */
+    @GetMapping("/stats/dashboard")
+    public AjaxResult getDashboardStats()
+    {
+        return success(samAchievementService.selectDashboardStats());
     }
 
     /**
