@@ -173,9 +173,7 @@ const isOnlyStudent = computed(() => (isStudent.value || isTeacher.value) && !is
 const handleAchievementApply = () => {
   if (isTeacher.value) {
     router.push({ path: '/achievement/teacher', query: { sourceMode: 'guided' } });
-  } else if (isStudent.value) {
-    router.push('/achievement/student');
-  } else {
+   } else {
     router.push('/achievement/manage');
   }
 };
@@ -185,26 +183,30 @@ const handleMyAchievement = () => {
 };
 
 const getStats = async () => {
-  if (isStudent.value || isTeacher.value) {
-    try {
-      const res = await listManage({ pageNum: 1, pageSize: 999 });
-      const rows = res.rows || [];
-      studentStats.value.certified = rows.filter(r => String(r.schooiReviewResult) === '1').length;
-      studentStats.value.pending = rows.filter(r => String(r.reviewResult) === '0' || (String(r.reviewResult) === '2' && String(r.schooiReviewResult) === '2')).length;
-      studentStats.value.rejected = rows.filter(r => String(r.reviewResult) === '1' || String(r.schooiReviewResult) === '0').length;
-    } catch (e) { console.error(e); }
-  }
+  // 1. 如果是管理人员/审核员，优先获取全局统计数据
   if (isReviewer.value) {
     try {
+      // 系统成果总数
       const resTotal = await listManage({ pageNum: 1, pageSize: 1 });
       reviewerStats.value.totalCount = resTotal.total || 0;
+
+      // 本月新增数
       const now = new Date();
-      const firstDay = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}-01`;
-      const lastDay = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}-${String(now.getDate()).padStart(2, '0')}`;
-      const resMonth = await listManage({ pageNum: 1, pageSize: 1, params: { beginTime: firstDay, endTime: lastDay } });
+      const firstDay = proxy.parseTime(new Date(now.getFullYear(), now.getMonth(), 1), '{y}-{m}-{d}');
+      const lastDay = proxy.parseTime(now, '{y}-{m}-{d}');
+      const resMonth = await listManage({ 
+        pageNum: 1, 
+        pageSize: 1, 
+        'params[beginTime]': firstDay, 
+        'params[endTime]': lastDay 
+      });
       reviewerStats.value.monthCount = resMonth.total || 0;
+
+      // 参与学生总数
       const resStudent = await listStudent({ pageNum: 1, pageSize: 1 });
       reviewerStats.value.studentCount = resStudent.total || 0;
+
+      // 待审核任务数
       reviewerStats.value.pendingCount = 0;
       if (isCollegeReviewer.value || isAdmin.value) {
         const res = await listCollege_level_unreviewed({ pageNum: 1, pageSize: 1 });
@@ -214,7 +216,17 @@ const getStats = async () => {
         const res = await listSchool_level_unreviewed({ pageNum: 1, pageSize: 1 });
         reviewerStats.value.pendingCount += (res.total || 0);
       }
-    } catch (e) { console.error(e); }
+    } catch (e) { console.error('获取管理端统计失败', e); }
+  } 
+  // 2. 如果只是学生或老师，则获取个人统计数据
+  else if (isStudent.value || isTeacher.value) {
+    try {
+      const res = await listManage({ pageNum: 1, pageSize: 999 });
+      const rows = res.rows || [];
+      studentStats.value.certified = rows.filter(r => String(r.schooiReviewResult) === '1').length;
+      studentStats.value.pending = rows.filter(r => String(r.reviewResult) === '0' || (String(r.reviewResult) === '2' && String(r.schooiReviewResult) === '2')).length;
+      studentStats.value.rejected = rows.filter(r => String(r.reviewResult) === '1' || String(r.schooiReviewResult) === '0').length;
+    } catch (e) { console.error('获取师生个人统计失败', e); }
   }
 };
 

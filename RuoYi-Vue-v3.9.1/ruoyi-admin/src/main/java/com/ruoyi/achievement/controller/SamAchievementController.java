@@ -51,6 +51,12 @@ public class SamAchievementController extends BaseController
     public TableDataInfo list(SamAchievement samAchievement)
     {
         startPage();
+        // 如果是管理员，则直接查询全量数据，不进行个人数据的强制过滤
+        if (SecurityUtils.hasRole("admin")) {
+            List<SamAchievement> list = samAchievementService.selectSamAchievementList(samAchievement);
+            return getDataTable(list);
+        }
+
         if (SecurityUtils.hasRole("student")) {
             String studentId = SecurityUtils.getUsername();
             if (samAchievement.getParams() == null) {
@@ -87,7 +93,9 @@ public class SamAchievementController extends BaseController
     public void export(HttpServletResponse response, SamAchievement samAchievement)
     {
         List<SamAchievement> list;
-        if (SecurityUtils.hasRole("student")) {
+        if (SecurityUtils.hasRole("admin")) {
+            list = samAchievementService.selectSamAchievementList(samAchievement);
+        } else if (SecurityUtils.hasRole("student")) {
             String studentId = SecurityUtils.getUsername();
             if (samAchievement.getParams() == null) {
                 samAchievement.setParams(new HashMap<>());
