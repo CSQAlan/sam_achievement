@@ -2,6 +2,8 @@
   <div class="app-container">
     <AchievementManageIndex
         source-mode="responsible"
+        :list-fn="listResponsibleAchievement"
+        :get-fn="getResponsibleManage"
         :audit-dict="college_audit_status"
         :audit-dict-school="school_audit_status"
     >
@@ -24,8 +26,11 @@
 import { ref } from 'vue';
 import AchievementManageIndex from '../component/index.vue';
 import { useDict } from '@/utils/dict';
+import { listResponsibleAchievement, getManage } from '@/api/achievement/manage';
 
 const { college_audit_status, school_audit_status } = useDict('college_audit_status', 'school_audit_status');
+
+const getResponsibleManage = (achievementId) => getManage(achievementId, { selfEditScene: 'responsible' });
 </script>
 
 <style scoped lang="scss">
