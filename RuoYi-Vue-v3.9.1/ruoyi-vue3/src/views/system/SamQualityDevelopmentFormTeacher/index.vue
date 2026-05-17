@@ -176,7 +176,7 @@ const getDictData = async () => {
     const [categoryRes, levelRes, gradeRes, groupRes] = await Promise.all([
       getDicts('sys_competition_category'),
       getDicts('sys_competition_level'),
-      getDicts('award_grade'),
+      getDicts('award_rank'),
       getDicts('group_type')
     ]);
     categoryOptions.value = formatDictData(categoryRes.data || []);

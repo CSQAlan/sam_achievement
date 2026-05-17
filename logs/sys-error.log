@@ -1,167 +1,133 @@
-00:10:06.107 [QuartzScheduler_RuoyiScheduler-楼台1778602192007_MisfireHandler] ERROR o.s.s.q.LocalDataSourceJobStore - [manage,4017] - MisfireHandler: Error handling misfires: Failed to obtain DB connection from data source 'springNonTxDataSource.RuoyiScheduler': com.alibaba.druid.pool.DataSourceClosedException: dataSource already closed at Wed May 13 00:10:04 CST 2026
-org.quartz.JobPersistenceException: Failed to obtain DB connection from data source 'springNonTxDataSource.RuoyiScheduler': com.alibaba.druid.pool.DataSourceClosedException: dataSource already closed at Wed May 13 00:10:04 CST 2026
-	at org.quartz.impl.jdbcjobstore.JobStoreCMT.getNonManagedTXConnection(JobStoreCMT.java:168)
-	at org.quartz.impl.jdbcjobstore.JobStoreSupport.doRecoverMisfires(JobStoreSupport.java:3246)
-	at org.quartz.impl.jdbcjobstore.JobStoreSupport$MisfireHandler.manage(JobStoreSupport.java:4012)
-	at org.quartz.impl.jdbcjobstore.JobStoreSupport$MisfireHandler.run(JobStoreSupport.java:4033)
-Caused by: com.alibaba.druid.pool.DataSourceClosedException: dataSource already closed at Wed May 13 00:10:04 CST 2026
-	at com.alibaba.druid.pool.DruidDataSource.getConnectionInternal(DruidDataSource.java:1546)
-	at com.alibaba.druid.pool.DruidDataSource.getConnectionDirect(DruidDataSource.java:1372)
-	at com.alibaba.druid.filter.FilterChainImpl.dataSource_connect(FilterChainImpl.java:5074)
-	at com.alibaba.druid.filter.stat.StatFilter.dataSource_getConnection(StatFilter.java:724)
-	at com.alibaba.druid.filter.FilterChainImpl.dataSource_connect(FilterChainImpl.java:5070)
-	at com.alibaba.druid.pool.DruidDataSource.getConnection(DruidDataSource.java:1347)
-	at com.alibaba.druid.pool.DruidDataSource.getConnection(DruidDataSource.java:1333)
-	at com.alibaba.druid.pool.DruidDataSource.getConnection(DruidDataSource.java:81)
-	at org.springframework.jdbc.datasource.lookup.AbstractRoutingDataSource.getConnection(AbstractRoutingDataSource.java:194)
-	at org.springframework.scheduling.quartz.LocalDataSourceJobStore$2.getConnection(LocalDataSourceJobStore.java:140)
-	at org.quartz.utils.DBConnectionManager.getConnection(DBConnectionManager.java:108)
-	at org.quartz.impl.jdbcjobstore.JobStoreCMT.getNonManagedTXConnection(JobStoreCMT.java:165)
-	... 3 common frames omitted
-00:10:30.967 [QuartzScheduler_RuoyiScheduler-楼台1778602216748_MisfireHandler] ERROR o.s.s.q.LocalDataSourceJobStore - [manage,4017] - MisfireHandler: Error handling misfires: Failed to obtain DB connection from data source 'springNonTxDataSource.RuoyiScheduler': com.alibaba.druid.pool.DataSourceClosedException: dataSource already closed at Wed May 13 00:10:29 CST 2026
-org.quartz.JobPersistenceException: Failed to obtain DB connection from data source 'springNonTxDataSource.RuoyiScheduler': com.alibaba.druid.pool.DataSourceClosedException: dataSource already closed at Wed May 13 00:10:29 CST 2026
-	at org.quartz.impl.jdbcjobstore.JobStoreCMT.getNonManagedTXConnection(JobStoreCMT.java:168)
-	at org.quartz.impl.jdbcjobstore.JobStoreSupport.doRecoverMisfires(JobStoreSupport.java:3246)
-	at org.quartz.impl.jdbcjobstore.JobStoreSupport$MisfireHandler.manage(JobStoreSupport.java:4012)
-	at org.quartz.impl.jdbcjobstore.JobStoreSupport$MisfireHandler.run(JobStoreSupport.java:4033)
-Caused by: com.alibaba.druid.pool.DataSourceClosedException: dataSource already closed at Wed May 13 00:10:29 CST 2026
-	at com.alibaba.druid.pool.DruidDataSource.getConnectionInternal(DruidDataSource.java:1546)
-	at com.alibaba.druid.pool.DruidDataSource.getConnectionDirect(DruidDataSource.java:1372)
-	at com.alibaba.druid.filter.FilterChainImpl.dataSource_connect(FilterChainImpl.java:5074)
-	at com.alibaba.druid.filter.stat.StatFilter.dataSource_getConnection(StatFilter.java:724)
-	at com.alibaba.druid.filter.FilterChainImpl.dataSource_connect(FilterChainImpl.java:5070)
-	at com.alibaba.druid.pool.DruidDataSource.getConnection(DruidDataSource.java:1347)
-	at com.alibaba.druid.pool.DruidDataSource.getConnection(DruidDataSource.java:1333)
-	at com.alibaba.druid.pool.DruidDataSource.getConnection(DruidDataSource.java:81)
-	at org.springframework.jdbc.datasource.lookup.AbstractRoutingDataSource.getConnection(AbstractRoutingDataSource.java:194)
-	at org.springframework.scheduling.quartz.LocalDataSourceJobStore$2.getConnection(LocalDataSourceJobStore.java:140)
-	at org.quartz.utils.DBConnectionManager.getConnection(DBConnectionManager.java:108)
-	at org.quartz.impl.jdbcjobstore.JobStoreCMT.getNonManagedTXConnection(JobStoreCMT.java:165)
-	... 3 common frames omitted
-00:10:33.122 [QuartzScheduler_RuoyiScheduler-楼台1778602192007_MisfireHandler] ERROR o.s.s.q.LocalDataSourceJobStore - [manage,4017] - MisfireHandler: Error handling misfires: Failed to obtain DB connection from data source 'springNonTxDataSource.RuoyiScheduler': com.alibaba.druid.pool.DataSourceClosedException: dataSource already closed at Wed May 13 00:10:29 CST 2026
-org.quartz.JobPersistenceException: Failed to obtain DB connection from data source 'springNonTxDataSource.RuoyiScheduler': com.alibaba.druid.pool.DataSourceClosedException: dataSource already closed at Wed May 13 00:10:29 CST 2026
-	at org.quartz.impl.jdbcjobstore.JobStoreCMT.getNonManagedTXConnection(JobStoreCMT.java:168)
-	at org.quartz.impl.jdbcjobstore.JobStoreSupport.doRecoverMisfires(JobStoreSupport.java:3246)
-	at org.quartz.impl.jdbcjobstore.JobStoreSupport$MisfireHandler.manage(JobStoreSupport.java:4012)
-	at org.quartz.impl.jdbcjobstore.JobStoreSupport$MisfireHandler.run(JobStoreSupport.java:4033)
-Caused by: com.alibaba.druid.pool.DataSourceClosedException: dataSource already closed at Wed May 13 00:10:29 CST 2026
-	at com.alibaba.druid.pool.DruidDataSource.getConnectionInternal(DruidDataSource.java:1546)
-	at com.alibaba.druid.pool.DruidDataSource.getConnectionDirect(DruidDataSource.java:1372)
-	at com.alibaba.druid.filter.FilterChainImpl.dataSource_connect(FilterChainImpl.java:5074)
-	at com.alibaba.druid.filter.stat.StatFilter.dataSource_getConnection(StatFilter.java:724)
-	at com.alibaba.druid.filter.FilterChainImpl.dataSource_connect(FilterChainImpl.java:5070)
-	at com.alibaba.druid.pool.DruidDataSource.getConnection(DruidDataSource.java:1347)
-	at com.alibaba.druid.pool.DruidDataSource.getConnection(DruidDataSource.java:1333)
-	at com.alibaba.druid.pool.DruidDataSource.getConnection(DruidDataSource.java:81)
-	at org.springframework.jdbc.datasource.lookup.AbstractRoutingDataSource.getConnection(AbstractRoutingDataSource.java:194)
-	at org.springframework.scheduling.quartz.LocalDataSourceJobStore$2.getConnection(LocalDataSourceJobStore.java:140)
-	at org.quartz.utils.DBConnectionManager.getConnection(DBConnectionManager.java:108)
-	at org.quartz.impl.jdbcjobstore.JobStoreCMT.getNonManagedTXConnection(JobStoreCMT.java:165)
-	... 3 common frames omitted
-00:10:51.947 [restartedMain] ERROR s.d.s.w.p.DefaultRequestHandlerCombiner - [safeGroupBy,103] - Unable to index request handlers Method [listQualityTeacher] was discovered in the .class file but cannot be resolved in the class object. Request handlers with issuesRequest Handlers with duplicate keys {	0. RequestHandlerKey{pathMappings=[/achievement/manage], supportedMethods=[PUT], supportedMediaTypes=[], producibleMediaTypes=[]}	1. RequestHandlerKey{pathMappings=[/achievement/manage], supportedMethods=[POST], supportedMediaTypes=[], producibleMediaTypes=[]}}
-00:10:54.517 [QuartzScheduler_RuoyiScheduler-楼台1778602241347_MisfireHandler] ERROR o.s.s.q.LocalDataSourceJobStore - [manage,4017] - MisfireHandler: Error handling misfires: Failed to obtain DB connection from data source 'springNonTxDataSource.RuoyiScheduler': com.alibaba.druid.pool.DataSourceClosedException: dataSource already closed at Wed May 13 00:10:53 CST 2026
-org.quartz.JobPersistenceException: Failed to obtain DB connection from data source 'springNonTxDataSource.RuoyiScheduler': com.alibaba.druid.pool.DataSourceClosedException: dataSource already closed at Wed May 13 00:10:53 CST 2026
-	at org.quartz.impl.jdbcjobstore.JobStoreCMT.getNonManagedTXConnection(JobStoreCMT.java:168)
-	at org.quartz.impl.jdbcjobstore.JobStoreSupport.doRecoverMisfires(JobStoreSupport.java:3246)
-	at org.quartz.impl.jdbcjobstore.JobStoreSupport$MisfireHandler.manage(JobStoreSupport.java:4012)
-	at org.quartz.impl.jdbcjobstore.JobStoreSupport$MisfireHandler.run(JobStoreSupport.java:4033)
-Caused by: com.alibaba.druid.pool.DataSourceClosedException: dataSource already closed at Wed May 13 00:10:53 CST 2026
-	at com.alibaba.druid.pool.DruidDataSource.getConnectionInternal(DruidDataSource.java:1546)
-	at com.alibaba.druid.pool.DruidDataSource.getConnectionDirect(DruidDataSource.java:1372)
-	at com.alibaba.druid.filter.FilterChainImpl.dataSource_connect(FilterChainImpl.java:5074)
-	at com.alibaba.druid.filter.stat.StatFilter.dataSource_getConnection(StatFilter.java:724)
-	at com.alibaba.druid.filter.FilterChainImpl.dataSource_connect(FilterChainImpl.java:5070)
-	at com.alibaba.druid.pool.DruidDataSource.getConnection(DruidDataSource.java:1347)
-	at com.alibaba.druid.pool.DruidDataSource.getConnection(DruidDataSource.java:1333)
-	at com.alibaba.druid.pool.DruidDataSource.getConnection(DruidDataSource.java:81)
-	at org.springframework.jdbc.datasource.lookup.AbstractRoutingDataSource.getConnection(AbstractRoutingDataSource.java:194)
-	at org.springframework.scheduling.quartz.LocalDataSourceJobStore$2.getConnection(LocalDataSourceJobStore.java:140)
-	at org.quartz.utils.DBConnectionManager.getConnection(DBConnectionManager.java:108)
-	at org.quartz.impl.jdbcjobstore.JobStoreCMT.getNonManagedTXConnection(JobStoreCMT.java:165)
-	... 3 common frames omitted
-00:10:57.977 [QuartzScheduler_RuoyiScheduler-楼台1778602216748_MisfireHandler] ERROR o.s.s.q.LocalDataSourceJobStore - [manage,4017] - MisfireHandler: Error handling misfires: Failed to obtain DB connection from data source 'springNonTxDataSource.RuoyiScheduler': com.alibaba.druid.pool.DataSourceClosedException: dataSource already closed at Wed May 13 00:10:53 CST 2026
-org.quartz.JobPersistenceException: Failed to obtain DB connection from data source 'springNonTxDataSource.RuoyiScheduler': com.alibaba.druid.pool.DataSourceClosedException: dataSource already closed at Wed May 13 00:10:53 CST 2026
-	at org.quartz.impl.jdbcjobstore.JobStoreCMT.getNonManagedTXConnection(JobStoreCMT.java:168)
-	at org.quartz.impl.jdbcjobstore.JobStoreSupport.doRecoverMisfires(JobStoreSupport.java:3246)
-	at org.quartz.impl.jdbcjobstore.JobStoreSupport$MisfireHandler.manage(JobStoreSupport.java:4012)
-	at org.quartz.impl.jdbcjobstore.JobStoreSupport$MisfireHandler.run(JobStoreSupport.java:4033)
-Caused by: com.alibaba.druid.pool.DataSourceClosedException: dataSource already closed at Wed May 13 00:10:53 CST 2026
-	at com.alibaba.druid.pool.DruidDataSource.getConnectionInternal(DruidDataSource.java:1546)
-	at com.alibaba.druid.pool.DruidDataSource.getConnectionDirect(DruidDataSource.java:1372)
-	at com.alibaba.druid.filter.FilterChainImpl.dataSource_connect(FilterChainImpl.java:5074)
-	at com.alibaba.druid.filter.stat.StatFilter.dataSource_getConnection(StatFilter.java:724)
-	at com.alibaba.druid.filter.FilterChainImpl.dataSource_connect(FilterChainImpl.java:5070)
-	at com.alibaba.druid.pool.DruidDataSource.getConnection(DruidDataSource.java:1347)
-	at com.alibaba.druid.pool.DruidDataSource.getConnection(DruidDataSource.java:1333)
-	at com.alibaba.druid.pool.DruidDataSource.getConnection(DruidDataSource.java:81)
-	at org.springframework.jdbc.datasource.lookup.AbstractRoutingDataSource.getConnection(AbstractRoutingDataSource.java:194)
-	at org.springframework.scheduling.quartz.LocalDataSourceJobStore$2.getConnection(LocalDataSourceJobStore.java:140)
-	at org.quartz.utils.DBConnectionManager.getConnection(DBConnectionManager.java:108)
-	at org.quartz.impl.jdbcjobstore.JobStoreCMT.getNonManagedTXConnection(JobStoreCMT.java:165)
-	... 3 common frames omitted
-00:11:00.135 [QuartzScheduler_RuoyiScheduler-楼台1778602192007_MisfireHandler] ERROR o.s.s.q.LocalDataSourceJobStore - [manage,4017] - MisfireHandler: Error handling misfires: Failed to obtain DB connection from data source 'springNonTxDataSource.RuoyiScheduler': com.alibaba.druid.pool.DataSourceClosedException: dataSource already closed at Wed May 13 00:10:53 CST 2026
-org.quartz.JobPersistenceException: Failed to obtain DB connection from data source 'springNonTxDataSource.RuoyiScheduler': com.alibaba.druid.pool.DataSourceClosedException: dataSource already closed at Wed May 13 00:10:53 CST 2026
-	at org.quartz.impl.jdbcjobstore.JobStoreCMT.getNonManagedTXConnection(JobStoreCMT.java:168)
-	at org.quartz.impl.jdbcjobstore.JobStoreSupport.doRecoverMisfires(JobStoreSupport.java:3246)
-	at org.quartz.impl.jdbcjobstore.JobStoreSupport$MisfireHandler.manage(JobStoreSupport.java:4012)
-	at org.quartz.impl.jdbcjobstore.JobStoreSupport$MisfireHandler.run(JobStoreSupport.java:4033)
-Caused by: com.alibaba.druid.pool.DataSourceClosedException: dataSource already closed at Wed May 13 00:10:53 CST 2026
-	at com.alibaba.druid.pool.DruidDataSource.getConnectionInternal(DruidDataSource.java:1546)
-	at com.alibaba.druid.pool.DruidDataSource.getConnectionDirect(DruidDataSource.java:1372)
-	at com.alibaba.druid.filter.FilterChainImpl.dataSource_connect(FilterChainImpl.java:5074)
-	at com.alibaba.druid.filter.stat.StatFilter.dataSource_getConnection(StatFilter.java:724)
-	at com.alibaba.druid.filter.FilterChainImpl.dataSource_connect(FilterChainImpl.java:5070)
-	at com.alibaba.druid.pool.DruidDataSource.getConnection(DruidDataSource.java:1347)
-	at com.alibaba.druid.pool.DruidDataSource.getConnection(DruidDataSource.java:1333)
-	at com.alibaba.druid.pool.DruidDataSource.getConnection(DruidDataSource.java:81)
-	at org.springframework.jdbc.datasource.lookup.AbstractRoutingDataSource.getConnection(AbstractRoutingDataSource.java:194)
-	at org.springframework.scheduling.quartz.LocalDataSourceJobStore$2.getConnection(LocalDataSourceJobStore.java:140)
-	at org.quartz.utils.DBConnectionManager.getConnection(DBConnectionManager.java:108)
-	at org.quartz.impl.jdbcjobstore.JobStoreCMT.getNonManagedTXConnection(JobStoreCMT.java:165)
-	... 3 common frames omitted
-00:16:45.726 [QuartzScheduler_RuoyiScheduler-楼台1778602241347_MisfireHandler] ERROR o.s.s.q.LocalDataSourceJobStore - [manage,4017] - MisfireHandler: Error handling misfires: Failed to obtain DB connection from data source 'springNonTxDataSource.RuoyiScheduler': com.alibaba.druid.pool.DataSourceClosedException: dataSource already closed at Wed May 13 00:16:44 CST 2026
-org.quartz.JobPersistenceException: Failed to obtain DB connection from data source 'springNonTxDataSource.RuoyiScheduler': com.alibaba.druid.pool.DataSourceClosedException: dataSource already closed at Wed May 13 00:16:44 CST 2026
-	at org.quartz.impl.jdbcjobstore.JobStoreCMT.getNonManagedTXConnection(JobStoreCMT.java:168)
-	at org.quartz.impl.jdbcjobstore.JobStoreSupport.doRecoverMisfires(JobStoreSupport.java:3246)
-	at org.quartz.impl.jdbcjobstore.JobStoreSupport$MisfireHandler.manage(JobStoreSupport.java:4012)
-	at org.quartz.impl.jdbcjobstore.JobStoreSupport$MisfireHandler.run(JobStoreSupport.java:4033)
-Caused by: com.alibaba.druid.pool.DataSourceClosedException: dataSource already closed at Wed May 13 00:16:44 CST 2026
-	at com.alibaba.druid.pool.DruidDataSource.getConnectionInternal(DruidDataSource.java:1546)
-	at com.alibaba.druid.pool.DruidDataSource.getConnectionDirect(DruidDataSource.java:1372)
-	at com.alibaba.druid.filter.FilterChainImpl.dataSource_connect(FilterChainImpl.java:5074)
-	at com.alibaba.druid.filter.stat.StatFilter.dataSource_getConnection(StatFilter.java:724)
-	at com.alibaba.druid.filter.FilterChainImpl.dataSource_connect(FilterChainImpl.java:5070)
-	at com.alibaba.druid.pool.DruidDataSource.getConnection(DruidDataSource.java:1347)
-	at com.alibaba.druid.pool.DruidDataSource.getConnection(DruidDataSource.java:1333)
-	at com.alibaba.druid.pool.DruidDataSource.getConnection(DruidDataSource.java:81)
-	at org.springframework.jdbc.datasource.lookup.AbstractRoutingDataSource.getConnection(AbstractRoutingDataSource.java:194)
-	at org.springframework.scheduling.quartz.LocalDataSourceJobStore$2.getConnection(LocalDataSourceJobStore.java:140)
-	at org.quartz.utils.DBConnectionManager.getConnection(DBConnectionManager.java:108)
-	at org.quartz.impl.jdbcjobstore.JobStoreCMT.getNonManagedTXConnection(JobStoreCMT.java:165)
-	... 3 common frames omitted
-00:16:49.207 [QuartzScheduler_RuoyiScheduler-楼台1778602216748_MisfireHandler] ERROR o.s.s.q.LocalDataSourceJobStore - [manage,4017] - MisfireHandler: Error handling misfires: Failed to obtain DB connection from data source 'springNonTxDataSource.RuoyiScheduler': com.alibaba.druid.pool.DataSourceClosedException: dataSource already closed at Wed May 13 00:16:44 CST 2026
-org.quartz.JobPersistenceException: Failed to obtain DB connection from data source 'springNonTxDataSource.RuoyiScheduler': com.alibaba.druid.pool.DataSourceClosedException: dataSource already closed at Wed May 13 00:16:44 CST 2026
-	at org.quartz.impl.jdbcjobstore.JobStoreCMT.getNonManagedTXConnection(JobStoreCMT.java:168)
-	at org.quartz.impl.jdbcjobstore.JobStoreSupport.doRecoverMisfires(JobStoreSupport.java:3246)
-	at org.quartz.impl.jdbcjobstore.JobStoreSupport$MisfireHandler.manage(JobStoreSupport.java:4012)
-	at org.quartz.impl.jdbcjobstore.JobStoreSupport$MisfireHandler.run(JobStoreSupport.java:4033)
-Caused by: com.alibaba.druid.pool.DataSourceClosedException: dataSource already closed at Wed May 13 00:16:44 CST 2026
-	at com.alibaba.druid.pool.DruidDataSource.getConnectionInternal(DruidDataSource.java:1546)
-	at com.alibaba.druid.pool.DruidDataSource.getConnectionDirect(DruidDataSource.java:1372)
-	at com.alibaba.druid.filter.FilterChainImpl.dataSource_connect(FilterChainImpl.java:5074)
-	at com.alibaba.druid.filter.stat.StatFilter.dataSource_getConnection(StatFilter.java:724)
-	at com.alibaba.druid.filter.FilterChainImpl.dataSource_connect(FilterChainImpl.java:5070)
-	at com.alibaba.druid.pool.DruidDataSource.getConnection(DruidDataSource.java:1347)
-	at com.alibaba.druid.pool.DruidDataSource.getConnection(DruidDataSource.java:1333)
-	at com.alibaba.druid.pool.DruidDataSource.getConnection(DruidDataSource.java:81)
-	at org.springframework.jdbc.datasource.lookup.AbstractRoutingDataSource.getConnection(AbstractRoutingDataSource.java:194)
-	at org.springframework.scheduling.quartz.LocalDataSourceJobStore$2.getConnection(LocalDataSourceJobStore.java:140)
-	at org.quartz.utils.DBConnectionManager.getConnection(DBConnectionManager.java:108)
-	at org.quartz.impl.jdbcjobstore.JobStoreCMT.getNonManagedTXConnection(JobStoreCMT.java:165)
-	... 3 common frames omitted
-00:16:49.317 [restartedMain] ERROR o.s.b.SpringApplication - [reportFailure,870] - Application run failed
-org.springframework.beans.factory.BeanCreationException: Error creating bean with name 'achievementBizAuditHandler' defined in file [D:\各种作业\ruo\RuoYi-Vue-v3.9.1\ruoyi-admin\target\classes\com\ruoyi\achievement\audit\AchievementBizAuditHandler.class]: Post-processing of merged bean definition failed; nested exception is java.lang.IllegalStateException: Failed to introspect Class [com.ruoyi.achievement.audit.AchievementBizAuditHandler] from ClassLoader [org.springframework.boot.devtools.restart.classloader.RestartClassLoader@312b48d9]
-	at org.springframework.beans.factory.support.AbstractAutowireCapableBeanFactory.doCreateBean(AbstractAutowireCapableBeanFactory.java:597)
+16:16:42.028 [restartedMain] ERROR o.s.b.SpringApplication - [reportFailure,870] - Application run failed
+org.springframework.beans.factory.BeanDefinitionStoreException: Failed to parse configuration class [com.ruoyi.RuoYiApplication]; nested exception is java.io.FileNotFoundException: class path resource [com/ruoyi/generator/config/GenConfig.class] cannot be opened because it does not exist
+	at org.springframework.context.annotation.ConfigurationClassParser.parse(ConfigurationClassParser.java:188)
+	at org.springframework.context.annotation.ConfigurationClassPostProcessor.processConfigBeanDefinitions(ConfigurationClassPostProcessor.java:331)
+	at org.springframework.context.annotation.ConfigurationClassPostProcessor.postProcessBeanDefinitionRegistry(ConfigurationClassPostProcessor.java:247)
+	at org.springframework.context.support.PostProcessorRegistrationDelegate.invokeBeanDefinitionRegistryPostProcessors(PostProcessorRegistrationDelegate.java:311)
+	at org.springframework.context.support.PostProcessorRegistrationDelegate.invokeBeanFactoryPostProcessors(PostProcessorRegistrationDelegate.java:112)
+	at org.springframework.context.support.AbstractApplicationContext.invokeBeanFactoryPostProcessors(AbstractApplicationContext.java:756)
+	at org.springframework.context.support.AbstractApplicationContext.refresh(AbstractApplicationContext.java:573)
+	at org.springframework.boot.web.servlet.context.ServletWebServerApplicationContext.refresh(ServletWebServerApplicationContext.java:145)
+	at org.springframework.boot.SpringApplication.refresh(SpringApplication.java:780)
+	at org.springframework.boot.SpringApplication.refreshContext(SpringApplication.java:453)
+	at org.springframework.boot.SpringApplication.run(SpringApplication.java:343)
+	at org.springframework.boot.SpringApplication.run(SpringApplication.java:1370)
+	at org.springframework.boot.SpringApplication.run(SpringApplication.java:1359)
+	at com.ruoyi.RuoYiApplication.main(RuoYiApplication.java:19)
+	at java.base/jdk.internal.reflect.DirectMethodHandleAccessor.invoke(DirectMethodHandleAccessor.java:103)
+	at java.base/java.lang.reflect.Method.invoke(Method.java:580)
+	at org.springframework.boot.devtools.restart.RestartLauncher.run(RestartLauncher.java:49)
+Caused by: java.io.FileNotFoundException: class path resource [com/ruoyi/generator/config/GenConfig.class] cannot be opened because it does not exist
+	at org.springframework.core.io.ClassPathResource.getInputStream(ClassPathResource.java:203)
+	at org.springframework.core.type.classreading.SimpleMetadataReader.getClassReader(SimpleMetadataReader.java:55)
+	at org.springframework.core.type.classreading.SimpleMetadataReader.<init>(SimpleMetadataReader.java:48)
+	at org.springframework.core.type.classreading.SimpleMetadataReaderFactory.getMetadataReader(SimpleMetadataReaderFactory.java:103)
+	at org.springframework.boot.type.classreading.ConcurrentReferenceCachingMetadataReaderFactory.createMetadataReader(ConcurrentReferenceCachingMetadataReaderFactory.java:86)
+	at org.springframework.boot.type.classreading.ConcurrentReferenceCachingMetadataReaderFactory.getMetadataReader(ConcurrentReferenceCachingMetadataReaderFactory.java:73)
+	at org.springframework.core.type.classreading.SimpleMetadataReaderFactory.getMetadataReader(SimpleMetadataReaderFactory.java:81)
+	at org.springframework.context.annotation.ConfigurationClassParser.parse(ConfigurationClassParser.java:197)
+	at org.springframework.context.annotation.ConfigurationClassParser.doProcessConfigurationClass(ConfigurationClassParser.java:303)
+	at org.springframework.context.annotation.ConfigurationClassParser.processConfigurationClass(ConfigurationClassParser.java:249)
+	at org.springframework.context.annotation.ConfigurationClassParser.parse(ConfigurationClassParser.java:206)
+	at org.springframework.context.annotation.ConfigurationClassParser.parse(ConfigurationClassParser.java:174)
+	... 16 common frames omitted
+16:16:46.309 [restartedMain] ERROR o.s.b.w.e.t.TomcatStarter - [onStartup,61] - Error starting Tomcat context. Exception: org.springframework.beans.factory.BeanCreationException. Message: Error creating bean with name 'filterCustomSingleRegistration' defined in class path resource [com/ruoyi/demo/Config.class]: Bean instantiation via factory method failed; nested exception is org.springframework.beans.BeanInstantiationException: Failed to instantiate [org.springframework.boot.web.servlet.FilterRegistrationBean]: Factory method 'filterCustomSingleRegistration' threw exception; nested exception is java.lang.NoClassDefFoundError: com/ruoyi/demo/CustomSingleSignOutFilter
+16:16:46.335 [restartedMain] ERROR o.s.b.SpringApplication - [reportFailure,870] - Application run failed
+org.springframework.context.ApplicationContextException: Unable to start web server; nested exception is org.springframework.boot.web.server.WebServerException: Unable to start embedded Tomcat
+	at org.springframework.boot.web.servlet.context.ServletWebServerApplicationContext.onRefresh(ServletWebServerApplicationContext.java:163)
+	at org.springframework.context.support.AbstractApplicationContext.refresh(AbstractApplicationContext.java:585)
+	at org.springframework.boot.web.servlet.context.ServletWebServerApplicationContext.refresh(ServletWebServerApplicationContext.java:145)
+	at org.springframework.boot.SpringApplication.refresh(SpringApplication.java:780)
+	at org.springframework.boot.SpringApplication.refreshContext(SpringApplication.java:453)
+	at org.springframework.boot.SpringApplication.run(SpringApplication.java:343)
+	at org.springframework.boot.SpringApplication.run(SpringApplication.java:1370)
+	at org.springframework.boot.SpringApplication.run(SpringApplication.java:1359)
+	at com.ruoyi.RuoYiApplication.main(RuoYiApplication.java:19)
+	at java.base/jdk.internal.reflect.DirectMethodHandleAccessor.invoke(DirectMethodHandleAccessor.java:103)
+	at java.base/java.lang.reflect.Method.invoke(Method.java:580)
+	at org.springframework.boot.devtools.restart.RestartLauncher.run(RestartLauncher.java:49)
+Caused by: org.springframework.boot.web.server.WebServerException: Unable to start embedded Tomcat
+	at org.springframework.boot.web.embedded.tomcat.TomcatWebServer.initialize(TomcatWebServer.java:142)
+	at org.springframework.boot.web.embedded.tomcat.TomcatWebServer.<init>(TomcatWebServer.java:104)
+	at org.springframework.boot.web.embedded.tomcat.TomcatServletWebServerFactory.getTomcatWebServer(TomcatServletWebServerFactory.java:456)
+	at org.springframework.boot.web.embedded.tomcat.TomcatServletWebServerFactory.getWebServer(TomcatServletWebServerFactory.java:204)
+	at org.springframework.boot.web.servlet.context.ServletWebServerApplicationContext.createWebServer(ServletWebServerApplicationContext.java:182)
+	at org.springframework.boot.web.servlet.context.ServletWebServerApplicationContext.onRefresh(ServletWebServerApplicationContext.java:160)
+	... 11 common frames omitted
+Caused by: org.springframework.beans.factory.BeanCreationException: Error creating bean with name 'filterCustomSingleRegistration' defined in class path resource [com/ruoyi/demo/Config.class]: Bean instantiation via factory method failed; nested exception is org.springframework.beans.BeanInstantiationException: Failed to instantiate [org.springframework.boot.web.servlet.FilterRegistrationBean]: Factory method 'filterCustomSingleRegistration' threw exception; nested exception is java.lang.NoClassDefFoundError: com/ruoyi/demo/CustomSingleSignOutFilter
+	at org.springframework.beans.factory.support.ConstructorResolver.instantiate(ConstructorResolver.java:646)
+	at org.springframework.beans.factory.support.ConstructorResolver.instantiateUsingFactoryMethod(ConstructorResolver.java:477)
+	at org.springframework.beans.factory.support.AbstractAutowireCapableBeanFactory.instantiateUsingFactoryMethod(AbstractAutowireCapableBeanFactory.java:1352)
+	at org.springframework.beans.factory.support.AbstractAutowireCapableBeanFactory.createBeanInstance(AbstractAutowireCapableBeanFactory.java:1195)
+	at org.springframework.beans.factory.support.AbstractAutowireCapableBeanFactory.doCreateBean(AbstractAutowireCapableBeanFactory.java:582)
+	at org.springframework.beans.factory.support.AbstractAutowireCapableBeanFactory.createBean(AbstractAutowireCapableBeanFactory.java:542)
+	at org.springframework.beans.factory.support.AbstractBeanFactory.lambda$doGetBean$0(AbstractBeanFactory.java:336)
+	at org.springframework.beans.factory.support.DefaultSingletonBeanRegistry.getSingleton(DefaultSingletonBeanRegistry.java:234)
+	at org.springframework.beans.factory.support.AbstractBeanFactory.doGetBean(AbstractBeanFactory.java:334)
+	at org.springframework.beans.factory.support.AbstractBeanFactory.getBean(AbstractBeanFactory.java:214)
+	at org.springframework.boot.web.servlet.ServletContextInitializerBeans.getOrderedBeansOfType(ServletContextInitializerBeans.java:212)
+	at org.springframework.boot.web.servlet.ServletContextInitializerBeans.getOrderedBeansOfType(ServletContextInitializerBeans.java:203)
+	at org.springframework.boot.web.servlet.ServletContextInitializerBeans.addServletContextInitializerBeans(ServletContextInitializerBeans.java:97)
+	at org.springframework.boot.web.servlet.ServletContextInitializerBeans.<init>(ServletContextInitializerBeans.java:86)
+	at org.springframework.boot.web.servlet.context.ServletWebServerApplicationContext.getServletContextInitializerBeans(ServletWebServerApplicationContext.java:260)
+	at org.springframework.boot.web.servlet.context.ServletWebServerApplicationContext.selfInitialize(ServletWebServerApplicationContext.java:234)
+	at org.springframework.boot.web.embedded.tomcat.TomcatStarter.onStartup(TomcatStarter.java:53)
+	at org.apache.catalina.core.StandardContext.startInternal(StandardContext.java:4479)
+	at org.apache.catalina.util.LifecycleBase.start(LifecycleBase.java:164)
+	at org.apache.catalina.core.ContainerBase$StartChild.call(ContainerBase.java:1201)
+	at org.apache.catalina.core.ContainerBase$StartChild.call(ContainerBase.java:1191)
+	at java.base/java.util.concurrent.FutureTask.run(FutureTask.java:317)
+	at org.apache.tomcat.util.threads.InlineExecutorService.execute(InlineExecutorService.java:82)
+	at java.base/java.util.concurrent.AbstractExecutorService.submit(AbstractExecutorService.java:145)
+	at org.apache.catalina.core.ContainerBase.startInternal(ContainerBase.java:747)
+	at org.apache.catalina.core.StandardHost.startInternal(StandardHost.java:719)
+	at org.apache.catalina.util.LifecycleBase.start(LifecycleBase.java:164)
+	at org.apache.catalina.core.ContainerBase$StartChild.call(ContainerBase.java:1201)
+	at org.apache.catalina.core.ContainerBase$StartChild.call(ContainerBase.java:1191)
+	at java.base/java.util.concurrent.FutureTask.run(FutureTask.java:317)
+	at org.apache.tomcat.util.threads.InlineExecutorService.execute(InlineExecutorService.java:82)
+	at java.base/java.util.concurrent.AbstractExecutorService.submit(AbstractExecutorService.java:145)
+	at org.apache.catalina.core.ContainerBase.startInternal(ContainerBase.java:747)
+	at org.apache.catalina.core.StandardEngine.startInternal(StandardEngine.java:209)
+	at org.apache.catalina.util.LifecycleBase.start(LifecycleBase.java:164)
+	at org.apache.catalina.core.StandardService.startInternal(StandardService.java:410)
+	at org.apache.catalina.util.LifecycleBase.start(LifecycleBase.java:164)
+	at org.apache.catalina.core.StandardServer.startInternal(StandardServer.java:872)
+	at org.apache.catalina.util.LifecycleBase.start(LifecycleBase.java:164)
+	at org.apache.catalina.startup.Tomcat.start(Tomcat.java:437)
+	at org.springframework.boot.web.embedded.tomcat.TomcatWebServer.initialize(TomcatWebServer.java:123)
+	... 16 common frames omitted
+Caused by: org.springframework.beans.BeanInstantiationException: Failed to instantiate [org.springframework.boot.web.servlet.FilterRegistrationBean]: Factory method 'filterCustomSingleRegistration' threw exception; nested exception is java.lang.NoClassDefFoundError: com/ruoyi/demo/CustomSingleSignOutFilter
+	at org.springframework.beans.factory.support.SimpleInstantiationStrategy.instantiate(SimpleInstantiationStrategy.java:185)
+	at org.springframework.beans.factory.support.ConstructorResolver.instantiate(ConstructorResolver.java:641)
+	... 56 common frames omitted
+Caused by: java.lang.NoClassDefFoundError: com/ruoyi/demo/CustomSingleSignOutFilter
+	at com.ruoyi.demo.Config.filterCustomSingleRegistration(Config.java:30)
+	at com.ruoyi.demo.Config$$EnhancerBySpringCGLIB$$4e6cfa57.CGLIB$filterCustomSingleRegistration$5(<generated>)
+	at com.ruoyi.demo.Config$$EnhancerBySpringCGLIB$$4e6cfa57$$FastClassBySpringCGLIB$$ee473ea6.invoke(<generated>)
+	at org.springframework.cglib.proxy.MethodProxy.invokeSuper(MethodProxy.java:244)
+	at org.springframework.context.annotation.ConfigurationClassEnhancer$BeanMethodInterceptor.intercept(ConfigurationClassEnhancer.java:331)
+	at com.ruoyi.demo.Config$$EnhancerBySpringCGLIB$$4e6cfa57.filterCustomSingleRegistration(<generated>)
+	at java.base/jdk.internal.reflect.DirectMethodHandleAccessor.invoke(DirectMethodHandleAccessor.java:103)
+	at java.base/java.lang.reflect.Method.invoke(Method.java:580)
+	at org.springframework.beans.factory.support.SimpleInstantiationStrategy.instantiate(SimpleInstantiationStrategy.java:154)
+	... 57 common frames omitted
+Caused by: java.lang.ClassNotFoundException: com.ruoyi.demo.CustomSingleSignOutFilter
+	at java.base/jdk.internal.loader.BuiltinClassLoader.loadClass(BuiltinClassLoader.java:641)
+	at java.base/jdk.internal.loader.ClassLoaders$AppClassLoader.loadClass(ClassLoaders.java:188)
+	at java.base/java.lang.ClassLoader.loadClass(ClassLoader.java:526)
+	at java.base/java.lang.Class.forName0(Native Method)
+	at java.base/java.lang.Class.forName(Class.java:534)
+	at java.base/java.lang.Class.forName(Class.java:513)
+	at org.springframework.boot.devtools.restart.classloader.RestartClassLoader.loadClass(RestartClassLoader.java:145)
+	at java.base/java.lang.ClassLoader.loadClass(ClassLoader.java:526)
+	... 66 common frames omitted
+16:21:15.562 [restartedMain] ERROR o.s.b.SpringApplication - [reportFailure,870] - Application run failed
+org.springframework.beans.factory.BeanCreationException: Error creating bean with name 'achievementBizAuditHandler': Lookup method resolution failed; nested exception is java.lang.IllegalStateException: Failed to introspect Class [com.ruoyi.achievement.audit.AchievementBizAuditHandler] from ClassLoader [org.springframework.boot.devtools.restart.classloader.RestartClassLoader@39aa996e]
+	at org.springframework.beans.factory.annotation.AutowiredAnnotationBeanPostProcessor.determineCandidateConstructors(AutowiredAnnotationBeanPostProcessor.java:298)
+	at org.springframework.beans.factory.support.AbstractAutowireCapableBeanFactory.determineConstructorsFromBeanPostProcessors(AbstractAutowireCapableBeanFactory.java:1302)
+	at org.springframework.beans.factory.support.AbstractAutowireCapableBeanFactory.createBeanInstance(AbstractAutowireCapableBeanFactory.java:1219)
+	at org.springframework.beans.factory.support.AbstractAutowireCapableBeanFactory.doCreateBean(AbstractAutowireCapableBeanFactory.java:582)
 	at org.springframework.beans.factory.support.AbstractAutowireCapableBeanFactory.createBean(AbstractAutowireCapableBeanFactory.java:542)
 	at org.springframework.beans.factory.support.AbstractBeanFactory.lambda$doGetBean$0(AbstractBeanFactory.java:336)
 	at org.springframework.beans.factory.support.DefaultSingletonBeanRegistry.getSingleton(DefaultSingletonBeanRegistry.java:234)
@@ -180,22 +146,18 @@ org.springframework.beans.factory.BeanCreationException: Error creating bean wit
 	at java.base/jdk.internal.reflect.DirectMethodHandleAccessor.invoke(DirectMethodHandleAccessor.java:103)
 	at java.base/java.lang.reflect.Method.invoke(Method.java:580)
 	at org.springframework.boot.devtools.restart.RestartLauncher.run(RestartLauncher.java:49)
-Caused by: java.lang.IllegalStateException: Failed to introspect Class [com.ruoyi.achievement.audit.AchievementBizAuditHandler] from ClassLoader [org.springframework.boot.devtools.restart.classloader.RestartClassLoader@312b48d9]
-	at org.springframework.util.ReflectionUtils.getDeclaredFields(ReflectionUtils.java:735)
-	at org.springframework.util.ReflectionUtils.doWithLocalFields(ReflectionUtils.java:667)
-	at org.springframework.context.annotation.CommonAnnotationBeanPostProcessor.buildResourceMetadata(CommonAnnotationBeanPostProcessor.java:377)
-	at org.springframework.context.annotation.CommonAnnotationBeanPostProcessor.findResourceMetadata(CommonAnnotationBeanPostProcessor.java:358)
-	at org.springframework.context.annotation.CommonAnnotationBeanPostProcessor.postProcessMergedBeanDefinition(CommonAnnotationBeanPostProcessor.java:306)
-	at org.springframework.beans.factory.support.AbstractAutowireCapableBeanFactory.applyMergedBeanDefinitionPostProcessors(AbstractAutowireCapableBeanFactory.java:1116)
-	at org.springframework.beans.factory.support.AbstractAutowireCapableBeanFactory.doCreateBean(AbstractAutowireCapableBeanFactory.java:594)
-	... 18 common frames omitted
-Caused by: java.lang.NoClassDefFoundError: com/ruoyi/achievement/mapper/SamAchievementMapper
-	at java.base/java.lang.Class.getDeclaredFields0(Native Method)
-	at java.base/java.lang.Class.privateGetDeclaredFields(Class.java:3473)
-	at java.base/java.lang.Class.getDeclaredFields(Class.java:2542)
-	at org.springframework.util.ReflectionUtils.getDeclaredFields(ReflectionUtils.java:730)
-	... 24 common frames omitted
-Caused by: java.lang.ClassNotFoundException: com.ruoyi.achievement.mapper.SamAchievementMapper
+Caused by: java.lang.IllegalStateException: Failed to introspect Class [com.ruoyi.achievement.audit.AchievementBizAuditHandler] from ClassLoader [org.springframework.boot.devtools.restart.classloader.RestartClassLoader@39aa996e]
+	at org.springframework.util.ReflectionUtils.getDeclaredMethods(ReflectionUtils.java:485)
+	at org.springframework.util.ReflectionUtils.doWithLocalMethods(ReflectionUtils.java:321)
+	at org.springframework.beans.factory.annotation.AutowiredAnnotationBeanPostProcessor.determineCandidateConstructors(AutowiredAnnotationBeanPostProcessor.java:276)
+	... 21 common frames omitted
+Caused by: java.lang.NoClassDefFoundError: com/ruoyi/achievement/domain/SamAchievement
+	at java.base/java.lang.Class.getDeclaredMethods0(Native Method)
+	at java.base/java.lang.Class.privateGetDeclaredMethods(Class.java:3578)
+	at java.base/java.lang.Class.getDeclaredMethods(Class.java:2676)
+	at org.springframework.util.ReflectionUtils.getDeclaredMethods(ReflectionUtils.java:467)
+	... 23 common frames omitted
+Caused by: java.lang.ClassNotFoundException: com.ruoyi.achievement.domain.SamAchievement
 	at java.base/jdk.internal.loader.BuiltinClassLoader.loadClass(BuiltinClassLoader.java:641)
 	at java.base/jdk.internal.loader.ClassLoaders$AppClassLoader.loadClass(ClassLoaders.java:188)
 	at java.base/java.lang.ClassLoader.loadClass(ClassLoader.java:526)
@@ -204,24 +166,4 @@ Caused by: java.lang.ClassNotFoundException: com.ruoyi.achievement.mapper.SamAch
 	at java.base/java.lang.Class.forName(Class.java:513)
 	at org.springframework.boot.devtools.restart.classloader.RestartClassLoader.loadClass(RestartClassLoader.java:145)
 	at java.base/java.lang.ClassLoader.loadClass(ClassLoader.java:526)
-	... 28 common frames omitted
-00:16:51.332 [QuartzScheduler_RuoyiScheduler-楼台1778602192007_MisfireHandler] ERROR o.s.s.q.LocalDataSourceJobStore - [manage,4017] - MisfireHandler: Error handling misfires: Failed to obtain DB connection from data source 'springNonTxDataSource.RuoyiScheduler': com.alibaba.druid.pool.DataSourceClosedException: dataSource already closed at Wed May 13 00:16:44 CST 2026
-org.quartz.JobPersistenceException: Failed to obtain DB connection from data source 'springNonTxDataSource.RuoyiScheduler': com.alibaba.druid.pool.DataSourceClosedException: dataSource already closed at Wed May 13 00:16:44 CST 2026
-	at org.quartz.impl.jdbcjobstore.JobStoreCMT.getNonManagedTXConnection(JobStoreCMT.java:168)
-	at org.quartz.impl.jdbcjobstore.JobStoreSupport.doRecoverMisfires(JobStoreSupport.java:3246)
-	at org.quartz.impl.jdbcjobstore.JobStoreSupport$MisfireHandler.manage(JobStoreSupport.java:4012)
-	at org.quartz.impl.jdbcjobstore.JobStoreSupport$MisfireHandler.run(JobStoreSupport.java:4033)
-Caused by: com.alibaba.druid.pool.DataSourceClosedException: dataSource already closed at Wed May 13 00:16:44 CST 2026
-	at com.alibaba.druid.pool.DruidDataSource.getConnectionInternal(DruidDataSource.java:1546)
-	at com.alibaba.druid.pool.DruidDataSource.getConnectionDirect(DruidDataSource.java:1372)
-	at com.alibaba.druid.filter.FilterChainImpl.dataSource_connect(FilterChainImpl.java:5074)
-	at com.alibaba.druid.filter.stat.StatFilter.dataSource_getConnection(StatFilter.java:724)
-	at com.alibaba.druid.filter.FilterChainImpl.dataSource_connect(FilterChainImpl.java:5070)
-	at com.alibaba.druid.pool.DruidDataSource.getConnection(DruidDataSource.java:1347)
-	at com.alibaba.druid.pool.DruidDataSource.getConnection(DruidDataSource.java:1333)
-	at com.alibaba.druid.pool.DruidDataSource.getConnection(DruidDataSource.java:81)
-	at org.springframework.jdbc.datasource.lookup.AbstractRoutingDataSource.getConnection(AbstractRoutingDataSource.java:194)
-	at org.springframework.scheduling.quartz.LocalDataSourceJobStore$2.getConnection(LocalDataSourceJobStore.java:140)
-	at org.quartz.utils.DBConnectionManager.getConnection(DBConnectionManager.java:108)
-	at org.quartz.impl.jdbcjobstore.JobStoreCMT.getNonManagedTXConnection(JobStoreCMT.java:165)
-	... 3 common frames omitted
+	... 27 common frames omitted

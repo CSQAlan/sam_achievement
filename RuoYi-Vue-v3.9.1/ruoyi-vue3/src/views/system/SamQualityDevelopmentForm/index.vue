@@ -176,7 +176,7 @@ const getDictData = async () => {
     const [categoryRes, levelRes, gradeRes, groupRes] = await Promise.all([
       getDicts('sys_competition_category'),
       getDicts('sys_competition_level'),
-      getDicts('award_grade'),
+      getDicts('award_rank'),
       getDicts('group_type')
     ]);
     // 将后端返回的字典数据转换为统一格式（兼容 dict_value/dict_label 和 dictValue/dictLabel）

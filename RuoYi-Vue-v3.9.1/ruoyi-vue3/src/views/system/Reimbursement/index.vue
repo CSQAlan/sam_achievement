@@ -1242,7 +1242,7 @@ const {
   group_type, 
   award_grade: award_rank, 
   sys_competition_level: award_level_type 
-} = proxy.useDict('sys_competition_category', 'group_type', 'award_grade', 'sys_competition_level')
+} = proxy.useDict('sys_competition_category', 'group_type', 'award_rank', 'sys_competition_level')
 
 
 // 页面加载时执行

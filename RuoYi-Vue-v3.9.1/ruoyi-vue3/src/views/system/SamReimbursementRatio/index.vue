@@ -523,7 +523,7 @@ const getDictData = async () => {
     const { getDicts } = await import("@/api/system/dict/data")
     const [levelRes, gradeRes, categoryRes, statusRes] = await Promise.all([
       getDicts('sys_competition_level'),
-      getDicts('award_grade'),
+      getDicts('award_rank'),
       getDicts('sys_competition_category'),
       getDicts('ratio_status')
     ]);
