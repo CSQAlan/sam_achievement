@@ -6,14 +6,8 @@
           <el-form-item label="比赛名称">
             <el-input v-model="searchForm.competitionName" placeholder="请输入比赛名称" class="search-input" />
           </el-form-item>
-          <el-form-item label="参赛选手">
-            <el-input v-model="searchForm.contestant" placeholder="请输入参赛选手" class="search-input" />
-          </el-form-item>
-          <el-form-item label="指导老师">
-            <el-input v-model="searchForm.instructor" placeholder="请输入指导老师" class="search-input" />
-          </el-form-item>
-          <el-form-item label="教师工号">
-            <el-input v-model="searchForm.teacherId" placeholder="请输入教师工号" class="search-input" />
+          <el-form-item label="参赛学生">
+            <el-input v-model="searchForm.contestant" placeholder="请输入参赛学生" class="search-input" />
           </el-form-item>
           <el-form-item label="获奖等级">
             <el-select v-model="searchForm.grade" placeholder="请选择获奖等级" class="search-input">
@@ -160,8 +154,6 @@ const groupOptions = ref([]);
 const searchForm = reactive({
   competitionName: '',
   contestant: '',
-  instructor: '',
-  teacherId: '',
   grade: ''
 });
 
@@ -229,14 +221,7 @@ const getCategoryTagType = (category) => {
 };
 
 const getGradeTagType = (grade) => {
-  const label = getGradeLabel(grade);
-  const types = {
-    '一等奖': 'danger',
-    '二等奖': 'warning',
-    '三等奖': 'primary',
-    '优秀奖': 'success'
-  };
-  return types[label] || 'info';
+  return 'danger';
 };
 
 const getList = () => {
@@ -246,8 +231,6 @@ const getList = () => {
     pageSize: pagination.pageSize,
     competitionName: searchForm.competitionName,
     contestant: searchForm.contestant,
-    instructor: searchForm.instructor,
-    teacherId: searchForm.teacherId,
     grade: searchForm.grade
   };
 
@@ -268,8 +251,6 @@ const handleSearch = () => {
 const handleReset = () => {
   searchForm.competitionName = '';
   searchForm.contestant = '';
-  searchForm.instructor = '';
-  searchForm.teacherId = '';
   searchForm.grade = '';
   pagination.pageNum = 1;
   getList();
@@ -302,8 +283,6 @@ const handleExport = () => {
     data: {
       competitionName: searchForm.competitionName,
       contestant: searchForm.contestant,
-      instructor: searchForm.instructor,
-      teacherId: searchForm.teacherId,
       grade: searchForm.grade
     },
     responseType: 'blob',

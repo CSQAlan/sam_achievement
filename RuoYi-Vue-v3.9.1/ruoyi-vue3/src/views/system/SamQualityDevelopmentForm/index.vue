@@ -230,14 +230,7 @@ const getCategoryTagType = (category) => {
 };
 
 const getGradeTagType = (grade) => {
-  const label = getGradeLabel(grade);
-  const types = {
-    '一等奖': 'danger',
-    '二等奖': 'warning',
-    '三等奖': 'primary',
-    '优秀奖': 'success'
-  };
-  return types[label] || 'info';
+  return 'danger';
 };
 
 const getList = () => {
