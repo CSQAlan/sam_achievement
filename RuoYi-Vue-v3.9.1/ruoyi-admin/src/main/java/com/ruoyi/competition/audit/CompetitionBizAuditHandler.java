@@ -10,7 +10,7 @@ import com.ruoyi.competition.domain.Competition;
 import com.ruoyi.competition.domain.CompetitionDeptRel;
 import com.ruoyi.competition.mapper.CompetitionMapper;
 import com.ruoyi.framework.bizaudit.BizAuditHandler;
-import com.ruoyi.framework.bizaudit.model.BizAuditContext;
+import com.ruoyi.framework.bizaudit.BizAuditContext;
 import com.ruoyi.system.service.ISysDeptService;
 import java.util.ArrayList;
 import java.util.Arrays;

@@ -56,7 +56,7 @@
 
     <el-table v-loading="loading" :data="bizAuditList" @selection-change="handleSelectionChange">
       <el-table-column type="selection" width="55" align="center" />
-      <el-table-column label="日志ID" prop="id" width="90" align="center" />
+      <el-table-column label="日志编号" prop="id" width="90" align="center" />
       <el-table-column label="业务类型" prop="bizType" min-width="120" show-overflow-tooltip />
       <el-table-column label="业务名称" prop="bizName" min-width="160" show-overflow-tooltip />
       <el-table-column label="业务主键" prop="bizId" min-width="120" show-overflow-tooltip />
@@ -112,14 +112,15 @@ const total = ref(0)
 const dateRange = ref([])
 
 const opTypeOptions = [
-  { label: "新增", value: "CREATE" },
+  { label: "新增", value: "ADD"},
   { label: "修改", value: "UPDATE" },
   { label: "删除", value: "DELETE" },
   { label: "通过", value: "APPROVE" },
   { label: "驳回", value: "REJECT" },
   { label: "导入", value: "IMPORT" },
   { label: "导出", value: "EXPORT" },
-  { label: "批量", value: "BATCH" }
+  { label: "批量", value: "BATCH" },
+
 ]
 
 const data = reactive({

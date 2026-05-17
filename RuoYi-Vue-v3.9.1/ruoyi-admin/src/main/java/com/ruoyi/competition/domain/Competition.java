@@ -64,6 +64,12 @@ public class Competition extends BaseEntity
 
     // ========== 新增字段（核心） ==========
     /**
+     * 赛事别名（多个用逗号分隔）
+     */
+    @Excel(name = "赛事别名")
+    private String alias;
+
+    /**
      * 归属学院名称（多个用、分隔，非数据库字段）
      * 例："计算机学院、软件学院、人工智能学院"
      */
@@ -114,6 +120,14 @@ public class Competition extends BaseEntity
     public void setCompetitionDeptRelList(List<CompetitionDeptRel> competitionDeptRelList) { this.competitionDeptRelList = competitionDeptRelList; }
 
     // ========== 新增字段的getter/setter ==========
+    public String getAlias() {
+        return alias;
+    }
+
+    public void setAlias(String alias) {
+        this.alias = alias;
+    }
+
     public String getDeptNames() {
         return deptNames;
     }
@@ -127,6 +141,7 @@ public class Competition extends BaseEntity
         return new ToStringBuilder(this,ToStringStyle.MULTI_LINE_STYLE)
                 .append("id", getId())
                 .append("name", getName())
+                .append("alias", getAlias())
                 .append("category", getCategory())
                 .append("organizations", getOrganizations())
                 .append("tags", getTags())

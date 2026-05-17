@@ -36,6 +36,7 @@ import com.ruoyi.common.utils.DictUtils;
 import com.ruoyi.common.utils.SecurityUtils;
 import com.ruoyi.common.utils.StringUtils;
 import com.ruoyi.common.utils.file.FileUtils;
+import com.ruoyi.common.utils.file.PdfUtils;
 import com.ruoyi.common.utils.poi.ExcelUtil;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
@@ -859,20 +860,30 @@ public class SamAchievementServiceImpl implements ISamAchievementService {
         Long userId = SecurityUtils.getUserId();
         boolean isAdmin = SecurityUtils.isAdmin(userId);
         String loginName = SecurityUtils.getUsername();
+        Long deptId = SecurityUtils.getDeptId();
+
         if (!isAdmin && StringUtils.isEmpty(loginName)) {
             throw new ServiceException("当前登录用户无效");
+        }
+
+        String sourceMode = normalizeSourceMode(req.getSourceMode());
+        if (sourceMode != null && (sourceMode.startsWith("college_level") || sourceMode.startsWith("school_level"))) {
+            if (!SecurityUtils.hasPermi("achievement:" + sourceMode + ":export") && !SecurityUtils.hasPermi("achievement:" + sourceMode + ":list")) {
+                throw new ServiceException("无权导出该状态的成果附件");
+            }
         }
 
         List<ExportAchievementBaseVo> authorizedAchievementList = samAchievementMapper
                 .selectAuthorizedExportAchievementBase(
                         achievementIdList.isEmpty() ? new String[0] : achievementIdList.toArray(new String[0]),
                         loginName,
-                        normalizeSourceMode(req.getSourceMode()),
+                        sourceMode,
                         SecurityUtils.hasRole("student"),
                         SecurityUtils.hasRole("teacher"),
                         isAdmin,
                         competitionId,
-                        isGroupByCompetition);
+                        isGroupByCompetition,
+                        deptId);
 
         if (authorizedAchievementList == null || authorizedAchievementList.isEmpty()) {
             throw new ServiceException("当前没有可导出的成果");
@@ -964,17 +975,36 @@ public class SamAchievementServiceImpl implements ISamAchievementService {
 
                 String entryName = resolveUniqueEntryName(nameCounterMap, folderPath, baseFileName);
 
+                boolean processed = false;
                 boolean opened = false;
-                try (InputStream inputStream = new BufferedInputStream(new FileInputStream(sourceFile))) {
-                    zipOutputStream.putNextEntry(new ZipEntry(entryName));
-                    opened = true;
-                    copyStream(inputStream, zipOutputStream);
+                try {
+                    if (entryName.toLowerCase().endsWith(".pdf")) {
+                        try (InputStream inputStream = new BufferedInputStream(new FileInputStream(sourceFile))) {
+                            zipOutputStream.putNextEntry(new ZipEntry(entryName));
+                            opened = true;
+                            PdfUtils.removeRestrictions(inputStream, zipOutputStream);
+                            processed = true;
+                        } catch (Exception ex) {
+                            log.warn("PDF restrictions removal failed during ZIP export for {}, falling back to direct copy. Message={}", entryName, ex.getMessage());
+                            // Fallback to direct copy logic below
+                        }
+                    }
+
+                    if (!processed) {
+                        try (InputStream inputStream = new BufferedInputStream(new FileInputStream(sourceFile))) {
+                            if (!opened) {
+                                zipOutputStream.putNextEntry(new ZipEntry(entryName));
+                                opened = true;
+                            }
+                            copyStream(inputStream, zipOutputStream);
+                        }
+                    }
                 } catch (Exception ex) {
                     log.warn("Skip unreadable attachment file, achievementId={}, type={}, fileUuid={}, message={}",
                             attachmentFile.getAchievementId(), attachmentFile.getType(),
                             attachmentFile.getFileUuid(), ex.getMessage());
                     addAttachmentFailRecord(failList, attachmentFile, ownerName, typeName,
-                            "文件读取失败" + (StringUtils.isNotEmpty(ex.getMessage()) ? "：" + ex.getMessage() : ""));
+                            "文件处理失败" + (StringUtils.isNotEmpty(ex.getMessage()) ? "：" + ex.getMessage() : ""));
                 } finally {
                     if (opened) {
                         try {
@@ -1199,6 +1229,54 @@ public class SamAchievementServiceImpl implements ISamAchievementService {
     @Override
     public List<String> selectTrackList(Long competitionId, Long sessionId) {
         return samAchievementMapper.selectTrackList(competitionId, sessionId);
+    }
+
+    /**
+     * 查询年度成果统计
+     */
+    @Override
+    public List<Map<String, Object>> selectYearStats(SamAchievement samAchievement) {
+        return samAchievementMapper.selectYearStats(samAchievement);
+    }
+
+    /**
+     * 查询首页统计数据
+     */
+    @Override
+    public Map<String, Object> selectDashboardStats() {
+        Map<String, Object> params = new HashMap<>();
+
+        // 权限判断与过滤 (与 Controller 保持一致)
+        boolean isSchoolAdmin = SecurityUtils.hasRole("admin") || SecurityUtils.hasRole("schooladmin")
+                || SecurityUtils.hasRole("schoolleveladmin") || SecurityUtils.hasRole("schooleveladmin")
+                || SecurityUtils.hasPermi("achievement:school_level_unreviewed:list");
+
+        params.put("isSchoolAdmin", isSchoolAdmin);
+
+        if (!isSchoolAdmin) {
+            boolean isCollegeAdmin = SecurityUtils.hasRole("collegeadmin") || SecurityUtils.hasRole("collegeleveladmin")
+                    || SecurityUtils.hasPermi("achievement:college_level_unreviewed:list");
+            if (isCollegeAdmin) {
+                Long userDeptId = SecurityUtils.getDeptId();
+                if (userDeptId != null) {
+                    Long collegeId = deptService.getCollegeId(userDeptId);
+                    if (collegeId != null) {
+                        params.put("ownerDepId", String.valueOf(collegeId));
+                    }
+                }
+            }
+        }
+
+        Map<String, Object> result = samAchievementMapper.selectDashboardStats(params);
+        if (result == null) {
+            result = new HashMap<>();
+        }
+
+        // 补充图表数据
+        result.put("trend", samAchievementMapper.selectDashboardTrend(params));
+        result.put("distribution", samAchievementMapper.selectDashboardDistribution(params));
+
+        return result;
     }
 
     /**

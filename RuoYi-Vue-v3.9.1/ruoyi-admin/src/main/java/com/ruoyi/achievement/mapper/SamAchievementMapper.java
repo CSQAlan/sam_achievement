@@ -170,7 +170,8 @@ public interface SamAchievementMapper
             @Param("isTeacher") boolean isTeacher,
             @Param("isAdmin") boolean isAdmin,
             @Param("competitionId") String competitionId,
-            @Param("groupByCompetition") Boolean groupByCompetition);
+            @Param("groupByCompetition") Boolean groupByCompetition,
+            @Param("deptId") Long deptId);
 
     /**
      * 查询成果附件文件信息
@@ -187,6 +188,26 @@ public interface SamAchievementMapper
      * @return 附件UUID列表
      */
     public List<String> selectAttachmentUuidByAchievementIdAndType(@Param("achievementId") String achievementId, @Param("type") Integer type);
+
+    /**
+     * 查询年度成果统计
+     */
+    public List<Map<String, Object>> selectYearStats(SamAchievement samAchievement);
+
+    /**
+     * 查询首页统计数据
+     */
+    public Map<String, Object> selectDashboardStats(Map<String, Object> params);
+
+    /**
+     * 查询首页趋势统计
+     */
+    public List<Map<String, Object>> selectDashboardTrend(Map<String, Object> params);
+
+    /**
+     * 查询首页分布统计
+     */
+    public List<Map<String, Object>> selectDashboardDistribution(Map<String, Object> params);
 
     /**
      * 查询带有指定标签比赛的成果列表（用于素质提升展示）

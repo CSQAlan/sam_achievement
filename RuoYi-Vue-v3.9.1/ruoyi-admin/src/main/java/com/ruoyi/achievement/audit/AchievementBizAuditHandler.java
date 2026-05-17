@@ -8,7 +8,7 @@ import com.ruoyi.achievement.mapper.SamAchievementMapper;
 import com.ruoyi.common.enums.BizAuditOpType;
 import com.ruoyi.common.utils.StringUtils;
 import com.ruoyi.framework.bizaudit.BizAuditHandler;
-import com.ruoyi.framework.bizaudit.model.BizAuditContext;
+import com.ruoyi.framework.bizaudit.BizAuditContext;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
 

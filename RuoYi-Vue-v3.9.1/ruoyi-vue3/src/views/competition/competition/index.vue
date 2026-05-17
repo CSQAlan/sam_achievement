@@ -455,7 +455,6 @@ function handleExport() {
   }, `competition_${new Date().getTime()}.xlsx`)
 }
 
-// 页面初始化加载
-getList()
-getDeptList()
+  getList()
+  getDeptList()
 </script>

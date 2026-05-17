@@ -1,6 +1,9 @@
 package com.ruoyi.achievement.controller;
 
 import java.io.File;
+import java.io.FileInputStream;
+import java.io.IOException;
+import java.io.OutputStream;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import com.alibaba.fastjson2.JSON;
@@ -15,6 +18,7 @@ import com.ruoyi.common.utils.ServletUtils;
 import com.ruoyi.common.utils.StringUtils;
 import com.ruoyi.common.utils.file.FileUploadUtils;
 import com.ruoyi.common.utils.file.FileUtils;
+import com.ruoyi.common.utils.file.PdfUtils;
 import com.ruoyi.common.utils.uuid.IdUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -34,6 +38,33 @@ public class AttachmentController extends BaseController
 
     @Autowired
     private FileUuidMapper fileUuidMapper;
+    @GetMapping("/download/notice")
+    public void downloadNotice(String fileName, HttpServletResponse response) {
+        try {
+            // 1. 获取若依配置的文件上传基础路径 (例如 D:/ruoyi/uploadPath)
+            String downloadPath = RuoYiConfig.getProfile() + StringUtils.substringAfter(fileName, Constants.RESOURCE_PREFIX);
+
+            File file = new File(downloadPath);
+            if (!file.exists()) {
+                throw new IOException("文件不存在");
+            }
+
+            // 2. 设置响应头，防止中文乱码，强制浏览器下载
+            response.setContentType("application/pdf");
+            FileUtils.setAttachmentResponseHeader(response, file.getName());
+
+            // 3. 执行解密并输出
+            try (FileInputStream fis = new FileInputStream(file);
+                 OutputStream os = response.getOutputStream()) {
+                PdfUtils.removeRestrictions(fis, os);
+            } catch (Exception e) {
+                log.warn("PDF restrictions removal failed for notice download {}, falling back to direct copy. Error: {}", fileName, e.getMessage());
+                FileUtils.writeBytes(downloadPath, response.getOutputStream());
+            }
+        } catch (Exception e) {
+            log.error("PDF解密下载失败", e);
+        }
+    }
 
     /**
      * 安全上传接口：返回 UUID 而不是路径
@@ -113,7 +144,18 @@ public class AttachmentController extends BaseController
                     ? fileRecord.getOriginName()
                     : resource + ".pdf";
             FileUtils.setAttachmentResponseHeader(response, fileName);
-            FileUtils.writeBytes(localPath, response.getOutputStream());
+            
+            // 如果是PDF文件，尝试去除限制
+            if (StringUtils.isNotEmpty(localPath) && localPath.toLowerCase().endsWith(".pdf")) {
+                try (FileInputStream fis = new FileInputStream(localFile)) {
+                    PdfUtils.removeRestrictions(fis, response.getOutputStream());
+                } catch (Exception e) {
+                    log.warn("PDF restrictions removal failed for {}, falling back to direct copy. Error: {}", resource, e.getMessage());
+                    FileUtils.writeBytes(localPath, response.getOutputStream());
+                }
+            } else {
+                FileUtils.writeBytes(localPath, response.getOutputStream());
+            }
             response.flushBuffer();
         }
         catch (Exception e)

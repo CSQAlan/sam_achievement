@@ -1,4 +1,4 @@
-﻿<template>
+<template>
   <div class="app-container review-page">
     <AchievementForm
       :key="formKey"
@@ -94,6 +94,9 @@
                           >
                             {{ opt.label }}
                           </el-dropdown-item>
+                          <el-dropdown-item divided command="manage_reasons" icon="Setting">
+                            管理常用原因
+                          </el-dropdown-item>
                         </el-dropdown-menu>
                       </template>
                     </el-dropdown>
@@ -105,6 +108,46 @@
         </div>
       </div>
     </div>
+
+    <!-- 常用原因管理弹窗 -->
+    <el-dialog
+        v-model="reasonManagementVisible"
+        :title="reasonManagementTitle"
+        width="500px"
+        append-to-body
+    >
+      <div class="reason-mgmt-container">
+        <div class="reason-mgmt-add">
+          <el-input
+              v-model="newReasonText"
+              placeholder="请输入新的常用原因"
+              clearable
+              @keyup.enter="handleAddReason"
+          >
+            <template #append>
+              <el-button @click="handleAddReason">添加</el-button>
+            </template>
+          </el-input>
+        </div>
+        
+        <el-table :data="fullReasonList" v-loading="reasonLoading" style="margin-top: 20px;" max-height="400">
+          <el-table-column label="原因描述" prop="dictLabel" />
+          <el-table-column label="操作" width="80" align="center">
+            <template #default="scope">
+              <el-button
+                  link
+                  type="danger"
+                  icon="Delete"
+                  @click="handleDeleteReason(scope.row)"
+              ></el-button>
+            </template>
+          </el-table-column>
+        </el-table>
+      </div>
+      <template #footer>
+        <el-button @click="reasonManagementVisible = false">关闭</el-button>
+      </template>
+    </el-dialog>
   </div>
 </template>
 
@@ -121,6 +164,7 @@ import {
 } from "vue";
 import { useRoute, useRouter } from "vue-router";
 import { ElMessageBox } from "element-plus";
+import { Setting, Delete } from "@element-plus/icons-vue";
 
 import AchievementForm from "@/views/achievement/component/AchievementForm.vue";
 
@@ -146,6 +190,9 @@ import {
   updateSchool_level_reviewed,
 } from "@/api/achievement/school_level_reviewed";
 import { submitReview as submitReviewAction } from "@/api/achievement/review_batch";
+import { addData, delData } from "@/api/system/dict/data";
+import { getFullDicts } from "@/api/achievement/reason";
+import useDictStore from "@/store/modules/dict";
 
 const { proxy } = getCurrentInstance();
 const route = useRoute();
@@ -264,6 +311,18 @@ const nextStatusOptions = computed(() => {
 
 const selectedAuditStatus = ref("");
 const rejectReasonCustom = ref("");
+
+// 常用原因管理相关
+const reasonManagementVisible = ref(false);
+const reasonLoading = ref(false);
+const fullReasonList = ref([]);
+const newReasonText = ref("");
+const reasonManagementTitle = computed(() => {
+  return isCollegeSource.value ? "管理院级常用原因" : "管理校级常用原因";
+});
+const currentReasonDictType = computed(() => {
+  return isCollegeSource.value ? "college_reason" : "school_reason";
+});
 
 function normalizeRejectReasonOptions(dictItems = []) {
   return (dictItems || [])
@@ -723,13 +782,105 @@ watch(baseRejectReasonOptions, (options) => {
 function handleRejectReasonCommand(value) {
   const selectedValue = normalizeLooseText(value);
   if (!selectedValue) return;
-  const matched = findRejectReasonOption(currentRejectReasonOptions.value, selectedValue);
-  const nextText = normalizeLooseText(matched?.label || matched?.value || selectedValue);
+
+  if (selectedValue === "manage_reasons") {
+    openReasonManagement();
+    return;
+  }
+
+  const matched = findRejectReasonOption(
+    currentRejectReasonOptions.value,
+    selectedValue
+  );
+  const nextText = normalizeLooseText(
+    matched?.label || matched?.value || selectedValue
+  );
   if (!nextText) return;
   const merged = Array.from(
     new Set([...splitRejectReasonText(rejectReasonCustom.value), nextText])
   );
   rejectReasonCustom.value = merged.join(REJECT_REASON_SEPARATOR);
+}
+
+function openReasonManagement() {
+  reasonManagementVisible.value = true;
+  loadFullReasons();
+}
+
+async function loadFullReasons() {
+  reasonLoading.value = true;
+  try {
+    const response = await getFullDicts(currentReasonDictType.value);
+    fullReasonList.value = response.data || [];
+  } finally {
+    reasonLoading.value = false;
+  }
+}
+
+async function handleAddReason() {
+  const text = normalizeLooseText(newReasonText.value);
+  if (!text) {
+    proxy.$modal.msgWarning("原因内容不能为空");
+    return;
+  }
+
+  if (fullReasonList.value.some((r) => r.dictLabel === text)) {
+    proxy.$modal.msgWarning("该原因已存在");
+    return;
+  }
+
+  try {
+    const maxSort = Math.max(
+      0,
+      ...fullReasonList.value.map((r) => r.dictSort || 0)
+    );
+    await addData({
+      dictLabel: text,
+      dictValue: text,
+      dictType: currentReasonDictType.value,
+      dictSort: maxSort + 1,
+      status: "0",
+    });
+    proxy.$modal.msgSuccess("添加成功");
+    newReasonText.value = "";
+    await loadFullReasons();
+    refreshDict();
+  } catch (e) {
+    console.error(e);
+  }
+}
+
+async function handleDeleteReason(row) {
+  try {
+    await proxy.$modal.confirm(`确认删除原因 "${row.dictLabel}" 吗？`);
+    await delData(row.dictCode);
+    proxy.$modal.msgSuccess("删除成功");
+    await loadFullReasons();
+    refreshDict();
+  } catch (e) {
+    // user cancelled
+  }
+}
+
+function refreshDict() {
+  // 清除本地缓存并重新加载字典
+  useDictStore().removeDict(currentReasonDictType.value);
+  const dictType = currentReasonDictType.value;
+  getFullDicts(dictType).then((resp) => {
+    const nextDicts = resp.data.map((p) => ({
+      label: p.dictLabel,
+      value: p.dictValue,
+      elTagType: p.listClass,
+      elTagClass: p.cssClass,
+    }));
+    useDictStore().setDict(dictType, nextDicts);
+    // 强制触发更新
+    if (dictType === "college_reason") {
+      college_reason.value = nextDicts;
+    } else {
+      school_reason.value = nextDicts;
+    }
+  });
 }
 
 watch(
@@ -1134,20 +1285,22 @@ watch(
   flex: 0 0 auto;
 }
 .reason-field {
-  flex: 0 0 100%;
+  flex: 1 1 100%;
   width: 100%;
   min-width: 0;
   padding-left: 0;
+  margin-top: 8px; /* 增加顶部间距，使其在换行后不显得拥挤 */
 }
 .reason-field::before {
   display: none;
 }
 .audit-reason-group {
-  display: none;
+  display: flex;
+  flex: 1;
 }
 .audit-label {
   color: #4e5969;
-  font-size: 12px;
+  font-size: 13px; /* 稍微调大一点点，与别处对齐 */
   font-weight: 500;
   white-space: nowrap;
 }
