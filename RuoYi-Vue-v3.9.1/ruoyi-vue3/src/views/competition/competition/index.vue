@@ -435,17 +435,16 @@ function handleDeleteCompetitionDeptRel() {
   if (checkedCompetitionDeptRel.value.length == 0) {
     proxy.$modal.msgError("请先选择要删除的赛事-部门关系数据")
   } else {
-    const competitionDeptRels = competitionDeptRelList.value
-    const checkedCompetitionDeptRels = checkedCompetitionDeptRel.value
-    competitionDeptRelList.value = competitionDeptRels.filter(function (item) {
-      return checkedCompetitionDeptRels.indexOf(item.index) == -1
+    const checkedItems = checkedCompetitionDeptRel.value
+    competitionDeptRelList.value = competitionDeptRelList.value.filter(function (item) {
+      return !checkedItems.includes(item)
     })
   }
 }
 
 /** 复选框选中数据 */
 function handleCompetitionDeptRelSelectionChange(selection) {
-  checkedCompetitionDeptRel.value = selection.map(item => item.index)
+  checkedCompetitionDeptRel.value = selection
 }
 
 /** 导出按钮操作 */

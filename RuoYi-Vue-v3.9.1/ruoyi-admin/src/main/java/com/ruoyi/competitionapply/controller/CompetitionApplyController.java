@@ -122,7 +122,7 @@ public class CompetitionApplyController extends BaseController
      * 审核赛事申请（通过/驳回）
      * status：0=待审，1=通过，2=驳回，3=撤回
      */
-    @PreAuthorize("@ss.hasPermi('competition-apply:competitionapply:edit')")
+    @PreAuthorize("@ss.hasPermi('competition-apply:competitionapply:review')")
     @Log(title = "赛事申请审核", businessType = BusinessType.UPDATE)
     @PutMapping("/review/{id}")
     public AjaxResult review(@PathVariable("id") Long id, @RequestBody CompetitionApply updateInfo)

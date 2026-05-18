@@ -174,7 +174,7 @@
             type="primary"
             icon="Edit"
             @click="handleReview(scope.row)"
-            v-hasPermi="['competition-apply:competitionapply:edit']"
+            v-hasPermi="['competition-apply:competitionapply:review']"
           >
             审核
           </el-button>

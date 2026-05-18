@@ -224,6 +224,37 @@ public class SessionController extends BaseController
     }
 
     /**
+     * 批量启用预录届次（事务保护，全部成功或全部回滚）
+     */
+    @PreAuthorize("@ss.hasPermi('session:session:edit')")
+    @Log(title = "赛事届次", businessType = BusinessType.UPDATE)
+    @PostMapping("/batchEnable")
+    public AjaxResult batchEnable(@RequestBody SessionBatchCopyRequest req) {
+        if (req == null || req.getItems() == null || req.getItems().isEmpty()) {
+            return error("请至少选择一条届次");
+        }
+        if (req.getItems().size() > 50) {
+            return error("单次批量启用最多支持50条");
+        }
+        int count = sessionService.batchEnableSessions(req.getItems());
+        return success("已成功启用" + count + "条届次");
+    }
+
+    /**
+     * 为预录届次上传参赛通知（学生/管理员均可操作，仅限预录状态）
+     */
+    @PreAuthorize("@ss.hasPermi('session:session:list')")
+    @Log(title = "赛事届次", businessType = BusinessType.UPDATE)
+    @PutMapping("/{id}/notice")
+    public AjaxResult uploadNotice(@PathVariable("id") Long id, @RequestBody Map<String, String> body) {
+        String uuid = body != null ? body.get("uuid") : null;
+        if (StringUtils.isBlank(uuid)) {
+            return error("通知文件UUID不能为空");
+        }
+        return toAjax(sessionService.uploadSessionNotice(id, uuid));
+    }
+
+    /**
      * 导出赛事届次模板（不含状态列，依托实体@Excel注解自动生成表头）
      */
     @PreAuthorize("@ss.hasPermi('session:session:exportTemplate')")
