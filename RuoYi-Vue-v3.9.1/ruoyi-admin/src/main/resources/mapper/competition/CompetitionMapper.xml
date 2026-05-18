@@ -41,6 +41,24 @@
         <result property="delFlag"    column="del_flag"    />
     </resultMap>
 
+    <resultMap type="CompetitionTagRel" id="CompetitionTagRelResult">
+        <result property="id"            column="tag_rel_id"        />
+        <result property="competitionId" column="tag_rel_comp_id"   />
+        <result property="tagCode"       column="tag_code"          />
+        <result property="sort"          column="tag_sort"          />
+        <result property="createBy"      column="tag_create_by"     />
+        <result property="createTime"    column="tag_create_time"   />
+        <result property="updateBy"      column="tag_update_by"     />
+        <result property="updateTime"    column="tag_update_time"   />
+        <result property="remark"        column="tag_remark"        />
+        <result property="delFlag"       column="tag_del_flag"      />
+    </resultMap>
+
+    <!-- 完整结果映射：包含部门关联 + 标签关联 -->
+    <resultMap id="CompetitionFullResult" type="Competition" extends="CompetitionCompetitionDeptRelResult">
+        <collection property="competitionTagRelList" ofType="CompetitionTagRel" column="id" select="selectCompetitionTagRelList" />
+    </resultMap>
+
     <!-- 仅新增学院关联和名称拼接，原有主表查询逻辑完全保留 -->
     <sql id="selectCompetitionVo">
         select
@@ -115,29 +133,25 @@
                 )
             </if>
 
-            <!-- 赛事标签同理 -->
+            <!-- 赛事标签：通过关联表精确匹配（包含所有选中标签） -->
             <if test="tagsList != null and tagsList.size() > 0">
-                AND (
-                SELECT GROUP_CONCAT(tag ORDER BY tag SEPARATOR ',')
-                FROM (
-                SELECT SUBSTRING_INDEX(SUBSTRING_INDEX(c.tags, ',', n), ',', -1) AS tag
-                FROM (SELECT 1 n UNION ALL SELECT 2 UNION ALL SELECT 3 UNION ALL SELECT 4) numbers
-                WHERE n &lt;=  LENGTH(c.tags) - LENGTH(REPLACE(c.tags, ',', '')) + 1
-                ) AS split_tags
-                ) = (
-                SELECT GROUP_CONCAT(tag ORDER BY tag SEPARATOR ',')
-                FROM (
-                <foreach collection="tagsList" item="tag" separator=" UNION ALL ">
-                    SELECT #{tag} AS tag
-                </foreach>
-                ) AS temp
+                AND c.id IN (
+                    SELECT rel.competition_id
+                    FROM sam_competition_tag_rel rel
+                    WHERE rel.tag_code IN
+                    <foreach collection="tagsList" item="tag" open="(" separator="," close=")">
+                        #{tag}
+                    </foreach>
+                    AND rel.del_flag = '0'
+                    GROUP BY rel.competition_id
+                    HAVING COUNT(DISTINCT rel.tag_code) = #{tagsList.size()}
                 )
             </if>
         </trim>
     </select>
 
     <!-- 以下部分完全保留你原始代码，无任何修改 -->
-    <select id="selectCompetitionById" parameterType="Long" resultMap="CompetitionCompetitionDeptRelResult">
+    <select id="selectCompetitionById" parameterType="Long" resultMap="CompetitionFullResult">
         select id, name, category, organizations,level, tags, scope_type, status, memo, create_by, create_time, update_by, update_time, del_flag
         from sam_competition
         where id = #{id}
@@ -239,4 +253,40 @@
             ( #{item.id}, #{item.sessionId}, #{item.deptId}, #{item.sort}, #{item.createBy}, #{item.createTime}, #{item.updateBy}, #{item.updateTime}, #{item.remark}, #{item.delFlag})
         </foreach>
     </insert>
+
+    <!-- ====================== 赛事-标签关联 ====================== -->
+    <select id="selectCompetitionTagRelList" parameterType="Long" resultMap="CompetitionTagRelResult">
+        select
+            id         as tag_rel_id,
+            competition_id as tag_rel_comp_id,
+            tag_code,
+            sort       as tag_sort,
+            create_by  as tag_create_by,
+            create_time as tag_create_time,
+            update_by  as tag_update_by,
+            update_time as tag_update_time,
+            remark     as tag_remark,
+            del_flag   as tag_del_flag
+        from sam_competition_tag_rel
+        where competition_id = #{competitionId} and del_flag = '0'
+        order by sort
+    </select>
+
+    <insert id="batchCompetitionTagRel">
+        insert into sam_competition_tag_rel( competition_id, tag_code, sort, create_by, create_time, del_flag) values
+        <foreach item="item" index="index" collection="list" separator=",">
+            ( #{item.competitionId}, #{item.tagCode}, #{item.sort}, #{item.createBy}, #{item.createTime}, #{item.delFlag})
+        </foreach>
+    </insert>
+
+    <delete id="deleteCompetitionTagRelByCompetitionId" parameterType="Long">
+        delete from sam_competition_tag_rel where competition_id = #{competitionId}
+    </delete>
+
+    <delete id="deleteCompetitionTagRelByCompetitionIds" parameterType="Long[]">
+        delete from sam_competition_tag_rel where competition_id in
+        <foreach item="id" collection="array" open="(" separator="," close=")">
+            #{id}
+        </foreach>
+    </delete>
 </mapper>

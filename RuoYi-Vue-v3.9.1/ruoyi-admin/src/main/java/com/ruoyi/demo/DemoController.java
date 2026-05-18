@@ -32,7 +32,7 @@ public class DemoController {
     private static final Logger log = LoggerFactory.getLogger(DemoController.class);
 
     // 你前端地址（已改为默认 80 端口，访问直接用 localhost 即可）
-    private static final String FRONT_URL = "http://localhost";
+    private static final String FRONT_URL = "http://localhost:5173";
 
     // 你写给浏览器的 token cookie key（若依常用）
     private static final String WEB_TOKEN_KEY = "Admin-Token";

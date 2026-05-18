@@ -62,6 +62,9 @@ public class Competition extends BaseEntity
     /** 赛事-部门关系信息 */
     private List<CompetitionDeptRel> competitionDeptRelList;
 
+    /** 赛事-标签关联信息 */
+    private List<CompetitionTagRel> competitionTagRelList;
+
     // ========== 新增字段（核心） ==========
     /**
      * 赛事别名（多个用逗号分隔）
@@ -119,6 +122,9 @@ public class Competition extends BaseEntity
     public List<CompetitionDeptRel> getCompetitionDeptRelList() { return competitionDeptRelList; }
     public void setCompetitionDeptRelList(List<CompetitionDeptRel> competitionDeptRelList) { this.competitionDeptRelList = competitionDeptRelList; }
 
+    public List<CompetitionTagRel> getCompetitionTagRelList() { return competitionTagRelList; }
+    public void setCompetitionTagRelList(List<CompetitionTagRel> competitionTagRelList) { this.competitionTagRelList = competitionTagRelList; }
+
     // ========== 新增字段的getter/setter ==========
     public String getAlias() {
         return alias;
@@ -154,7 +160,8 @@ public class Competition extends BaseEntity
                 .append("updateTime", getUpdateTime())
                 .append("delFlag", getDelFlag())
                 .append("competitionDeptRelList", getCompetitionDeptRelList())
-                .append("deptNames", getDeptNames()) // 新增：toString中加入deptNames
+                .append("competitionTagRelList", getCompetitionTagRelList())
+                .append("deptNames", getDeptNames())
                 .toString();
     }
 }
