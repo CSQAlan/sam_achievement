@@ -1173,11 +1173,17 @@ function buildListParams() {
   const finalParams = { ...queryParams };
 
   // 这里的 params 是为了配合 Mybatis XML 中的 #{params.contestant} 等
-  finalParams.params = {
-    contestant: queryParams.contestant,
-    instructor: queryParams.instructor,
-    competitionName: queryParams.competitionName // 虽然目前主要用 ID 过滤
-  };
+  if (!finalParams.params) {
+    finalParams.params = {};
+  }
+  
+  finalParams.params.contestant = queryParams.contestant;
+  finalParams.params.instructor = queryParams.instructor;
+  finalParams.params.competitionName = queryParams.competitionName;
+  
+  if (props.sourceMode) {
+    finalParams.params.sourceMode = props.sourceMode;
+  }
 
   if (props.sourceMode === 'guided') {
     finalParams.firstInstructorId = userStore.name;
@@ -1676,7 +1682,7 @@ async function submitExportAttachment() {
     const data = await exportAttachmentZip({
       achievementIds: ids.value,
       types: selectedAttachmentTypes.value,
-      sourceMode: props.sourceMode || ''
+      sourceMode: props.reviewSource || props.sourceMode || ''
     });
 
     if (!blobValidate(data)) {
@@ -1714,7 +1720,7 @@ async function submitCompetitionExportAttachment() {
     const data = await exportAttachmentZip({
       achievementIds: [],
       types: exportCompetitionAttachmentTypes.value,
-      sourceMode: props.sourceMode || '',
+      sourceMode: props.reviewSource || props.sourceMode || '',
       groupByCompetition: true,
       competitionId: exportCompetitionId.value,
       filenameTemplate: namingPreset.value === 'custom' ? customNamingTemplate.value : (namingPreset.value === 'default' ? '{id}_{manager}' : (namingPreset.value === 'comp_id_name' ? '{competition}_{id}_{manager}' : '{manager}_{grade}'))

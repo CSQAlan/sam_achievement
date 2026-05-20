@@ -8,6 +8,23 @@ export function listManage(query) {
   })
 }
 
+// 查询年度成果统计
+export function listYearStats(query) {
+  return request({
+    url: '/achievement/manage/stats/year',
+    method: 'get',
+    params: query
+  })
+}
+
+// 查询首页统计数据
+export function getDashboardStats() {
+  return request({
+    url: '/achievement/manage/stats/dashboard',
+    method: 'get'
+  })
+}
+
 export function getManage(achievementId, params = {}) {
   return request({
     url: '/achievement/manage/' + achievementId,

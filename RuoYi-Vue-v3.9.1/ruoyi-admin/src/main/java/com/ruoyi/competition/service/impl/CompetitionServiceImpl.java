@@ -51,6 +51,12 @@ public class CompetitionServiceImpl implements ICompetitionService
     {
         return competitionMapper.selectCompetitionList(competition);
     }
+    
+    @Override
+    public List<Competition> selectCompetitionByTag(String tagName)
+    {
+        return competitionMapper.selectCompetitionByTag(tagName);
+    }
 
     /**
      * 新增总赛事
