@@ -362,7 +362,7 @@ public class SysUser extends BaseEntity
             .append("phonenumber", getPhonenumber())
             .append("sex", getSex())
             .append("avatar", getAvatar())
-            .append("password", getPassword())
+            
             .append("status", getStatus())
             .append("delFlag", getDelFlag())
             .append("loginIp", getLoginIp())
