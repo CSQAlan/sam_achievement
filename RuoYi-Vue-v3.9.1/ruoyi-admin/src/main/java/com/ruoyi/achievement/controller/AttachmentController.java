@@ -41,6 +41,10 @@ public class AttachmentController extends BaseController
     @GetMapping("/download/notice")
     public void downloadNotice(String fileName, HttpServletResponse response) {
         try {
+            if (!FileUtils.checkAllowDownload(fileName))
+            {
+                throw new Exception(StringUtils.format("文件名称({})非法，不允许下载。 ", fileName));
+            }
             // 1. 获取若依配置的文件上传基础路径 (例如 D:/ruoyi/uploadPath)
             String downloadPath = RuoYiConfig.getProfile() + StringUtils.substringAfter(fileName, Constants.RESOURCE_PREFIX);
 
