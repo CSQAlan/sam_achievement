@@ -45,7 +45,7 @@ public class AttachmentController extends BaseController
             {
                 throw new Exception(StringUtils.format("文件名称({})非法，不允许下载。 ", fileName));
             }
-            // 1. 获取若依配置的文件上传基础路径 (例如 D:/ruoyi/uploadPath)
+            // 1. 获取若依配置的文件上传基础路径
             String downloadPath = RuoYiConfig.getProfile() + StringUtils.substringAfter(fileName, Constants.RESOURCE_PREFIX);
 
             File file = new File(downloadPath);
@@ -131,9 +131,13 @@ public class AttachmentController extends BaseController
                 return;
             }
 
-            String localPath = realPath.startsWith(Constants.RESOURCE_PREFIX)
-                    ? RuoYiConfig.getProfile() + StringUtils.substringAfter(realPath, Constants.RESOURCE_PREFIX)
-                    : realPath;
+            String localPath = RuoYiConfig.getProfile() + StringUtils.substringAfter(realPath, Constants.RESOURCE_PREFIX);
+            
+            if (!FileUtils.checkAllowDownload(localPath))
+            {
+                renderDownloadError(response, "文件路径非法，不允许下载");
+                return;
+            }
 
             File localFile = new File(localPath);
             if (!localFile.exists() || !localFile.isFile())
