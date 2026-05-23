@@ -51,7 +51,7 @@ public class SamAchievementController extends BaseController
      * 判断是否为校级管理员（通过角色或权限）
      */
     private boolean isSchoolAdmin() {
-        return SecurityUtils.hasRole("admin") || SecurityUtils.hasRole("schooladmin") 
+        return SecurityUtils.hasRole("admin") || SecurityUtils.hasRole("schooladmin")
             || SecurityUtils.hasRole("schoolleveladmin") || SecurityUtils.hasRole("schooleveladmin")
             || SecurityUtils.hasPermi("achievement:school_level_unreviewed:list");
     }
@@ -74,7 +74,7 @@ public class SamAchievementController extends BaseController
     public TableDataInfo list(SamAchievement samAchievement)
     {
         startPage();
-        
+
         // 优先处理明确要求的个人视角（不论是否为管理员）
         if (samAchievement.getParams() != null) {
             String sourceMode = (String) samAchievement.getParams().get("sourceMode");
@@ -138,8 +138,8 @@ public class SamAchievementController extends BaseController
             samAchievement.setParams(new HashMap<>());
         }
         samAchievement.getParams().put("studentId", username);
-        samAchievement.getParams().put("manager", "1"); 
-        
+        samAchievement.getParams().put("manager", "1");
+
         List<SamAchievement> list = samAchievementService.selectSamAchievementListByResponsibleStudentId(samAchievement);
         return getDataTable(list);
     }
@@ -165,7 +165,7 @@ public class SamAchievementController extends BaseController
         samAchievement.getParams().put("teacherId", username);
         // 限制位次：仅限第一指导老师（遵循“我负责的成果权限是我为第一负责人”规则）
         samAchievement.getParams().put("isFirst", 1);
-        
+
         List<SamAchievement> list = samAchievementService.selectSamAchievementListByTeacherId(samAchievement);
         return getDataTable(list);
     }
@@ -330,4 +330,61 @@ public class SamAchievementController extends BaseController
     {
         samAchievementService.exportAttachmentZip(req, response);
     }
+
+    /**
+     * 查询带有素质提升奖标签的成果列表
+     */
+    @GetMapping("/list-quality")
+    public TableDataInfo listQuality(SamAchievement samAchievement)
+    {
+        startPage();
+        List<SamAchievement> list = samAchievementService.selectSamAchievementListByCompetitionTag(samAchievement);
+        return getDataTable(list);
+    }
+
+    /**
+     * 查询教师指导的带有素质提升奖标签的成果列表（教师版素质提升）
+     */
+    @GetMapping("/list-quality-teacher")
+    public TableDataInfo listQualityTeacher(SamAchievement samAchievement)
+    {
+        // 获取当前用户工号
+        String username = SecurityUtils.getUsername();
+        if (samAchievement.getParams() == null) {
+            samAchievement.setParams(new HashMap<>());
+        }
+        samAchievement.getParams().put("teacherId", username);
+        startPage();
+        List<SamAchievement> list = samAchievementService.selectQualityAchievementListByTeacher(samAchievement);
+        return getDataTable(list);
+    }
+
+    /**
+     * 导出素质提升奖成果列表
+     */
+    @PostMapping("/export-quality")
+    public void exportQuality(HttpServletResponse response, @RequestBody SamAchievement samAchievement)
+    {
+        List<SamAchievement> list = samAchievementService.selectSamAchievementListByCompetitionTag(samAchievement);
+        ExcelUtil<SamAchievement> util = new ExcelUtil<SamAchievement>(SamAchievement.class);
+        util.exportExcel(response, list, "素质提升奖成果数据");
+    }
+
+    /**
+     * 导出教师指导的素质提升奖成果列表（教师版）
+     */
+    @PostMapping("/export-quality-teacher")
+    public void exportQualityTeacher(HttpServletResponse response, @RequestBody SamAchievement samAchievement)
+    {
+        // 获取当前用户工号
+        String username = SecurityUtils.getUsername();
+        if (samAchievement.getParams() == null) {
+            samAchievement.setParams(new HashMap<>());
+        }
+        samAchievement.getParams().put("teacherId", username);
+        List<SamAchievement> list = samAchievementService.selectQualityAchievementListByTeacher(samAchievement);
+        ExcelUtil<SamAchievement> util = new ExcelUtil<SamAchievement>(SamAchievement.class);
+        util.exportExcel(response, list, "教师指导素质提升奖成果数据");
+    }
+
 }

@@ -860,20 +860,30 @@ public class SamAchievementServiceImpl implements ISamAchievementService {
         Long userId = SecurityUtils.getUserId();
         boolean isAdmin = SecurityUtils.isAdmin(userId);
         String loginName = SecurityUtils.getUsername();
+        Long deptId = SecurityUtils.getDeptId();
+
         if (!isAdmin && StringUtils.isEmpty(loginName)) {
             throw new ServiceException("当前登录用户无效");
+        }
+
+        String sourceMode = normalizeSourceMode(req.getSourceMode());
+        if (sourceMode != null && (sourceMode.startsWith("college_level") || sourceMode.startsWith("school_level"))) {
+            if (!SecurityUtils.hasPermi("achievement:" + sourceMode + ":export") && !SecurityUtils.hasPermi("achievement:" + sourceMode + ":list")) {
+                throw new ServiceException("无权导出该状态的成果附件");
+            }
         }
 
         List<ExportAchievementBaseVo> authorizedAchievementList = samAchievementMapper
                 .selectAuthorizedExportAchievementBase(
                         achievementIdList.isEmpty() ? new String[0] : achievementIdList.toArray(new String[0]),
                         loginName,
-                        normalizeSourceMode(req.getSourceMode()),
+                        sourceMode,
                         SecurityUtils.hasRole("student"),
                         SecurityUtils.hasRole("teacher"),
                         isAdmin,
                         competitionId,
-                        isGroupByCompetition);
+                        isGroupByCompetition,
+                        deptId);
 
         if (authorizedAchievementList == null || authorizedAchievementList.isEmpty()) {
             throw new ServiceException("当前没有可导出的成果");
@@ -979,7 +989,7 @@ public class SamAchievementServiceImpl implements ISamAchievementService {
                             // Fallback to direct copy logic below
                         }
                     }
-                    
+
                     if (!processed) {
                         try (InputStream inputStream = new BufferedInputStream(new FileInputStream(sourceFile))) {
                             if (!opened) {
@@ -1261,11 +1271,33 @@ public class SamAchievementServiceImpl implements ISamAchievementService {
         if (result == null) {
             result = new HashMap<>();
         }
-        
+
         // 补充图表数据
         result.put("trend", samAchievementMapper.selectDashboardTrend(params));
         result.put("distribution", samAchievementMapper.selectDashboardDistribution(params));
 
         return result;
+    }
+
+    /**
+     * 查询带有指定标签比赛的成果列表（用于素质提升展示）
+     *
+     * @param samAchievement 查询条件
+     * @return 成果列表
+     */
+    @Override
+    public List<SamAchievement> selectSamAchievementListByCompetitionTag(SamAchievement samAchievement) {
+        return samAchievementMapper.selectSamAchievementListByCompetitionTag(samAchievement);
+    }
+
+    /**
+     * 查询教师指导的带有素质提升奖标签的成果列表（用于教师版素质提升展示）
+     *
+     * @param samAchievement 查询条件
+     * @return 成果列表
+     */
+    @Override
+    public List<SamAchievement> selectQualityAchievementListByTeacher(SamAchievement samAchievement) {
+        return samAchievementMapper.selectQualityAchievementListByTeacher(samAchievement);
     }
 }

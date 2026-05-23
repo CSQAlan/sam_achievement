@@ -139,6 +139,9 @@
             v-hasPermi="['session:session:add']">复制模板</el-button>
           <el-button link type="primary" icon="Edit" @click="handleUpdate(scope.row)"
             v-hasPermi="['session:session:edit']">修改</el-button>
+          <el-button link type="warning" icon="Upload" @click="handleOpenNoticeUpload(scope.row)"
+            v-if="String(scope.row.status) === '2'"
+            v-hasPermi="['session:session:list']">上传通知</el-button>
           <el-button link type="primary" icon="Delete" @click="handleDelete(scope.row)"
             v-hasPermi="['session:session:remove']">删除</el-button>
         </template>
@@ -356,6 +359,25 @@
       </template>
     </el-dialog>
 
+    <!-- 上传通知文件弹窗（学生/管理员均可操作） -->
+    <el-dialog title="上传参赛通知" v-model="noticeUploadOpen" width="480px" append-to-body>
+      <el-form label-width="80px">
+        <el-form-item label="届次信息">
+          <span>{{ noticeUploadRow?.competitionName }} — {{ noticeUploadRow?.session }}（{{ noticeUploadRow?.year }}）</span>
+        </el-form-item>
+        <el-form-item label="通知PDF">
+          <upload-file v-model="noticeUploadUuid" :limit="1" :fileSize="50" :fileType="['pdf']"
+            :isShowTip="false" buttonText="选择PDF文件" />
+        </el-form-item>
+      </el-form>
+      <template #footer>
+        <div class="dialog-footer">
+          <el-button @click="noticeUploadOpen = false">取 消</el-button>
+          <el-button type="primary" :disabled="!noticeUploadUuid" @click="handleNoticeUploadSubmit">确认上传</el-button>
+        </div>
+      </template>
+    </el-dialog>
+
     <!-- 新增：年份选择弹窗（带加减器） -->
     <el-dialog title="按年份一键选择" v-model="yearSelectOpen" width="400px" append-to-body>
       <div style="text-align: center; padding: 20px 0;">
@@ -552,7 +574,7 @@
 </template>
 
 <script setup name="Session">
-import { listSession, getSession, delSession, addSession, updateSession, exportTemplateSession, importDataSession, updateSessionStatusByIds, batchCopySession, allIdsSession } from "@/api/session/session"
+import { listSession, getSession, delSession, addSession, updateSession, exportTemplateSession, importDataSession, updateSessionStatusByIds, batchCopySession, batchEnableSession, uploadSessionNotice, allIdsSession } from "@/api/session/session"
 import { listCompetition, analyzeCompetitionPdf, linkCompetitionPdf, manualLinkCompetitionPdf, removeCompetitionTags } from "@/api/competition/competition"
 import { listDept } from "@/api/system/dept"
 import request from "@/utils/request"
@@ -683,6 +705,10 @@ const batchItems = ref([])
 const batchActiveIndex = ref(0)
 const batchPreviewUrl = ref("")
 const batchZoom = ref(100)
+
+const noticeUploadOpen = ref(false)
+const noticeUploadRow = ref(null)
+const noticeUploadUuid = ref("")
 
 const activeBatchItem = computed(() => batchItems.value?.[batchActiveIndex.value] || null)
 
@@ -1505,6 +1531,31 @@ function handleBatchSelectAndPreview(index) {
   loadBatchPreview(item.uuid)
 }
 
+function handleOpenNoticeUpload(row) {
+  noticeUploadRow.value = row
+  noticeUploadUuid.value = ""
+  noticeUploadOpen.value = true
+}
+
+async function handleNoticeUploadSubmit() {
+  if (!noticeUploadUuid.value) {
+    proxy.$modal.msgError("请先上传通知PDF文件")
+    return
+  }
+  try {
+    proxy.$modal.loading("正在上传...")
+    await uploadSessionNotice(noticeUploadRow.value.id, noticeUploadUuid.value)
+    proxy.$modal.msgSuccess("上传成功")
+    noticeUploadOpen.value = false
+    getList()
+  } catch (e) {
+    console.error(e)
+    proxy.$modal.msgError("上传失败，请重试")
+  } finally {
+    proxy.$modal.closeLoading()
+  }
+}
+
 function handleBatchCancel() {
   batchOpen.value = false
   resetBatchCopyState()
@@ -1527,19 +1578,15 @@ async function handleBatchSubmit() {
 
   try {
     await proxy.$modal.confirm(`确认将这${batchItems.value.length}条届次全部补充通知文件，并立刻启用？`)
-    proxy.$modal.loading("正在逐条保存并开启...")
-    
-    // We will update each session and then trigger batch status update
-    // Update uuid for each first
-    await Promise.all(batchItems.value.map(item => {
-      const updateData = { ...item }
-      updateData.status = "1" // Set target status
-      // make sure tags is properly transformed just like regular submitForm
-      if (Array.isArray(updateData.tags)) {
-        updateData.tags = updateData.tags.join(",")
-      }
-      return updateSession(updateData)
-    }))
+    proxy.$modal.loading("正在批量启用...")
+
+    const payload = {
+      items: batchItems.value.map(item => ({
+        id: item.id,
+        uuid: String(item.uuid || "").trim()
+      }))
+    }
+    await batchEnableSession(payload)
 
     proxy.$modal.msgSuccess("已全部成功开启！")
     batchOpen.value = false

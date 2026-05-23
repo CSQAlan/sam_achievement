@@ -1,4 +1,4 @@
-package com.ruoyi.framework.bizaudit;
+package com.ruoyi.framework.bizaudit.model;
 
 import com.ruoyi.common.annotation.BizAudit;
 import org.aspectj.lang.ProceedingJoinPoint;
@@ -6,7 +6,6 @@ import org.aspectj.lang.ProceedingJoinPoint;
 /**
  * 业务审计上下文
  */
-
 public class BizAuditContext
 {
     private BizAudit annotation;

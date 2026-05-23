@@ -286,6 +286,8 @@ public class SamReimbursementItemsServiceImpl implements ISamReimbursementItemsS
                 paymentInfo.put("reimbursementDate", achievementInfo.get("reimbursement_date"));
                 paymentInfo.put("isReimburse", achievementInfo.get("is_reimburse"));
                 paymentInfo.put("reimbursementFee", achievementInfo.get("reimbursement_fee"));
+                paymentInfo.put("phone", achievementInfo.get("phone"));
+                paymentInfo.put("email", achievementInfo.get("email"));
             }
             
             // 查询成果的收款码附件（type=6表示收款码）
@@ -323,49 +325,23 @@ public class SamReimbursementItemsServiceImpl implements ISamReimbursementItemsS
         List<Map<String, Object>> rulesList = new ArrayList<>();
         
         try {
-            // 1. 查询学院级规则
+            // 查询学院级规则（查询指定学院的所有规则，包括启用和停用状态）
             SamReimbursementRatio collegeRatio = new SamReimbursementRatio();
             collegeRatio.setOwnerDepId(ownerDepId);
-            collegeRatio.setStatus("1"); // 只查询启用的规则
+            // 不设置 status 过滤条件，获取所有状态的规则
             List<SamReimbursementRatio> collegeRules = samReimbursementRatioMapper.selectSamReimbursementRatioList(collegeRatio);
             
-            // 2. 查询全校通用规则（owner_dep_id IS NULL）
-            SamReimbursementRatio globalRatio = new SamReimbursementRatio();
-            globalRatio.setOwnerDepId(null);
-            globalRatio.setStatus("1"); // 只查询启用的规则
-            List<SamReimbursementRatio> globalRules = samReimbursementRatioMapper.selectSamReimbursementRatioList(globalRatio);
-            
-            // 3. 合并规则，学院级优先
-            // 先添加学院级规则
+            // 添加学院级规则
             for (SamReimbursementRatio rule : collegeRules) {
                 Map<String, Object> ruleMap = new HashMap<>();
+                ruleMap.put("level", rule.getLevel());     // 添加级别字段
                 ruleMap.put("grade", rule.getGrade());
                 ruleMap.put("category", rule.getCategory());
                 ruleMap.put("ratio", rule.getRatio());
                 ruleMap.put("ownerDepId", rule.getOwnerDepId());
+                ruleMap.put("status", rule.getStatus());   // 添加状态字段
                 ruleMap.put("ruleType", "学院级");
                 rulesList.add(ruleMap);
-            }
-            
-            // 再添加全校通用规则（如果学院级规则中没有相同的等级和类别）
-            for (SamReimbursementRatio globalRule : globalRules) {
-                boolean exists = false;
-                for (SamReimbursementRatio collegeRule : collegeRules) {
-                    if (collegeRule.getGrade().equals(globalRule.getGrade()) &&
-                        collegeRule.getCategory().equals(globalRule.getCategory())) {
-                        exists = true;
-                        break;
-                    }
-                }
-                if (!exists) {
-                    Map<String, Object> ruleMap = new HashMap<>();
-                    ruleMap.put("grade", globalRule.getGrade());
-                    ruleMap.put("category", globalRule.getCategory());
-                    ruleMap.put("ratio", globalRule.getRatio());
-                    ruleMap.put("ownerDepId", globalRule.getOwnerDepId());
-                    ruleMap.put("ruleType", "全校通用");
-                    rulesList.add(ruleMap);
-                }
             }
             
         } catch (Exception e) {

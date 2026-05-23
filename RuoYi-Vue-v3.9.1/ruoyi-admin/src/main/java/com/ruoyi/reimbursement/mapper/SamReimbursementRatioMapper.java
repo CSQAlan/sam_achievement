@@ -65,9 +65,9 @@ public interface SamReimbursementRatioMapper
     public int deleteSamReimbursementRatioByIds(Long[] ids);
     
     /**
-     * 根据获奖等级、类别、归属学院获取报销比例
+     * 根据获奖级别、获奖等级、归属学院获取报销比例
      */
-    public Integer getReimbursementRatio(@Param("grade") String grade, 
-                                          @Param("category") String category,
+    public Integer getReimbursementRatio(@Param("level") String level, 
+                                          @Param("grade") String grade,
                                           @Param("ownerDepId") Long ownerDepId);
 }

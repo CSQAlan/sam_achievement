@@ -94,4 +94,21 @@ public interface ISessionService
      * @throws com.ruoyi.common.exception.ServiceException 导入失败时抛出业务异常（如无数据、重复数据、主表新增失败等）
      */
     public String importSession(List<Session> sessionList, boolean updateSupport);
+
+    /**
+     * 批量启用预录届次（事务保护，全部成功或全部回滚）
+     *
+     * @param items 届次ID+通知UUID列表
+     * @return 启用成功的条数
+     */
+    public int batchEnableSessions(List<Session> items);
+
+    /**
+     * 为预录届次上传参赛通知（仅允许预录状态，仅更新UUID）
+     *
+     * @param id 届次ID
+     * @param uuid 通知PDF的UUID
+     * @return 结果
+     */
+    public int uploadSessionNotice(Long id, String uuid);
 }

@@ -183,6 +183,10 @@
         <if test="year != null"> and a.year = #{year}</if>
         <if test="ownerDepId != null and ownerDepId != ''"> and a.owner_dep_id = #{ownerDepId}</if>
         <if test="isSupplement != null"> and a.is_supplement = #{isSupplement}</if>
+        <if test="contestant != null and contestant != ''"> and p_view.contestant like concat('%', #{contestant}, '%')</if>
+        <if test="instructor != null and instructor != ''"> and ad_view.instructor like concat('%', #{instructor}, '%')</if>
+        <if test="competitionName != null and competitionName != ''"> and c.name like concat('%', #{competitionName}, '%')</if>
+        <if test="teacherId != null and teacherId != ''"> and ad.teacher_id = #{teacherId}</if>
         and a.del_flag = '0'
         <if test="params.contestant != null and params.contestant != ''"> and p_view.contestant like concat('%', #{params.contestant}, '%')</if>
         <if test="params.instructor != null and params.instructor != ''"> and ad_view.instructor like concat('%', #{params.instructor}, '%')</if>
@@ -578,6 +582,13 @@
         <choose>
             <when test="isAdmin">
             </when>
+            <when test="sourceMode == 'college_level_unreviewed' or sourceMode == 'college_level_reviewed'">
+                <if test="deptId != null">
+                    and a.owner_dep_id = #{deptId}
+                </if>
+            </when>
+            <when test="sourceMode == 'school_level_unreviewed' or sourceMode == 'school_level_reviewed'">
+            </when>
             <when test="sourceMode == 'participated'">
                 and (
                 exists (
@@ -747,14 +758,16 @@
     </select>
 
     <select id="selectAchievementInfoById" parameterType="String" resultType="java.util.HashMap">
-        select 
+        select
             a.name,
             a.fee,
             a.reimbursement_date,
             a.is_reimburse,
             a.reimbursement_fee,
             s.name as contact_name,
-            s.no as student_id
+            s.no as student_id,
+            u.email as email,
+            u.phonenumber as phone
         from sam_achievement a
         left join (
             select p.achievement_id, p.student_id
@@ -765,6 +778,33 @@
             limit 1
         ) p on p.achievement_id = a.achievement_id
         left join sam_student s on s.no = p.student_id
+        left join sys_user u on u.user_name = s.no
         where a.achievement_id = #{achievementId}
+    </select>
+
+    <select id="selectSamAchievementListByCompetitionTag" parameterType="SamAchievement" resultMap="SamAchievementListResult">
+        <include refid="selectSamAchievementVo"/>
+        <where>
+            a.del_flag = '0'
+            AND c.del_flag = '0'
+            AND FIND_IN_SET('0', c.tags) > 0
+            AND EXISTS (SELECT 1 FROM sam_achievement_advisor ad WHERE ad.achievement_id = a.achievement_id AND ad.del_flag = '0')
+            <include refid="commonSearchConditions"/>
+        </where>
+        order by a.achievement_id desc
+    </select>
+
+    <select id="selectQualityAchievementListByTeacher" parameterType="SamAchievement" resultMap="SamAchievementListResult">
+        <include refid="selectSamAchievementVo"/>
+        inner join sam_achievement_advisor ad on a.achievement_id = ad.achievement_id
+        <where>
+            a.del_flag = '0'
+            AND ad.del_flag = '0'
+            AND c.del_flag = '0'
+            AND FIND_IN_SET('0', c.tags) > 0
+            AND ad.teacher_id = #{params.teacherId}
+            <include refid="commonSearchConditions"/>
+        </where>
+        order by a.achievement_id desc
     </select>
 </mapper>
