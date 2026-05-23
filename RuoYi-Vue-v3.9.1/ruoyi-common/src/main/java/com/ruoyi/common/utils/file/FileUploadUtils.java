@@ -194,6 +194,20 @@ public class FileUploadUtils
 
         String fileName = file.getOriginalFilename();
         String extension = getExtension(file);
+        String contentType = file.getContentType();
+
+        // 验证MIME类型 (针对常见文档类型)
+        if (StringUtils.isNotEmpty(contentType))
+        {
+            if (extension.equalsIgnoreCase("xls") && !contentType.equalsIgnoreCase(MimeTypeUtils.EXCEL_XLS))
+            {
+                throw new InvalidExtensionException(new String[]{"xls"}, extension, fileName);
+            }
+            else if (extension.equalsIgnoreCase("xlsx") && !contentType.equalsIgnoreCase(MimeTypeUtils.EXCEL_XLSX))
+            {
+                throw new InvalidExtensionException(new String[]{"xlsx"}, extension, fileName);
+            }
+        }
         if (allowedExtension != null && !isAllowedExtension(extension, allowedExtension))
         {
             if (allowedExtension == MimeTypeUtils.IMAGE_EXTENSION)
