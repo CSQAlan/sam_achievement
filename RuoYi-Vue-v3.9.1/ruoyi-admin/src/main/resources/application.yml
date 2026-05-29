@@ -98,8 +98,8 @@ spring:
     time-zone: GMT+8
     # 添加以下配置，使反序列化更灵活
     parser:
-      allow_single_quotes: true
-      allow_unquoted_field_names: true
+      allow_single_quotes: false
+      allow_unquoted_field_names: false
     deserialization:
       # 允许接受空字符串作为null
       accept_empty_string_as_null_object: true
