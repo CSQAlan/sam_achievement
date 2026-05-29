@@ -129,6 +129,10 @@ public class GenController extends BaseController
     @PostMapping("/createTable")
     public AjaxResult createTableSave(String sql)
     {
+        if (!SecurityUtils.isAdmin(SecurityUtils.getUserId()))
+        {
+            return AjaxResult.error("创建表结构失败，仅允许超级管理员操作");
+        }
         try
         {
             SqlUtil.filterKeyword(sql);

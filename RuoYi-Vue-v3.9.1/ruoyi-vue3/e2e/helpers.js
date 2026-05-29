@@ -1,6 +1,11 @@
 import { expect } from '@playwright/test';
 
 export async function mockCommonBackend(page) {
+  // Set E2E test flag in browser context
+  await page.addInitScript(() => {
+    window.__E2E_TEST__ = true;
+  });
+
   // Log all network requests and response details
   page.on('request', req => console.log('>>', req.method(), req.url()));
   page.on('response', async res => {
@@ -319,7 +324,7 @@ export async function mockCommonBackend(page) {
         code: 200,
         total: 1,
         rows: [
-          { id: 1, session: "第一届" }
+          { id: 1, session: "第一届", level: "1", year: "2026" }
         ]
       }),
     });
@@ -334,6 +339,44 @@ export async function mockCommonBackend(page) {
         msg: "操作成功",
         code: 200,
         data: ["单片机赛道", "嵌入式赛道"]
+      }),
+    });
+  });
+
+  // 13. Mock student list
+  await page.route('**/dev-api/student/student/list*', async (route) => {
+    await route.fulfill({
+      status: 200,
+      contentType: 'application/json',
+      body: JSON.stringify({
+        msg: "操作成功",
+        code: 200,
+        rows: [
+          {
+            studentId: 1,
+            no: "admin",
+            name: "管理员",
+            school: 100,
+            department: 101,
+            major: 102,
+            className: "计算机2201",
+            classYear: "2022"
+          }
+        ],
+        total: 1
+      }),
+    });
+  });
+
+  // 14. Mock certificate uniqueness check
+  await page.route('**/dev-api/achievement/manage/checkCertificateNoUnique*', async (route) => {
+    await route.fulfill({
+      status: 200,
+      contentType: 'application/json',
+      body: JSON.stringify({
+        code: 200,
+        msg: "操作成功",
+        data: true
       }),
     });
   });

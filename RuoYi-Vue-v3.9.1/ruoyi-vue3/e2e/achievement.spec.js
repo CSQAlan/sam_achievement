@@ -34,7 +34,7 @@ test.describe('Achievement Management CRUD E2E Tests', () => {
         contentType: 'application/json',
         body: JSON.stringify({
           rows: [
-            { id: 1, session: "第一届" }
+            { id: 1, session: "第一届", level: "1", year: "2026" }
           ]
         })
       });
@@ -88,7 +88,10 @@ test.describe('Achievement Management CRUD E2E Tests', () => {
               instructor: "王老师",
               level: "1",
               reviewStatus: "0",
-              awardTime: "2026-05-23"
+              awardTime: "2026-05-23",
+              track: "单片机赛道",
+              groupId: "1",
+              ownerDepId: 100
             }
           })
         });
@@ -145,8 +148,31 @@ test.describe('Achievement Management CRUD E2E Tests', () => {
     await expect(formContainer).toBeVisible();
 
     // Fill out form
-    await page.getByPlaceholder('请输入证书编号').fill('NEW-CERT-500');
-    await page.getByPlaceholder('请输入参赛选手').fill('王五, 赵六');
+    // Select competition
+    await page.getByRole('combobox', { name: '* 参加比赛' }).click();
+    await page.getByRole('option', { name: '全国电子设计竞赛' }).click();
+
+    // Select award time
+    await page.getByRole('combobox', { name: '* 获奖时间' }).fill('2026-05-23');
+    await page.getByRole('combobox', { name: '* 获奖时间' }).press('Enter');
+
+    // Select award level
+    await page.getByRole('combobox', { name: '* 获奖级别' }).click({ force: true });
+    await page.getByRole('option', { name: '国家级' }).click();
+
+    // Select award rank
+    await page.getByRole('combobox', { name: '* 奖项等级' }).click({ force: true });
+    await page.getByRole('option', { name: '特等奖' }).click();
+
+    // Fill track
+    await page.getByRole('textbox', { name: '* 参赛赛道' }).fill('单片机赛道');
+
+    // Fill certificateNo
+    await page.getByRole('textbox', { name: '* 证书编号' }).fill('NEW-CERT-500');
+
+    // Select group
+    await page.getByRole('combobox', { name: '* 参赛组别' }).click({ force: true });
+    await page.getByRole('option', { name: '学生组' }).click();
 
     // Click submit button (often named "确 定" or "保存")
     // Wait, let's click the main submit action button
@@ -163,7 +189,7 @@ test.describe('Achievement Management CRUD E2E Tests', () => {
     await page.locator('.el-table__body').getByRole('button', { name: '修改' }).first().click();
 
     // Modify certificateNo
-    const certField = page.getByPlaceholder('请输入证书编号');
+    const certField = page.getByRole('textbox', { name: '* 证书编号' });
     await expect(certField).toBeVisible();
     await certField.fill('CERT-100200-MOD');
 
