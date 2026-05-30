@@ -9,6 +9,11 @@ test.describe('Competition Application & Review E2E Tests', () => {
     isAddCalled = false;
     isReviewCalled = false;
 
+    // Listen to browser console logs for debugging
+    page.on('console', msg => {
+      console.log(`[Browser Console] ${msg.type()}: ${msg.text()}`);
+    });
+
     // 1. Mock common APIs
     await mockCommonBackend(page);
 
@@ -116,12 +121,17 @@ test.describe('Competition Application & Review E2E Tests', () => {
     await expect(dialog).toBeVisible();
 
     // Fill application form details (name select input, year, session)
-    await dialog.getByPlaceholder('请选择已有赛事或直接输入新的赛事名称').fill('全国电子设计竞赛');
+    await dialog.getByRole('combobox').fill('全国电子设计竞赛');
+    await page.locator('.el-select-dropdown__item').filter({ hasText: '全国电子设计竞赛' }).first().click();
     await dialog.getByPlaceholder('例如：2025、十二届').fill('第一届');
 
     // Submit
     const submitBtn = dialog.getByRole('button', { name: '确 定' }).or(dialog.getByRole('button', { name: '确定' })).first();
-    await submitBtn.click();
+    await submitBtn.evaluate(el => el.click());
+
+    // Confirm the duplicate warning popup
+    const confirmBtn = page.locator('.el-message-box__btns button').last();
+    await confirmBtn.click();
 
     expect(isAddCalled).toBe(true);
   });
@@ -140,7 +150,7 @@ test.describe('Competition Application & Review E2E Tests', () => {
 
     // Click "通过" or "同意" or "审核通过" button
     const approveBtn = dialog.getByRole('button', { name: '通过' }).or(dialog.getByRole('button', { name: '同意' })).first();
-    await approveBtn.click({ force: true });
+    await approveBtn.evaluate(el => el.click());
 
     // Confirm the action in the popup dialog box
     const confirmBtn = page.locator('.el-message-box__btns button').last();
