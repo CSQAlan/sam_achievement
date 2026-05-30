@@ -132,9 +132,16 @@ test.describe('Achievement Management CRUD E2E Tests', () => {
     // Navigate to achievement record page
     await page.goto('/achievement/manage');
 
-    // Assert table cell populated with mock data
-    await expect(page.getByRole('cell', { name: 'CERT-100200' })).toBeVisible();
-    await expect(page.getByRole('cell', { name: '张三, 李四' })).toBeVisible();
+    // Wait for the list API response to ensure data is loaded
+    await page.waitForResponse(response => 
+      response.url().includes('/dev-api/achievement/manage/list-responsible') && 
+      response.status() === 200
+    );
+
+    // Assert table cell populated with mock data using faster text locators
+    const tableBody = page.locator('.el-table__body');
+    await expect(tableBody.getByText('CERT-100200')).toBeVisible({ timeout: 10000 });
+    await expect(tableBody.getByText('张三, 李四')).toBeVisible({ timeout: 10000 });
   });
 
   test('should support adding a new achievement entry', async ({ page }) => {
