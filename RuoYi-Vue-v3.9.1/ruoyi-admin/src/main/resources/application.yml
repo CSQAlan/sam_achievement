@@ -106,10 +106,10 @@ pagehelper:
   supportMethodsArguments: true
   params: count=countSql
 
-# Swagger配置
+# Swagger配置（在各环境配置文件中单独设置）
 swagger:
-  # 是否开启swagger
-  enabled: true
+  # 是否开启swagger（默认关闭，生产环境安全）
+  enabled: false
   # 请求前缀
   pathMapping: /dev-api
 

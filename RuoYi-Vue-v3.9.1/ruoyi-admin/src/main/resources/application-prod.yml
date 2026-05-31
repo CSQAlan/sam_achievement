@@ -69,3 +69,7 @@ logging:
   level:
     com.ruoyi: warn
     org.springframework: warn
+
+# Swagger配置（生产环境禁用）
+swagger:
+  enabled: false
