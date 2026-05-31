@@ -73,3 +73,7 @@ logging:
 # Swagger配置（生产环境禁用）
 swagger:
   enabled: false
+
+# Cookie配置（生产环境使用HTTPS，需要Secure）
+cookie:
+  secure: true

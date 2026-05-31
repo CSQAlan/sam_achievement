@@ -48,6 +48,9 @@ public class DemoController {
     @Value("${cas.serverName}")
     private String serverName;
 
+    @Value("${cookie.secure:false}")
+    private boolean cookieSecure;
+
 
     public DemoController(TokenService tokenService,
                           ISysUserService userService,
@@ -107,8 +110,9 @@ public class DemoController {
         // 3) 把 token 写给浏览器（cookie）
         Cookie cookie = new Cookie(WEB_TOKEN_KEY, ruoyiToken);
         cookie.setPath("/");
-        // 本地开发先不加 secure；如果以后 https 再加 cookie.setSecure(true)
-        cookie.setHttpOnly(false); // 若依前端一般需要读 token，先别设 true
+        cookie.setHttpOnly(true);     // 防止JavaScript读取，防止XSS窃取token
+        cookie.setSecure(cookieSecure); // 根据环境配置决定是否只在HTTPS下传输
+        cookie.setSameSite("Strict");  // 防止CSRF攻击
         response.addCookie(cookie);
 
         // 4) 跳回前端
