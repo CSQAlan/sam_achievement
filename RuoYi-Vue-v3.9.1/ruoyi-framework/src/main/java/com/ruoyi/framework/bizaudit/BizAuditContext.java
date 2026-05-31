@@ -1,4 +1,4 @@
-package com.ruoyi.framework.bizaudit.model;
+package com.ruoyi.framework.bizaudit;
 
 import com.ruoyi.common.annotation.BizAudit;
 import org.aspectj.lang.ProceedingJoinPoint;

@@ -34,6 +34,7 @@
         <itextpdf.version>5.5.13.3</itextpdf.version>
         <itext-asian.version>5.2.0</itext-asian.version>
         <mybatis.spring.boot.version>2.2.2</mybatis.spring.boot.version>
+        <pdfbox.version>2.0.29</pdfbox.version>
         <!-- override dependency version -->
         <tomcat.version>9.0.112</tomcat.version>
         <logback.version>1.2.13</logback.version>
@@ -185,6 +186,13 @@
                 <groupId>pro.fessional</groupId>
                 <artifactId>kaptcha</artifactId>
                 <version>${kaptcha.version}</version>
+            </dependency>
+
+            <!-- PDFBox -->
+            <dependency>
+                <groupId>org.apache.pdfbox</groupId>
+                <artifactId>pdfbox</artifactId>
+                <version>${pdfbox.version}</version>
             </dependency>
 
             <!-- iText PDF -->
