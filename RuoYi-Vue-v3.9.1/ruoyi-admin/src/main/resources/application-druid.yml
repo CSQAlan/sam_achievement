@@ -10,7 +10,7 @@ spring:
 
                 username: ruoyi1
                 password: Ruoyi@123456
-            # 从库数据源（保持默认关闭）
+            # 从库数据源（保持默认关闭sudo docker-compose restart springboot-app
             slave:
                 enabled: false
                 url: 
@@ -46,4 +46,4 @@ spring:
                     merge-sql: true
                 wall:
                     config:
-                        multi-statement-allow: true
+                        multi-statement-allow: false

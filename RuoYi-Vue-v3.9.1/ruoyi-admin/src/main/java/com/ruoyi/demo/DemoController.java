@@ -67,9 +67,7 @@ public class DemoController {
     @RequestMapping(value = "/cas", method = RequestMethod.GET)
     public Object cas(HttpServletRequest request, HttpServletResponse response) throws IOException {
         String ticket = request.getParameter("ticket");
-        if (StringUtils.hasText(ticket)) {
-            log.info("登录票据ticket:[{}]", ticket);
-        }
+        
 
         AttributePrincipalImpl principal = (AttributePrincipalImpl) request.getUserPrincipal();
         if (principal == null) {
@@ -81,19 +79,9 @@ public class DemoController {
         Map<String, Object> attributes = principal.getAttributes();
 
         log.info("登录名:[{}]", loginName);
-        log.info("--------attributes keys--------");
-        for (String key : attributes.keySet()) {
-            log.info("{}==[{}]", key, attributes.get(key));
-        }
+        
 
-        // 1) 保留原逻辑：debug=1 时返回 info 页面
-        if ("1".equals(request.getParameter("debug"))) {
-            ModelAndView mv = new ModelAndView();
-            mv.addObject("loginName", loginName);
-            mv.addObject("info", attributes);
-            mv.setViewName("info");
-            return mv;
-        }
+        
 
         // 2) 正常逻辑：把 CAS 登录结果桥接成若依 token
         SysUser user = userService.selectUserByUserName(loginName);
