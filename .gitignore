@@ -63,3 +63,13 @@ RuoYi-Vue-v3.9.1/D/ruoyi/uploadPath/upload/2026/03/30/附件：中国国际大�
 RuoYi-Vue-v3.9.1/D/ruoyi/uploadPath/upload/2026/04/07/25十五届重庆赛区公示电子商务“创新、创意及创业”挑战赛_20260407224833A001.pdf
 RuoYi-Vue-v3.9.1/rollback.diff
 RuoYi-Vue-v3.9.1/D/ruoyi/uploadPath/upload/2026/04/12/重庆师范大学github学生认证教程_20260412154117A001.pdf
+D/ruoyi/uploadPath/
+logs/
+*.log
+logs/
+*.log
+D/ruoyi/uploadPath/
+*_BACKUP_*.xml
+*_BASE_*.xml
+*_LOCAL_*.xml
+*_REMOTE_*.xml

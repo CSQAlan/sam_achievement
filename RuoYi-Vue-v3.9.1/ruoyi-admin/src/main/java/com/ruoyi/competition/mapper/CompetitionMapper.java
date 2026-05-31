@@ -3,6 +3,7 @@ package com.ruoyi.competition.mapper;
 import java.util.List;
 import com.ruoyi.competition.domain.Competition;
 import com.ruoyi.competition.domain.CompetitionDeptRel;
+import com.ruoyi.competition.domain.CompetitionTagRel;
 import org.apache.ibatis.annotations.Mapper;
 import org.apache.ibatis.annotations.Param;
 
@@ -24,12 +25,20 @@ public interface CompetitionMapper
     public Competition selectCompetitionById(Long id);
 
     /**
-     * 查询总赛事列表
-     * 
-     * @param competition 总赛事
-     * @return 总赛事集合
+     * 查询赛事列表
+     *
+     * @param competition 赛事
+     * @return 赛事集合
      */
     public List<Competition> selectCompetitionList(Competition competition);
+    
+    /**
+     * 查询带有指定标签的赛事列表
+     *
+     * @param tagName 标签名称
+     * @return 赛事集合
+     */
+    public List<Competition> selectCompetitionByTag(String tagName);
 
     /**
      * 新增总赛事
@@ -95,5 +104,27 @@ public interface CompetitionMapper
      * @return 总赛事
      */
     public Competition selectCompetitionByNameExact(@Param("name") String name);
+
+    // ====================== 赛事-标签关联 ======================
+
+    /**
+     * 通过赛事ID查询标签关联列表
+     */
+    public List<CompetitionTagRel> selectCompetitionTagRelList(@Param("competitionId") Long competitionId);
+
+    /**
+     * 批量新增赛事-标签关联
+     */
+    public int batchCompetitionTagRel(List<CompetitionTagRel> competitionTagRelList);
+
+    /**
+     * 通过赛事ID删除标签关联
+     */
+    public int deleteCompetitionTagRelByCompetitionId(Long competitionId);
+
+    /**
+     * 批量通过赛事ID删除标签关联
+     */
+    public int deleteCompetitionTagRelByCompetitionIds(Long[] ids);
 
 }

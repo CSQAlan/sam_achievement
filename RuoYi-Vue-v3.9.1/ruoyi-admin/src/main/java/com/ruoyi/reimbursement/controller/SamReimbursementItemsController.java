@@ -1,20 +1,14 @@
 package com.ruoyi.reimbursement.controller;
 
 import java.util.List;
+import java.util.Map;
 import java.io.IOException;
 import javax.servlet.http.HttpServletResponse;
 
 import com.ruoyi.reimbursement.service.ISamReimbursementItemsService;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.web.bind.annotation.GetMapping;
-import org.springframework.web.bind.annotation.PostMapping;
-import org.springframework.web.bind.annotation.PutMapping;
-import org.springframework.web.bind.annotation.DeleteMapping;
-import org.springframework.web.bind.annotation.PathVariable;
-import org.springframework.web.bind.annotation.RequestBody;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.bind.annotation.*;
 import com.ruoyi.common.annotation.Log;
 import com.ruoyi.common.core.controller.BaseController;
 import com.ruoyi.common.core.domain.AjaxResult;
@@ -114,5 +108,39 @@ public class SamReimbursementItemsController extends BaseController
     public void exportPdf(@PathVariable("id") Long id, HttpServletResponse response) throws IOException
     {
         samReimbursementItemsService.exportReimbursementPdf(id, response);
+    }
+
+    /**
+     * 更新报销项目状态
+     */
+    @PreAuthorize("@ss.hasPermi('system:SamReimbursementItems:edit')")
+    @Log(title = "报销项目", businessType = BusinessType.UPDATE)
+    @PutMapping("/updateStatus")
+    public AjaxResult updateStatus(@RequestBody Map<String, Object> params) {
+        Long id = Long.valueOf(params.get("id").toString());
+        String status = params.get("status").toString();
+        
+        SamReimbursementItems item = new SamReimbursementItems();
+        item.setId(id);
+        item.setStatus(status);
+        return toAjax(samReimbursementItemsService.updateSamReimbursementItems(item));
+    }
+
+    /**
+     * 获取批量报销支付信息
+     */
+    @PreAuthorize("@ss.hasPermi('system:SamReimbursementItems:edit')")
+    @GetMapping("/paymentInfo")
+    public AjaxResult getPaymentInfo(@RequestParam("achievementIds") String achievementIds) {
+        return success(samReimbursementItemsService.getPaymentInfo(achievementIds));
+    }
+
+    /**
+     * 获取报销比例规则
+     */
+    @PreAuthorize("@ss.hasPermi('system:SamReimbursementItems:query')")
+    @GetMapping("/reimbursementRules")
+    public AjaxResult getReimbursementRules(@RequestParam("ownerDepId") Long ownerDepId) {
+        return success(samReimbursementItemsService.getReimbursementRules(ownerDepId));
     }
 }

@@ -6,7 +6,7 @@ import com.ruoyi.common.utils.StringUtils;
 import com.ruoyi.competitionapply.domain.CompetitionApply;
 import com.ruoyi.competitionapply.mapper.CompetitionApplyMapper;
 import com.ruoyi.framework.bizaudit.BizAuditHandler;
-import com.ruoyi.framework.bizaudit.model.BizAuditContext;
+import com.ruoyi.framework.bizaudit.BizAuditContext;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashSet;

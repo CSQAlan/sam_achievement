@@ -130,6 +130,18 @@ public class SessionServiceImpl implements ISessionService {
     @Override
     @BizAudit(bizType = "session", bizName = "新增届次", opType = BizAuditOpType.ADD, handler = "sessionBizAuditHandler", async = false)
     public int insertSession(Session session) {
+        // 1. 查重校验：同一赛事下届次名称不可重复
+        if (session.getCompetitionId() == null || StringUtils.isBlank(session.getSession())) {
+            throw new ServiceException("新增失败：赛事ID和届次名称不能为空");
+        }
+        Session query = new Session();
+        query.setCompetitionId(session.getCompetitionId());
+        query.setSession(session.getSession().trim());
+        List<Session> existList = sessionMapper.selectSessionList(query);
+        if (!CollectionUtils.isEmpty(existList)) {
+            throw new ServiceException("新增失败：该赛事下已存在届次【" + session.getSession() + "】");
+        }
+
         // year：默认当前年
         session.setYear(resolveYear(session.getYear()));
         // 规范化盖章单位
@@ -171,8 +183,19 @@ public class SessionServiceImpl implements ISessionService {
         if (session.getId() == null) {
             throw new ServiceException("修改届次必须传入主键ID！");
         }
-        // year：为空则默认当前年（避免被更新成null）
-        session.setYear(resolveYear(session.getYear()));
+
+        // 1. 查重校验：不能修改成该赛事下已有的其它届次名称
+        if (session.getCompetitionId() != null && StringUtils.isNotBlank(session.getSession())) {
+            Session query = new Session();
+            query.setCompetitionId(session.getCompetitionId());
+            query.setSession(session.getSession().trim());
+            List<Session> existList = sessionMapper.selectSessionList(query);
+            // 如果查到了且 ID 不一样，说明改重了
+            if (!CollectionUtils.isEmpty(existList) && !existList.get(0).getId().equals(session.getId())) {
+                throw new ServiceException("修改失败：该赛事下已存在届次【" + session.getSession() + "】");
+            }
+        }
+
         // 规范化盖章单位
         session.setOrganizations(normalizeOrganizations(session.getOrganizations()));
         // uuid：启用时必填且必须为PDF
@@ -245,6 +268,79 @@ public class SessionServiceImpl implements ISessionService {
         }
 
         return sessionMapper.updateSessionStatusByIds(ids, status, SecurityUtils.getUsername());
+    }
+
+    @Transactional(rollbackFor = Exception.class)
+    @Override
+    @BizAudit(bizType = "session", bizName = "批量启用预录", opType = BizAuditOpType.UPDATE, handler = "sessionBizAuditHandler", async = false)
+    public int batchEnableSessions(List<Session> items) {
+        if (CollectionUtils.isEmpty(items)) {
+            throw new ServiceException("请至少选择一条届次");
+        }
+        if (items.size() > 50) {
+            throw new ServiceException("单次批量启用最多支持50条");
+        }
+
+        // 第一遍：全部预校验
+        for (int i = 0; i < items.size(); i++) {
+            Session item = items.get(i);
+            int rowNo = i + 1;
+            if (item.getId() == null) {
+                throw new ServiceException("第" + rowNo + "行：届次ID不能为空");
+            }
+            Session existing = sessionMapper.selectSessionById(item.getId());
+            if (existing == null) {
+                throw new ServiceException("第" + rowNo + "行：届次不存在");
+            }
+            if (!"2".equals(existing.getStatus())) {
+                throw new ServiceException("第" + rowNo + "行：仅预录状态的届次可以启用，当前状态为" + existing.getStatus());
+            }
+            String uuid = StringUtils.isNotBlank(item.getUuid()) ? item.getUuid().trim() : existing.getUuid();
+            if (StringUtils.isBlank(uuid)) {
+                throw new ServiceException("第" + rowNo + "行【" + existing.getSession() + "】：未上传参赛通知PDF，无法启用！");
+            }
+            validateAndFinalizeNoticeUuid(uuid);
+            item.setUuid(uuid);
+        }
+
+        // 第二遍：全部更新
+        String operName = SecurityUtils.getUsername();
+        for (Session item : items) {
+            Session update = new Session();
+            update.setId(item.getId());
+            update.setUuid(item.getUuid());
+            update.setStatus("1");
+            update.setUpdateBy(operName);
+            update.setUpdateTime(DateUtils.getNowDate());
+            sessionMapper.updateSession(update);
+        }
+
+        return items.size();
+    }
+
+    @Override
+    public int uploadSessionNotice(Long id, String uuid) {
+        if (id == null) {
+            throw new ServiceException("届次ID不能为空");
+        }
+        if (StringUtils.isBlank(uuid)) {
+            throw new ServiceException("通知文件UUID不能为空");
+        }
+        Session existing = sessionMapper.selectSessionById(id);
+        if (existing == null) {
+            throw new ServiceException("届次不存在");
+        }
+        if (!"2".equals(existing.getStatus())) {
+            throw new ServiceException("仅预录状态的届次可以上传通知文件，当前状态不允许操作");
+        }
+        validateAndFinalizeNoticeUuid(uuid);
+
+        Session update = new Session();
+        update.setId(id);
+        update.setUuid(uuid);
+        update.setUpdateBy(SecurityUtils.getUsername());
+        update.setUpdateTime(DateUtils.getNowDate());
+        return sessionMapper.updateSession(update);
     }
 
     @Transactional(rollbackFor = Exception.class)
@@ -331,6 +427,7 @@ public class SessionServiceImpl implements ISessionService {
             newSession.setOrganizations(template.getOrganizations());
             newSession.setLevel(template.getLevel());
             newSession.setTags(template.getTags());
+            newSession.setUuid(item.getUuid());
 
             if (StringUtils.isNotBlank(newSession.getUuid())) {
                 validateAndFinalizeNoticeUuid(newSession.getUuid());

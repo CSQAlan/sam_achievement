@@ -1,20 +1,30 @@
 package com.ruoyi.reimbursement.service.impl;
 
 import java.util.List;
+import java.util.Map;
+import java.util.ArrayList;
+import java.util.HashMap;
 import java.io.IOException;
 import java.io.OutputStream;
 import java.net.URLEncoder;
 import java.text.SimpleDateFormat;
 import javax.servlet.http.HttpServletResponse;
 import com.ruoyi.common.utils.DateUtils;
+import com.ruoyi.achievement.mapper.SamAchievementMapper;
+import com.ruoyi.achievement.mapper.FileUuidMapper;
+import com.ruoyi.achievement.domain.FileUuid;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import com.ruoyi.reimbursement.mapper.SamReimbursementItemsMapper;
+import com.ruoyi.reimbursement.mapper.SamReimbursementRatioMapper;
 import com.ruoyi.reimbursement.domain.SamReimbursementItems;
+import com.ruoyi.reimbursement.domain.SamReimbursementRatio;
 import com.ruoyi.reimbursement.service.ISamReimbursementItemsService;
 import com.itextpdf.text.*;
 import com.itextpdf.text.pdf.*;
 import com.itextpdf.text.pdf.BaseFont;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 /**
  * 报销项目Service业务层处理
@@ -23,10 +33,21 @@ import com.itextpdf.text.pdf.BaseFont;
  * @date 2026-02-07
  */
 @Service
-public class SamReimbursementItemsServiceImpl implements ISamReimbursementItemsService 
+public class SamReimbursementItemsServiceImpl implements ISamReimbursementItemsService
 {
+    private static final Logger logger = LoggerFactory.getLogger(SamReimbursementItemsServiceImpl.class);
+
     @Autowired
     private SamReimbursementItemsMapper samReimbursementItemsMapper;
+
+    @Autowired
+    private SamAchievementMapper samAchievementMapper;
+
+    @Autowired
+    private FileUuidMapper fileUuidMapper;
+
+    @Autowired
+    private SamReimbursementRatioMapper samReimbursementRatioMapper;
 
     /**
      * 查询报销项目
@@ -228,5 +249,105 @@ public class SamReimbursementItemsServiceImpl implements ISamReimbursementItemsS
             return "¥0.00";
         }
         return String.format("¥%.2f", money);
+    }
+
+    /**
+     * 获取批量报销支付信息
+     * 
+     * @param achievementIds 成果ID列表，逗号分隔
+     * @return 支付信息列表
+     */
+    @Override
+    public List<Map<String, Object>> getPaymentInfo(String achievementIds) {
+        List<Map<String, Object>> paymentInfoList = new ArrayList<>();
+        
+        if (achievementIds == null || achievementIds.isEmpty()) {
+            return paymentInfoList;
+        }
+        
+        // 解析成果ID列表
+        String[] ids = achievementIds.split(",");
+        
+        for (String achievementId : ids) {
+            if (achievementId == null || achievementId.trim().isEmpty()) {
+                continue;
+            }
+            
+            Map<String, Object> paymentInfo = new HashMap<>();
+            paymentInfo.put("achievementId", achievementId.trim());
+            
+            // 查询成果的基本信息
+            Map<String, Object> achievementInfo = samAchievementMapper.selectAchievementInfoById(achievementId.trim());
+            if (achievementInfo != null) {
+                paymentInfo.put("name", achievementInfo.get("name"));
+                paymentInfo.put("contactName", achievementInfo.get("contact_name"));
+                paymentInfo.put("studentId", achievementInfo.get("student_id"));
+                paymentInfo.put("fee", achievementInfo.get("fee"));
+                paymentInfo.put("reimbursementDate", achievementInfo.get("reimbursement_date"));
+                paymentInfo.put("isReimburse", achievementInfo.get("is_reimburse"));
+                paymentInfo.put("reimbursementFee", achievementInfo.get("reimbursement_fee"));
+                paymentInfo.put("phone", achievementInfo.get("phone"));
+                paymentInfo.put("email", achievementInfo.get("email"));
+            }
+            
+            // 查询成果的收款码附件（type=6表示收款码）
+            List<String> qrCodeUuids = samAchievementMapper.selectAttachmentUuidByAchievementIdAndType(
+                achievementId.trim(), 6);
+            
+            if (qrCodeUuids != null && !qrCodeUuids.isEmpty()) {
+                // 获取第一个收款码的UUID
+                String qrCodeUuid = qrCodeUuids.get(0);
+                paymentInfo.put("qrCodeUuid", qrCodeUuid);
+                
+                // 查询文件真实路径
+                FileUuid fileUuid = fileUuidMapper.selectFileUuidById(qrCodeUuid);
+                if (fileUuid != null) {
+                    paymentInfo.put("qrCodeUrl", qrCodeUuid);
+                    paymentInfo.put("originName", fileUuid.getOriginName());
+                } else {
+                    paymentInfo.put("qrCodeUrl", null);
+                    paymentInfo.put("originName", null);
+                }
+            } else {
+                paymentInfo.put("qrCodeUuid", null);
+                paymentInfo.put("qrCodeUrl", null);
+                paymentInfo.put("originName", null);
+            }
+            
+            paymentInfoList.add(paymentInfo);
+        }
+        
+        return paymentInfoList;
+    }
+
+    @Override
+    public List<Map<String, Object>> getReimbursementRules(Long ownerDepId) {
+        List<Map<String, Object>> rulesList = new ArrayList<>();
+        
+        try {
+            // 查询学院级规则（查询指定学院的所有规则，包括启用和停用状态）
+            SamReimbursementRatio collegeRatio = new SamReimbursementRatio();
+            collegeRatio.setOwnerDepId(ownerDepId);
+            // 不设置 status 过滤条件，获取所有状态的规则
+            List<SamReimbursementRatio> collegeRules = samReimbursementRatioMapper.selectSamReimbursementRatioList(collegeRatio);
+            
+            // 添加学院级规则
+            for (SamReimbursementRatio rule : collegeRules) {
+                Map<String, Object> ruleMap = new HashMap<>();
+                ruleMap.put("level", rule.getLevel());     // 添加级别字段
+                ruleMap.put("grade", rule.getGrade());
+                ruleMap.put("category", rule.getCategory());
+                ruleMap.put("ratio", rule.getRatio());
+                ruleMap.put("ownerDepId", rule.getOwnerDepId());
+                ruleMap.put("status", rule.getStatus());   // 添加状态字段
+                ruleMap.put("ruleType", "学院级");
+                rulesList.add(ruleMap);
+            }
+            
+        } catch (Exception e) {
+            logger.error("获取报销比例规则失败", e);
+        }
+        
+        return rulesList;
     }
 }

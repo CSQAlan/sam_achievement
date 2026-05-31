@@ -1,7 +1,12 @@
 package com.ruoyi.competition.controller;
 
+import java.io.File;
 import java.util.List;
+import java.util.Map;
+import java.util.stream.Collectors;
 import javax.servlet.http.HttpServletResponse;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -10,14 +15,22 @@ import org.springframework.web.bind.annotation.PutMapping;
 import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.RequestBody;
+import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.multipart.MultipartFile;
 import com.ruoyi.common.annotation.Log;
 import com.ruoyi.common.core.controller.BaseController;
 import com.ruoyi.common.core.domain.AjaxResult;
 import com.ruoyi.common.enums.BusinessType;
+import com.ruoyi.common.exception.ServiceException;
+import com.ruoyi.common.utils.StringUtils;
+import com.ruoyi.common.utils.file.FileUtils;
 import com.ruoyi.competition.domain.Competition;
 import com.ruoyi.competition.service.ICompetitionService;
+import com.ruoyi.competition.service.ICompetitionPdfMappingService;
+import org.springframework.util.CollectionUtils;
 import com.ruoyi.common.utils.poi.ExcelUtil;
 import com.ruoyi.common.core.page.TableDataInfo;
 
@@ -30,8 +43,14 @@ import com.ruoyi.common.core.page.TableDataInfo;
 @RestController
 @RequestMapping("/competition/competition")
 public class CompetitionController extends BaseController {
+    private static final Logger log = LoggerFactory.getLogger(CompetitionController.class);
+
     @Autowired
     private ICompetitionService competitionService;
+
+
+    @Autowired
+    private ICompetitionPdfMappingService competitionPdfMappingService;
 
     /**
      * 查询总赛事列表
@@ -96,6 +115,97 @@ public class CompetitionController extends BaseController {
     }
 
     /**
+     * 解析PDF竞赛清单并匹配
+     */
+    @PreAuthorize("@ss.hasPermi('competition:competition:import')")
+    @Log(title = "竞赛导入", businessType = BusinessType.OTHER)
+    @PostMapping("/import/analyze")
+    public AjaxResult analyzePdf(@RequestParam("file") MultipartFile file, 
+                                @RequestParam(value = "threshold", defaultValue = "0.7") Double threshold,
+                                @RequestParam("year") Integer year) {
+        if (file == null || file.isEmpty()) {
+            return error("请上传PDF文件");
+        }
+        if (year == null) {
+            return error("请选择导入年份");
+        }
+        
+        try {
+            // 保存临时文件以便处理
+            File tempFile = File.createTempFile("comp_import_", ".pdf");
+            file.transferTo(tempFile);
+            
+            try {
+                Map<String, Object> matchResult = competitionPdfMappingService.extractAndMatchFromPdf(tempFile, threshold, year);
+                return success(matchResult);
+            } finally {
+                FileUtils.deleteFile(tempFile.getAbsolutePath());
+            }
+        } catch (Exception e) {
+            log.error("解析PDF失败", e);
+            return error("解析失败：" + e.getMessage());
+        }
+    }
+
+    /**
+     * 确认匹配并建立关联（打标签）
+     */
+    @PreAuthorize("@ss.hasPermi('competition:competition:import')")
+    @Log(title = "竞赛导入", businessType = BusinessType.UPDATE)
+    @PostMapping("/import/link")
+    public AjaxResult confirmLink(@RequestBody Map<String, Object> params) {
+        List<?> rawList = (List<?>) params.get("sessionIds");
+        if (rawList == null || rawList.isEmpty()) {
+            return error("请选择要关联的届次");
+        }
+        List<Long> sessionIds = rawList.stream()
+                .map(o -> ((Number) o).longValue()).collect(Collectors.toList());
+        List<String> tagCodes = (List<String>) params.get("tagCodes");
+        String filename = (String) params.get("filename");
+        Integer year = (Integer) params.get("year");
+
+        int count = competitionPdfMappingService.confirmAndLink(sessionIds, tagCodes, filename, year);
+        return AjaxResult.success("成功关联 " + count + " 条届次数据", count);
+    }
+
+    /**
+     * 批量移除标签
+     */
+    @PreAuthorize("@ss.hasPermi('competition:competition:import')")
+    @Log(title = "竞赛导入", businessType = BusinessType.UPDATE)
+    @PostMapping("/batch-remove-tags")
+    public AjaxResult removeTags(@RequestBody Map<String, Object> params) {
+        List<Integer> idsInt = (List<Integer>) params.get("sessionIds");
+        if (CollectionUtils.isEmpty(idsInt)) {
+            return error("请选择要操作的届次");
+        }
+        List<Long> sessionIds = idsInt.stream().map(Integer::longValue).collect(Collectors.toList());
+        List<String> tagCodes = (List<String>) params.get("tagCodes");
+        if (CollectionUtils.isEmpty(tagCodes)) {
+            return error("请选择要移除的标签");
+        }
+        
+        int count = competitionPdfMappingService.batchRemoveTagsFromSessions(sessionIds, tagCodes);
+        return success("成功从 " + count + " 条届次中移除指定标签");
+    }
+
+    /**
+     * 手动关联并学习别名
+     */
+    @PreAuthorize("@ss.hasPermi('competition:competition:import')")
+    @Log(title = "竞赛导入", businessType = BusinessType.UPDATE)
+    @PostMapping("/batch-manual-link")
+    public AjaxResult manualLink(@RequestBody Map<String, Object> params) {
+        Long sessionId = Long.valueOf(params.get("sessionId").toString());
+        String pdfName = (String) params.get("pdfName");
+        
+        if (competitionPdfMappingService.linkManualMatch(sessionId, pdfName)) {
+            return success("手动关联成功，系统已自动学习该名称为别名");
+        }
+        return error("手动关联失败");
+    }
+
+    /**
      * 获取总赛事列表选项（不拦截权限，供申请时下拉选择）
      */
     @GetMapping("/optionList")
@@ -103,6 +213,15 @@ public class CompetitionController extends BaseController {
         Competition query = new Competition();
 
         List<Competition> list = competitionService.selectCompetitionList(query);
+        return AjaxResult.success(list);
+    }
+    
+    /**
+     * 获取带有指定标签的赛事列表（用于素质提升界面）
+     */
+    @GetMapping("/listByTag")
+    public AjaxResult listByTag(@RequestParam("tagName") String tagName) {
+        List<Competition> list = competitionService.selectCompetitionByTag(tagName);
         return AjaxResult.success(list);
     }
 }

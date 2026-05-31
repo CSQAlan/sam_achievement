@@ -29,6 +29,14 @@ public interface SamAchievementMapper
     public SamAchievement selectSamAchievementByAchievementId(String achievementId);
 
     /**
+     * 查询成果基本信息，包括名称和负责人信息
+     *
+     * @param achievementId 成果录入主键
+     * @return 成果基本信息
+     */
+    public Map<String, Object> selectAchievementInfoById(String achievementId);
+
+    /**
      * 查询成果录入列表
      *
      * @param samAchievement 成果录入
@@ -162,7 +170,8 @@ public interface SamAchievementMapper
             @Param("isTeacher") boolean isTeacher,
             @Param("isAdmin") boolean isAdmin,
             @Param("competitionId") String competitionId,
-            @Param("groupByCompetition") Boolean groupByCompetition);
+            @Param("groupByCompetition") Boolean groupByCompetition,
+            @Param("deptId") Long deptId);
 
     /**
      * 查询成果附件文件信息
@@ -170,4 +179,49 @@ public interface SamAchievementMapper
     public List<ExportAttachmentFileVo> selectExportAttachmentFiles(
             @Param("achievementIds") String[] achievementIds,
             @Param("types") Integer[] types);
+
+    /**
+     * 根据成果ID和附件类型查询附件UUID列表
+     *
+     * @param achievementId 成果ID
+     * @param type 附件类型
+     * @return 附件UUID列表
+     */
+    public List<String> selectAttachmentUuidByAchievementIdAndType(@Param("achievementId") String achievementId, @Param("type") Integer type);
+
+    /**
+     * 查询年度成果统计
+     */
+    public List<Map<String, Object>> selectYearStats(SamAchievement samAchievement);
+
+    /**
+     * 查询首页统计数据
+     */
+    public Map<String, Object> selectDashboardStats(Map<String, Object> params);
+
+    /**
+     * 查询首页趋势统计
+     */
+    public List<Map<String, Object>> selectDashboardTrend(Map<String, Object> params);
+
+    /**
+     * 查询首页分布统计
+     */
+    public List<Map<String, Object>> selectDashboardDistribution(Map<String, Object> params);
+
+    /**
+     * 查询带有指定标签比赛的成果列表（用于素质提升展示）
+     *
+     * @param samAchievement 查询条件
+     * @return 成果列表
+     */
+    public List<SamAchievement> selectSamAchievementListByCompetitionTag(SamAchievement samAchievement);
+
+    /**
+     * 查询教师指导的带有素质提升奖标签的成果列表（用于教师版素质提升展示）
+     *
+     * @param samAchievement 查询条件
+     * @return 成果列表
+     */
+    public List<SamAchievement> selectQualityAchievementListByTeacher(SamAchievement samAchievement);
 }

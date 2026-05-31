@@ -42,3 +42,39 @@ export function delSamQualityDevelopmentForm(id) {
     method: 'delete'
   })
 }
+
+// 查询带有指定标签的赛事列表
+export function listCompetitionByTag(tagName) {
+  return request({
+    url: '/competition/competition/listByTag',
+    method: 'get',
+    params: { tagName: tagName }
+  })
+}
+
+// 查询素质提升奖成果列表
+export function listQualityAchievement(query) {
+  return request({
+    url: '/achievement/manage/list-quality',
+    method: 'get',
+    params: query
+  })
+}
+
+// 获取成果详情
+export function getAchievementInfo(achievementId) {
+  return request({
+    url: '/achievement/manage/' + achievementId,
+    method: 'get'
+  })
+}
+
+// 导出素质提升奖成果列表
+export function exportQualityAchievement(query) {
+  return request({
+    url: '/achievement/manage/export-quality',
+    method: 'get',
+    params: query,
+    responseType: 'blob'
+  })
+}

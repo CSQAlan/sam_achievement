@@ -92,6 +92,24 @@ export function batchCopySession(data) {
 //   })
 // }
 
+// 批量启用预录届次（事务保护，全部成功或全部回滚）
+export function batchEnableSession(data) {
+  return request({
+    url: '/session/session/batchEnable',
+    method: 'post',
+    data: data
+  })
+}
+
+// 为预录届次上传参赛通知（学生/管理员均可）
+export function uploadSessionNotice(id, uuid) {
+  return request({
+    url: `/session/session/${id}/notice`,
+    method: 'put',
+    data: { uuid }
+  })
+}
+
 // 批量复制届次模板（每条必须重新上传参赛通知PDF）
 // export function batchCopySession(data) {
 //   return request({

@@ -57,6 +57,9 @@ public class SamAchievement extends BaseEntity
     /** 列表展示用：指导老师（姓名+工号） */
     private String instructor;
 
+    /** 教师工号（搜索用） */
+    private String teacherId;
+
     /** 获奖级别 */
     @Excel(name = "获奖级别", dictType = "award_level_type")
     private String level;
@@ -259,6 +262,16 @@ public class SamAchievement extends BaseEntity
     public String getInstructor()
     {
         return instructor;
+    }
+
+    public void setTeacherId(String teacherId)
+    {
+        this.teacherId = teacherId;
+    }
+
+    public String getTeacherId()
+    {
+        return teacherId;
     }
 
     public void setLevel(String level)
@@ -584,6 +597,7 @@ public class SamAchievement extends BaseEntity
             .append("teamName", getTeamName())
             .append("contestant", getContestant())
             .append("instructor", getInstructor())
+            .append("teacherId", getTeacherId())
             .append("level", getLevel())
             .append("grade", getGrade())
             .append("track", getTrack())

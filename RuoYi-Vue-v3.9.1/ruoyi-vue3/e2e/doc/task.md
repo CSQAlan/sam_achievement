@@ -1,0 +1,12 @@
+- [x] Modify `ruoyi-vue3/package.json` to add Playwright dependency and scripts
+- [x] Run npm install in `ruoyi-vue3`
+- [x] Install Playwright browser binaries
+- [x] Create `ruoyi-vue3/playwright.config.js`
+- [x] Create E2E test helper file `ruoyi-vue3/e2e/helpers.js`
+- [x] Create and refactor login tests `ruoyi-vue3/e2e/login.spec.js`
+- [x] Implement E2E CRUD tests for Competition module in `ruoyi-vue3/e2e/competition.spec.js`
+- [x] Extend helpers.js mock routes (menus, dicts)
+- [x] Implement achievement E2E tests (achievement.spec.js)
+- [x] Implement competition application & review E2E tests (apply.spec.js)
+- [x] Implement reimbursement projects E2E tests (reimbursement.spec.js)
+- [/] Verify all E2E tests pass successfully

@@ -62,7 +62,16 @@ public class Competition extends BaseEntity
     /** 赛事-部门关系信息 */
     private List<CompetitionDeptRel> competitionDeptRelList;
 
+    /** 赛事-标签关联信息 */
+    private List<CompetitionTagRel> competitionTagRelList;
+
     // ========== 新增字段（核心） ==========
+    /**
+     * 赛事别名（多个用逗号分隔）
+     */
+    @Excel(name = "赛事别名")
+    private String alias;
+
     /**
      * 归属学院名称（多个用、分隔，非数据库字段）
      * 例："计算机学院、软件学院、人工智能学院"
@@ -113,7 +122,18 @@ public class Competition extends BaseEntity
     public List<CompetitionDeptRel> getCompetitionDeptRelList() { return competitionDeptRelList; }
     public void setCompetitionDeptRelList(List<CompetitionDeptRel> competitionDeptRelList) { this.competitionDeptRelList = competitionDeptRelList; }
 
+    public List<CompetitionTagRel> getCompetitionTagRelList() { return competitionTagRelList; }
+    public void setCompetitionTagRelList(List<CompetitionTagRel> competitionTagRelList) { this.competitionTagRelList = competitionTagRelList; }
+
     // ========== 新增字段的getter/setter ==========
+    public String getAlias() {
+        return alias;
+    }
+
+    public void setAlias(String alias) {
+        this.alias = alias;
+    }
+
     public String getDeptNames() {
         return deptNames;
     }
@@ -127,6 +147,7 @@ public class Competition extends BaseEntity
         return new ToStringBuilder(this,ToStringStyle.MULTI_LINE_STYLE)
                 .append("id", getId())
                 .append("name", getName())
+                .append("alias", getAlias())
                 .append("category", getCategory())
                 .append("organizations", getOrganizations())
                 .append("tags", getTags())
@@ -139,7 +160,8 @@ public class Competition extends BaseEntity
                 .append("updateTime", getUpdateTime())
                 .append("delFlag", getDelFlag())
                 .append("competitionDeptRelList", getCompetitionDeptRelList())
-                .append("deptNames", getDeptNames()) // 新增：toString中加入deptNames
+                .append("competitionTagRelList", getCompetitionTagRelList())
+                .append("deptNames", getDeptNames())
                 .toString();
     }
 }
