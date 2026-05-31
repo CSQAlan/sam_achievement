@@ -112,7 +112,10 @@ public class DemoController {
         cookie.setPath("/");
         cookie.setHttpOnly(true);     // 防止JavaScript读取，防止XSS窃取token
         cookie.setSecure(cookieSecure); // 根据环境配置决定是否只在HTTPS下传输
-        cookie.setSameSite("Strict");  // 防止CSRF攻击
+        // SameSite属性通过响应头设置（兼容Servlet 3.x）
+        response.setHeader("Set-Cookie",
+            String.format("%s=%s; Path=/; HttpOnly; %s SameSite=Strict",
+                WEB_TOKEN_KEY, ruoyiToken, cookieSecure ? "Secure;" : ""));
         response.addCookie(cookie);
 
         // 4) 跳回前端
