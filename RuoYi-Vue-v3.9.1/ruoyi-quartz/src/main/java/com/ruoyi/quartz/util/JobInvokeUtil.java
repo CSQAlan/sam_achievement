@@ -23,6 +23,10 @@ public class JobInvokeUtil
     public static void invokeMethod(SysJob sysJob) throws Exception
     {
         String invokeTarget = sysJob.getInvokeTarget();
+        if (!ScheduleUtils.whiteList(invokeTarget))
+        {
+            throw new Exception("目标字符串不在白名单内，不允许执行！");
+        }
         String beanName = getBeanName(invokeTarget);
         String methodName = getMethodName(invokeTarget);
         List<Object[]> methodParams = getMethodParams(invokeTarget);

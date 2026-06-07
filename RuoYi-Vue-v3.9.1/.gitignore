@@ -88,5 +88,8 @@ temp-logback*.xml
 result_*.md
 ruoyi-admin/src/main/resources/application-druid.yml.backup
 
+# 开发环境配置（包含敏感信息）
+application-dev.yml
+
 # Node modules
 node_modules/

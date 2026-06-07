@@ -272,6 +272,79 @@ public class SessionServiceImpl implements ISessionService {
 
     @Transactional(rollbackFor = Exception.class)
     @Override
+    @BizAudit(bizType = "session", bizName = "批量启用预录", opType = BizAuditOpType.UPDATE, handler = "sessionBizAuditHandler", async = false)
+    public int batchEnableSessions(List<Session> items) {
+        if (CollectionUtils.isEmpty(items)) {
+            throw new ServiceException("请至少选择一条届次");
+        }
+        if (items.size() > 50) {
+            throw new ServiceException("单次批量启用最多支持50条");
+        }
+
+        // 第一遍：全部预校验
+        for (int i = 0; i < items.size(); i++) {
+            Session item = items.get(i);
+            int rowNo = i + 1;
+            if (item.getId() == null) {
+                throw new ServiceException("第" + rowNo + "行：届次ID不能为空");
+            }
+            Session existing = sessionMapper.selectSessionById(item.getId());
+            if (existing == null) {
+                throw new ServiceException("第" + rowNo + "行：届次不存在");
+            }
+            if (!"2".equals(existing.getStatus())) {
+                throw new ServiceException("第" + rowNo + "行：仅预录状态的届次可以启用，当前状态为" + existing.getStatus());
+            }
+            String uuid = StringUtils.isNotBlank(item.getUuid()) ? item.getUuid().trim() : existing.getUuid();
+            if (StringUtils.isBlank(uuid)) {
+                throw new ServiceException("第" + rowNo + "行【" + existing.getSession() + "】：未上传参赛通知PDF，无法启用！");
+            }
+            validateAndFinalizeNoticeUuid(uuid);
+            item.setUuid(uuid);
+        }
+
+        // 第二遍：全部更新
+        String operName = SecurityUtils.getUsername();
+        for (Session item : items) {
+            Session update = new Session();
+            update.setId(item.getId());
+            update.setUuid(item.getUuid());
+            update.setStatus("1");
+            update.setUpdateBy(operName);
+            update.setUpdateTime(DateUtils.getNowDate());
+            sessionMapper.updateSession(update);
+        }
+
+        return items.size();
+    }
+
+    @Override
+    public int uploadSessionNotice(Long id, String uuid) {
+        if (id == null) {
+            throw new ServiceException("届次ID不能为空");
+        }
+        if (StringUtils.isBlank(uuid)) {
+            throw new ServiceException("通知文件UUID不能为空");
+        }
+        Session existing = sessionMapper.selectSessionById(id);
+        if (existing == null) {
+            throw new ServiceException("届次不存在");
+        }
+        if (!"2".equals(existing.getStatus())) {
+            throw new ServiceException("仅预录状态的届次可以上传通知文件，当前状态不允许操作");
+        }
+        validateAndFinalizeNoticeUuid(uuid);
+
+        Session update = new Session();
+        update.setId(id);
+        update.setUuid(uuid);
+        update.setUpdateBy(SecurityUtils.getUsername());
+        update.setUpdateTime(DateUtils.getNowDate());
+        return sessionMapper.updateSession(update);
+    }
+
+    @Transactional(rollbackFor = Exception.class)
+    @Override
     @BizAudit(bizType = "session", bizName = "批量复制模版", opType = BizAuditOpType.IMPORT, handler = "sessionBizAuditHandler", async = false)
     public int batchCopyFromTemplates(List<Session> items)
     {
@@ -354,6 +427,7 @@ public class SessionServiceImpl implements ISessionService {
             newSession.setOrganizations(template.getOrganizations());
             newSession.setLevel(template.getLevel());
             newSession.setTags(template.getTags());
+            newSession.setUuid(item.getUuid());
 
             if (StringUtils.isNotBlank(newSession.getUuid())) {
                 validateAndFinalizeNoticeUuid(newSession.getUuid());

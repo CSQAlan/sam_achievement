@@ -145,13 +145,13 @@ PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
 
     <delete id="cleanBizAuditLogBeforeDays" parameterType="Integer">
         delete from biz_audit_log
-        where create_time &lt; DATE_SUB(now(), interval ${days} day)
+        where create_time &lt; DATE_SUB(now(), interval #{days} day)
     </delete>
 
     <delete id="cleanBizAuditLogDetailBeforeDays" parameterType="Integer">
         delete d from biz_audit_log_detail d
         inner join biz_audit_log l on l.id = d.log_id
-        where l.create_time &lt; DATE_SUB(now(), interval ${days} day)
+        where l.create_time &lt; DATE_SUB(now(), interval #{days} day)
     </delete>
 
 </mapper>

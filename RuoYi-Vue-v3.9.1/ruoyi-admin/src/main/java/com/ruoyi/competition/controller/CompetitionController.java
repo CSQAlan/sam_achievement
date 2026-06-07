@@ -118,7 +118,7 @@ public class CompetitionController extends BaseController {
     /**
      * 解析PDF竞赛清单并匹配
      */
-    @PreAuthorize("@ss.hasPermi('competition:competition:edit')")
+    @PreAuthorize("@ss.hasPermi('competition:competition:import')")
     @Log(title = "竞赛导入", businessType = BusinessType.OTHER)
     @PostMapping("/import/analyze")
     public AjaxResult analyzePdf(@RequestParam("file") MultipartFile file, 
@@ -151,23 +151,20 @@ public class CompetitionController extends BaseController {
     /**
      * 确认匹配并建立关联（打标签）
      */
-    @PreAuthorize("@ss.hasPermi('competition:competition:edit')")
+    @PreAuthorize("@ss.hasPermi('competition:competition:import')")
     @Log(title = "竞赛导入", businessType = BusinessType.UPDATE)
     @PostMapping("/import/link")
     public AjaxResult confirmLink(@RequestBody Map<String, Object> params) {
-        List<Integer> idsInt = (List<Integer>) params.get("sessionIds");
-        if (idsInt == null) {
+        List<?> rawList = (List<?>) params.get("sessionIds");
+        if (rawList == null || rawList.isEmpty()) {
             return error("请选择要关联的届次");
         }
-        List<Long> sessionIds = idsInt.stream().map(Integer::longValue).collect(Collectors.toList());
+        List<Long> sessionIds = rawList.stream()
+                .map(o -> ((Number) o).longValue()).collect(Collectors.toList());
         List<String> tagCodes = (List<String>) params.get("tagCodes");
         String filename = (String) params.get("filename");
         Integer year = (Integer) params.get("year");
-        
-        if (CollectionUtils.isEmpty(sessionIds)) {
-            return error("请选择要关联的届次");
-        }
-        
+
         int count = competitionPdfMappingService.confirmAndLink(sessionIds, tagCodes, filename, year);
         return AjaxResult.success("成功关联 " + count + " 条届次数据", count);
     }
@@ -175,7 +172,7 @@ public class CompetitionController extends BaseController {
     /**
      * 批量移除标签
      */
-    @PreAuthorize("@ss.hasPermi('competition:competition:edit')")
+    @PreAuthorize("@ss.hasPermi('competition:competition:import')")
     @Log(title = "竞赛导入", businessType = BusinessType.UPDATE)
     @PostMapping("/batch-remove-tags")
     public AjaxResult removeTags(@RequestBody Map<String, Object> params) {
@@ -196,7 +193,7 @@ public class CompetitionController extends BaseController {
     /**
      * 手动关联并学习别名
      */
-    @PreAuthorize("@ss.hasPermi('competition:competition:edit')")
+    @PreAuthorize("@ss.hasPermi('competition:competition:import')")
     @Log(title = "竞赛导入", businessType = BusinessType.UPDATE)
     @PostMapping("/batch-manual-link")
     public AjaxResult manualLink(@RequestBody Map<String, Object> params) {
