@@ -5,6 +5,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
 import javax.servlet.http.HttpServletResponse;
+import javax.validation.Valid;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.security.access.prepost.PreAuthorize;
@@ -90,7 +91,7 @@ public class CompetitionController extends BaseController {
     @PreAuthorize("@ss.hasPermi('competition:competition:add')")
     @Log(title = "总赛事", businessType = BusinessType.INSERT)
     @PostMapping
-    public AjaxResult add(@RequestBody Competition competition) {
+    public AjaxResult add(@Valid @RequestBody Competition competition) {
         return toAjax(competitionService.insertCompetition(competition));
     }
 
@@ -100,7 +101,7 @@ public class CompetitionController extends BaseController {
     @PreAuthorize("@ss.hasPermi('competition:competition:edit')")
     @Log(title = "总赛事", businessType = BusinessType.UPDATE)
     @PutMapping
-    public AjaxResult edit(@RequestBody Competition competition) {
+    public AjaxResult edit(@Valid @RequestBody Competition competition) {
         return toAjax(competitionService.updateCompetition(competition));
     }
 
@@ -209,8 +210,9 @@ public class CompetitionController extends BaseController {
     }
 
     /**
-     * 获取总赛事列表选项（不拦截权限，供申请时下拉选择）
+     * 获取总赛事列表选项（供申请时下拉选择）
      */
+    @PreAuthorize("@ss.hasAnyPermi('competition:competition:list','competition-apply:competitionapply:add')")
     @GetMapping("/optionList")
     public AjaxResult optionList() {
         Competition query = new Competition();
@@ -222,6 +224,7 @@ public class CompetitionController extends BaseController {
     /**
      * 获取带有指定标签的赛事列表（用于素质提升界面）
      */
+    @PreAuthorize("@ss.hasPermi('competition:competition:list')")
     @GetMapping("/listByTag")
     public AjaxResult listByTag(@RequestParam("tagName") String tagName) {
         List<Competition> list = competitionService.selectCompetitionByTag(tagName);

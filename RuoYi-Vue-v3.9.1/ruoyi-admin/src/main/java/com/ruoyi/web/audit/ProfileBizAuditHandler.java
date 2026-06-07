@@ -10,7 +10,7 @@ import com.ruoyi.common.core.domain.model.LoginUser;
 import com.ruoyi.common.utils.SecurityUtils;
 import com.ruoyi.common.utils.StringUtils;
 import com.ruoyi.framework.bizaudit.BizAuditHandler;
-import com.ruoyi.framework.bizaudit.BizAuditContext;
+import com.ruoyi.framework.bizaudit.model.BizAuditContext;
 import com.ruoyi.system.service.ISysUserService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
