@@ -30,6 +30,7 @@ import io.swagger.annotations.ApiOperation;
 @Api("用户信息管理")
 @RestController
 @RequestMapping("/test/user")
+@org.springframework.context.annotation.Profile("dev")
 public class TestController extends BaseController
 {
     private final static Map<Integer, UserEntity> users = new LinkedHashMap<Integer, UserEntity>();

@@ -2,6 +2,7 @@ package com.ruoyi.competition.service.impl;
 
 import java.util.List;
 import com.ruoyi.common.utils.DateUtils;
+import com.ruoyi.common.utils.SecurityUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import com.ruoyi.common.annotation.BizAudit;
@@ -10,6 +11,7 @@ import java.util.ArrayList;
 import com.ruoyi.common.utils.StringUtils;
 import org.springframework.transaction.annotation.Transactional;
 import com.ruoyi.competition.domain.CompetitionDeptRel;
+import com.ruoyi.competition.domain.CompetitionTagRel;
 import com.ruoyi.competition.mapper.CompetitionMapper;
 import com.ruoyi.competition.domain.Competition;
 import com.ruoyi.competition.service.ICompetitionService;
@@ -70,6 +72,7 @@ public class CompetitionServiceImpl implements ICompetitionService
         competition.setCreateTime(DateUtils.getNowDate());
         int rows = competitionMapper.insertCompetition(competition);
         insertCompetitionDeptRel(competition);
+        insertCompetitionTagRel(competition);
         return rows;
     }
 
@@ -87,6 +90,8 @@ public class CompetitionServiceImpl implements ICompetitionService
         competition.setUpdateTime(DateUtils.getNowDate());
         competitionMapper.deleteCompetitionDeptRelBySessionId(competition.getId());
         insertCompetitionDeptRel(competition);
+        competitionMapper.deleteCompetitionTagRelByCompetitionId(competition.getId());
+        insertCompetitionTagRel(competition);
         return competitionMapper.updateCompetition(competition);
     }
 
@@ -102,6 +107,7 @@ public class CompetitionServiceImpl implements ICompetitionService
     public int deleteCompetitionByIds(Long[] ids)
     {
         competitionMapper.deleteCompetitionDeptRelBySessionIds(ids);
+        competitionMapper.deleteCompetitionTagRelByCompetitionIds(ids);
         return competitionMapper.deleteCompetitionByIds(ids);
     }
 
@@ -117,6 +123,7 @@ public class CompetitionServiceImpl implements ICompetitionService
     public int deleteCompetitionById(Long id)
     {
         competitionMapper.deleteCompetitionDeptRelBySessionId(id);
+        competitionMapper.deleteCompetitionTagRelByCompetitionId(id);
         return competitionMapper.deleteCompetitionById(id);
     }
 
@@ -141,6 +148,63 @@ public class CompetitionServiceImpl implements ICompetitionService
             {
                 competitionMapper.batchCompetitionDeptRel(list);
             }
+        }
+    }
+
+    /**
+     * 新增赛事-标签关联信息
+     * 优先使用 competitionTagRelList 结构化数据，否则从 tags 字段解析
+     */
+    public void insertCompetitionTagRel(Competition competition)
+    {
+        List<CompetitionTagRel> competitionTagRelList = competition.getCompetitionTagRelList();
+        Long competitionId = competition.getId();
+        String operName = SecurityUtils.getUsername();
+
+        // 优先使用结构化数据
+        if (StringUtils.isNotNull(competitionTagRelList))
+        {
+            for (CompetitionTagRel rel : competitionTagRelList)
+            {
+                rel.setCompetitionId(competitionId);
+                rel.setCreateBy(operName);
+                rel.setCreateTime(DateUtils.getNowDate());
+                rel.setDelFlag("0");
+            }
+            if (!competitionTagRelList.isEmpty())
+            {
+                competitionMapper.batchCompetitionTagRel(competitionTagRelList);
+            }
+            return;
+        }
+
+        // 兜底：从 tags 字段（逗号分隔的编码字符串）解析
+        String tags = competition.getTags();
+        if (StringUtils.isBlank(tags))
+        {
+            return;
+        }
+        String[] tagArray = tags.split(",");
+        List<CompetitionTagRel> list = new ArrayList<>();
+        for (int i = 0; i < tagArray.length; i++)
+        {
+            String tagCode = tagArray[i].trim();
+            if (tagCode.isEmpty())
+            {
+                continue;
+            }
+            CompetitionTagRel rel = new CompetitionTagRel();
+            rel.setCompetitionId(competitionId);
+            rel.setTagCode(tagCode);
+            rel.setSort((long) i);
+            rel.setCreateBy(operName);
+            rel.setCreateTime(DateUtils.getNowDate());
+            rel.setDelFlag("0");
+            list.add(rel);
+        }
+        if (!list.isEmpty())
+        {
+            competitionMapper.batchCompetitionTagRel(list);
         }
     }
 

@@ -8,8 +8,8 @@ import com.ruoyi.common.enums.BizAuditOpType;
 import com.ruoyi.common.utils.DictUtils;
 import com.ruoyi.common.utils.StringUtils;
 import com.ruoyi.framework.bizaudit.BizAuditHandler;
-import com.ruoyi.framework.bizaudit.BizAuditContext;
-import com.ruoyi.framework.bizaudit.BizAuditDiffResult;
+import com.ruoyi.framework.bizaudit.model.BizAuditContext;
+import com.ruoyi.framework.bizaudit.model.BizAuditDiffResult;
 import com.ruoyi.system.domain.BizAuditLogDetail;
 import com.ruoyi.system.service.ISysDictTypeService;
 

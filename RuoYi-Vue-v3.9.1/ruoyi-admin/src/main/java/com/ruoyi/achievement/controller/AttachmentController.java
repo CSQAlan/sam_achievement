@@ -24,6 +24,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.MediaType;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
@@ -38,10 +39,16 @@ public class AttachmentController extends BaseController
 
     @Autowired
     private FileUuidMapper fileUuidMapper;
+
+    @PreAuthorize("@ss.hasPermi('achievement:attachment:download')")
     @GetMapping("/download/notice")
     public void downloadNotice(String fileName, HttpServletResponse response) {
         try {
-            // 1. 获取若依配置的文件上传基础路径 (例如 D:/ruoyi/uploadPath)
+            if (!FileUtils.checkAllowDownload(fileName))
+            {
+                throw new Exception(StringUtils.format("文件名称({})非法，不允许下载。 ", fileName));
+            }
+            // 1. 获取若依配置的文件上传基础路径
             String downloadPath = RuoYiConfig.getProfile() + StringUtils.substringAfter(fileName, Constants.RESOURCE_PREFIX);
 
             File file = new File(downloadPath);
@@ -69,6 +76,7 @@ public class AttachmentController extends BaseController
     /**
      * 安全上传接口：返回 UUID 而不是路径
      */
+    @PreAuthorize("@ss.hasPermi('achievement:attachment:upload')")
     @PostMapping("/upload")
     public AjaxResult uploadFile(MultipartFile file) throws Exception
     {
@@ -102,6 +110,7 @@ public class AttachmentController extends BaseController
     /**
      * 通过 UUID 下载/预览附件
      */
+    @PreAuthorize("@ss.hasPermi('achievement:attachment:download')")
     @GetMapping("/download")
     public void downloadFile(String resource, HttpServletRequest request, HttpServletResponse response)
     {
@@ -127,9 +136,13 @@ public class AttachmentController extends BaseController
                 return;
             }
 
-            String localPath = realPath.startsWith(Constants.RESOURCE_PREFIX)
-                    ? RuoYiConfig.getProfile() + StringUtils.substringAfter(realPath, Constants.RESOURCE_PREFIX)
-                    : realPath;
+            String localPath = RuoYiConfig.getProfile() + StringUtils.substringAfter(realPath, Constants.RESOURCE_PREFIX);
+            
+            if (!FileUtils.checkAllowDownload(localPath))
+            {
+                renderDownloadError(response, "文件路径非法，不允许下载");
+                return;
+            }
 
             File localFile = new File(localPath);
             if (!localFile.exists() || !localFile.isFile())

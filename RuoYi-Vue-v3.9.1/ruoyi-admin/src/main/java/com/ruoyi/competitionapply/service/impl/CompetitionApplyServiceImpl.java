@@ -259,9 +259,7 @@ public class CompetitionApplyServiceImpl implements ICompetitionApplyService
                 {
                     continue;
                 }
-                // 兼容旧前端字段：如果误传到 path，这里也允许兜底成 uuid
-                String uuid = StringUtils.isNotBlank(item.getUuid()) ? item.getUuid() : "0";
-                uuid = StringUtils.trim(uuid);
+                String uuid = StringUtils.trim(item.getUuid());
                 if (StringUtils.isNotBlank(uuid))
                 {
                     uuidList.add(uuid);
@@ -762,14 +760,6 @@ public class CompetitionApplyServiceImpl implements ICompetitionApplyService
         update.setId(id);
         update.setStatus(status);
         update.setAuditRemark(auditRemark);
-        update.setName(updateInfo.getName());
-        update.setYear(updateInfo.getYear());
-        update.setSession(updateInfo.getSession());
-        update.setMemo(updateInfo.getMemo());
-        update.setCategory(updateInfo.getCategory());
-        update.setOrganizations(updateInfo.getOrganizations());
-        update.setLevel(updateInfo.getLevel());
-        update.setTags(updateInfo.getTags());
         update.setAuditTime(new Date());
         if (auditor != null)
         {
@@ -779,6 +769,14 @@ public class CompetitionApplyServiceImpl implements ICompetitionApplyService
         update.setUpdateTime(DateUtils.getNowDate());
         if ("1".equals(status))
         {
+            update.setName(updateInfo.getName());
+            update.setYear(updateInfo.getYear());
+            update.setSession(updateInfo.getSession());
+            update.setMemo(updateInfo.getMemo());
+            update.setCategory(updateInfo.getCategory());
+            update.setOrganizations(updateInfo.getOrganizations());
+            update.setLevel(updateInfo.getLevel());
+            update.setTags(updateInfo.getTags());
             update.setCompetitionId(competitionId);
             update.setSessionId(sessionId);
         }

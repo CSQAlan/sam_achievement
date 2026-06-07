@@ -3,13 +3,14 @@ package com.ruoyi;
 import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
 import org.springframework.boot.autoconfigure.jdbc.DataSourceAutoConfiguration;
+import org.mybatis.spring.boot.autoconfigure.MybatisAutoConfiguration;
 
 /**
  * 启动程序
  * 
  * @author ruoyi
  */
-@SpringBootApplication(exclude = { DataSourceAutoConfiguration.class })
+@SpringBootApplication(exclude = { DataSourceAutoConfiguration.class, MybatisAutoConfiguration.class })
 public class RuoYiApplication
 {
     public static void
@@ -23,7 +24,8 @@ public class RuoYiApplication
                 " | ( ' )  |       \\  _. /  '       \n" +
                 " |(_ o _) /        _( )_ .'         \n" +
                 " | (_,_).' __  ___(_ o _)'          \n" +
-                " |  |\\ \\  |  ||   |(_,_)'         \n" +
+                " |  |\\ \\  |  ||   |(_,_)'    " +
+                "     \n" +
                 " |  | \\ `'   /|   `-'  /           \n" +
                 " |  |  \\    /  \\      /           \n" +
                 " ''-'   `'-'    `-..-'              ");

@@ -3,6 +3,7 @@ package com.ruoyi.achievement.controller;
 import java.util.HashMap;
 import java.util.List;
 import javax.servlet.http.HttpServletResponse;
+import javax.validation.Valid;
 
 import com.ruoyi.common.utils.SecurityUtils;
 import com.ruoyi.common.utils.StringUtils;
@@ -192,6 +193,7 @@ public class SamAchievementController extends BaseController
     /**
      * 查询年度成果统计（遵循管理/个人视图分离）
      */
+    @PreAuthorize("@ss.hasPermi('achievement:manage:list')")
     @GetMapping("/stats/year")
     public AjaxResult selectYearStats(SamAchievement samAchievement)
     {
@@ -217,6 +219,7 @@ public class SamAchievementController extends BaseController
     /**
      * 查询首页统计数据
      */
+    @PreAuthorize("@ss.hasPermi('achievement:manage:list')")
     @GetMapping("/stats/dashboard")
     public AjaxResult getDashboardStats()
     {
@@ -276,7 +279,7 @@ public class SamAchievementController extends BaseController
     @PreAuthorize("@ss.hasAnyPermi('achievement:manage:add,achievement:manage:guided:add')")
     @Log(title = "成果录入", businessType = BusinessType.INSERT)
     @PostMapping
-    public AjaxResult add(@RequestBody SamAchievement samAchievement)
+    public AjaxResult add(@Valid @RequestBody SamAchievement samAchievement)
     {
         return toAjax(samAchievementService.insertSamAchievement(samAchievement));
     }
@@ -287,7 +290,7 @@ public class SamAchievementController extends BaseController
     @PreAuthorize("@ss.hasAnyPermi('achievement:manage:edit,achievement:manage:guided:edit')")
     @Log(title = "成果录入", businessType = BusinessType.UPDATE)
     @PutMapping
-    public AjaxResult edit(@RequestBody SamAchievement samAchievement)
+    public AjaxResult edit(@Valid @RequestBody SamAchievement samAchievement)
     {
         return toAjax(samAchievementService.updateSamAchievement(samAchievement));
     }
@@ -306,6 +309,7 @@ public class SamAchievementController extends BaseController
     /**
      * 根据比赛和届次查询已有的赛道
      */
+    @PreAuthorize("@ss.hasPermi('achievement:manage:list')")
     @GetMapping("/listTracks")
     public AjaxResult listTracks(Long competitionId, Long sessionId)
     {
@@ -315,6 +319,7 @@ public class SamAchievementController extends BaseController
     /**
      * 校验证书编号是否唯一
      */
+    @PreAuthorize("@ss.hasPermi('achievement:manage:add')")
     @GetMapping("/checkCertificateNoUnique")
     public AjaxResult checkCertificateNoUnique(SamAchievement samAchievement)
     {
@@ -334,6 +339,7 @@ public class SamAchievementController extends BaseController
     /**
      * 查询带有素质提升奖标签的成果列表
      */
+    @PreAuthorize("@ss.hasPermi('achievement:manage:list')")
     @GetMapping("/list-quality")
     public TableDataInfo listQuality(SamAchievement samAchievement)
     {
@@ -345,6 +351,7 @@ public class SamAchievementController extends BaseController
     /**
      * 查询教师指导的带有素质提升奖标签的成果列表（教师版素质提升）
      */
+    @PreAuthorize("@ss.hasPermi('achievement:manage:guided:list')")
     @GetMapping("/list-quality-teacher")
     public TableDataInfo listQualityTeacher(SamAchievement samAchievement)
     {
@@ -362,6 +369,7 @@ public class SamAchievementController extends BaseController
     /**
      * 导出素质提升奖成果列表
      */
+    @PreAuthorize("@ss.hasPermi('achievement:manage:export')")
     @PostMapping("/export-quality")
     public void exportQuality(HttpServletResponse response, @RequestBody SamAchievement samAchievement)
     {
@@ -373,6 +381,7 @@ public class SamAchievementController extends BaseController
     /**
      * 导出教师指导的素质提升奖成果列表（教师版）
      */
+    @PreAuthorize("@ss.hasPermi('achievement:manage:guided:export')")
     @PostMapping("/export-quality-teacher")
     public void exportQualityTeacher(HttpServletResponse response, @RequestBody SamAchievement samAchievement)
     {

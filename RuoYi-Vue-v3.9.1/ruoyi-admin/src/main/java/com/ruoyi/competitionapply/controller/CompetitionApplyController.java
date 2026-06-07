@@ -4,6 +4,7 @@ import java.io.File;
 import java.net.URLEncoder;
 import java.util.List;
 import javax.servlet.http.HttpServletResponse;
+import javax.validation.Valid;
 
 import com.ruoyi.achievement.domain.FileUuid;
 import com.ruoyi.achievement.mapper.FileUuidMapper;
@@ -99,7 +100,7 @@ public class CompetitionApplyController extends BaseController
     @PreAuthorize("@ss.hasPermi('competition-apply:competitionapply:add')")
     @Log(title = "赛事申请", businessType = BusinessType.INSERT)
     @PostMapping // 根路径，匹配你前端旧的 API 路径
-    public AjaxResult add(@RequestBody CompetitionApply competitionApply) {
+    public AjaxResult add(@Valid @RequestBody CompetitionApply competitionApply) {
         try {
             return toAjax(competitionApplyService.insertCompetitionApply(competitionApply));
         } catch (Exception e) {
@@ -113,7 +114,7 @@ public class CompetitionApplyController extends BaseController
     @PreAuthorize("@ss.hasPermi('competition-apply:competitionapply:edit')")
     @Log(title = "赛事申请", businessType = BusinessType.UPDATE)
     @PutMapping
-    public AjaxResult edit(@RequestBody CompetitionApply competitionApply)
+    public AjaxResult edit(@Valid @RequestBody CompetitionApply competitionApply)
     {
         return toAjax(competitionApplyService.updateCompetitionApply(competitionApply));
     }
@@ -122,7 +123,7 @@ public class CompetitionApplyController extends BaseController
      * 审核赛事申请（通过/驳回）
      * status：0=待审，1=通过，2=驳回，3=撤回
      */
-    @PreAuthorize("@ss.hasPermi('competition-apply:competitionapply:edit')")
+    @PreAuthorize("@ss.hasPermi('competition-apply:competitionapply:review')")
     @Log(title = "赛事申请审核", businessType = BusinessType.UPDATE)
     @PutMapping("/review/{id}")
     public AjaxResult review(@PathVariable("id") Long id, @RequestBody CompetitionApply updateInfo)

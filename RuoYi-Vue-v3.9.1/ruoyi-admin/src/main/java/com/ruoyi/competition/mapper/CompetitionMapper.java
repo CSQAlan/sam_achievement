@@ -3,6 +3,7 @@ package com.ruoyi.competition.mapper;
 import java.util.List;
 import com.ruoyi.competition.domain.Competition;
 import com.ruoyi.competition.domain.CompetitionDeptRel;
+import com.ruoyi.competition.domain.CompetitionTagRel;
 import org.apache.ibatis.annotations.Mapper;
 import org.apache.ibatis.annotations.Param;
 
@@ -103,5 +104,27 @@ public interface CompetitionMapper
      * @return 总赛事
      */
     public Competition selectCompetitionByNameExact(@Param("name") String name);
+
+    // ====================== 赛事-标签关联 ======================
+
+    /**
+     * 通过赛事ID查询标签关联列表
+     */
+    public List<CompetitionTagRel> selectCompetitionTagRelList(@Param("competitionId") Long competitionId);
+
+    /**
+     * 批量新增赛事-标签关联
+     */
+    public int batchCompetitionTagRel(List<CompetitionTagRel> competitionTagRelList);
+
+    /**
+     * 通过赛事ID删除标签关联
+     */
+    public int deleteCompetitionTagRelByCompetitionId(Long competitionId);
+
+    /**
+     * 批量通过赛事ID删除标签关联
+     */
+    public int deleteCompetitionTagRelByCompetitionIds(Long[] ids);
 
 }
