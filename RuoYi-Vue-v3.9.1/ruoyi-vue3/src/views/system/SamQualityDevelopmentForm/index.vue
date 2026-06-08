@@ -142,8 +142,7 @@ import { ref, reactive, onMounted, nextTick } from 'vue';
 import { Search, Refresh, View, Download } from '@element-plus/icons-vue';
 import { listQualityAchievement, getAchievementInfo } from '@/api/system/SamQualityDevelopmentForm';
 import { getDicts } from "@/api/system/dict/data";
-import axios from 'axios';
-import { getToken } from '@/utils/auth';
+import request from '@/utils/request';
 import AchievementForm from '@/views/achievement/component/AchievementForm.vue';
 import { getManage } from '@/api/achievement/manage';
 
@@ -289,10 +288,9 @@ const handleView = (row) => {
 };
 
 const handleExport = () => {
-  const baseURL = import.meta.env.VITE_APP_BASE_API;
-  axios({
+  request({
     method: 'post',
-    url: baseURL + '/achievement/manage/export-quality',
+    url: '/achievement/manage/export-quality',
     data: {
       competitionName: searchForm.competitionName,
       contestant: searchForm.contestant,
@@ -300,10 +298,9 @@ const handleExport = () => {
       teacherId: searchForm.teacherId,
       grade: searchForm.grade
     },
-    responseType: 'blob',
-    headers: { 'Authorization': 'Bearer ' + getToken() }
+    responseType: 'blob'
   }).then((res) => {
-    const blob = new Blob([res.data], { type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' });
+    const blob = new Blob([res], { type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' });
     const url = window.URL.createObjectURL(blob);
     const link = document.createElement('a');
     link.href = url;

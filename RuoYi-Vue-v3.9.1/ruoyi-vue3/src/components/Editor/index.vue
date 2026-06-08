@@ -27,7 +27,7 @@
 </template>
 
 <script setup>
-import axios from 'axios'
+import request from '@/utils/request'
 import { QuillEditor } from "@vueup/vue-quill"
 import "@vueup/vue-quill/dist/vue-quill.snow.css"
 import { getToken } from "@/utils/auth"
@@ -189,8 +189,13 @@ function handlePasteCapture(e) {
 function insertImage(file) {
   const formData = new FormData()
   formData.append("file", file)
-  axios.post(uploadUrl.value, formData, { headers: { "Content-Type": "multipart/form-data", Authorization: headers.value.Authorization } }).then(res => {
-    handleUploadSuccess(res.data)
+  request({
+    url: '/common/upload',
+    method: 'post',
+    data: formData,
+    headers: { 'Content-Type': 'multipart/form-data' }
+  }).then(res => {
+    handleUploadSuccess(res)
   })
 }
 </script>
