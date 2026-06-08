@@ -54,8 +54,6 @@ services:
     ports:
       - "8080:8080"
     environment:
-      # JWT密钥（必须通过环境变量设置强密钥）
-      TOKEN_SECRET: ${TOKEN_SECRET:-change-this-to-a-strong-secret-key}
       # Cookie安全配置
       COOKIE_SECURE: "true"
       # 日志级别
