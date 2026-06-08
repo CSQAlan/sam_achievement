@@ -86,8 +86,9 @@ spring:
 token:
   # 令牌自定义标识
   header: Authorization
-  # 令牌密钥（使用 openssl rand -base64 64 生成的强密钥）
-  secret: BFv0orvXSnEVmaxOsqzajkZ3rhGdyCsJyeSzJVLuDHuqusfn8CtBaCRaGDrzxnWBDs2gpjkZn+kk3i6wCCzIQg==
+  # 令牌密钥（通过环境变量注入，使用 openssl rand -base64 64 生成）
+  # 开发环境使用默认值，生产环境必须通过 TOKEN_SECRET 环境变量设置
+  secret: ${TOKEN_SECRET:BFv0orvXSnEVmaxOsqzajkZ3rhGdyCsJyeSzJVLuDHuqusfn8CtBaCRaGDrzxnWBDs2gpjkZn+kk3i6wCCzIQg==}
   # 令牌有效期（默认30分钟）
   expireTime: 30
 

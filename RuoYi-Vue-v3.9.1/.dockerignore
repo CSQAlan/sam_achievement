@@ -1,0 +1,45 @@
+# Git
+.git
+.gitignore
+
+# IDE
+.idea
+.vscode
+*.swp
+*.swo
+
+# Docker
+docker-compose.yml
+docker-compose*.yml
+Dockerfile
+.dockerignore
+
+# Environment files (sensitive)
+.env
+.env.local
+.env.*.local
+
+# Documentation
+*.md
+docs/
+
+# Logs
+logs/
+*.log
+
+# Upload files
+uploadPath/
+D/ruoyi/uploadPath/
+
+# Node modules
+node_modules/
+
+# Build output
+dist/
+target/
+
+# Temporary files
+tmp/
+temp/
+*.tmp
+*.bak

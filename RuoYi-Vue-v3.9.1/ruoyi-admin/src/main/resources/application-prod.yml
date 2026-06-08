@@ -9,9 +9,9 @@ spring:
     druid:
       # 主库数据源（从环境变量读取）
       master:
-        url: jdbc:mysql://121.36.231.106:3306/ruoyi?useUnicode=true&characterEncoding=utf8&serverTimezone=Asia/Shanghai&useSSL=false
-        username: ${DB_USERNAME}
-        password: ${DB_PASSWORD}
+        url: ${DB_URL:jdbc:mysql://localhost:3306/ruoyi?useUnicode=true&characterEncoding=utf8&serverTimezone=Asia/Shanghai&useSSL=false}
+        username: ${DB_USERNAME:ruoyi}
+        password: ${DB_PASSWORD:}
       # 从库数据源
       slave:
         enabled: false

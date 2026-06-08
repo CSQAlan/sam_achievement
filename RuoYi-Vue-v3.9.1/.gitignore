@@ -91,5 +91,14 @@ ruoyi-admin/src/main/resources/application-druid.yml.backup
 # 开发环境配置（包含敏感信息）
 application-dev.yml
 
+# Docker环境变量文件（包含敏感信息）
+.env
+.env.local
+.env.*.local
+
 # Node modules
 node_modules/
+
+# Upload files
+uploadPath/
+D/ruoyi/uploadPath/

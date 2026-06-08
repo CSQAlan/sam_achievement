@@ -54,16 +54,19 @@ services:
     ports:
       - "8080:8080"
     environment:
-      # 数据库配置
-      SPRING_DATASOURCE_DRUID_MASTER_URL: jdbc:mysql://mysql:3306/ruoyi?useUnicode=true&characterEncoding=utf8&serverTimezone=Asia/Shanghai&useSSL=false
-      SPRING_DATASOURCE_DRUID_MASTER_USERNAME: ruoyi
-      SPRING_DATASOURCE_DRUID_MASTER_PASSWORD: Ruoyi@123456
+      # 数据库配置（对应 application-prod.yml 中的变量）
+      DB_URL: jdbc:mysql://mysql:3306/ruoyi?useUnicode=true&characterEncoding=utf8&serverTimezone=Asia/Shanghai&useSSL=false
+      DB_USERNAME: ruoyi
+      DB_PASSWORD: ${MYSQL_PASSWORD:-Ruoyi@123456}
       # Redis配置
-      SPRING_REDIS_HOST: redis
-      SPRING_REDIS_PORT: 6379
-      SPRING_REDIS_PASSWORD: redis123456
-      # JWT密钥（生产环境请修改为强密钥）
-      TOKEN_SECRET: your-very-long-and-secure-jwt-secret-key-at-least-64-bytes-long-here
+      REDIS_HOST: redis
+      REDIS_PORT: 6379
+      REDIS_PASSWORD: ${REDIS_PASSWORD:-redis123456}
+      # JWT密钥（必须通过环境变量或 .env 文件设置强密钥）
+      TOKEN_SECRET: ${TOKEN_SECRET:-change-this-to-a-strong-secret-key}
+      # Druid监控配置
+      DRUID_USERNAME: ruoyi
+      DRUID_PASSWORD: ${DRUID_PASSWORD:-druid123456}
       # Cookie安全配置
       COOKIE_SECURE: "true"
       # 日志级别
