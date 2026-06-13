@@ -58,12 +58,6 @@ public class XssFilter implements Filter
     private boolean handleExcludeURL(HttpServletRequest request, HttpServletResponse response)
     {
         String url = request.getServletPath();
-        String method = request.getMethod();
-        // GET DELETE 不过滤
-        if (method == null || HttpMethod.GET.matches(method) || HttpMethod.DELETE.matches(method))
-        {
-            return true;
-        }
         return StringUtils.matches(url, excludes);
     }
 

@@ -31,6 +31,7 @@
         <poi.version>4.1.2</poi.version>
         <velocity.version>2.3</velocity.version>
         <jwt.version>0.9.1</jwt.version>
+        <pdfbox.version>2.0.27</pdfbox.version>
         <itextpdf.version>5.5.13.3</itextpdf.version>
         <itext-asian.version>5.2.0</itext-asian.version>
         <mybatis.spring.boot.version>2.2.2</mybatis.spring.boot.version>
@@ -188,6 +189,13 @@
                 <version>${kaptcha.version}</version>
             </dependency>
 
+            <!-- PDFBox -->
+            <dependency>
+                <groupId>org.apache.pdfbox</groupId>
+                <artifactId>pdfbox</artifactId>
+                <version>${pdfbox.version}</version>
+            </dependency>
+
             <!-- iText PDF -->
             <dependency>
                 <groupId>com.itextpdf</groupId>
@@ -200,6 +208,13 @@
                 <groupId>com.itextpdf</groupId>
                 <artifactId>itext-asian</artifactId>
                 <version>${itext-asian.version}</version>
+            </dependency>
+
+            <!-- PDFBox -->
+            <dependency>
+                <groupId>org.apache.pdfbox</groupId>
+                <artifactId>pdfbox</artifactId>
+                <version>${pdfbox.version}</version>
             </dependency>
 
             <!-- 定时任务-->

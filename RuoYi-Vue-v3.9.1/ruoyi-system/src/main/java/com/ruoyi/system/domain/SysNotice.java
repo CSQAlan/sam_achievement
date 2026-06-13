@@ -69,6 +69,7 @@ public class SysNotice extends BaseEntity
         this.noticeContent = noticeContent;
     }
 
+    @Xss(message = "公告内容不能包含脚本字符")
     public String getNoticeContent()
     {
         return noticeContent;

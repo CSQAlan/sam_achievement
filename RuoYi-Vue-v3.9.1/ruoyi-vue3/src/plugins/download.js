@@ -1,63 +1,57 @@
-﻿import axios from 'axios'
+﻿import request from '@/utils/request'
 import { ElLoading, ElMessage } from 'element-plus'
 import { saveAs } from 'file-saver'
-import { getToken } from '@/utils/auth'
 import errorCode from '@/utils/errorCode'
 import { blobValidate } from '@/utils/ruoyi'
 
-const baseURL = import.meta.env.VITE_APP_BASE_API
 let downloadLoadingInstance
 
 export default {
   name(name, isDelete = true) {
-    var url = baseURL + "/common/download?fileName=" + encodeURIComponent(name) + "&delete=" + isDelete
-    axios({
+    var url = "/common/download?fileName=" + encodeURIComponent(name) + "&delete=" + isDelete
+    request({
       method: 'get',
       url: url,
-      responseType: 'blob',
-      headers: { 'Authorization': 'Bearer ' + getToken() }
+      responseType: 'blob'
     }).then((res) => {
-      const isBlob = blobValidate(res.data)
+      const isBlob = blobValidate(res)
       if (isBlob) {
-        const blob = new Blob([res.data])
-        this.saveAs(blob, decodeURIComponent(res.headers['download-filename']))
+        const blob = new Blob([res])
+        this.saveAs(blob, decodeURIComponent(name))
       } else {
-        this.printErrMsg(res.data)
+        this.printErrMsg(res)
       }
     })
   },
   resource(resource) {
-    var url = baseURL + "/common/download/resource?resource=" + encodeURIComponent(resource)
-    axios({
+    var url = "/common/download/resource?resource=" + encodeURIComponent(resource)
+    request({
       method: 'get',
       url: url,
-      responseType: 'blob',
-      headers: { 'Authorization': 'Bearer ' + getToken() }
+      responseType: 'blob'
     }).then((res) => {
-      const isBlob = blobValidate(res.data)
+      const isBlob = blobValidate(res)
       if (isBlob) {
-        const blob = new Blob([res.data])
-        this.saveAs(blob, decodeURIComponent(res.headers['download-filename']))
+        const blob = new Blob([res])
+        this.saveAs(blob, decodeURIComponent(resource))
       } else {
-        this.printErrMsg(res.data)
+        this.printErrMsg(res)
       }
     })
   },
   zip(url, name) {
-    var url = baseURL + url
     downloadLoadingInstance = ElLoading.service({ text: "正在下载数据，请稍候", background: "rgba(0, 0, 0, 0.7)", })
-    axios({
+    request({
       method: 'get',
       url: url,
-      responseType: 'blob',
-      headers: { 'Authorization': 'Bearer ' + getToken() }
+      responseType: 'blob'
     }).then((res) => {
-      const isBlob = blobValidate(res.data)
+      const isBlob = blobValidate(res)
       if (isBlob) {
-        const blob = new Blob([res.data], { type: 'application/zip' })
+        const blob = new Blob([res], { type: 'application/zip' })
         this.saveAs(blob, name)
       } else {
-        this.printErrMsg(res.data)
+        this.printErrMsg(res)
       }
       downloadLoadingInstance.close()
     }).catch((r) => {

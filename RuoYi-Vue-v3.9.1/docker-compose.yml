@@ -1,0 +1,100 @@
+version: '3.8'
+
+services:
+  # MySQL数据库
+  mysql:
+    image: mysql:8.0
+    container_name: ruoyi-mysql
+    restart: always
+    ports:
+      - "3306:3306"
+    environment:
+      MYSQL_ROOT_PASSWORD: root123456
+      MYSQL_DATABASE: ruoyi
+      MYSQL_USER: ruoyi
+      MYSQL_PASSWORD: Ruoyi@123456
+      TZ: Asia/Shanghai
+    volumes:
+      - mysql-data:/var/lib/mysql
+      - ./sql:/docker-entrypoint-initdb.d  # 初始化SQL脚本
+    command: --character-set-server=utf8mb4 --collation-server=utf8mb4_unicode_ci --default-authentication-plugin=mysql_native_password
+    networks:
+      - ruoyi-net
+    healthcheck:
+      test: ["CMD", "mysqladmin", "ping", "-h", "localhost"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  # Redis缓存
+  redis:
+    image: redis:7-alpine
+    container_name: ruoyi-redis
+    restart: always
+    ports:
+      - "6379:6379"
+    command: redis-server --requirepass redis123456 --appendonly yes
+    volumes:
+      - redis-data:/data
+    networks:
+      - ruoyi-net
+    healthcheck:
+      test: ["CMD", "redis-cli", "-a", "redis123456", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  # 后端Java应用
+  ruoyi-admin:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: ruoyi-admin
+    restart: always
+    ports:
+      - "8080:8080"
+    environment:
+      # Cookie安全配置
+      COOKIE_SECURE: "true"
+      # 日志级别
+      LOGGING_LEVEL_COM_RUOYI: info
+      # Swagger（生产环境禁用）
+      SWAGGER_ENABLED: "false"
+    volumes:
+      - ./uploadPath:/home/ruoyi/uploadPath
+      - ./logs:/home/ruoyi/logs
+    depends_on:
+      mysql:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    networks:
+      - ruoyi-net
+
+  # 前端Nginx服务
+  ruoyi-nginx:
+    image: nginx:alpine
+    container_name: ruoyi-nginx
+    restart: always
+    ports:
+      - "80:80"
+      - "443:443"
+    volumes:
+      - ./nginx/conf.d:/etc/nginx/conf.d
+      - ./nginx/ssl:/etc/nginx/ssl
+      - ./ruoyi-vue3/dist:/usr/share/nginx/html
+      - ./uploadPath:/home/ruoyi/uploadPath
+    depends_on:
+      - ruoyi-admin
+    networks:
+      - ruoyi-net
+
+volumes:
+  mysql-data:
+    driver: local
+  redis-data:
+    driver: local
+
+networks:
+  ruoyi-net:
+    driver: bridge

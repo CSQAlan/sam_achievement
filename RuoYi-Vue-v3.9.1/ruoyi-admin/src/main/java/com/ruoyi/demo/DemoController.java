@@ -48,6 +48,9 @@ public class DemoController {
     @Value("${cas.serverName}")
     private String serverName;
 
+    @Value("${cookie.secure:false}")
+    private boolean cookieSecure;
+
 
     public DemoController(TokenService tokenService,
                           ISysUserService userService,
@@ -67,9 +70,7 @@ public class DemoController {
     @RequestMapping(value = "/cas", method = RequestMethod.GET)
     public Object cas(HttpServletRequest request, HttpServletResponse response) throws IOException {
         String ticket = request.getParameter("ticket");
-        if (StringUtils.hasText(ticket)) {
-            log.info("登录票据ticket:[{}]", ticket);
-        }
+        
 
         AttributePrincipalImpl principal = (AttributePrincipalImpl) request.getUserPrincipal();
         if (principal == null) {
@@ -81,19 +82,9 @@ public class DemoController {
         Map<String, Object> attributes = principal.getAttributes();
 
         log.info("登录名:[{}]", loginName);
-        log.info("--------attributes keys--------");
-        for (String key : attributes.keySet()) {
-            log.info("{}==[{}]", key, attributes.get(key));
-        }
+        
 
-        // 1) 保留原逻辑：debug=1 时返回 info 页面
-        if ("1".equals(request.getParameter("debug"))) {
-            ModelAndView mv = new ModelAndView();
-            mv.addObject("loginName", loginName);
-            mv.addObject("info", attributes);
-            mv.setViewName("info");
-            return mv;
-        }
+        
 
         // 2) 正常逻辑：把 CAS 登录结果桥接成若依 token
         SysUser user = userService.selectUserByUserName(loginName);
@@ -119,8 +110,12 @@ public class DemoController {
         // 3) 把 token 写给浏览器（cookie）
         Cookie cookie = new Cookie(WEB_TOKEN_KEY, ruoyiToken);
         cookie.setPath("/");
-        // 本地开发先不加 secure；如果以后 https 再加 cookie.setSecure(true)
-        cookie.setHttpOnly(false); // 若依前端一般需要读 token，先别设 true
+        cookie.setHttpOnly(true);     // 防止JavaScript读取，防止XSS窃取token
+        cookie.setSecure(cookieSecure); // 根据环境配置决定是否只在HTTPS下传输
+        // SameSite属性通过响应头设置（兼容Servlet 3.x）
+        response.setHeader("Set-Cookie",
+            String.format("%s=%s; Path=/; HttpOnly; %s SameSite=Strict",
+                WEB_TOKEN_KEY, ruoyiToken, cookieSecure ? "Secure;" : ""));
         response.addCookie(cookie);
 
         // 4) 跳回前端
