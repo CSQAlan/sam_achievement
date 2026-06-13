@@ -2,14 +2,14 @@ import router from './router'
 import { ElMessage } from 'element-plus'
 import NProgress from 'nprogress'
 import 'nprogress/nprogress.css'
-import { getToken } from '@/utils/auth'
+import { getToken, setToken } from '@/utils/auth'
 import { isHttp, isPathMatch } from '@/utils/validate'
 import { isRelogin } from '@/utils/request'
 import useUserStore from '@/store/modules/user'
 import useSettingsStore from '@/store/modules/settings'
 import usePermissionStore from '@/store/modules/permission'
-// const CAS_LOGIN_URL = 'https://csxrz.cqnu.edu.cn/cas/login'
-// const CAS_SERVICE = 'http://localhost:8080/cas' // 后端回调地址
+const CAS_LOGIN_URL = 'https://csxrz.cqnu.edu.cn/cas/login'
+const CAS_SERVICE = import.meta.env.VITE_CAS_SERVICE // 后端回调地址
 NProgress.configure({ showSpinner: false })
 
 const whiteList = ['/login', '/register', '/reset', '/cas']
@@ -44,6 +44,24 @@ const checkProfileInitialized = (to, next) => {
 
 router.beforeEach((to, from, next) => {
   NProgress.start()
+
+  // 1. 拦截从后端重定向回来时 URL 带有的 token 参数
+  const urlToken = to.query.token
+  if (urlToken) {
+    // 将 Token 存入前端 Cookie
+    setToken(urlToken)
+    
+    // 清除 URL 中的 token 敏感参数，防止留在历史记录中或刷新时重复处理
+    const query = { ...to.query }
+    delete query.token
+    
+    // 使用 replace 模式跳转，清除浏览器历史记录中的 token
+    next({ path: to.path, query, replace: true })
+    NProgress.done()
+    return
+  }
+
+  // 2. 正常校验流程
   if (getToken()) {
     to.meta.title && useSettingsStore().setTitle(to.meta.title)
     /* has token*/
@@ -83,16 +101,16 @@ router.beforeEach((to, from, next) => {
   } else {
     // 没有token
     if (isWhiteList(to.path)) {
-      // redirectToCas(to)   // 让 /login 也跳 CAS
-      NProgress.done()
+      redirectToCas(to)   // 让 /login 也跳 CAS
+      // NProgress.done()
 
       // 在免登录白名单，直接进入
       next()
     } else {
       // 重定向到CAS登录页
-      // redirectToCas(to)
-      next(`/login?redirect=${to.fullPath}`) // 否则全部重定向到登录页
-      NProgress.done()
+      redirectToCas(to)
+      // next(`/login?redirect=${to.fullPath}`) // 否则全部重定向到登录页
+      // NProgress.done()
     }
   }
 })

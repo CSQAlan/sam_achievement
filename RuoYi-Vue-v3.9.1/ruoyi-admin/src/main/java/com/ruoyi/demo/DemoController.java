@@ -31,9 +31,6 @@ public class DemoController {
 
     private static final Logger log = LoggerFactory.getLogger(DemoController.class);
 
-    // 你前端地址（已改为默认 80 端口，访问直接用 localhost 即可）
-    private static final String FRONT_URL = "http://localhost:5173";
-
     // 你写给浏览器的 token cookie key（若依常用）
     private static final String WEB_TOKEN_KEY = "Admin-Token";
 
@@ -47,6 +44,9 @@ public class DemoController {
 
     @Value("${cas.serverName}")
     private String serverName;
+
+    @Value("${cas.frontendUrl}")
+    private String frontUrl;
 
     @Value("${cookie.secure:false}")
     private boolean cookieSecure;
@@ -107,19 +107,8 @@ public class DemoController {
         loginUser.setDeptId(user.getDeptId());
         String ruoyiToken = tokenService.createToken(loginUser);
 
-        // 3) 把 token 写给浏览器（cookie）
-        Cookie cookie = new Cookie(WEB_TOKEN_KEY, ruoyiToken);
-        cookie.setPath("/");
-        cookie.setHttpOnly(true);     // 防止JavaScript读取，防止XSS窃取token
-        cookie.setSecure(cookieSecure); // 根据环境配置决定是否只在HTTPS下传输
-        // SameSite属性通过响应头设置（兼容Servlet 3.x）
-        response.setHeader("Set-Cookie",
-            String.format("%s=%s; Path=/; HttpOnly; %s SameSite=Strict",
-                WEB_TOKEN_KEY, ruoyiToken, cookieSecure ? "Secure;" : ""));
-        response.addCookie(cookie);
-
-        // 4) 跳回前端
-        response.sendRedirect(FRONT_URL);
+        // 3) 把 token 拼接到前端 URL 后面，跳回前端进行解析落地（不写入 HttpOnly Cookie）
+        response.sendRedirect(frontUrl + "?token=" + ruoyiToken);
         log.info("requestURL={}", request.getRequestURL());
         log.info("serverName={}, serverPort={}", request.getServerName(), request.getServerPort());
 
@@ -146,8 +135,7 @@ public class DemoController {
         response.addCookie(cookie);
 
         // 3) 重定向到 CAS 登出地址，要求 CAS 彻底登出后跳回我们的前端主页
-        // 拼接成: https://cas服务器/logout?service=http://localhost
-        response.sendRedirect(casServerUrlPrefix + "/logout?service=" + FRONT_URL);
+        response.sendRedirect(casServerUrlPrefix + "/logout?service=" + frontUrl);
     }
 
     @GetMapping("/hello")
