@@ -11,8 +11,7 @@ import com.ruoyi.common.core.domain.BaseEntity;
  * @author ruoyi
  * @date 2026-05-23
  */
-public class CompetitionTagRel extends BaseEntity
-{
+public class CompetitionTagRel extends BaseEntity {
     private static final long serialVersionUID = 1L;
 
     /** 主键 */
@@ -33,69 +32,59 @@ public class CompetitionTagRel extends BaseEntity
     /** 删除标记（0=存在，2=删除） */
     private String delFlag;
 
-    public void setId(Long id) 
-    {
+    public void setId(Long id) {
         this.id = id;
     }
 
-    public Long getId() 
-    {
+    public Long getId() {
         return id;
     }
-    
-    public void setCompetitionId(Long competitionId) 
-    {
+
+    public void setCompetitionId(Long competitionId) {
         this.competitionId = competitionId;
     }
 
-    public Long getCompetitionId() 
-    {
+    public Long getCompetitionId() {
         return competitionId;
     }
-    
-    public void setTagCode(String tagCode) 
-    {
+
+    public void setTagCode(String tagCode) {
         this.tagCode = tagCode;
     }
 
-    public String getTagCode() 
-    {
+    public String getTagCode() {
         return tagCode;
     }
-    
-    public void setSort(Long sort) 
-    {
+
+    public void setSort(Long sort) {
         this.sort = sort;
     }
 
-    public Long getSort() 
-    {
+    public Long getSort() {
         return sort;
     }
-    
-    public void setDelFlag(String delFlag) 
-    {
+
+    public void setDelFlag(String delFlag) {
         this.delFlag = delFlag;
     }
 
-    public String getDelFlag() 
-    {
+    public String getDelFlag() {
         return delFlag;
     }
 
     @Override
     public String toString() {
         return new ToStringBuilder(this, ToStringStyle.MULTI_LINE_STYLE)
-            .append("id", getId())
-            .append("competitionId", getCompetitionId())
-            .append("tagCode", getTagCode())
-            .append("sort", getSort())
-            .append("createBy", getCreateBy())
-            .append("createTime", getCreateTime())
-            .append("updateBy", getUpdateBy())
-            .append("updateTime", getUpdateTime())
-            .append("remark", getRemark())
-            .append("delFlag", getDelFlag())
-            .toString();
+                .append("id", getId())
+                .append("competitionId", getCompetitionId())
+                .append("tagCode", getTagCode())
+                .append("sort", getSort())
+                .append("createBy", getCreateBy())
+                .append("createTime", getCreateTime())
+                .append("updateBy", getUpdateBy())
+                .append("updateTime", getUpdateTime())
+                .append("remark", getRemark())
+                .append("delFlag", getDelFlag())
+                .toString();
     }
 }

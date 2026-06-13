@@ -1350,6 +1350,7 @@ const validateCertificateNo = (rule, value, callback) => {
 
 rules.value.certificateNo = [
   { required: true, message: "证书编号不能为空", trigger: "blur" },
+  { max: 100, message: "证书编号不能超过100个字符", trigger: "blur" },
   { validator: validateCertificateNo, trigger: "blur" }
 ];
 

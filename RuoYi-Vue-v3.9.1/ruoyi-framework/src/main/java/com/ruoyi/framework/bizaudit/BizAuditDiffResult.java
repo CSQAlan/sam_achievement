@@ -1,4 +1,4 @@
-package com.ruoyi.framework.bizaudit;
+package com.ruoyi.framework.bizaudit.model;
 
 import com.ruoyi.system.domain.BizAuditLogDetail;
 import java.util.ArrayList;

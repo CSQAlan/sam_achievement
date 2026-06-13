@@ -284,6 +284,22 @@ export async function mockCommonBackend(page) {
     });
   });
 
+  await page.route('**/dev-api/achievement/manage/stats/year*', async (route) => {
+    await route.fulfill({
+      status: 200,
+      contentType: 'application/json',
+      body: JSON.stringify({
+        msg: "操作成功",
+        code: 200,
+        data: [
+          { year: 2024, count: 2 },
+          { year: 2025, count: 3 },
+          { year: 2026, count: 5 }
+        ]
+      }),
+    });
+  });
+
   // 9. Mock Homepage Notice List
   await page.route('**/dev-api/system/notice/list*', async (route) => {
     await route.fulfill({
